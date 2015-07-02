@@ -99,7 +99,6 @@ Common references (units, frames of reference, etc.) are required to ensure inte
     \item[Common Epoch] \hfill \\ J2000
     \item[Common Reference Frame] \hfill \\ Heliocentric Equatorial (HE)
     \item[Common Time] \hfill \\ Modified Julian Day (MJD $\triangleq$ JD - 2400000.5)
-    \item[Relative Working Directory] \hfill \\ EXOSIMS/
 \end{description}
 
 \subsection{Python Packages} 
@@ -180,6 +179,10 @@ The input modules include Optical System Description (OSD), Star Catalog (SC), P
 The OSD module contains all of the necessary information to describe the effects of the telescope and starlight suppression system on the target star and planet wavefronts.  This requires encoding the design of both the telescope optics and the specific starlight suppression system, whether it be an internal coronagraph or an external occulter.  The encoding can be achieved by specifying Point Spread Functions (PSF) for on- and off-axis sources, along with (potentially angular separation-dependent) contrast and throughput definitions.  At the opposite level of complexity, the encoded portions of this module may be a description of all of the optical elements between the telescope aperture and the imaging detector, along with a method of propagating an input wavefront to the final image plane.  Intermediate implementations can include partial propagations, or collections of static PSFs representing the contributions of various system elements.  The encoding of the optical train will allow for the extraction of specific bulk parameters including the instrument inner working angle (IWA), outer working angle (OWA), and mean and max contrast and throughput.
 
 Finally, the OSD must also include a description of the science instrument.  The baseline instrument is assumed to be an imaging spectrometer.  The encoding must provide the spatial and wavelength coverage of the instrument as well as sampling for each, along with detector details such as read noise, dark current, and readout cycle.
+
+TASKS:
+
+
 \label{sec:opticalsystem}
 \subsubsection{Optical System Object Attribute Initialization Input/Output Description} 
 \subsubsection*{Inputs}
@@ -357,7 +360,10 @@ This module will not provide any functionality for picking the specific targets 
 \subsection{Planet Population Description (PPD) NEEDS UPDATING}
 The PPD module encodes the density functions of all required planetary parameters, both physical and orbital. These include semi-major axis, eccentricity, orbital orientation, and planetary radius and mass. Certain parameter models may be empirically derived while others may come from analyses of observational surveys.  This module also encodes the limits on all parameters to be used for sampling the distributions and determining derived cutoff values such as the maximum target distance for a given instrument's IWA.
 
-The PPD module does not model the physics of planetary orbits or the amount of light reflected or emitted by a given planet, but rather encodes the statistics of planetary occurrence and properties.  
+The PPD module does not model the physics of planetary orbits or the amount of light reflected or emitted by a given planet, but rather encodes the statistics of planetary occurrence and properties. 
+
+TASKS: 
+
 \label{sec:planetpopulation}
 \subsubsection{Planet Population Object Attribute Initialization Input/Output Description} 
 \subsubsection*{Inputs}
@@ -404,7 +410,7 @@ The PPD module does not model the physics of planetary orbits or the amount of l
         \item[PlanetPopulation.scaleOrbits] \hfill \\
         Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
         \item[PlanetPopulation.rrange] \hfill \\
-        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) (astropy unit object with units of $ km $)
+        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy unit object with units of $ km $)
     \end{description}
 \end{itemize}
 
@@ -418,6 +424,9 @@ The observatory orbit plays a key role in determining which of the target stars 
 The keepout definition determines which target stars are observable at a specific time during the mission simulation and which are unobservable due to bright objects within the field of view such as the sun, moon, and solar system planets.  The keepout volume is determined by the specific design of the observatory and, in certain cases, by the starlight suppression system.  The keepout definition function takes the current mission time and SC module output as inputs and outputs a list of the target stars which are observable at the current time. It constructs position vectors of the target stars and bright objects which may interfere with observations with respect to the observatory. These position vectors are used to determine if bright objects are in the field of view for each of the potential stars under exoplanet finding observation.  If there are no bright objects obstructing the view of the target star, it becomes a candidate for observation in the SS module.
 
 In addition to these functions, the observatory definition can also encode finite resources used by the observatory throughout the mission.  The most important of these is the fuel used for stationkeeping and repointing, especially in the case of occulters which must move significant distances between observations.  Other considerations could include the use of other volatiles such as cryogens for cooled instruments, which tend to deplete solely as a function of mission time.  This module also allows for detailed investigations of the effects of orbital design on the science yield, e.g., comparing the baseline geosynchronous 28.5\textdegree{} inclined orbit for WFIRST-AFTA with an L2 halo orbit proposed for other exoplanet imaging mission concepts. 
+
+
+TASKS: Orbital position, Keepout Definition
 
 \begin{figure}[ht]
     \begin{center}
@@ -444,6 +453,12 @@ In addition to these functions, the observatory definition can also encode finit
             Occulter slew thrust in $ mN $. Default value is 450.
             \item specs["slewIsp"] \hfill \\
             Occulter slew specific impulse in $ s $. Default value is 4160.
+            \item specs["sc\_mass"] \hfill \\
+            Occulter (maneuvering spacecraft) initial wet mass in $ kg $. Default value is 6000.
+            \item specs["dryMass"] \hfill \\
+            Occulter (maneuvering spacecraft) dry mass in $ kg $. Default value is 3400.
+            \item specs["coMass"] \hfill \\
+            Telescope (or non-maneuvering spacecraft) mass in $ kg $. Default value is 5800.
         \end{description}
     \end{description}
 \end{itemize}
@@ -458,12 +473,18 @@ In addition to these functions, the observatory definition can also encode finit
         Occulter slew thrust (astropy unit object initially set in $ mN $)
         \item[Observatory.slewIsp] \hfill \\
         Occulter slew specific impulse (astropy unit object initially set in $ s $)
-        \item[Observatory.flowRate] \hfill \\
-        Slew flow rate derived from Observatory.thrust and Observatory.slewIsp (astropy unit object initially set in $ kg/day $)
+        \item[Observatory.sc\_mass] \hfill \\
+        Occulter (maneuvering spacecraft) initial wet mass (astropy unit object initially set in $ kg $)
+        \item[Observatory.dryMass] \hfill \\
+        Occulter (maneuvering spacecraft) dry mass (astropy unit object initially set in $ kg $)
+        \item[Observatory.coMass] \hfill \\
+        Telescope (or non-maneuvering spacecraft) mass (astropy unit object initially set in $ kg $)
+        \item[Observatory.kogood] \hfill \\
+        Numpy array of Boolean values where True is a target unobstructed and observable in the keepout zone. Initialized to an empty array. This attribute is updated to the current mission time through the keepout task (see \ref{sec:keepouttask}).
         \item[Observatory.r\_sc] \hfill \\
         Observatory orbit position in HE reference frame. Initialized to numpy array as numpy.array([0., 0., 0.]) and associated with astropy unit object in $ km $. This attribute is updated to the orbital position of the observatory at the current mission time through the orbit task (see \ref{sec:orbittask}).
-        \item[Observatory.kogood] \hfill \\
-        List of Boolean values where True is a target unobstructed and observable in the keepout zone. Initialized to an empty list. This attribute is updated to the current mission time through the keepout task (see \ref{sec:keepouttask}).
+        \item[Observatory.flowRate] \hfill \\
+        Slew flow rate derived from Observatory.thrust and Observatory.slewIsp (astropy unit object initially set in $ kg/day $)
         
     \end{description}
 \end{itemize}
@@ -522,6 +543,9 @@ The PPM module contains models of the light emitted or reflected by planets in t
 
 \subsection{Time} 
 The Time module is responsible for keeping track of the current mission time.  It encodes only the mission start time, the mission duration, and the current time within a simulation.  All functions in all modules requiring knowledge of the current time call functions or access parameters implemented within the Time module.  Internal encoding of time is implemented as the time from mission start (measured in days).  The Time module also provides functionality for converting between this time measure and standard measures such as Julian Day Number and UTC time.
+
+TASKS:
+
 \label{sec:time}
 \subsubsection{Time Object Attribute Initialization Input/Output Description ORGANIZE LATER}
 
@@ -566,6 +590,9 @@ The Rules module contains additional constraints placed on the mission design no
 The Rules module also encodes the calculation of integration time for an observation.  This can be based on achieving a pre-determined signal to noise (SNR) metric (with various possible definitions), or via a probabilistic description.  This requires also defining a model for the background contribution due to all astronomical sources and especially due to zodiacal and exozodiacal light.
 
 The duty cycle determines when during the mission timeline the observatory is allowed to perform planet-finding operations.  The duty cycle function takes the current mission time as input and outputs the next available time when exoplanet observations may begin or resume, along with the duration of the observational period. The outputs of this task are used in the SS module to determine when and how long exoplanet finding and characterization observations occur.  
+
+TASKS:
+
 \label{sec:rules}
 \subsubsection{Rules Object Attribute Initialization Input/Output Description}
 
@@ -614,7 +641,11 @@ The PP module encodes the effects of post-processing on the data gathered in a s
 \label{sec:postprocessing}
 
 % ZODIACAL LIGHT NEEDS UPDATING
+
 \subsection{Zodiacal Light (ZL) NEEDS UPDATING}
+
+TASKS: exozodi levels for each planetary system
+
 \label{sec:zodiacallight}
 \subsubsection{Zodiacal Light Object Attribute Initialization Input/Output Description ORGANIZE LATER}
 \subsubsection*{Input}
@@ -665,15 +696,15 @@ The TL module takes in information from the OSD, SC, PPD, and OD input modules a
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Target List object attributes will be assigned the default values listed.
             \begin{description}
                 \item specs["catalogname"] \hfill \\
-                String containing name of desired SC module
+                String containing name of desired SC module. Default is SC prototype module.
                 \item specs["optsysname"] \hfill \\
-                String containing name of desired OSD module
+                String containing name of desired OSD module. Default is OSD prototype module.
                 \item specs["popname"] \hfill \\
-                String containing name of desired PPD module
+                String containing name of desired PPD module. Default is PPD prototype module.
                 \item specs["rulesname"] \hfill \\
-                String containing name of desired Rules module
+                String containing name of desired Rules module. Default is Rules prototype module.
                 \item specs["zodiname"] \hfill \\
-                String containing name of desired ZL module
+                String containing name of desired ZL module. Default is ZL prototype module.
             \end{description}
         \item[StarCatalog] \hfill \\
         Output of SC module given by above specs["catalogname"] (see \ref{sec:starcatalog})
@@ -692,8 +723,16 @@ The TL module takes in information from the OSD, SC, PPD, and OD input modules a
 \begin{itemize}
     \item 
     \begin{description}
-        \item[StarCatalog values] \hfill \\
+        \item[TargetList.(StarCatalog values)] \hfill \\
         Mission specific filtered star catalog values from SC module (see \ref{sec:starcatalog})
+        \item[TargetList.OpticalSys] \hfill \\
+        Output of OSD module (see \ref{sec:opticalsystem})
+        \item[TargetList.PlanetPopulation] \hfill \\
+        Output of PPD module (see \ref{sec:planetpopulation})
+        \item[TargetList.Rules] \hfill \\
+        Output of Rules module (see \ref{sec:rules})
+        \item[TargetList.ZodiacalLight] \hfill \\
+        Output of ZL module (see \ref{sec:zodiacallight})
         \item[TargetList.intTime] \hfill \\
         Numpy array of maximum integration time for each target star (astropy unit object initially defined in $ s $)
         \item[TargetList.MsEst] \hfill \\
@@ -710,10 +749,140 @@ The SU module takes as input the outputs of the TL simulation module to create a
 
 The SU module also takes as input the PPM module instance, so that it can return the specific spectra due to every simulated planet at an arbitrary observation time throughout the mission simulation.
 
+TASKS:
+\label{sec:simulateduniverse}
+\subsubsection{Simulated Universe Object Attribute Initialization Input/Output Description}
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[User specification] \hfill \\
+        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Simulated Universe object attributes will be assigned the default values listed.
+            \begin{description}
+                \item specs["targlistname"] \hfill \\
+                String containing name of desired TL module. Default is TL prototype module.
+                \item specs["planphysname"] \hfill \\
+                String containing name of PPM module. Default is PPM prototype module.
+            \end{description}
+        \item[OpticalSys] \hfill \\
+        Output of OSD module inherited from TL module (see \ref{sec:opticalsystem})
+        \item[PlanetPopulation] \hfill \\
+        Output of PPD module inherited from TL module (see \ref{sec:planetpopulation})
+        \item[Rules] \hfill \\
+        Output of Rules module inherited from TL module (see \ref{sec:rules})
+        \item[ZodiacalLight] \hfill \\
+        Output of ZL module inherited from TL module (see \ref{sec:zodiacallight})
+        \item[TargetList] \hfill \\
+        Output of TL module given by above specs["targlistname"] (see \ref{sec:targetlist})
+        \item[PlanetPhysical] \hfill \\
+        Output of PPM module given by above specs["planphysname"] (see \ref{sec:planetphysicalmodel})
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[SimulatedUniverse.OpticalSys] \hfill \\
+        Output of OSD module (see \ref{sec:opticalsystem})
+        \item[SimulatedUniverse.PlanetPopulation] \hfill \\
+        Output of PPD module (see \ref{sec:planetpopulation})
+        \item[SimulatedUniverse.Rules] \hfill \\
+        Output of Rules module (see \ref{sec:rules})
+        \item[SimulatedUniverse.ZodiacalLight] \hfill \\
+        Output of ZL module (see \ref{sec:zodiacallight})
+        \item[SimulatedUniverse.TargetList] \hfill \\
+        Output of TL module (see \ref{sec:targetlist})
+        \item[SimulatedUniverse.PlanetPhysical] \hfill \\
+        Output of PPM module (see \ref{sec:planetphysicalmodel})
+        \item[SimulatedUniverse.planInds] \hfill \\
+        Numpy array containing indices of target list stars with planets
+        \item[SimulatedUniverse.nPlans] \hfill \\
+        Number of planetary systems
+        \item[SimulatedUniverse.I] \hfill \\
+        Numpy array containing list of inclination of planetary systems in degrees
+    \end{description}
+\end{itemize}
+
 % SURVEY SIMULATION NEEDS UPDATING
 
 \subsection{Survey Simulation (SS) NEEDS UPDATING}
 The SS module takes as input the output of the SU simulation module and the Time, Rules, and PP input modules. This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
+
+TASKS: 
+
+\subsubsection{Survey Simulation Object Attribute Initialization Input/Output Description}
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[User specification] \hfill \\
+        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Survey Simulation object attributes will be assigned the default values listed.
+            \begin{description}
+                \item specs["simuniname"] \hfill \\
+                String containing name of desired SU module. Default is SU prototype module.
+                \item specs["obsname"] \hfill \\
+                String containing name of OD module. Default is OD prototype module.
+                \item specs["timename"] \hfill \\
+                String containing name of Time module. Default is Time prototype module
+                \item specs["ppname"] \hfill \\
+                String containing name of PP module. Default is PP prototype module
+            \end{description}
+        \item[OpticalSys] \hfill \\
+        Output of OSD module inherited from SU module (see \ref{sec:opticalsystem})
+        \item[PlanetPopulation] \hfill \\
+        Output of PPD module inherited from SU module (see \ref{sec:planetpopulation})
+        \item[Rules] \hfill \\
+        Output of Rules module inherited from SU module (see \ref{sec:rules})
+        \item[ZodiacalLight] \hfill \\
+        Output of ZL module inherited from SU module (see \ref{sec:zodiacallight})
+        \item[TargetList] \hfill \\
+        Output of TL module inherited from SU module (see \ref{sec:targetlist})
+        \item[PlanetPhysical] \hfill \\
+        Output of PPM module inherited from SU module (see \ref{sec:planetphysicalmodel})
+        \item[SimulatedUniverse] \hfill \\
+        Output of SU module (see \ref{sec:simulateduniverse})
+        \item[Observatory] \hfill \\
+        Output of OD module (see \ref{sec:observatorydefinition})
+        \item[TimeKeeping] \hfill \\
+        Output of Time module (see \ref{sec:time})
+        \item[PostProcessing] \hfill \\
+        Output of PP module (see \ref{sec:postprocessing})
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[SurveySimulation.OpticalSys] \hfill \\
+        Output of OSD module (see \ref{sec:opticalsystem})
+        \item[SurveySimulation.PlanetPopulation] \hfill \\
+        Output of PPD module (see \ref{sec:planetpopulation})
+        \item[SurveySimulation.Rules] \hfill \\
+        Output of Rules module (see \ref{sec:rules})
+        \item[SurveySimulation.ZodiacalLight] \hfill \\
+        Output of ZL module (see \ref{sec:zodiacallight})
+        \item[SurveySimulation.TargetList] \hfill \\
+        Output of TL module (see \ref{sec:targetlist})
+        \item[SurveySimulation.PlanetPhysical] \hfill \\
+        Output of PPM module (see \ref{sec:planetphysicalmodel})
+        \item[SurveySimulation.SimulatedUniverse] \hfill \\
+        Output of SU module (see \ref{sec:simulateduniverse})
+        \item[SurveySimulation.Observatory] \hfill \\
+        Output of OD module (see \ref{sec:observatorydefinition})
+        \item[SurveySimulation.TimeKeeping] \hfill \\
+        Output of Time module (see \ref{sec:time})
+        \item[SurveySimulation.PostProcessing] \hfill \\
+        Output of PP module (see \ref{sec:postprocessing})
+        \item[SurveySimulation.visited] \hfill \\
+        Numpy array giving number of observations for each star in the target list with indices corresponding to the target list. All are initialized to zero.
+        \item[SurveySimulation.revisit\_list] \hfill \\
+        Python list where each item gives index of star to revisit (corresponding to the target list) and mission time to revisit.
+        \item[SurveySimulation.planPosTime] \hfill \\
+        Numpy array giving current normalized time of each planet's position (astropy TimeDelta objects initially defined in $ JD $ increments as for TimeKeeping.currenttimeNorm, see \ref{sec:time}). All are initialized to zero as for TimeKeeping.currenttimeNorm. 
+    \end{description}
+\end{itemize}
 
 % SURVEY ENSEMBLE NEEDS UPDATING
 

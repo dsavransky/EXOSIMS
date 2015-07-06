@@ -76,17 +76,41 @@ This ICD defines the input/output of each module and the interfaces between modu
 \section{Overview}
 The terminology used to describe the software implementation is loosely based on the object-oriented Python framework upon which EXOSIMS is built.  The term module can refer to the object class prototype representing the abstracted functionality of one piece of the software, an implementation of this object class which inherits the attributes of the prototype, or an instance of this object class.  Input/output definitions of modules refer to the class prototype.  Implemented modules refer to the inherited class definition.  Passing modules (or their outputs) means the instantiation of the inherited object class being used in a given simulation.  Relying on strict inheritance for all implemented module classes provides an automated error and consistency-checking mechanism.  The outputs of a given object instance may be compared to the outputs of the prototype.  It is trivial to pre-check whether a given module implementation will work with the larger framework, and thus allows flexibility and adaptability.
 
-The overall framework of EXOSIMS is depicted in Fig.~\ref{figure_framework} where the component stand-alone software modules are classified as input modules and simulation modules.  The input modules include the Optical System Description (OSD), Star Catalog (SC), Planet Population Description (PPD), Observatory Definition (OD), Planet Physical Model (PPM), Time, Rules, and Post-Processing (PP) modules.  These modules contain specific mission design parameters.  The simulation modules include Target List (TL), Simulated Universe (SU), Survey Simulation (SS), and Survey Ensemble (SE) modules.  The simulation modules take information contained in the input modules and perform mission simulation tasks.  Any module may perform any number or kind of calculations using any or all of the input parameters provided.  They are only constrained by their input and output specification contained in this document.
-
 \begin{figure}[ht]
     \begin{center}
         \begin{tabular}{c}
-             \includegraphics[width=\textwidth]{codeflow2.pdf}
+             \includegraphics[width=\textwidth]{codeflow2}
         \end{tabular}
     \end{center}
     \caption{Flowchart of mission simulation. Each box represents a component software module which interacts with other modules as indicated by the arrows. The simulation modules (those that are not classified as input modules) pass all input modules along with their own output.  Thus, the Survey Ensemble module has access to all of the input modules and all of the upstream simulation modules.}
     \label{figure_framework}
 \end{figure}
+
+The overall framework of EXOSIMS is depicted in Fig.~\ref{figure_framework} where the component stand-alone software modules are classified as input modules and simulation modules.  The input modules include the Optical System Description (OSD), Star Catalog (SC), Planet Population Description (PPD), Observatory Definition (OD), Planet Physical Model (PPM), Time, Rules, and Post-Processing (PP) modules.  These modules contain specific mission design parameters.  The simulation modules include Target List (TL), Simulated Universe (SU), Survey Simulation (SS), and Survey Ensemble (SE) modules.  The simulation modules take information contained in the input modules and perform mission simulation tasks.  Any module may perform any number or kind of calculations using any or all of the input parameters provided.  They are only constrained by their input and output specification contained in this document.
+
+\begin{figure}[ht]
+    \begin{center}
+        \begin{tabular}{c}
+             \includegraphics[width=0.75\textwidth]{starcatalog_flowdown}
+        \end{tabular}
+    \end{center}
+    \caption{Schematic of a sample implementation for the three module layers for the Star Catalog module. The Star Catalog prototype (top row) is immutable, specifies the input/output structure of the module along with all common functionality, and is inherited by all Star Catalog class implementations (middle row).  In this case, two different catalog classes are shown: one that reads in data from a SIMBAD catalog dump, and one which contains only information about a subset of known radial velocity targets.  The object used in the simulation (bottom row) is an instance of one of these classes, and can be used in exactly the same way in the rest of the code due to the common input/output scheme.}
+    \label{fig:starcatalog_flowdown}
+\end{figure}
+
+\begin{figure}[ht]
+    \begin{center}
+        \begin{tabular}{c}
+             \includegraphics[width=0.75\textwidth]{observatory_flowdown}
+        \end{tabular}
+    \end{center}
+    \caption{Schematic of a sample implementation for the three module layers for the Observatory Description module. The Observatory Definition prototype (top row) is immutable, specifies the input/output structure of the module along with all common functionality, and is inherited by all Observatory Definition class implementations (middle row).  In this case, two different observatory classes are shown that differ only in the definition of the observatory orbit.  Therefore, the second implementation inherits the first (rather than directly inheriting the prototype) and overloads only the orbit method. The object used in the simulation (bottom row) is an instance of one of these classes, and can be used in exactly the same way in the rest of the code due to the common input/output scheme.}
+    \label{fig:observatory_flowdown}
+\end{figure}
+
+Figures \ref{fig:starcatalog_flowdown} and \ref{fig:observatory_flowdown} show schematic representations of the three different apsects of a module, for the Star Catalog and Observatory Definition modules, respectively.  Every module has a specific prototype that sets the input/output structure of the module and encodes any common functionality for all module class implementations.  The various implementations inherit the prototype and perform whatever processing is necessary, limited only by the preset input/output scheme.  Finally, in the course of running a simulation, an object is generated for each module class selected for that simulation.  The generated objects can be used in exactly the same way in the downstream code, regardless of what implementation they are instances of, due to the strict interface defined in the class prototypes.
+
+For the input modules, the input specification is much more loosely defined than the output specification, as different implementations may draw data from a wide variety of sources.  For example, the star catalog may be implemented as reading values from a static file on disk, or may represent an active connection to a local or remote database.  The output specification for these modules, however, as well as both the input and output for the simulation modules, is entirely fixed so as to allow for generic use of all module objects in the simulation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GLOBAL SPECIFICATIONS (INCLUDE BETTER EXPLANATIONS)
@@ -104,6 +128,7 @@ Common references (units, frames of reference, etc.) are required to ensure inte
 \subsection{Python Packages} 
 EXOSIMS is an open source platform.  As such, packages and modules may be imported and used for calculations within any of the stand-alone modules.  The following commonly used Python packages are used for the WFIRST-specific implementation of EXOSIMS:
 
+\texttt{
 \begin{itemize}
     \item astropy
         \begin{itemize}
@@ -128,7 +153,7 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
             \item scipy.special
         \end{itemize}
 \end{itemize}
-
+}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BACKBONE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -213,9 +238,9 @@ TASKS:
             \item specs["dMagLim"] \hfill \\
             Limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is 26.
             \item specs["throughput"] \hfill \\
-            Optical system throughput at IWA. Default value is 0.5.
+            Optical system throughput. Default value is 0.5. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
             \item specs["contrast"] \hfill \\
-            Optical system suppression level at IWA. Default value is 1e-10.
+            Optical system suppression level at IWA. Default value is 1e-10. This may be a floating point scalar (representing a fixed contrast) or a \verb+scipy.interpolate.interp1d+ object representing variable contrast as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
             \item specs["dr"] \hfill \\
             Detector dark current rate per pixel. Default value is 0.001.
             \item specs["sigma\_r"] \hfill \\
@@ -223,14 +248,20 @@ TASKS:
             \item specs["t\_exp"] \hfill \\
             Exposure time per read in $ s $. Default value is 1000.
             \item specs["QE"] \hfill \\
-            Detector quantum efficiency. Default value is 0.5.
+            Detector quantum efficiency. Default value is 0.5. This may be a floating point scalar (representing a fixed QE) or a \verb+scipy.interpolate.interp1d+ object representing variable QE as a function of wavelength.  In the case of the latter, the interpolant must be valid between the minimum and maximum wavelengths of the instrument (as defined by lambda and deltaLambda), inclusive, and must assume an argument in nanometers.
             \item specs["eta2"] \hfill \\
             Post coronagraph attenuation. Default value is 0.57.
             \item specs["deltaLambda"] \hfill \\
             Detection bandwidth $ \Delta\lambda $ in $ nm $. Default value is 100.
+            \item specs["PSF"] \hfill \\
+            Instrument point spread function stored as 2D numpy ndarray.  The core of the PSF should be normalized to 1, so that all throughput terms are combined in the througput variable above.
+            \item specs["PSFsampling"] \hfill \\
+            Sampling of the PSF in arcsec/pixel.
         \end{description}
     \end{description}
 \end{itemize}
+
+For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames with tabulated data, or numpy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).
 
 \subsubsection*{Outputs}
 \begin{itemize}

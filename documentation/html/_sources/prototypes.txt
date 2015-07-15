@@ -1,0 +1,113 @@
+.. _prototypes:
+
+Prototypes
+===============
+
+
+.. _completeness-prototype:
+
+Completeness
+-------------
+
+.. automodule:: EXOSIMS.Prototypes.Completeness
+    :members:
+
+.. _observatory-prototype:
+
+Observatory
+--------------
+
+.. automodule:: EXOSIMS.Prototypes.Observatory
+    :members:
+
+.. _opticalsys-prototype:
+
+Optical System
+-----------------
+
+.. automodule:: EXOSIMS.Prototypes.OpticalSys
+    :members:
+
+
+.. _planetphysical-prototype:
+
+Planet Physical Model
+------------------------
+
+.. automodule:: EXOSIMS.Prototypes.PlanetPhysical
+    :members:
+
+.. _planetpopulation-prototype:
+
+Planet Populations
+---------------------
+
+.. automodule:: EXOSIMS.Prototypes.PlanetPopulation
+    :members:
+
+
+.. _postprocessing-prototype:
+
+Post-Processing
+------------------
+
+.. automodule:: EXOSIMS.Prototypes.PostProcessing
+    :members:
+
+.. _rules:
+
+Rules
+---------
+
+.. automodule:: EXOSIMS.Prototypes.Rules
+    :members:
+
+
+.. _simulateduniverse-prototype:
+
+Simulated Universe
+-----------------------
+
+.. automodule:: EXOSIMS.Prototypes.SimulatedUniverse
+    :members:
+
+.. _starcatalog-prototype:
+
+Star Catalog
+-----------------
+
+
+.. automodule:: EXOSIMS.Prototypes.StarCatalog
+    :members:
+
+.. _surveysimulation-prototype:
+
+Survey Simulation
+------------------------
+
+.. automodule:: EXOSIMS.Prototypes.SurveySimulation
+    :members:
+
+.. _targetlist-prototype:
+
+Target List
+-------------
+
+.. automodule:: EXOSIMS.Prototypes.TargetList
+    :members:
+
+.. _timekeeping-prototype:
+
+Time Keeping
+--------------
+
+.. _zodiacallight-prototype:
+
+Zodiacal Light
+-----------------
+
+
+.. automodule:: EXOSIMS.Prototypes.ZodiacalLight
+    :members:
+
+

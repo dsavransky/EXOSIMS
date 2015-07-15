@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.util package &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exosims-util-package">
+<h1>EXOSIMS.util package<a class="headerlink" href="#exosims-util-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.util.keplerSTM">
+<span id="exosims-util-keplerstm-module"></span><h2>EXOSIMS.util.keplerSTM module<a class="headerlink" href="#module-EXOSIMS.util.keplerSTM" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="EXOSIMS.util.keplerSTM.pi">
+<code class="descclassname">EXOSIMS.util.keplerSTM.</code><code class="descname">pi</code><em class="property"> = 3.141592653589793</em><a class="headerlink" href="#EXOSIMS.util.keplerSTM.pi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kepler State Transition Matrix</p>
+<p>Class container for defining a planetary system (or group of planets in multiple
+systems) via their gravitational parameters and state vectors.  Contains methods
+for propagating state vectors forward in time via the Kepler state transition
+matrix.</p>
+<p>Constructor take the following arguments:
+x0 - 6n vector of stacked positions and velocities for n planets
+mu - n vector of standard gravitational parameters mu = G(m+m_s)</p>
+<blockquote>
+<div>where m is the planet mass, m_s is the star mass and G is the
+gravitational constant</div></blockquote>
+<dl class="docutils">
+<dt>epsmult - default multiplier on floating point precision, used as</dt>
+<dd>convergence metric.  Higher values mean faster convergence,
+but sacrifice precision.</dd>
+</dl>
+<p>Step function (updateState) takes the following arguments:
+dt - time step</p>
+<p>All units must be complementary (i.e., if position is AU and velocity
+is AU/day, mu must be in AU^3/day^2.</p>
+<p>Algorithm from Shepperd, 1984, using Goodyear&#8217;s universal variables
+and continued fraction to solve the Kepler equation.</p>
+<p>12/21/2011 Dmitry Savransky <a class="reference external" href="mailto:savransky1&#37;&#52;&#48;llnl&#46;gov">savransky1<span>&#64;</span>llnl<span>&#46;</span>gov</a>
+12/23/2011 Added epsmult param - ds</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="EXOSIMS.util.keplerSTM.planSys">
+<em class="property">class </em><code class="descclassname">EXOSIMS.util.keplerSTM.</code><code class="descname">planSys</code><span class="sig-paren">(</span><em>x0</em>, <em>mu</em>, <em>epsmult=2.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/keplerSTM.html#planSys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.keplerSTM.planSys" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="EXOSIMS.util.keplerSTM.planSys.calcSTM">
+<code class="descname">calcSTM</code><span class="sig-paren">(</span><em>dt</em>, <em>epsmult=2.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/keplerSTM.html#planSys.calcSTM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.keplerSTM.planSys.calcSTM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.util.keplerSTM.planSys.contFrac">
+<code class="descname">contFrac</code><span class="sig-paren">(</span><em>x</em>, <em>a=5.0</em>, <em>b=0.0</em>, <em>c=2.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/keplerSTM.html#planSys.contFrac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.keplerSTM.planSys.contFrac" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.util.keplerSTM.planSys.takeStep">
+<code class="descname">takeStep</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/keplerSTM.html#planSys.takeStep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.keplerSTM.planSys.takeStep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.util.keplerSTM.planSys.updateState">
+<code class="descname">updateState</code><span class="sig-paren">(</span><em>x0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/keplerSTM.html#planSys.updateState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.keplerSTM.planSys.updateState" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.util">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.util" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.keplerSTM">EXOSIMS.util.keplerSTM module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/EXOSIMS.util.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/EXOSIMS.util.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

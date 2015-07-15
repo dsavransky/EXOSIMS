@@ -1,0 +1,996 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Prototypes &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="prev" title="Welcome to EXOSIMS’s documentation!" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to EXOSIMS’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="prototypes">
+<span id="id1"></span><h1>Prototypes<a class="headerlink" href="#prototypes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-EXOSIMS.Prototypes.Completeness">
+<span id="completeness"></span><span id="completeness-prototype"></span><h2>Completeness<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Completeness class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Completeness Module calculations in exoplanet mission simulation</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">
+<code class="descname">target_completeness</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates completeness values for target stars</p>
+<p>Input: targlist - TargetList module object containing target list star 
+attributes.
+targlist also contains the following available for use:
+targlist.opt - optical system object
+targlist.pop - planet population object
+targlist.rules - rules object
+targlist.zodi - zodiacal light object
+targlist.comp - completeness object</p>
+<p>Output: comp0 - numpy array of completeness values for each target star</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.Observatory">
+<span id="observatory"></span><span id="observatory-prototype"></span><h2>Observatory<a class="headerlink" href="#module-EXOSIMS.Prototypes.Observatory" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observatory class template</p>
+<p>This class contains all variables and methods necessary to perform
+Observatory Definition Module calculations in exoplanet mission simulation</p>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph">
+<em class="property">class </em><code class="descname">SolarEph</code><span class="sig-paren">(</span><em>a</em>, <em>e</em>, <em>i</em>, <em>O</em>, <em>w</em>, <em>lM</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.SolarEph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solar system ephemerides class</p>
+<p>This class takes the constants in Appendix D.4 of Vallado as inputs
+and stores them for use in defining solar system ephemerides at a 
+given time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.cent">
+<code class="descclassname">Observatory.</code><code class="descname">cent</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.cent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.cent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes current time (MJD) and returns TDB, the time in Julian centuries 
+since the J2000 epoch needed for the algorithm in Vallado</p>
+<p>Input: current time (MJD)
+Output: time in Julian centuries since the J2000 epoch (TDB)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.distForces">
+<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>time</em>, <em>targlist</em>, <em>s_ind</em>, <em>secondDist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds disturbance forces on occulter and returns values for lateral
+and axial forces in N</p>
+<p>Inputs: time - timekeeping object, targlist - targetlist object, 
+s_ind - index of target star, secondDist - boolean where True is for
+second occulter</p>
+<p>Outputs: dF_lateral - lateral disturbance force, dF_axial - axial
+disturbance force (both have units u.N)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.eccanom">
+<code class="descclassname">Observatory.</code><code class="descname">eccanom</code><span class="sig-paren">(</span><em>M</em>, <em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.eccanom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.eccanom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds and returns eccentric anomaly given mean anomaly and eccentricity</p>
+<p>Inputs: M - mean anomaly, e - eccentricity
+Output: E - eccentric anomaly</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.keepout">
+<code class="descclassname">Observatory.</code><code class="descname">keepout</code><span class="sig-paren">(</span><em>currenttime</em>, <em>catalog</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds Boolean values for each target at current mission time and
+returns True if successful</p>
+<p>Inputs: current absolute time (astropy Time object), star catalog information
+Output: True if successful, False if not
+Finds:  Boolean values for each target where True is observable and
+False is target unobservable (bright object in the keepout zone)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">
+<code class="descclassname">Observatory.</code><code class="descname">keplerplanet</code><span class="sig-paren">(</span><em>time</em>, <em>planet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keplerplanet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds heliocentric equatorial position vector (km) for solar system
+planets using algorithms 2 and 10 from Vallado.</p>
+<p>Input: time - current time (astropy Time object), 
+planet - object containing ephemeride data from the SolarEph class
+Output: r_planet - heliocentric equatorial position vector (km) for 
+solar system planet</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.mass_dec">
+<code class="descclassname">Observatory.</code><code class="descname">mass_dec</code><span class="sig-paren">(</span><em>dF_lateral</em>, <em>t_int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.mass_dec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.mass_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns mass_used and deltaV values needed to decrement spacecraft
+mass for station-keeping</p>
+<p>Inputs: dF_lateral - lateral force on occulter (astropy unit N)
+t_int - integration time (astropy unit day)</p>
+<p>Outputs: mass_used - mass used in station-keeping (kg)
+deltaV - change in velocity required for station-keeping (km/s)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.moon_earth">
+<code class="descclassname">Observatory.</code><code class="descname">moon_earth</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.moon_earth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.moon_earth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds geocentric equatorial position vector (km) for Earth&#8217;s moon
+using Algorithm 31 from Vallado.</p>
+<p>Input: time - current time (astropy Time object)
+Output: r_moon - geocentric equatorial position vector (km) for
+Earth&#8217;s moon</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.orbit">
+<code class="descclassname">Observatory.</code><code class="descname">orbit</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.orbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds observatory orbit position vector (km) in heliocentric 
+equatorial frame and returns True if successful</p>
+<p>Input: current absolute time (astropy Time object)
+Output: True if successful, False if not
+Finds: observatory position vector (numpy array) in self.r_sc</p>
+<p>This defines the data type expected, orbits are determined by specific 
+Observatory classes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.propeph">
+<code class="descclassname">Observatory.</code><code class="descname">propeph</code><span class="sig-paren">(</span><em>x</em>, <em>TDB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.propeph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.propeph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates ephemeride to current time and returns this value</p>
+<p>Input: x - ephemeride list (4 elements), TDB - time in Julian centeries 
+since the J2000 epoch
+Output: y - ephemeride value at current time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.rot">
+<code class="descclassname">Observatory.</code><code class="descname">rot</code><span class="sig-paren">(</span><em>th</em>, <em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.rot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.rot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the rotation matrix of angle th about the axis value</p>
+<p>Inputs: th - rotation angle, axis - value denoting axis (1,2,3)
+Output: rotation matrix defined as numpy array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.starprop">
+<code class="descclassname">Observatory.</code><code class="descname">starprop</code><span class="sig-paren">(</span><em>time</em>, <em>catalog</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.starprop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.starprop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds target star position vector (km) for current time (MJD)</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>time : current time (MJD)
+catalog : star catalog information
+i : index for catalog information</dd>
+</dl>
+<p>Kwargs:</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>star position vector in heliocentric equatorial frame (km)</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.OpticalSys">
+<span id="optical-system"></span><span id="opticalsys-prototype"></span><h2>Optical System<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSys" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSys.</code><code class="descname">OpticalSys</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optical System class template</p>
+<p>This class contains all variables and methods necessary to perform
+Optical System Definition Module calculations in exoplanet mission 
+simulation</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds integration time for a specific target system (called in
+SurveySimulation)</p>
+<p>Input: targlist - TargetList module object 
+opt - OpticalSys module object
+rules - Rules module object
+universe - SimulatedUniverse module object
+s_ind - target star index
+planInds - planet index linking back to target star
+Output: intTime - numpy array of integration times</p>
+<p>This defines the data type expected, specific OpticalSys classes give
+integration times.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime">
+<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds maximum integration time for target systems (called in
+TargetList)</p>
+<p>Input: targlist - TargetList module object containing target list star 
+attributes.
+targlist also contains the following available for use:
+targlist.opt - optical system object
+targlist.pop - planet population object
+targlist.rules - rules object
+targlist.zodi - zodiacal light object
+targlist.comp - completeness object</p>
+<p>Output: maxintTime - numpy array of maximum integration times</p>
+<p>This defines the data type expected, specific OpticalSys classes give
+maximum integration times.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.PlanetPhysical">
+<span id="planet-physical-model"></span><span id="planetphysical-prototype"></span><h2>Planet Physical Model<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPhysical" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPhysical.</code><code class="descname">PlanetPhysical</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysical.html#PlanetPhysical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Planet Physical Model class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Planet Physical Model Module calculations in exoplanet mission simulation</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.PlanetPopulation">
+<span id="planet-populations"></span><span id="planetpopulation-prototype"></span><h2>Planet Populations<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Planet Population Description class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Planet Population Description Module calculations in exoplanet mission 
+simulation</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.PostProcessing">
+<span id="post-processing"></span><span id="postprocessing-prototype"></span><h2>Post-Processing<a class="headerlink" href="#module-EXOSIMS.Prototypes.PostProcessing" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Post Processing class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Post Processing Module calculations in exoplanet mission simulation</p>
+</dd></dl>
+
+</div>
+<div class="section" id="rules">
+<span id="id2"></span><h2>Rules<a class="headerlink" href="#rules" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-EXOSIMS.Prototypes.Rules"></span><dl class="class">
+<dt id="EXOSIMS.Prototypes.Rules.Rules">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Rules.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rules class template</p>
+<p>This class contains all variables and methods necessary to perform
+Rules Module calculations in exoplanet mission simulation</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Rules.Rules.find_K">
+<code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_K"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_K" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds threshold value determined by FAP</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Rules.Rules.find_gamma">
+<code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds threshold value determined by MDP</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.SimulatedUniverse">
+<span id="simulated-universe"></span><span id="simulateduniverse-prototype"></span><h2>Simulated Universe<a class="headerlink" href="#module-EXOSIMS.Prototypes.SimulatedUniverse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulated Universe class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Simulated Universe Module calculations in exoplanet mission simulation</p>
+<p>It inherits the following class objects which are definied in __init__:
+TL - TargetList
+PlanPhys - PlanetPhysical</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_module">
+<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports specific or Prototype class module</p>
+<p>Input: name - string containing module name
+folder - specific module folder
+Output: desired class module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_albedos">
+<code class="descname">planet_albedos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_albedos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_albedos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet an albedo</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses
+self.Rp - planet radii
+self.r - planet initial positions
+self.v - planet initial velocities</p>
+<p>Output: p - numpy array containing albedo of each planet</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations">
+<code class="descname">planet_inclinations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_inclinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet an inclination in degrees</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses
+self.Rp - planet radii
+self.r - planet initial positions
+self.v - planet initial velocities
+self.p - planet albedos</p>
+<p>Output: I - numpy array containing inclination of each planet in
+degrees</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_masses">
+<code class="descname">planet_masses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_masses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet mass in kg</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets</p>
+<p>Output: M - numpy array containing masses of each planet (astropy 
+unit object in kg)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos">
+<code class="descname">planet_pos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet an initial position (km)</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses
+self.Rp - planet radii</p>
+<p>Output: r - numpy array containing initial position of each planet 
+(astropy unit object in km)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_radii">
+<code class="descname">planet_radii</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_radii" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet a radius in km</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses</p>
+<p>Output: R - numpy array containing radius of each planet (astropy 
+unit object in km)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_rtypes">
+<code class="descname">planet_rtypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_rtypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_rtypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns rock/ice fraction for each rocky/icy planet</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses
+self.Rp - planet radii
+self.r - planet initial positions
+self.v - planet initial velocities
+self.p - planet albedos
+self.I - planet inclinations</p>
+<p>Output: rtype - numpy array containing rock/ice fraction of each 
+rocky/icy planet</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star">
+<code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns planets to stars and returns index of star in target star
+list</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object</p>
+<p>Output: planSys - numpy array containing indices of the target star 
+each planet (element in the list) belongs to</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these indices more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_vel">
+<code class="descname">planet_vel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_vel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_vel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet an initial velocity (km/s)</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses
+self.Rp - planet radii
+self.r - planet initial positions</p>
+<p>Output: v - numpy array containing initial velocity of each planet 
+(astropy unit object in km/s)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.prop_system">
+<code class="descname">prop_system</code><span class="sig-paren">(</span><em>r</em>, <em>v</em>, <em>Mp</em>, <em>Ms</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.prop_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.prop_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates planets&#8217; state vectors (position and velocity) forward
+in time using the Kepler state transition matrix</p>
+<p>Input: r - numpy array containing planet position vectors relative to
+host stars (astropy unit attached)
+v - numpy array containing planet velocity vectors relative to host
+stars (astropy unit attached)
+Mp - numpy array containing list of planet masses (astropy unit attached)
+Ms - numpy array containing mass of target star (astropy unit attached)
+dt - time increment to propagate the system (astropy unit attached)</p>
+<p>Output: rnew - propagated position vectors (astropy unit km)
+vnew - propagated velocity vectors (astropy unit km/day)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.StarCatalog">
+<span id="star-catalog"></span><span id="starcatalog-prototype"></span><h2>Star Catalog<a class="headerlink" href="#module-EXOSIMS.Prototypes.StarCatalog" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.StarCatalog.</code><code class="descname">StarCatalog</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Star Catalog class template</p>
+<p>This class contains all variables and methods necessary to perform
+Star Catalog Module calculations in exoplanet mission simulation</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.SIMBAD_mat2pkl">
+<code class="descname">SIMBAD_mat2pkl</code><span class="sig-paren">(</span><em>matpath</em>, <em>pklpath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog.SIMBAD_mat2pkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.SIMBAD_mat2pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes pickled dictionary file from .mat file and stores it in 
+StarCatalog directory</p>
+<p>Inputs: matpath - path to .mat file, pklpath - path to .pkl file to be written
+Output: True if successful, False if not
+Stores pickled dictionary file with same name as .mat file (and 
+extension of .pkl) containing lists of required values needed to 
+populate the Star Catalog object in StarCatalog directory</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.populatepkl">
+<code class="descname">populatepkl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog.populatepkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.populatepkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populates the star catalog from a pickled dictionary file housed in 
+the StarCatalog directory and returns True if successful</p>
+<p>Input: filename - name of file (extension .pkl) containing pickled 
+dictionary of values for the star catalog defined below
+Output: True if successful, False if not
+Finds: star catalog values</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.SurveySimulation">
+<span id="survey-simulation"></span><span id="surveysimulation-prototype"></span><h2>Survey Simulation<a class="headerlink" href="#module-EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Survey Simulation class template</p>
+<p>This class contains all variables and methods necessary to perform
+Survey Simulation Module calculations in exoplanet mission simulation</p>
+<p>It inherits the following class objects which are defined in __init__:
+SimUni - Simulated Universe
+Obs - Observatory
+TK - TimeKeeping
+PP - PostProcessing</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_IWA_OWA">
+<code class="descname">check_IWA_OWA</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>r</em>, <em>dist</em>, <em>IWA</em>, <em>OWA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.check_IWA_OWA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_IWA_OWA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines whether planets are inside the IWA or outside the OWA
+and returns numpy array of booleans where True is outside IWA and
+inside OWA</p>
+<p>Inputs: observationPossible - numpy array of booleans indicating if an
+observation of the planet is possible
+r - numpy array of planet position vectors
+dist - target star distance (in pc)
+IWA - instrument inner working angle
+OWA - instrument outer working angle</p>
+<p>Output: observationPossible</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_brightness">
+<code class="descname">check_brightness</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>r</em>, <em>Rp</em>, <em>p</em>, <em>dMagLim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.check_brightness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_brightness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if planets are bright enough for detection and returns
+numpy array of booleans where True is a planet bright enough for
+detection</p>
+<p>Inputs: observationPossible - numpy array of booleans indicating if an
+observation of the planet is possible
+r - numpy array of planet position vectors
+Rp - numpy array of planet radii
+p - numpy array of planet albedos
+dMagLim - limiting difference in brightness between planet and star</p>
+<p>Output: observationPossible</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_visible_end">
+<code class="descname">check_visible_end</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>t_int</em>, <em>t_trueint</em>, <em>s_ind</em>, <em>pInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.check_visible_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.check_visible_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if planets are visible at the end of the observation time
+and returns true integration time and observationPossible</p>
+<p>Inputs: observationPossible - numpy array of booleans indicating if an
+observation of the planet is possible
+t_int - integration time
+t_trueint - list of calculated integration times for planets
+s_ind - target star index
+pInds - numpy array of planet indices</p>
+<p>makes use of inherited objects:
+self.targlist - target list object 
+self.obs - observatory object 
+self.timekeeping - timekeeping object 
+self.simuni - simulated universe object 
+self.opt - optical system object</p>
+<p>Outputs: t_int - true integration time for planetary system
+observationPossible</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.get_module">
+<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.get_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports specific or Prototype class module</p>
+<p>Input: name - string containing module name
+folder - specific module folder
+Output: desired class module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.initial_target">
+<code class="descname">initial_target</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.initial_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.initial_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns index of initial target star</p>
+<p>This method has access to the following:
+self.simuni - simulated universe object
+self.obs - observatory object
+self.timekeeping - time object
+self.post - post-processing object
+self.opt - optical system object
+self.rules - rules object
+self.pop - planet population object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planphys - planet physical model object
+self.targlist - target list object</p>
+<p>Output: s_ind - index of initial target star</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_Coronagraph_sim">
+<code class="descname">run_Coronagraph_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.run_Coronagraph_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_Coronagraph_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the survey simulation for missions without occulters and 
+populates self.DRM with results</p>
+<p>This method has access to the following:
+self.simuni - simulated universe object
+self.obs - observatory object
+self.timekeeping - time object
+self.post - post-processing object
+self.opt - optical system object
+self.rules - rules object
+self.pop - planet population object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planphys - planet physical model object
+self.targlist - target list object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_Occulter_sim">
+<code class="descname">run_Occulter_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.run_Occulter_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_Occulter_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the survey simulation for missions with occulters and 
+populates self.DRM with results</p>
+<p>This method has access to the following:
+self.simuni - simulated universe object
+self.obs - observatory object
+self.timekeeping - time object
+self.post - post-processing object
+self.opt - optical system object
+self.rules - rules object
+self.pop - planet population object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planphys - planet physical model object
+self.targlist - target list object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim">
+<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs survey simulation and populates self.DRM containing results</p>
+<p>This method has access to the following:
+self.simuni - simulated universe object
+self.obs - observatory object
+self.timekeeping - time object
+self.post - post-processing object
+self.opt - optical system object
+self.rules - rules object
+self.pop - planet population object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planphys - planet physical model object
+self.targlist - target list object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.sys_end_res">
+<code class="descname">sys_end_res</code><span class="sig-paren">(</span><em>dt</em>, <em>s_ind</em>, <em>r</em>, <em>v</em>, <em>Mp</em>, <em>MsTrue</em>, <em>Rp</em>, <em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.sys_end_res"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.sys_end_res" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if a planet is visible at the end of the observation time
+and returns a value signifying this status</p>
+<p>Inputs: dt - propagation time
+s_ind - target star index
+r - planet position vector
+v - planet velocity vector
+Mp - planetary mass
+MsTrue - stellar mass
+Rp - planet radius
+p - planet albedo</p>
+<p>makes use of inherited objects:        
+self.obs - observatory object
+self.timekeeping - timekeeping object
+self.targlist - target list object
+self.opt - optical system object</p>
+<p>Output: obsRes - (-1) if star is inside the keepout zone, (0) if planet
+is not visible, (1) if the planet is visible</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.TargetList">
+<span id="target-list"></span><span id="targetlist-prototype"></span><h2>Target List<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Target List class template</p>
+<p>This class contains all variables and functions necessary to perform 
+Target List Module calculations in exoplanet mission simulation</p>
+<p>It inherits the following class objects which are defined in __init__:
+Cat - StarCatalog
+Opt - OpticalSys
+Pop - PlanetPopulation
+Rules - Rules
+Zodi - ZodiacalLight
+Comp - Completeness</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.binary_filter">
+<code class="descname">binary_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.binary_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.binary_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes stars from Target List which have attribut Binary_Cut == True</p>
+<p>Input: atts - list of star catalog object attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.completeness_filter">
+<code class="descname">completeness_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.completeness_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.completeness_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes stars in target list if their completeness value is larger
+than the minimum value</p>
+<p>Inputs: atts - list of target list attributes
+Uses: comp - Completeness object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.fgk_filter">
+<code class="descname">fgk_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.fgk_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.fgk_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes only F, G, K spectral type stars in Target List</p>
+<p>Input: atts - list of star catalog object attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.get_module">
+<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.get_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports specific or Prototype class module</p>
+<p>Input: name - string containing module name
+folder - specific module folder
+Output: desired class module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">
+<code class="descname">int_cutoff_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.int_cutoff_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes stars in the target list if the calculated integration time
+is less than the integration cutoff time</p>
+<p>Inputs: atts - list of star catalog object attributes, 
+Uses: rules - Rules object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.life_expectancy_filter">
+<code class="descname">life_expectancy_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.life_expectancy_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.life_expectancy_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes stars from Target List which have BV &lt; 0.3</p>
+<p>Input: atts - list of star catalog object attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.main_sequence_filter">
+<code class="descname">main_sequence_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.main_sequence_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.main_sequence_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes stars from Target List which are not main sequence</p>
+<p>Input: atts - list of star catalog object attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">
+<code class="descname">max_dmag_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.max_dmag_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes stars in the target list if the maximum delta mag is in the
+allowable orbital range</p>
+<p>Input: atts - list of star catalog object attributes, 
+Uses: pop - Planet Population object, opt - Optical System object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.nan_filter">
+<code class="descname">nan_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.nan_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.nan_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populates Target List with Star Catalog attributes and filters out 
+values which are nan</p>
+<p>Input: atts - list of Star Catalog attributes
+Output: filtered Star Catalog values as Target List object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.outside_IWA_filter">
+<code class="descname">outside_IWA_filter</code><span class="sig-paren">(</span><em>atts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.outside_IWA_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.outside_IWA_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes stars in the target list which may have planets with orbital
+distributions estimated to fall outside of the IWA of the optical system.</p>
+<p>Inputs: atts - list of star catalog object attributes, 
+Uses: opt - Optical System object, pop - Planet Population object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">
+<code class="descname">revise_lists</code><span class="sig-paren">(</span><em>atts</em>, <em>ind</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.revise_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces Target List catalog attributes with filtered values</p>
+<p>Inputs: atts - list of star catalog object attributes,
+ind - numpy array of indices to keep
+Output: filtered Star Catalog attributes as Target List attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">
+<code class="descname">stellar_mass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.stellar_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populates target list with &#8216;true&#8217; (self.MsTrue) and &#8216;approximate&#8217; 
+(self.MsEst) stellar masses</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.vis_mag_filter">
+<code class="descname">vis_mag_filter</code><span class="sig-paren">(</span><em>atts</em>, <em>Vmagcrit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.vis_mag_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.vis_mag_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes stars in the target list which are below the maximum 
+apparent visual magnitude</p>
+<p>Input: atts - list of star catalog object attributes,
+Vmagcrit - maximum apparent visual magnitude</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="time-keeping">
+<span id="timekeeping-prototype"></span><h2>Time Keeping<a class="headerlink" href="#time-keeping" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.ZodiacalLight">
+<span id="zodiacal-light"></span><span id="zodiacallight-prototype"></span><h2>Zodiacal Light<a class="headerlink" href="#module-EXOSIMS.Prototypes.ZodiacalLight" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.ZodiacalLight.</code><code class="descname">ZodiacalLight</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zodiacal Light class template</p>
+<p>This class contains all variables and methods necessary to perform
+Zodiacal Light Module calculations in exoplanet mission simulation</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.eclip_lats">
+<code class="descname">eclip_lats</code><span class="sig-paren">(</span><em>coords</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.eclip_lats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.eclip_lats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns ecliptic latitudes for equatorial right ascension and 
+declination values in Star Catalog data (astropy.coordinates does not
+yet support this conversion)</p>
+<p>Input: coords - astropy SkyCoord object with right ascension and 
+declination in degrees
+Output: ecliptic latitudes in deg</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi">
+<code class="descname">fzodi</code><span class="sig-paren">(</span><em>simuni</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fzodi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns exozodi levels for systems with planets (called in Simulated
+Universe)</p>
+<p>Input: simuni - Simulated Universe object
+simuni also contains the following available for use:
+simuni.opt - optical system object
+simuni.pop - planet population object
+simuni.rules - rules object
+simuni.zodi - zodiacal light object
+simuni.comp - completeness object
+simuni.targlist - target list object
+simuni.planphys - planet physical model object</p>
+<p>Output: fzodicurr - exozodiacal light assigned to each planet indexed 
+with planet index</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Prototypes</a><ul>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Completeness">Completeness</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Observatory">Observatory</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.OpticalSys">Optical System</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysical">Planet Physical Model</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPopulation">Planet Populations</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PostProcessing">Post-Processing</a></li>
+<li><a class="reference internal" href="#rules">Rules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SimulatedUniverse">Simulated Universe</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.StarCatalog">Star Catalog</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveySimulation">Survey Simulation</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.TargetList">Target List</a></li>
+<li><a class="reference internal" href="#time-keeping">Time Keeping</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.ZodiacalLight">Zodiacal Light</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to EXOSIMS&#8217;s documentation!</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/prototypes.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/prototypes.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.Prototypes.StarCatalog &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.Prototypes.StarCatalog</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">cPickle</span> <span class="kn">as</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
+
+<div class="viewcode-block" id="StarCatalog"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog">[docs]</a><span class="k">class</span> <span class="nc">StarCatalog</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Star Catalog class template</span>
+<span class="sd">    </span>
+<span class="sd">    This class contains all variables and methods necessary to perform</span>
+<span class="sd">    Star Catalog Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span> 
+
+    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;StarCatalog&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes star catalog with the data type expected, actual values</span>
+<span class="sd">            are populated by specific StarCatalog classes.&quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of star names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of star types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of spectral types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of parallax in milliarcseconds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Umag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of U magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of B magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of V magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of R magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of I magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Jmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of J magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Hmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of H magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Kmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of K magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of distance in parsecs (dist = 1000/parx)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of B-V Johnson magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of absolute V magnitude (MV = -5 * log(1000/parx) + 5 - Vmag) </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of bolometric correction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of stellar luminosity in Solar luminosities</span>
+        <span class="c"># list of astropy SkyCoord objects of right ascension and declination in degrees        </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="p">[],</span> <span class="n">dec</span><span class="o">=</span><span class="p">[],</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of proper motion in right ascension in milliarcseconds/year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of proper motion in declination in milliarcseconds/year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of radial velocity in kilometers/second</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># boolean list where True is companion closer than 10 arcsec</span>
+                
+        
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the StarCatalog object</span>
+<span class="sd">        </span>
+<span class="sd">        When the command &#39;print&#39; is used on the StarCatalog object, this method</span>
+<span class="sd">        will return the values contained in the object&quot;&quot;&quot;</span>
+
+        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="s">&#39;Star Catalog class object attributes&#39;</span>
+        
+<div class="viewcode-block" id="StarCatalog.populatepkl"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog.populatepkl">[docs]</a>    <span class="k">def</span> <span class="nf">populatepkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Populates the star catalog from a pickled dictionary file housed in </span>
+<span class="sd">        the StarCatalog directory and returns True if successful</span>
+<span class="sd">        </span>
+<span class="sd">        Input: filename - name of file (extension .pkl) containing pickled </span>
+<span class="sd">        dictionary of values for the star catalog defined below</span>
+<span class="sd">        Output: True if successful, False if not</span>
+<span class="sd">        Finds: star catalog values&quot;&quot;&quot;</span>
+        
+        <span class="c"># pickled dictionary stored in filename must contain at least the first </span>
+        <span class="c"># key (&#39;Name&#39;) defined</span>
+        <span class="c"># &#39;Name&#39; - list of star names</span>
+        <span class="c"># &#39;Type&#39; - list of star types</span>
+        <span class="c"># &#39;Spec&#39; - list of spectral types</span>
+        <span class="c"># &#39;parx&#39; - list of parallax in milliarcseconds</span>
+        <span class="c"># &#39;Umag&#39; - list of U magnitude</span>
+        <span class="c"># &#39;Bmag&#39; - list of B magnitude</span>
+        <span class="c"># &#39;Vmag&#39; - list of V magnitude</span>
+        <span class="c"># &#39;Rmag&#39; - list of R magnitude</span>
+        <span class="c"># &#39;Imag&#39; - list of I magnitude</span>
+        <span class="c"># &#39;Jmag&#39; - list of J magnitude</span>
+        <span class="c"># &#39;Hmag&#39; - list of H magnitude</span>
+        <span class="c"># &#39;Kmag&#39; - list of K magnitude</span>
+        <span class="c"># &#39;dist&#39; - list of distance in parsecs</span>
+        <span class="c"># &#39;BV&#39; - list of B-V Johnson magnitude</span>
+        <span class="c"># &#39;MV&#39; - list of absolute V magnitude</span>
+        <span class="c"># &#39;BC&#39; - list of bolometric correction</span>
+        <span class="c"># &#39;L&#39; - list of stellar luminosity in Solar luminosities</span>
+        <span class="c"># &#39;radeg&#39; - list of right ascension in degrees</span>
+        <span class="c"># &#39;decdeg&#39; - list of declination in degrees</span>
+        <span class="c"># &#39;pmra&#39;- list of proper motion in right assension in milliarcseconds/year</span>
+        <span class="c"># &#39;pmdec&#39; - list of proper motion in declination in milliarcseconds/year</span>
+        <span class="c"># &#39;rv&#39; - list of radial velocity in kilometers/second</span>
+        <span class="c"># &#39;Binary_Cut&#39; - boolean list where True is companion closer than 10 arcsec</span>
+        
+        <span class="n">nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span> <span class="c"># used to fill missing data</span>
+        <span class="c"># find path to pkl file</span>
+        <span class="c">#pathname = os.path.join(&#39;EXOSIMS\StarCatalog&#39;, filename)</span>
+        
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s">&#39;Name&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
+                <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="c"># stores attributes as list</span>
+                <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;radeg&#39;</span> <span class="ow">or</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;decdeg&#39;</span><span class="p">:</span>
+                            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">attr</span><span class="p">]))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
+                            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)))</span>
+                            <span class="k">print</span> <span class="s">&quot;Warning, </span><span class="si">%s</span><span class="s"> not in </span><span class="si">%s</span><span class="s"> list set to &#39;nan&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;radeg&#39;</span><span class="p">],</span> <span class="n">dec</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;decdeg&#39;</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">filename</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">filename</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+        
+        <span class="k">return</span> <span class="n">success</span>
+    </div>
+<div class="viewcode-block" id="StarCatalog.SIMBAD_mat2pkl"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog.SIMBAD_mat2pkl">[docs]</a>    <span class="k">def</span> <span class="nf">SIMBAD_mat2pkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matpath</span><span class="p">,</span> <span class="n">pklpath</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes pickled dictionary file from .mat file and stores it in </span>
+<span class="sd">        StarCatalog directory</span>
+<span class="sd">        </span>
+<span class="sd">        Inputs: matpath - path to .mat file, pklpath - path to .pkl file to be written</span>
+<span class="sd">        Output: True if successful, False if not</span>
+<span class="sd">        Stores pickled dictionary file with same name as .mat file (and </span>
+<span class="sd">        extension of .pkl) containing lists of required values needed to </span>
+<span class="sd">        populate the Star Catalog object in StarCatalog directory&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">matpath</span><span class="p">):</span>
+            <span class="c"># dictionary mapping MATLAB structure fields to required Python </span>
+            <span class="c"># object attribute names</span>
+            <span class="n">mat2pkl</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;NAME&#39;</span><span class="p">:</span><span class="s">&#39;Name&#39;</span><span class="p">,</span> <span class="s">&#39;TYPE&#39;</span><span class="p">:</span><span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;SPEC&#39;</span><span class="p">:</span><span class="s">&#39;Spec&#39;</span><span class="p">,</span> <span class="s">&#39;PARX&#39;</span><span class="p">:</span><span class="s">&#39;parx&#39;</span><span class="p">,</span>
+            <span class="s">&#39;UMAG&#39;</span><span class="p">:</span><span class="s">&#39;Umag&#39;</span><span class="p">,</span> <span class="s">&#39;BMAG&#39;</span><span class="p">:</span><span class="s">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s">&#39;VMAG&#39;</span><span class="p">:</span><span class="s">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s">&#39;RMAG&#39;</span><span class="p">:</span><span class="s">&#39;Rmag&#39;</span><span class="p">,</span> <span class="s">&#39;IMAG&#39;</span><span class="p">:</span><span class="s">&#39;Imag&#39;</span><span class="p">,</span>
+            <span class="s">&#39;JMAG&#39;</span><span class="p">:</span><span class="s">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s">&#39;HMAG&#39;</span><span class="p">:</span><span class="s">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s">&#39;KMAG&#39;</span><span class="p">:</span><span class="s">&#39;Kmag&#39;</span><span class="p">,</span> <span class="s">&#39;DIST&#39;</span><span class="p">:</span><span class="s">&#39;dist&#39;</span><span class="p">,</span> <span class="s">&#39;BVNEW&#39;</span><span class="p">:</span><span class="s">&#39;BV&#39;</span><span class="p">,</span>
+            <span class="s">&#39;MV&#39;</span><span class="p">:</span><span class="s">&#39;MV&#39;</span><span class="p">,</span> <span class="s">&#39;BC&#39;</span><span class="p">:</span><span class="s">&#39;BC&#39;</span><span class="p">,</span> <span class="s">&#39;L&#39;</span><span class="p">:</span><span class="s">&#39;L&#39;</span><span class="p">,</span> <span class="s">&#39;RADEG&#39;</span><span class="p">:</span><span class="s">&#39;radeg&#39;</span><span class="p">,</span> <span class="s">&#39;DECDEG&#39;</span><span class="p">:</span><span class="s">&#39;decdeg&#39;</span><span class="p">,</span>
+            <span class="s">&#39;PMRA&#39;</span><span class="p">:</span><span class="s">&#39;pmra&#39;</span><span class="p">,</span> <span class="s">&#39;PMDEC&#39;</span><span class="p">:</span><span class="s">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s">&#39;RV&#39;</span><span class="p">:</span><span class="s">&#39;rv&#39;</span><span class="p">,</span> <span class="s">&#39;BINARY_CUT&#39;</span><span class="p">:</span><span class="s">&#39;Binary_Cut&#39;</span><span class="p">}</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># empty dictionary to be pickled </span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">struct_as_record</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;S&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">mat2pkl</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s">&#39;BINARY_CUT&#39;</span><span class="p">:</span>
+                    <span class="n">bc</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">BINARY_CUT</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">y</span><span class="p">[</span><span class="s">&#39;Binary_Cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="n">bc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;cut&#39;</span><span class="p">:</span>
+                            <span class="n">y</span><span class="p">[</span><span class="s">&#39;Binary_Cut&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">y</span><span class="p">[</span><span class="n">mat2pkl</span><span class="p">[</span><span class="n">field</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="c"># store pickled y dictionary in file</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">))</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> does not exist in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">matpath</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            
+        <span class="k">return</span> <span class="n">success</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.Prototypes.OpticalSys &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.Prototypes.OpticalSys</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="OpticalSys"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys">[docs]</a><span class="k">class</span> <span class="nc">OpticalSys</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Optical System class template</span>
+<span class="sd">    </span>
+<span class="sd">    This class contains all variables and methods necessary to perform</span>
+<span class="sd">    Optical System Definition Module calculations in exoplanet mission </span>
+<span class="sd">    simulation&quot;&quot;&quot;</span>
+
+    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;OpticalSys&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes Optical System with default values or values from user</span>
+<span class="sd">        specification</span>
+<span class="sd">        </span>
+<span class="sd">        Input: specs - dictionary containing user specification values&quot;&quot;&quot;</span>
+        
+        <span class="c"># default Optical System values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lam</span> <span class="o">=</span> <span class="mf">500.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span> <span class="c"># detection wavelength (nm)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapeFac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.</span> <span class="c"># shapeFac*diameter**2 = Area</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pupilArea</span> <span class="o">=</span> <span class="mf">4.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="c"># entrance pupil area</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SNchar</span> <span class="o">=</span> <span class="mf">11.</span> <span class="c"># Signal to Noise Ratio for characterization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># boolean signifying if system has occulter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixelArea</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="c"># pixel area (m**2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">focalLength</span> <span class="o">=</span> <span class="mf">240.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">m</span> <span class="c"># focal length (m)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span> <span class="o">=</span> <span class="mf">0.075</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span> <span class="c"># Inner Working Angle (arcseconds)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span> <span class="c"># Outer Working Angle (arcseconds)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">=</span> <span class="mf">26.</span> <span class="c"># limiting delta magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">throughput</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c"># optical system throughput at IWA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span> <span class="o">=</span> <span class="mf">1.e-10</span> <span class="c"># optical system designed suppression level at IWA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr</span> <span class="o">=</span> <span class="mf">0.001</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> <span class="c"># detector dark-current rate per pixel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_r</span> <span class="o">=</span> <span class="mf">3.</span> <span class="c"># detector read noise (e/s)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_exp</span> <span class="o">=</span> <span class="mf">1000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> <span class="c"># exposure time per read (s)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">QE</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c"># detection quantum efficiency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eta2</span> <span class="o">=</span> <span class="mf">0.57</span> <span class="c"># post coronagraph attenuation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deltaLambda</span> <span class="o">=</span> <span class="mf">100.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span> <span class="c"># bandpass (nm)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">have2ndDist</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># boolean signifying if there is a 2nd occulter</span>
+        <span class="c"># replace default values with any user specified values</span>
+        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;lam&#39;</span> <span class="ow">or</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;deltaLambda&#39;</span><span class="p">:</span>
+                    <span class="c"># set lam with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;pupilArea&#39;</span> <span class="ow">or</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;pixelArea&#39;</span><span class="p">:</span>
+                    <span class="c"># set pupilArea or pixelArea with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;focalLength&#39;</span><span class="p">:</span>
+                    <span class="c"># set focalLength with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;IWA&#39;</span> <span class="ow">or</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;OWA&#39;</span><span class="p">:</span>
+                    <span class="c"># set IWA or OWA with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;dr&#39;</span><span class="p">:</span>
+                    <span class="c"># set dr with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;t_exp&#39;</span><span class="p">:</span>
+                    <span class="c"># set t_exp with proper units</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">])</span>
+                    
+        <span class="c"># set values derived from quantities above</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span>
+                
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the Optical System object</span>
+<span class="sd">        </span>
+<span class="sd">        When the command &#39;print&#39; is used on the Optical System object, this </span>
+<span class="sd">        method will print the attribute values contained in the object&quot;&quot;&quot;</span>
+        
+        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="s">&#39;Optical System class object attributes&#39;</span>
+        
+<div class="viewcode-block" id="OpticalSys.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems (called in</span>
+<span class="sd">        TargetList)</span>
+<span class="sd">        </span>
+<span class="sd">        Input: targlist - TargetList module object containing target list star </span>
+<span class="sd">        attributes.</span>
+<span class="sd">        targlist also contains the following available for use:</span>
+<span class="sd">        targlist.opt - optical system object</span>
+<span class="sd">        targlist.pop - planet population object</span>
+<span class="sd">        targlist.rules - rules object</span>
+<span class="sd">        targlist.zodi - zodiacal light object</span>
+<span class="sd">        targlist.comp - completeness object</span>
+<span class="sd">        </span>
+<span class="sd">        Output: maxintTime - numpy array of maximum integration times</span>
+<span class="sd">        </span>
+<span class="sd">        This defines the data type expected, specific OpticalSys classes give</span>
+<span class="sd">        maximum integration times.&quot;&quot;&quot;</span>
+        
+        <span class="c"># maximum integration time is given as 1 day for each system in target list</span>
+        <span class="n">maxintTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        
+        <span class="k">return</span> <span class="n">maxintTime</span>
+        </div>
+<div class="viewcode-block" id="OpticalSys.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">rules</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system (called in</span>
+<span class="sd">        SurveySimulation)</span>
+<span class="sd">        </span>
+<span class="sd">        Input: targlist - TargetList module object </span>
+<span class="sd">        opt - OpticalSys module object</span>
+<span class="sd">        rules - Rules module object</span>
+<span class="sd">        universe - SimulatedUniverse module object</span>
+<span class="sd">        s_ind - target star index</span>
+<span class="sd">        planInds - planet index linking back to target star</span>
+<span class="sd">        Output: intTime - numpy array of integration times</span>
+<span class="sd">        </span>
+<span class="sd">        This defines the data type expected, specific OpticalSys classes give</span>
+<span class="sd">        integration times.&quot;&quot;&quot;</span>
+        
+        <span class="c"># integration time given as 1 day</span>
+        <span class="n">intTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">planInds</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        
+        <span class="k">return</span> <span class="n">intTime</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

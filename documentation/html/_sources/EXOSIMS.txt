@@ -1,0 +1,31 @@
+EXOSIMS package
+===============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    EXOSIMS.Completeness
+    EXOSIMS.Observatory
+    EXOSIMS.OpticalSys
+    EXOSIMS.PlanetPhysical
+    EXOSIMS.PlanetPopulation
+    EXOSIMS.PostProcessing
+    EXOSIMS.Prototypes
+    EXOSIMS.Rules
+    EXOSIMS.SimulatedUniverse
+    EXOSIMS.StarCatalog
+    EXOSIMS.SurveySimulation
+    EXOSIMS.TargetList
+    EXOSIMS.TimeKeeping
+    EXOSIMS.ZodiacalLight
+    EXOSIMS.util
+
+Module contents
+---------------
+
+.. automodule:: EXOSIMS
+    :members:
+    :undoc-members:
+    :show-inheritance:

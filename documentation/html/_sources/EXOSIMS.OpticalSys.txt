@@ -1,0 +1,22 @@
+EXOSIMS.OpticalSys package
+==========================
+
+Submodules
+----------
+
+EXOSIMS.OpticalSys.WFIRSTOpticalSys module
+------------------------------------------
+
+.. automodule:: EXOSIMS.OpticalSys.WFIRSTOpticalSys
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: EXOSIMS.OpticalSys
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,22 @@
+EXOSIMS.util package
+====================
+
+Submodules
+----------
+
+EXOSIMS.util.keplerSTM module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.keplerSTM
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: EXOSIMS.util
+    :members:
+    :undoc-members:
+    :show-inheritance:

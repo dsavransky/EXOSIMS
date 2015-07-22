@@ -154,18 +154,30 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
         \end{itemize}
 \end{itemize}
 }
+
+\subsection{Coding Conventions}
+In order to allow for flexibility in using alternate or user-generated module implementations, the only requirement on any module is that it inherits (either directly or by inheriting another module implementation that inherits the prototype) the appropriate prototype.  
+
+It is always possible to check whether a module is an instance of a given prototype, for example:
+\begin{verbatim}
+isinstance(obj,EXOSIMS.Prototypes.Observatory.Observatory)
+\end{verbatim}
+However, it can be tedious to look up all of a given object's base classes so, for convenience, every prototype will provide a private variable \verb+_modtype+, which will always return the name of the prototype and should not be overwritten by any module code.  Thus, if the above example evaluates as \verb+True+, \verb+obj._modtype+ will return \verb+Observatory+.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BACKBONE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Backbone}
-All simulation execution will be performed by the backbone.  This set of functions will have very limited built-in functionality, and will primarily be tasked with parsing the input specification described below, and then calling the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.
+All simulation execution will be performed by the backbone.  This set of functions will have very limited built-in functionality, and will primarily be tasked with parsing the input specification described below, and then calling the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.  The backbone functionality will primarily be implemented in the Survey Simulation prototype \S\ref{sec:surveysim}, with any mission-specific execution variations introduced by method overloading in the inherited survey simulation implementation.
 
-A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values. 
+A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values.   
 
-The backbone will contain a standalone specification parser that will check specification files for internal consistency.  For example, if modules carry mutual dependencies, the specification parser will return an error if these are not met for a given specification.  Similarly, if modules are selected with optional top level inputs, warnings will be generated if these are not set in the same specification files.
+The backbone will contain a specification parser that will check specification files for internal consistency.  For example, if modules carry mutual dependencies, the specification parser will return an error if these are not met for a given specification.  Similarly, if modules are selected with optional top level inputs, warnings will be generated if these are not set in the same specification files.
 
-The backbone will contain an interactive function to help users generate specification files via a series of questions.
+In addition to the specification parser, the backbone will contain a method for comparing two specification files and returning the difference between them.  Assuming that the files specify all user-settable values, this will be equivalent to simply performing a \verb+diff+ operation on any POSIX system.  The backbone diff function will add in the capability to automatically fill in unset values with their defaults.
+
+The backbone will also contain an interactive function to help users generate specification files via a series of questions.
 
 \subsection{Specification Format}
 \begin{verbatim}
@@ -205,7 +217,7 @@ The OSD module contains all of the necessary information to describe the effects
 
 Finally, the OSD must also include a description of the science instrument.  The baseline instrument is assumed to be an imaging spectrometer.  The encoding must provide the spatial and wavelength coverage of the instrument as well as sampling for each, along with detector details such as read noise, dark current, and readout cycle.
 
-TASKS:
+TASKS: \verb+calc_maxintTime+ - maximum integration time for all systems in target list, \verb+calc_intTime+ - calculate required integration time for exoplanet detection
 
 
 \label{sec:opticalsystem}
@@ -239,6 +251,8 @@ TASKS:
             Limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is 26.
             \item specs["throughput"] \hfill \\
             Optical system throughput. Default value is 0.5. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
+            \item specs["throughput2"] \hfill \\
+            Optical system throughput for systems with a second occulter distance. Default value is 0.5. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
             \item specs["contrast"] \hfill \\
             Optical system suppression level at IWA. Default value is 1e-10. This may be a floating point scalar (representing a fixed contrast) or a \verb+scipy.interpolate.interp1d+ object representing variable contrast as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
             \item specs["dr"] \hfill \\
@@ -257,6 +271,20 @@ TASKS:
             Instrument point spread function stored as 2D numpy ndarray.  The core of the PSF should be normalized to 1, so that all throughput terms are combined in the througput variable above.
             \item specs["PSFsampling"] \hfill \\
             Sampling of the PSF in arcsec/pixel.
+            \item specs["have2ndDist"] \hfill \\
+            Boolean signifying if there is a second occulter. Default value is False.
+            \item specs["QEchar"] \hfill \\
+            Characterization quantum efficiency. Default value is 0.5.
+            \item specs["telescopeKeepout"] \hfill \\
+            Telescope keepout angle in degrees. Default value is 45.
+            \item specs["specLambda"] \hfill \\
+            Spectral wavelength of interest in nm. Default value is 760.
+            \item specs["Rspec"] \hfill \\
+            Spectral resolving power. Default value is 70.
+            \item specs["Npix"] \hfill \\
+            Number of noise pixels. Default value is 14.3.
+            \item specs["Ndark"] \hfill \\
+            Number of dark frames used. Default value is 10.
         \end{description}
     \end{description}
 \end{itemize}
@@ -268,53 +296,57 @@ For all values that may be either scalars or interpolants, in the case where sca
     \item 
     \begin{description}
         \item[OpticalSys.lam] \hfill \\
-        Central or detection wavelength (astropy unit object initially defined in nm)
+        Central or detection wavelength (astropy Quantity object initially set in nm)
         \item[OpticalSys.shapeFac] \hfill \\
         Shape factor so that $ shapeFac \times diameter^2 = Area $
         \item[OpticalSys.pupilArea] \hfill \\
-        Entrance pupil area (astropy unit object initially defined in $ m^{2} $)
+        Entrance pupil area (astropy Quantity object initially set in $ m^{2} $)
         \item[OpticalSys.SNchar] \hfill \\
         Signal to Noise Ratio for characterization
         \item[OpticalSys.haveOcculter] \hfill \\
         Boolean signifying if system includes an occulter
         \item[OpticalSys.pixelArea] \hfill \\
-        Pixel area (astropy unit object initially defined in $ m^{2} $
+        Pixel area (astropy Quantity object initially set in $ m^{2} $
         \item[OpticalSys.focalLength] \hfill \\
-        Focal length (astropy unit object initially defined in $ m $
+        Focal length (astropy Quantity object initially set in $ m $
         \item[OpticalSys.IWA] \hfill \\
-        Inner Working Angle (astropy unit object initially defined in $ arcseconds $)
+        Inner Working Angle (astropy Quantity object initially set in $ arcseconds $)
         \item[OpticalSys.OWA] \hfill \\
-        Outer Working Angle (astropy unit object initially defined in $ as $)
+        Outer Working Angle (astropy Quantity object initially set in $ as $)
         \item[OpticalSys.dMagLim] \hfill \\
         Limiting $ \Delta$mag (difference in magnitude between star and planet)
         \item[OpticalSys.throughput] \hfill \\
-        Optical system throughput at IWA
+        Optical system throughput. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
+        \item[OpticalSys.throughput2] \hfill \\
+        Optical system throughput for systems with a second occulter distance. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
         \item[OpticalSys.contrast] \hfill \\
-        Designed optical system suppression level at IWA
+        Optical system suppression level at IWA. This may be a floating point scalar (representing a fixed contrast) or a \verb+scipy.interpolate.interp1d+ object representing variable contrast as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
         \item[OpticalSys.dr] \hfill \\
-        Detector dark-current rate per pixel (astropy unit object initially defined in $ \frac{1}{s} $)
+        Detector dark-current rate per pixel (astropy Quantity object initially set in $ \frac{1}{s} $)
         \item[OpticalSys.sigma\_r] \hfill \\
         Detector read noise 
         \item[OpticalSys.t\_exp] \hfill \\
-        Exposure time per read (astropy unit object initially defined in $ s $)
+        Exposure time per read (astropy Quantity object initially set in $ s $)
         \item[OpticalSys.QE] \hfill \\
-        Detector quantum efficiency
+        Detector quantum efficiency. This may be a floating point scalar (representing a fixed QE) or a \verb+scipy.interpolate.interp1d+ object representing variable QE as a function of wavelength.  In the case of the latter, the interpolant must be valid between the minimum and maximum wavelengths of the instrument (as defined by lambda and deltaLambda), inclusive, and must assume an argument in nanometers.
         \item[OpticalSys.eta2] \hfill \\
         Post coronagraph attenuation
         \item[OpticalSys.deltaLambda] \hfill \\
-        Detection bandwidth $ \Delta\lambda $ (astropy unit object initially defined in $ nm $)
-        \item[OpticalSys.dAlpha] \hfill \\
-        Pixel size in square arcseconds derived from OpticalSys.lam, OpticalSys.shapeFac, and OpticalSys.pupilArea (astropy unit object initially defined in $ as^{2} $)
-        \item[OpticalSys.Psi] \hfill \\
-        Nondimensional instrument specific value derived from PSF
-        \item[OpticalSys.Xi] \hfill \\
-        Nondimensional instrument specific value derived from PSF
-        \item[OpticalSys.P1] \hfill \\
-        Nondimensional instrument specific value derived from PSF
-        \item[OpticalSys.alphaBar] \hfill \\
-        Nondimensional instrument specific value derived from OpticalSys.pixelArea, OpticalSys.pupilArea, OpticalSys.shapeFac, OpticalSys.focalLength, and OpticalSys.lam.
-        \item[OpticalSys.Ta] \hfill \\
-        Airy throughput derived from OpticalSys.throughput, OpticalSys.shapeFac, OpticalSys.P1, and OpticalSys.alphaBar
+        Detection bandwidth $ \Delta\lambda $ (astropy Quantity object initially set in $ nm $)
+        \item[OpticalSys.have2ndDist] \hfill \\
+        Boolean signifying if there is a second occulter
+        \item[OpticalSys.QEchar] \hfill \\
+        Characterization quantum efficiency
+        \item[OpticalSys.telescopeKeepout] \hfill \\
+        Telescope keepout angle in degrees
+        \item[OpticalSys.specLambda] \hfill \\
+        Spectral wavelength of interest (astropy Quantity object initially set in $ nm $
+        \item[OpticalSys.Rspec] \hfill \\
+        Spectral resolving power
+        \item[OpticalSys.Npix] \hfill \\
+        Number of noise pixels
+        \item[OpticalSys.Ndark] \hfill \\
+        Number of dark frames used
     \end{description}
 \end{itemize}
 
@@ -431,17 +463,17 @@ TASKS:
     \item
     \begin{description}
         \item[PlanetPopulation.arange] \hfill \\
-        Semi-major axis range defined as numpy.array([a\_min, a\_max]) (astropy unit object with units of $ AU $)
+        Semi-major axis range defined as numpy.array([a\_min, a\_max]) (astropy Quantity object initially set in $ AU $)
         \item[PlanetPopulation.erange] \hfill \\
         Eccentricity range defined as numpy.array([e\_min, e\_max])
         \item[PlanetPopulation.prange] \hfill \\
         Planetary albedo range defined as numpy.array([p\_min, p\_max])
         \item[PlanetPopulation.Rrange] \hfill \\
-        Planetary radius range defined as numpy.array([R\_min, R\_max]) (astropy unit object or astropy constant objects, e.g., astropy.constant.R\_earth with units of $ km $)
+        Planetary radius range defined as numpy.array([R\_min, R\_max]) (astropy Quantity object or astropy constant objects, e.g., astropy.constant.R\_earth initially set in $ km $)
         \item[PlanetPopulation.scaleOrbits] \hfill \\
         Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
         \item[PlanetPopulation.rrange] \hfill \\
-        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy unit object with units of $ km $)
+        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity object initially set in $ km $)
     \end{description}
 \end{itemize}
 
@@ -457,7 +489,7 @@ The keepout definition determines which target stars are observable at a specifi
 In addition to these functions, the observatory definition can also encode finite resources used by the observatory throughout the mission.  The most important of these is the fuel used for stationkeeping and repointing, especially in the case of occulters which must move significant distances between observations.  Other considerations could include the use of other volatiles such as cryogens for cooled instruments, which tend to deplete solely as a function of mission time.  This module also allows for detailed investigations of the effects of orbital design on the science yield, e.g., comparing the baseline geosynchronous 28.5\textdegree{} inclined orbit for WFIRST-AFTA with an L2 halo orbit proposed for other exoplanet imaging mission concepts. 
 
 
-TASKS: Orbital position, Keepout Definition
+TASKS: \verb+orbit+ - Orbital position, \verb+keepout+ - Keepout Definition
 
 \begin{figure}[ht]
     \begin{center}
@@ -490,6 +522,12 @@ TASKS: Orbital position, Keepout Definition
             Occulter (maneuvering spacecraft) dry mass in $ kg $. Default value is 3400.
             \item specs["coMass"] \hfill \\
             Telescope (or non-maneuvering spacecraft) mass in $ kg $. Default value is 5800.
+            \item specs["occulterSep"] \hfill \\
+            Occulter-telescope distance in $ km $. Default value is 55000.
+            \item specs["occulterSep2"] \hfill \\
+            Second occulter distance in $ km $. Default value is 35000.
+            \item specs["skIsp"] \hfill \\
+            Specific impulse for station keeping in $ s $. Default value is 220.
         \end{description}
     \end{description}
 \end{itemize}
@@ -499,23 +537,31 @@ TASKS: Orbital position, Keepout Definition
     \item
     \begin{description}
         \item[Observatory.settling\_time] \hfill \\
-        Amount of time needed for observatory to settle after a repointing (astropy unit object initially set in days)
+        Amount of time needed for observatory to settle after a repointing (astropy Quantity object initially set in days)
         \item[Observatory.thrust] \hfill \\
-        Occulter slew thrust (astropy unit object initially set in $ mN $)
+        Occulter slew thrust (astropy Quantity object initially set in $ mN $)
         \item[Observatory.slewIsp] \hfill \\
-        Occulter slew specific impulse (astropy unit object initially set in $ s $)
+        Occulter slew specific impulse (astropy Quantity object initially set in $ s $)
         \item[Observatory.sc\_mass] \hfill \\
-        Occulter (maneuvering spacecraft) initial wet mass (astropy unit object initially set in $ kg $)
+        Occulter (maneuvering spacecraft) initial wet mass (astropy Quantity object initially set in $ kg $)
         \item[Observatory.dryMass] \hfill \\
-        Occulter (maneuvering spacecraft) dry mass (astropy unit object initially set in $ kg $)
+        Occulter (maneuvering spacecraft) dry mass (astropy Quantity object initially set in $ kg $)
         \item[Observatory.coMass] \hfill \\
-        Telescope (or non-maneuvering spacecraft) mass (astropy unit object initially set in $ kg $)
+        Telescope (or non-maneuvering spacecraft) mass (astropy Quantity object initially set in $ kg $)
         \item[Observatory.kogood] \hfill \\
         Numpy array of Boolean values where True is a target unobstructed and observable in the keepout zone. Initialized to an empty array. This attribute is updated to the current mission time through the keepout task (see \ref{sec:keepouttask}).
         \item[Observatory.r\_sc] \hfill \\
-        Observatory orbit position in HE reference frame. Initialized to numpy array as numpy.array([0., 0., 0.]) and associated with astropy unit object in $ km $. This attribute is updated to the orbital position of the observatory at the current mission time through the orbit task (see \ref{sec:orbittask}).
+        Observatory orbit position in HE reference frame. Initialized to numpy array as numpy.array([0., 0., 0.]) and associated with astropy Quantity object in $ km $. This attribute is updated to the orbital position of the observatory at the current mission time through the orbit task (see \ref{sec:orbittask}).
+        \item[Observatory.occulterSep] \hfill \\
+        Occulter-telescope distance (astropy Quantity object initially set in $ km $)
+        \item[Observatory.occulterSep2] \hfill \\
+        Second occulter separation (astropy Quantity object initially set in $ km $)
+        \item[Observatory.skIsp] \hfill \\
+        Specific impulse for station keeping (astropy Quantity object initially set in $ s $)
+        \item[Observatory.currentSep] \hfill \\
+        Current occulter separation (astropy Quantity object initially set in $ km $
         \item[Observatory.flowRate] \hfill \\
-        Slew flow rate derived from Observatory.thrust and Observatory.slewIsp (astropy unit object initially set in $ kg/day $)
+        Slew flow rate derived from Observatory.thrust and Observatory.slewIsp (astropy Quantity object initially set in $ kg/day $)
         
     \end{description}
 \end{itemize}
@@ -536,7 +582,7 @@ TASKS: Orbital position, Keepout Definition
     \item
     \begin{description}
         \item[Observatory.r\_sc] \hfill \\
-        Observatory orbit position in HE reference frame at current mission time (astropy unit object defined in $ km $)
+        Observatory orbit position in HE reference frame at current mission time (astropy Quantity object defined in $ km $)
     \end{description}
 \end{itemize}
 
@@ -548,8 +594,10 @@ TASKS: Orbital position, Keepout Definition
     \begin{description}
         \item[time.currenttimeAbs] \hfill \\
         Current Absolute mission time (astropy Time object) from Time module see \ref{sec:currenttime} for definition
-        \item[StarCatalog] \hfill \\
-        Output of SC module. See \ref{sec:starcatalog} for definitions
+        \item[TargetList] \hfill \\
+        Output of TL module. See \ref{sec:targetlist} for definitions
+        \item[OpticalSys.telescopeKeepout] \hfill \\
+        Telescope keepout angle in degrees
     \end{description}
 \end{itemize}
 
@@ -558,7 +606,7 @@ TASKS: Orbital position, Keepout Definition
     \item 
     \begin{description}
         \item[Observatory.kogood] \hfill \\
-        List of Boolean values for each target at current mission time where True is when a target is unobstructed in the keepout zone and False is when a target cannot be observed due to obstructions in the keepout zone
+        Numpy array of Boolean values for each target at current mission time where True is when a target is unobstructed in the keepout zone and False is when a target cannot be observed due to obstructions in the keepout zone
     \end{description}
 \end{itemize}
 
@@ -575,7 +623,7 @@ The PPM module contains models of the light emitted or reflected by planets in t
 \subsection{Time} 
 The Time module is responsible for keeping track of the current mission time.  It encodes only the mission start time, the mission duration, and the current time within a simulation.  All functions in all modules requiring knowledge of the current time call functions or access parameters implemented within the Time module.  Internal encoding of time is implemented as the time from mission start (measured in days).  The Time module also provides functionality for converting between this time measure and standard measures such as Julian Day Number and UTC time.
 
-TASKS:
+TASKS: \verb+update_times+ - update mission times
 
 \label{sec:time}
 \subsubsection{Time Object Attribute Initialization Input/Output Description ORGANIZE LATER}
@@ -590,7 +638,9 @@ TASKS:
             \item specs["missionStart"] \hfill \\
             Mission start time in $ MJD $. Default value is 60634.
             \item specs["missionLife"] \hfill \\
-            Total length of mission in $ days $. Default value is 2191.5.
+            Total length of mission in $ years $. Default value is 6.
+            \item specs["extendedLife"] \hfill \\
+            Extended mission time in $ years $. Default value is 0.
         \end{description}
     \end{description}
 \end{itemize}
@@ -602,12 +652,16 @@ TASKS:
         \item[TimeKeeping.missionStart] \hfill \\
         Mission start time (astropy Time object initially defined in $ MJD $)
         \item[TimeKeeping.missionLife] \hfill \\
-        Mission lifetime (astropy TimeDelta object initially defined in $ JD $ increments, where $ JD = MJD = 86400 s $)
+        Mission lifetime (astropy Quantity object initially set in $ years $)
+        \item[TimeKeeping.extendedLife] \hfill \\
+        Extended mission time (astropy Quantity object initially set in $ years $)
         \item[TimeKeeping.currenttimeNorm] \hfill \\
-        Current mission time normalized so that start date is 0 (astropy TimeDelta object initially defined in $ JD $ increments as above)
+        Current mission time normalized so that start date is 0 (astropy Quantity object initially set in $ days $)
         \item[TimeKeeping.currenttimeAbs] \label{sec:currenttime}\hfill \\
         Current absolute mission time (astropy Time object initially defined in $ MJD $)
-        \item[TimeKeeping.missionFinish] \hfill \\
+        \item[TimeKeeping.missionFinishNorm] \hfill \\
+        Mission finish time (astropy Quantity object initially set in $ days $)
+        \item[TimeKeeping.missionFinishAbs] \hfill \\
         Mission completion date (astropy Time object initially defined in $ MJD $)
 
     \end{description}
@@ -657,7 +711,7 @@ TASKS:
         \item[Rules.dutyCycle] \hfill \\
         Observation duty cycle
         \item[Rules.intCutoff] \hfill \\
-        Maximum allowed integration time (astropy unit object initially set to $ days $)
+        Maximum allowed integration time (astropy Quantity object initially set in $ days $)
         \item[Rules.K] \hfill \\
         Threshold value determined by Rules.FAP
         \item[Rules.gamma] \hfill \\
@@ -671,11 +725,13 @@ TASKS:
 The PP module encodes the effects of post-processing on the data gathered in a simulated observation, and the effects on the final contrast of the simulation.  The PP module is also responsible for determining whether a planet detection has occurred for a given observation, returning one of four possible states---true positive (real detection), false positive (false alarm), true negative (no detection when no planet is present) and false negative (missed detection).  These can be generated based solely on statistical modeling or by processing simulated images.
 \label{sec:postprocessing}
 
+TASK: \verb+det_occur+ - determines detection status
+
 % ZODIACAL LIGHT NEEDS UPDATING
 
 \subsection{Zodiacal Light (ZL) NEEDS UPDATING}
 
-TASKS: exozodi levels for each planetary system
+TASKS: \verb+fzodi+ - return exozodi levels for each systems
 
 \label{sec:zodiacallight}
 \subsubsection{Zodiacal Light Object Attribute Initialization Input/Output Description ORGANIZE LATER}
@@ -702,6 +758,32 @@ TASKS: exozodi levels for each planetary system
         Exo-zodi level in zodi
         \item[ZodiacalLight.exozodiVar] \hfill \\
         Exo-zodi variation (variance of log-normal distribution)
+    \end{description}
+\end{itemize}
+
+\subsection{Completeness (NEEDS UPDATING)}
+\label{sec:completeness}
+\subsubsection{Completeness Object Attribute Initialization Input/Output Description ORGANIZE LATER}
+TASKS: \verb+target_completeness+ - generate completeness values for each target system
+\subsubsection*{Input}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[User specification] \hfill \\
+        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Completeness object attributes will be assigned the default values listed.
+        \begin{description}
+            \item specs["minComp"] \hfill \\
+            Minimum completeness level for detection
+        \end{description}
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Output}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[Completeness.minComp] \hfill \\
+        Minimum completeness level for detection
     \end{description}
 \end{itemize}
 
@@ -736,6 +818,8 @@ The TL module takes in information from the OSD, SC, PPD, and OD input modules a
                 String containing name of desired Rules module. Default is Rules prototype module.
                 \item specs["zodiname"] \hfill \\
                 String containing name of desired ZL module. Default is ZL prototype module.
+                \item specs["compname"] \hfill \\
+                String containing name of desired Completeness module. Default is Completeness prototype module.
             \end{description}
         \item[StarCatalog] \hfill \\
         Output of SC module given by above specs["catalogname"] (see \ref{sec:starcatalog})
@@ -747,6 +831,8 @@ The TL module takes in information from the OSD, SC, PPD, and OD input modules a
         Output of Rules module given by above specs["rulesname"] (see \ref{sec:rules})
         \item[ZodiacalLight] \hfill \\
         Output of ZL module given by above specs["zodiname"] (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Output of Completeness module given by above specs["compname"] (see \ref{sec:completeness})
     \end{description}
 \end{itemize}
 
@@ -765,7 +851,9 @@ The TL module takes in information from the OSD, SC, PPD, and OD input modules a
         \item[TargetList.ZodiacalLight] \hfill \\
         Output of ZL module (see \ref{sec:zodiacallight})
         \item[TargetList.intTime] \hfill \\
-        Numpy array of maximum integration time for each target star (astropy unit object initially defined in $ s $)
+        Numpy array of maximum integration time for each target star (astropy Quantity object initially set in $ s $)
+        \item[TargetList.comp0] \hfill \\
+        Numpy array of completeness value for each target star
         \item[TargetList.MsEst] \hfill \\
         Approximate stellar mass in $ M_{sun} $
         \item[TargetList.MsTrue] \hfill \\
@@ -780,7 +868,8 @@ The SU module takes as input the outputs of the TL simulation module to create a
 
 The SU module also takes as input the PPM module instance, so that it can return the specific spectra due to every simulated planet at an arbitrary observation time throughout the mission simulation.
 
-TASKS:
+TASKS: \verb+planet_to_star+ - map planets to stars, \verb+planet_masses+ - assign mass to planets, \verb+planet_radii+ - assign radius to planets, \verb+planet_pos+ - assign initial planet position vectors, \verb+planet_vel+ - assign initial planet velocity vectors, \verb+planet_albedos+ - assign albedo to planets, \verb+planet_inclinations+ - assign inclination to planets, \verb+planet_rtypes+ - assign rock/ice fraction to planets, \verb+prop_system+ - propagate planet position and velocity vectors in time
+
 \label{sec:simulateduniverse}
 \subsubsection{Simulated Universe Object Attribute Initialization Input/Output Description}
 \subsubsection*{Inputs}
@@ -803,6 +892,8 @@ TASKS:
         Output of Rules module inherited from TL module (see \ref{sec:rules})
         \item[ZodiacalLight] \hfill \\
         Output of ZL module inherited from TL module (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Output of Completeness module inherited from TL module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
         Output of TL module given by above specs["targlistname"] (see \ref{sec:targetlist})
         \item[PlanetPhysical] \hfill \\
@@ -822,25 +913,43 @@ TASKS:
         Output of Rules module (see \ref{sec:rules})
         \item[SimulatedUniverse.ZodiacalLight] \hfill \\
         Output of ZL module (see \ref{sec:zodiacallight})
+        \item[SimulatedUniverse.Completeness] \hfill \\
+        Output of Completeness module (see \ref{sec:completeness})
         \item[SimulatedUniverse.TargetList] \hfill \\
         Output of TL module (see \ref{sec:targetlist})
         \item[SimulatedUniverse.PlanetPhysical] \hfill \\
         Output of PPM module (see \ref{sec:planetphysicalmodel})
         \item[SimulatedUniverse.planInds] \hfill \\
-        Numpy array containing indices of target list stars with planets
+        Numpy array containing indices (referenced to exoplanet list) mapping each planet to its star
         \item[SimulatedUniverse.nPlans] \hfill \\
-        Number of planetary systems
+        Number of planets
+        \item[SimulatedUniverse.sysInds] \hfill \\
+        Numpy array containing indices (referenced to target star list) of target stars with planets
+        \item[SimulatedUniverse.Mp] \hfill \\
+        Numpy array containing masses of each planet (astropy Quantity object initially set in $ kg $)
+        \item[SimulatedUniverse.Rp] \hfill \\
+        Numpy array containing radii of each planet (astropy Quantity object initially set in $ km $)
+        \item[SimulatedUniverse.r] \hfill \\
+        Numpy array containing planet position vectors relative to host stars (astropy Quantity object initially set in $ km $)
+        \item[SimulatedUniverse.v] \hfill \\
+        Numpy array containing planet velocity vectors relative to host stars (astropy uni object initially set in $ km/s $)
+        \item[SimulatedUniverse.p] \hfill \\
+        Numpy array containing planet albedos
         \item[SimulatedUniverse.I] \hfill \\
         Numpy array containing list of inclination of planetary systems in degrees
+        \item[SimulatedUniverse.rtype] \hfill \\
+        Numpy array containing list of rock/ice fraction for rocky/icy planets
+        \item[SimulatedUniverse.fzodicurr] \hfill \\
+        Numpy array containing list of exozodi levels for systems with planets
     \end{description}
 \end{itemize}
 
 % SURVEY SIMULATION NEEDS UPDATING
 
-\subsection{Survey Simulation (SS) NEEDS UPDATING}
+\subsection{Survey Simulation (SS) NEEDS UPDATING} \label{sec:surveysim}
 The SS module takes as input the output of the SU simulation module and the Time, Rules, and PP input modules. This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
 
-TASKS: 
+TASKS: \verb+run_sim+ - perform survey simulation, \verb+initial_target+ - find initial target star, \verb+next_target+ - find next target (scheduler)
 
 \subsubsection{Survey Simulation Object Attribute Initialization Input/Output Description}
 \subsubsection*{Inputs}
@@ -867,6 +976,8 @@ TASKS:
         Output of Rules module inherited from SU module (see \ref{sec:rules})
         \item[ZodiacalLight] \hfill \\
         Output of ZL module inherited from SU module (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Output of Completeness module inherited from SU module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
         Output of TL module inherited from SU module (see \ref{sec:targetlist})
         \item[PlanetPhysical] \hfill \\
@@ -894,6 +1005,8 @@ TASKS:
         Output of Rules module (see \ref{sec:rules})
         \item[SurveySimulation.ZodiacalLight] \hfill \\
         Output of ZL module (see \ref{sec:zodiacallight})
+        \item[SurveySimulation.Completeness] \hfill \\
+        Output of Completeness module (see \ref{sec:completeness})
         \item[SurveySimulation.TargetList] \hfill \\
         Output of TL module (see \ref{sec:targetlist})
         \item[SurveySimulation.PlanetPhysical] \hfill \\
@@ -906,12 +1019,8 @@ TASKS:
         Output of Time module (see \ref{sec:time})
         \item[SurveySimulation.PostProcessing] \hfill \\
         Output of PP module (see \ref{sec:postprocessing})
-        \item[SurveySimulation.visited] \hfill \\
-        Numpy array giving number of observations for each star in the target list with indices corresponding to the target list. All are initialized to zero.
-        \item[SurveySimulation.revisit\_list] \hfill \\
-        Python list where each item gives index of star to revisit (corresponding to the target list) and mission time to revisit.
-        \item[SurveySimulation.planPosTime] \hfill \\
-        Numpy array giving current normalized time of each planet's position (astropy TimeDelta objects initially defined in $ JD $ increments as for TimeKeeping.currenttimeNorm, see \ref{sec:time}). All are initialized to zero as for TimeKeeping.currenttimeNorm. 
+        \item[SurveySimulation.DRM] \hfill \\
+        Contains the results of survey simulation
     \end{description}
 \end{itemize}
 

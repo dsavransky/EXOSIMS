@@ -52,20 +52,32 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.Completeness</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="Completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness">[docs]</a><span class="k">class</span> <span class="nc">Completeness</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Completeness class template</span>
 <span class="sd">    </span>
-<span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Completeness Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    This class contains all variables and methods necessary to perform </span>
+<span class="sd">    Completeness Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs: </span>
+<span class="sd">            user specified values</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        minComp: </span>
+<span class="sd">            minimum completeness level for detection</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;Completeness&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;Completeness&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c"># default values        </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="c"># minimum completeness level for detection</span>
+        <span class="c"># default values </span>
+        <span class="c"># minimum completeness level for detection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="mf">0.1</span> 
         <span class="c"># replace default values with user specification values if any</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
@@ -79,7 +91,9 @@
         <span class="sd">&quot;&quot;&quot;String representation of Completeness object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Completeness object, this </span>
-<span class="sd">        method will return the values contained in the object&quot;&quot;&quot;</span>
+<span class="sd">        method will return the values contained in the object</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
@@ -91,16 +105,26 @@
 <div class="viewcode-block" id="Completeness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
 <span class="sd">        </span>
-<span class="sd">        Input: targlist - TargetList module object containing target list star </span>
-<span class="sd">        attributes.</span>
-<span class="sd">        targlist also contains the following available for use:</span>
-<span class="sd">        targlist.opt - optical system object</span>
-<span class="sd">        targlist.pop - planet population object</span>
-<span class="sd">        targlist.rules - rules object</span>
-<span class="sd">        targlist.zodi - zodiacal light object</span>
-<span class="sd">        targlist.comp - completeness object</span>
+<span class="sd">        Args:</span>
+<span class="sd">            targlist: </span>
+<span class="sd">                TargetList class object which, in addition to TargetList class</span>
+<span class="sd">                object attributes, has available:</span>
+<span class="sd">                    targlist.opt: </span>
+<span class="sd">                        OpticalSys class object</span>
+<span class="sd">                    targlist.pop: </span>
+<span class="sd">                        PlanetPopulation class object</span>
+<span class="sd">                    targlist.rules: </span>
+<span class="sd">                        Rules class object</span>
+<span class="sd">                    targlist.zodi: </span>
+<span class="sd">                        ZodiacalLight class object</span>
+<span class="sd">                    targlist.comp: </span>
+<span class="sd">                        Completeness class object</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            comp0: </span>
+<span class="sd">                1D numpy array of completeness values for each target star</span>
 <span class="sd">        </span>
-<span class="sd">        Output: comp0 - numpy array of completeness values for each target star&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span>
         

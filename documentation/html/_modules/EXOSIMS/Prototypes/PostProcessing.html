@@ -52,13 +52,22 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.PostProcessing</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Post Processing class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Post Processing Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    Post Processing Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;PostProcessing&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;PostProcessing&#39;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="c"># default values</span>
@@ -78,7 +87,45 @@
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Post Processing class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s">&#39;Post Processing class object attributes&#39;</span>
+        
+<div class="viewcode-block" id="PostProcessing.det_occur"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">[docs]</a>    <span class="k">def</span> <span class="nf">det_occur</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observationPossible</span><span class="p">,</span> <span class="n">rules</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determines if a detection has occurred and returns booleans </span>
+<span class="sd">        </span>
+<span class="sd">        This method returns three booleans: FA (False Alarm), DET (DETection), </span>
+<span class="sd">        and MD (Missed Detection) where True gives the case.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            observationPossible:</span>
+<span class="sd">                1D numpy array of booleans signifying if each planet is </span>
+<span class="sd">                observable</span>
+<span class="sd">            rules:</span>
+<span class="sd">                Rules class object</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            FA:</span>
+<span class="sd">                False Alarm boolean</span>
+<span class="sd">            DET:</span>
+<span class="sd">                Detection boolean</span>
+<span class="sd">            MD:</span>
+<span class="sd">                Missed Detection boolean</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">FA</span><span class="p">,</span> <span class="n">DET</span><span class="p">,</span> <span class="n">MD</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span>
+        
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
+            <span class="n">r0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">r0</span> <span class="o">&lt;=</span> <span class="n">rules</span><span class="o">.</span><span class="n">MDP</span><span class="p">:</span>
+                <span class="n">MD</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">DET</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">r1</span> <span class="o">&lt;=</span> <span class="n">rules</span><span class="o">.</span><span class="n">FAP</span><span class="p">:</span>
+                <span class="n">FA</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="k">return</span> <span class="n">FA</span><span class="p">,</span> <span class="n">DET</span><span class="p">,</span> <span class="n">MD</span></div></div>
 </pre></div>
 
           </div>

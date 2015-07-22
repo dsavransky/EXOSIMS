@@ -52,9 +52,10 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.StarCatalog</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">cPickle</span> <span class="kn">as</span> <span class="nn">pickle</span>
 <span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
 
@@ -62,13 +63,63 @@
     <span class="sd">&quot;&quot;&quot;Star Catalog class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
-<span class="sd">    Star Catalog Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span> 
+<span class="sd">    Star Catalog Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        Name:</span>
+<span class="sd">            1D numpy array of star names</span>
+<span class="sd">        Type:</span>
+<span class="sd">            1D numpy array of star types</span>
+<span class="sd">        Spec:</span>
+<span class="sd">            1D numpy array of spectral types</span>
+<span class="sd">        parx:</span>
+<span class="sd">            1D numpy array of parallax in milliarcseconds</span>
+<span class="sd">        Umag:</span>
+<span class="sd">            1D numpy array of U magnitude</span>
+<span class="sd">        Bmag:</span>
+<span class="sd">            1D numpy array of B magnitude</span>
+<span class="sd">        Vmag:</span>
+<span class="sd">            1D numpy array of V magnitude</span>
+<span class="sd">        Rmag:</span>
+<span class="sd">            1D numpy array of R magnitude</span>
+<span class="sd">        Imag:</span>
+<span class="sd">            1D numpy array of I magnitude</span>
+<span class="sd">        Jmag:</span>
+<span class="sd">            1D numpy array of J magnitude</span>
+<span class="sd">        Hmag:</span>
+<span class="sd">            1D numpy array of H magnitude</span>
+<span class="sd">        Kmag:</span>
+<span class="sd">            1D numpy array of K magnitude</span>
+<span class="sd">        dist:</span>
+<span class="sd">            1D numpy array of distance in parsecs to star</span>
+<span class="sd">        BV:</span>
+<span class="sd">            1D numpy array of B-V Johnson magnitude</span>
+<span class="sd">        MV:</span>
+<span class="sd">            1D numpy array of absolute V magnitude</span>
+<span class="sd">        BC:</span>
+<span class="sd">            1D numpy array of bolometric correction</span>
+<span class="sd">        L:</span>
+<span class="sd">            1D numpy array of stellar luminosity in Solar luminosities</span>
+<span class="sd">        coords:</span>
+<span class="sd">            numpy array of astropy SkyCoord objects containing right ascension</span>
+<span class="sd">            and declination in degrees</span>
+<span class="sd">        pmra:</span>
+<span class="sd">            1D numpy array of proper motion in right ascension in</span>
+<span class="sd">            milliarcseconds/year</span>
+<span class="sd">        pmdec:</span>
+<span class="sd">            1D numpy array of proper motion in declination in </span>
+<span class="sd">            milliarcseconds/year</span>
+<span class="sd">        rv:</span>
+<span class="sd">            1D numpy array of radial velocity in km/s</span>
+<span class="sd">        Binary_Cut:</span>
+<span class="sd">            1D numpy array of booleans where True is a star with a companion </span>
+<span class="sd">            closer than 10 arcsec</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span> 
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;StarCatalog&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;StarCatalog&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializes star catalog with the data type expected, actual values</span>
-<span class="sd">            are populated by specific StarCatalog classes.&quot;&quot;&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of star names</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># list of star types</span>
@@ -109,13 +160,19 @@
         <span class="k">return</span> <span class="s">&#39;Star Catalog class object attributes&#39;</span>
         
 <div class="viewcode-block" id="StarCatalog.populatepkl"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog.populatepkl">[docs]</a>    <span class="k">def</span> <span class="nf">populatepkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Populates the star catalog from a pickled dictionary file housed in </span>
-<span class="sd">        the StarCatalog directory and returns True if successful</span>
+        <span class="sd">&quot;&quot;&quot;Populates the star catalog and returns True if successful</span>
 <span class="sd">        </span>
-<span class="sd">        Input: filename - name of file (extension .pkl) containing pickled </span>
-<span class="sd">        dictionary of values for the star catalog defined below</span>
-<span class="sd">        Output: True if successful, False if not</span>
-<span class="sd">        Finds: star catalog values&quot;&quot;&quot;</span>
+<span class="sd">        This method populates the star catalog from a pickled dictionary file </span>
+<span class="sd">        housed in the StarCatalog directory and returns True if successful.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            filename:</span>
+<span class="sd">                name of the pickled dictionary file with extension .pkl</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if successful, False if not</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># pickled dictionary stored in filename must contain at least the first </span>
         <span class="c"># key (&#39;Name&#39;) defined</span>
@@ -151,7 +208,8 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
             <span class="k">if</span> <span class="s">&#39;Name&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">]</span>
-                <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="c"># stores attributes as list</span>
+                <span class="c"># store attributes as list</span>
+                <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> 
                 <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;radeg&#39;</span> <span class="ow">or</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s">&#39;decdeg&#39;</span><span class="p">:</span>
@@ -172,14 +230,26 @@
         <span class="k">return</span> <span class="n">success</span>
     </div>
 <div class="viewcode-block" id="StarCatalog.SIMBAD_mat2pkl"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog.SIMBAD_mat2pkl">[docs]</a>    <span class="k">def</span> <span class="nf">SIMBAD_mat2pkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matpath</span><span class="p">,</span> <span class="n">pklpath</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Writes pickled dictionary file from .mat file and stores it in </span>
-<span class="sd">        StarCatalog directory</span>
+        <span class="sd">&quot;&quot;&quot;Writes pickled dictionary file from .mat file </span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: matpath - path to .mat file, pklpath - path to .pkl file to be written</span>
-<span class="sd">        Output: True if successful, False if not</span>
+<span class="sd">        This method takes a .mat star catalog, converts it to a Python </span>
+<span class="sd">        dictionary, pickles the dictionary, and stores it in the StarCatalog </span>
+<span class="sd">        directory.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            matpath:</span>
+<span class="sd">                path to .mat file</span>
+<span class="sd">            pklpath:</span>
+<span class="sd">                pat to .pkl file to be written</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if successful, False if not</span>
+<span class="sd">        </span>
 <span class="sd">        Stores pickled dictionary file with same name as .mat file (and </span>
 <span class="sd">        extension of .pkl) containing lists of required values needed to </span>
-<span class="sd">        populate the Star Catalog object in StarCatalog directory&quot;&quot;&quot;</span>
+<span class="sd">        populate the Star Catalog object in StarCatalog directory.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">matpath</span><span class="p">):</span>
             <span class="c"># dictionary mapping MATLAB structure fields to required Python </span>

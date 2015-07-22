@@ -52,24 +52,43 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TimeKeeping</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
-<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">TimeDelta</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="TimeKeeping"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">[docs]</a><span class="k">class</span> <span class="nc">TimeKeeping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Time class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Time Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    Time Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        missionStart:</span>
+<span class="sd">            mission start time (astropy Time in MJD)</span>
+<span class="sd">        missionLife:</span>
+<span class="sd">            mission lifetime (astropy Quantity with units of year)</span>
+<span class="sd">        extendedLife:</span>
+<span class="sd">            extended mission time (astropy Quantity with units of year)</span>
+<span class="sd">        currenttimeNorm:</span>
+<span class="sd">            current mission time normalized to zero at mission start (astropy</span>
+<span class="sd">            Quantity with units of day)</span>
+<span class="sd">        currenttimeAbs:</span>
+<span class="sd">            current absolute mission time (astropy Time in MJD)</span>
+<span class="sd">        missionFinishAbs:</span>
+<span class="sd">            mission finish absolute time (astropy Time in MJD)</span>
+<span class="sd">        missionFinishNorm:</span>
+<span class="sd">            mission finish normalized time (astropy Quantity with units of day)</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;TimeKeeping&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;TimeKeeping&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializes time values with default values or values from user</span>
-<span class="sd">        specification</span>
-<span class="sd">        </span>
-<span class="sd">        Input: specs - dictionary containing user specification values&quot;&quot;&quot;</span>
-        
+                
         <span class="c"># default values</span>
         <span class="c"># mission start time (astropy Time object) in mjd</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;mjd&#39;</span><span class="p">)</span>
@@ -116,7 +135,11 @@
 <div class="viewcode-block" id="TimeKeeping.update_times"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.update_times">[docs]</a>    <span class="k">def</span> <span class="nf">update_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates self.currenttimeNorm and self.currenttimeAbs</span>
 <span class="sd">        </span>
-<span class="sd">        Input: dt - astropy unit object with time unit (ie day)&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            dt:</span>
+<span class="sd">                time increment (astropy Quantity attached, ie day)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+=</span> <span class="n">dt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>

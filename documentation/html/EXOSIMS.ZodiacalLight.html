@@ -25,6 +25,9 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.util package" href="EXOSIMS.util.html" />
+    <link rel="prev" title="EXOSIMS.StarCatalog package" href="EXOSIMS.StarCatalog.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,7 +43,14 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="EXOSIMS.util.html" title="EXOSIMS.util package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.StarCatalog.html" title="EXOSIMS.StarCatalog package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,24 +73,52 @@
 <p>Lindler Zodiacal Light class</p>
 <p>This class contains all variables and methods necessary to perform
 Zodiacal Light Module calculations in exoplanet mission simulation using
-the model from Lindler</p>
+the model from Lindler.</p>
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fbeta">
 <code class="descname">fbeta</code><span class="sig-paren">(</span><em>beta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/LindlerZodiacalLight.html#LindlerZodiacalLight.fbeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fbeta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Empirically derived variation of zodiacal light with viewing angle
-(from Lindler)</p>
-<p>Input: beta - angle in degrees
-Output: f - zodiacal light in zodi</p>
+<dd><p>Empirically derived variation of zodiacal light with viewing angle</p>
+<p>This method encodes the empirically derived formula for zodiacal light
+with viewing angle from Lindler.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>beta:</dt>
+<dd>angle in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>f:</dt>
+<dd>zodiacal light in zodi</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fzodi">
-<code class="descname">fzodi</code><span class="sig-paren">(</span><em>simuni</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/LindlerZodiacalLight.html#LindlerZodiacalLight.fzodi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fzodi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns exozodi levels for systems with planets (called in Simulated
-Universe)</p>
-<p>Input: simuni - Simulated Universe object
-Output: fzodi - exozodiacal light assigned to each planet indexed 
-with planet index</p>
+<code class="descname">fzodi</code><span class="sig-paren">(</span><em>Inds</em>, <em>I</em>, <em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/LindlerZodiacalLight.html#LindlerZodiacalLight.fzodi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fzodi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns exozodi levels for systems with planets</p>
+<p>This method is called in __init__ of SimulatedUniverse.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>Inds:</dt>
+<dd>1D numpy array of indicies referring back to target list stars</dd>
+<dt>I:</dt>
+<dd>1D numpy array or scalar value of inclination in degrees</dd>
+<dt>targlist:</dt>
+<dd>TargetList class object</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>fzodicurr:</dt>
+<dd>1D numpy array of exozodiacal light levels</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -107,6 +145,12 @@ with planet index</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.StarCatalog.html"
+                        title="previous chapter">EXOSIMS.StarCatalog package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.util.html"
+                        title="next chapter">EXOSIMS.util package</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">

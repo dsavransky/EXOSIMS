@@ -25,6 +25,9 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.OpticalSys package" href="EXOSIMS.OpticalSys.html" />
+    <link rel="prev" title="EXOSIMS package" href="EXOSIMS.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,7 +43,14 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="EXOSIMS.OpticalSys.html" title="EXOSIMS.OpticalSys package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.html" title="EXOSIMS package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,27 +73,47 @@
 <p>WFIRST Observatory class</p>
 <p>This class contains all variables and methods specific to the WFIRST
 observatory needed to perform Observatory Definition Module calculations
-in exoplanet mission simulation</p>
+in exoplanet mission simulation.</p>
 <dl class="method">
 <dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">
-<code class="descname">keepout</code><span class="sig-paren">(</span><em>time</em>, <em>catalog</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds Boolean values for each target at current mission time and
-returns True if successful.</p>
-<p>Inputs: current time (MJD), star catalog information
-Output: True if successful, False if not
-Finds: Boolean values for each target where True is observable and</p>
-<blockquote>
-<div>False is target unobservable (bright object inside keepout zone)</div></blockquote>
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>time</em>, <em>catalog</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds keepout Boolean values, returns True if successful</p>
+<p>This method finds the keepout Boolean values for each target star where
+True is an observable star and stores the 1D numpy array in self.kogood.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>time:</dt>
+<dd>absolute time (astropy Time)</dd>
+<dt>catalog:</dt>
+<dd>TargetList or StarCatalog class object</dd>
+<dt>koangle:</dt>
+<dd>Telescope keepout angle in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>True if successful, False if not</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit">
 <code class="descname">orbit</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds WFIRST observatory orbit position vector (km) in heliocentric 
-equatorial frame and returns True if successful</p>
-<p>Input: current time (astropy Time object)
-Output: True if successful, False if not
-Finds: observatory position vector (numpy array) in self.r_sc</p>
+<dd><p>Finds WFIRST geosynchronous circular orbit position vector</p>
+<p>This method finds the WFIRST geosynchronous circular orbit position 
+vector as 1D numpy array (astropy Quantity with units of km) in the
+heliocentric equatorial frame, stores this vector in self.r_sc,
+and returns True if successful.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>time:</dt>
+<dd>current absolute time (astropy Time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>True if successful, False if not</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -110,6 +140,12 @@ Finds: observatory position vector (numpy array) in self.r_sc</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.html"
+                        title="previous chapter">EXOSIMS package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.OpticalSys.html"
+                        title="next chapter">EXOSIMS.OpticalSys package</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">

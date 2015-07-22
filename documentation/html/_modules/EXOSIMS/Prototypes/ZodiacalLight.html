@@ -52,6 +52,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.ZodiacalLight</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
 
@@ -59,16 +60,24 @@
     <span class="sd">&quot;&quot;&quot;Zodiacal Light class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
-<span class="sd">    Zodiacal Light Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    Zodiacal Light Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        exozodi:</span>
+<span class="sd">            exozodi level in zodi</span>
+<span class="sd">        exozodiVar:</span>
+<span class="sd">            exozodi variation (variance of log-normal distribution)</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;ZodiacalLight&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;ZodiacalLight&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializes Zodiacal Light values with default values or values from</span>
-<span class="sd">        user specification</span>
-<span class="sd">        </span>
-<span class="sd">        Input: specs - dictionary containing user specification values&quot;&quot;&quot;</span>
-        
+                
         <span class="c"># default values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exozodi</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="c"># exo-zodi level in zodi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exozodiVar</span> <span class="o">=</span> <span class="mf">0.</span> <span class="c"># exo-zodi variation (variance of log-normal distribution)</span>
@@ -96,13 +105,22 @@
         <span class="k">return</span> <span class="s">&#39;Zodiacal Light class object attributes&#39;</span>
         
 <div class="viewcode-block" id="ZodiacalLight.eclip_lats"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.eclip_lats">[docs]</a>    <span class="k">def</span> <span class="nf">eclip_lats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns ecliptic latitudes for equatorial right ascension and </span>
-<span class="sd">        declination values in Star Catalog data (astropy.coordinates does not</span>
-<span class="sd">        yet support this conversion)</span>
+        <span class="sd">&quot;&quot;&quot;Returns ecliptic latitudes </span>
 <span class="sd">        </span>
-<span class="sd">        Input: coords - astropy SkyCoord object with right ascension and </span>
-<span class="sd">        declination in degrees</span>
-<span class="sd">        Output: ecliptic latitudes in deg&quot;&quot;&quot;</span>
+<span class="sd">        This method returns ecliptic latitudes for equatorial right ascension </span>
+<span class="sd">        and declination values in Star Catalog data (astropy.coordinates does </span>
+<span class="sd">        not yet support this conversion).</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            coords:</span>
+<span class="sd">                numpy array of astropy SkyCoord objects with right ascension </span>
+<span class="sd">                and declination in degrees</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            el:</span>
+<span class="sd">                ecliptic latitudes in degrees</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">eps</span> <span class="o">=</span> <span class="mf">23.439281</span> <span class="c"># obliquity of ecliptic in degrees</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">eps</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span>
@@ -111,26 +129,26 @@
 
         <span class="k">return</span> <span class="n">el</span>
         </div>
-<div class="viewcode-block" id="ZodiacalLight.fzodi"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi">[docs]</a>    <span class="k">def</span> <span class="nf">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simuni</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns exozodi levels for systems with planets (called in Simulated</span>
-<span class="sd">        Universe)</span>
+<div class="viewcode-block" id="ZodiacalLight.fzodi"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi">[docs]</a>    <span class="k">def</span> <span class="nf">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Inds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns exozodi levels for systems </span>
 <span class="sd">        </span>
-<span class="sd">        Input: simuni - Simulated Universe object</span>
-<span class="sd">        simuni also contains the following available for use:</span>
-<span class="sd">        simuni.opt - optical system object</span>
-<span class="sd">        simuni.pop - planet population object</span>
-<span class="sd">        simuni.rules - rules object</span>
-<span class="sd">        simuni.zodi - zodiacal light object</span>
-<span class="sd">        simuni.comp - completeness object</span>
-<span class="sd">        simuni.targlist - target list object</span>
-<span class="sd">        simuni.planphys - planet physical model object</span>
+<span class="sd">        This method is called in __init__ of SimulatedUniverse.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Inds:</span>
+<span class="sd">                1D numpy array of indicies referring back to target list stars</span>
+<span class="sd">            I:</span>
+<span class="sd">                1D numpy array or scalar value of inclination in degrees</span>
+<span class="sd">            targlist:</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            fzodicurr:</span>
+<span class="sd">                1D numpy array of exozodiacal light levels</span>
 
-<span class="sd">        Output: fzodicurr - exozodiacal light assigned to each planet indexed </span>
-<span class="sd">        with planet index&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">planInds</span> <span class="o">=</span> <span class="n">simuni</span><span class="o">.</span><span class="n">planInds</span> <span class="c"># indices of planets mapped to target stars</span>
-        
-        <span class="n">fzodicurr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">planInds</span><span class="p">))</span>
+        <span class="n">fzodicurr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">Inds</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="n">fzodicurr</span></div></div>
 </pre></div>

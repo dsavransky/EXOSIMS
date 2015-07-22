@@ -25,6 +25,9 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.Prototypes package" href="EXOSIMS.Prototypes.html" />
+    <link rel="prev" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -40,7 +43,14 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="EXOSIMS.Prototypes.html" title="EXOSIMS.Prototypes package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.Observatory.html" title="EXOSIMS.Observatory package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -63,30 +73,94 @@
 <p>WFIRST Optical System class</p>
 <p>This class contains all variables and methods specific to the WFIRST
 optical system needed to perform Optical System Module calculations
-in exoplanet mission simulation</p>
+in exoplanet mission simulation.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>**specs:</dt>
+<dd>user specified values</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>dAlpha:</dt>
+<dd>pixel size in square arcseconds (astropy Quantity in arcsec**2)</dd>
+<dt>Psi:</dt>
+<dd>instrument specific value &#8216;sharpness&#8217; derived from PSF</dd>
+<dt>Xi:</dt>
+<dd>instrument specific value derived from PSF</dd>
+<dt>P1:</dt>
+<dd>instrument specific value derived from PSF</dd>
+<dt>alphaBar:</dt>
+<dd>instrument specific value</dd>
+<dt>Ta:</dt>
+<dd>Airy throughput</dd>
+</dl>
+</dd>
+</dl>
 <dl class="method">
 <dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime">
 <code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds integration time for a specific target system (called in
-SurveySimulation)</p>
-<p>Input: targlist - TargetList module object 
-opt - OpticalSys module object
-rules - Rules module object
-universe - SimulatedUniverse module object
-s_ind - target star index
-planInds - planet index linking back to target star
-Output: intTime - numpy array of integration times</p>
+<dd><p>Finds integration time for a specific target system</p>
+<p>This method is called from a method in the SurveySimulation class
+object.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist:</dt>
+<dd>TargetList class object</dd>
+<dt>opt:</dt>
+<dd>OpticalSys class object</dd>
+<dt>rules:</dt>
+<dd>Rules class object</dd>
+<dt>universe:</dt>
+<dd>SimulatedUniverse class object</dd>
+<dt>s_ind:</dt>
+<dd>target star index</dd>
+<dt>planInds:</dt>
+<dd>planet indices linking back to target star</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>intTime:</dt>
+<dd>1D numpy array of integration times (astropy Quantity with 
+units of day)</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_maxintTime">
 <code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration time for target systems (called in
-TargetList)</p>
-<p>targlist - TargetList module object (contains ZodiacalLight,
-OpticalSys, and Rules module objects)
-atIWA - Boolean to determine if at IWA (default is False)
-Output: maxintTime - numpy array of maximum integration times</p>
+<dd><p>Finds maximum integration time for target systems</p>
+<p>This method is called in the __init__ for the TargetList class object.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist:</dt>
+<dd><dl class="first last docutils">
+<dt>TargetList class object which also has access to:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist.zodi:</dt>
+<dd>ZodiacalLight class object</dd>
+<dt>targlist.rules:</dt>
+<dd>Rules class object</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>maxintTime:</dt>
+<dd>1D numpy array containing maximum integration time for target
+list stars (astropy Quantity with units of day)</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -113,6 +187,12 @@ Output: maxintTime - numpy array of maximum integration times</p>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.Observatory.html"
+                        title="previous chapter">EXOSIMS.Observatory package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.Prototypes.html"
+                        title="next chapter">EXOSIMS.Prototypes package</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">

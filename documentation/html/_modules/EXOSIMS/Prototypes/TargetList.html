@@ -52,6 +52,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TargetList</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
@@ -62,31 +63,102 @@
     <span class="sd">&quot;&quot;&quot;Target List class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Target List Module calculations in exoplanet mission simulation</span>
+<span class="sd">    Target List Module calculations in exoplanet mission simulation.</span>
 <span class="sd">    </span>
 <span class="sd">    It inherits the following class objects which are defined in __init__:</span>
-<span class="sd">    Cat - StarCatalog</span>
-<span class="sd">    Opt - OpticalSys</span>
-<span class="sd">    Pop - PlanetPopulation</span>
-<span class="sd">    Rules - Rules</span>
-<span class="sd">    Zodi - ZodiacalLight</span>
-<span class="sd">    Comp - Completeness&quot;&quot;&quot;</span>
+<span class="sd">    StarCatalog, OpticalSys, PlanetPopulation, Rules, ZodiacalLight, </span>
+<span class="sd">    Completeness</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        opt:</span>
+<span class="sd">            OpticalSys class object</span>
+<span class="sd">        pop:</span>
+<span class="sd">            PlanetPopulation class object</span>
+<span class="sd">        rules:</span>
+<span class="sd">            Rules class object</span>
+<span class="sd">        zodi:</span>
+<span class="sd">            ZodiacalLight class object</span>
+<span class="sd">        comp:</span>
+<span class="sd">            Completeness class object</span>
+<span class="sd">        Name:</span>
+<span class="sd">            1D numpy array of star names</span>
+<span class="sd">        Type:</span>
+<span class="sd">            1D numpy array of star types</span>
+<span class="sd">        Spec:</span>
+<span class="sd">            1D numpy array of spectral types</span>
+<span class="sd">        parx:</span>
+<span class="sd">            1D numpy array of parallax in milliarcseconds</span>
+<span class="sd">        Umag:</span>
+<span class="sd">            1D numpy array of U magnitude</span>
+<span class="sd">        Bmag:</span>
+<span class="sd">            1D numpy array of B magnitude</span>
+<span class="sd">        Vmag:</span>
+<span class="sd">            1D numpy array of V magnitude</span>
+<span class="sd">        Rmag:</span>
+<span class="sd">            1D numpy array of R magnitude</span>
+<span class="sd">        Imag:</span>
+<span class="sd">            1D numpy array of I magnitude</span>
+<span class="sd">        Jmag:</span>
+<span class="sd">            1D numpy array of J magnitude</span>
+<span class="sd">        Hmag:</span>
+<span class="sd">            1D numpy array of H magnitude</span>
+<span class="sd">        Kmag:</span>
+<span class="sd">            1D numpy array of K magnitude</span>
+<span class="sd">        dist:</span>
+<span class="sd">            1D numpy array of distance in parsecs to star</span>
+<span class="sd">        BV:</span>
+<span class="sd">            1D numpy array of B-V Johnson magnitude</span>
+<span class="sd">        MV:</span>
+<span class="sd">            1D numpy array of absolute V magnitude</span>
+<span class="sd">        BC:</span>
+<span class="sd">            1D numpy array of bolometric correction</span>
+<span class="sd">        L:</span>
+<span class="sd">            1D numpy array of stellar luminosity in Solar luminosities</span>
+<span class="sd">        coords:</span>
+<span class="sd">            numpy array of astropy SkyCoord objects containing right ascension</span>
+<span class="sd">            and declination in degrees</span>
+<span class="sd">        pmra:</span>
+<span class="sd">            1D numpy array of proper motion in right ascension in</span>
+<span class="sd">            milliarcseconds/year</span>
+<span class="sd">        pmdec:</span>
+<span class="sd">            1D numpy array of proper motion in declination in </span>
+<span class="sd">            milliarcseconds/year</span>
+<span class="sd">        rv:</span>
+<span class="sd">            1D numpy array of radial velocity in km/s</span>
+<span class="sd">        Binary_Cut:</span>
+<span class="sd">            1D numpy array of booleans where True is a star with a companion </span>
+<span class="sd">            closer than 10 arcsec</span>
+<span class="sd">        maxintTime:</span>
+<span class="sd">            1D numpy array containing maximum integration time (astropy </span>
+<span class="sd">            Quantity with units of day)</span>
+<span class="sd">        comp0:</span>
+<span class="sd">            1D numpy array containing completeness value for each target star</span>
+<span class="sd">        MsEst:</span>
+<span class="sd">            1D numpy array containing &#39;approximate&#39; stellar mass in M_sun</span>
+<span class="sd">        MsTrue:</span>
+<span class="sd">            1D numpy array containing &#39;true&#39; stellar mass in M_sun</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;TargetList&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;TargetList&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes target list</span>
-<span class="sd">        </span>
-<span class="sd">        Input: specs - dictionary containing user specification values and</span>
-<span class="sd">        desired module names</span>
 <span class="sd">                </span>
 <span class="sd">        nan data from star catalog quantities are removed</span>
+<span class="sd">        binary stars are removed</span>
 <span class="sd">        maximum integration time is calculated</span>
 <span class="sd">        Filters applied to star catalog data:</span>
-<span class="sd">            systems with planets inside the IWA removed</span>
-<span class="sd">            systems where maximum delta mag is not in allowable orbital range removed</span>
-<span class="sd">            systems where integration time is longer than maximum time removed</span>
-<span class="sd">            systems not meeting the completeness threshold removed</span>
+<span class="sd">            *nan data from star catalog quantities are removed</span>
+<span class="sd">            *systems with planets inside the IWA removed</span>
+<span class="sd">            *systems where maximum delta mag is not in allowable orbital range </span>
+<span class="sd">            removed</span>
+<span class="sd">            *systems where integration time is longer than maximum time removed</span>
+<span class="sd">            *systems not meeting the completeness threshold removed</span>
 <span class="sd">            </span>
 <span class="sd">        Additional filters are given in specific TargetList classes.&quot;&quot;&quot;</span>
         
@@ -141,6 +213,8 @@
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         <span class="c"># filter out nan attribute values from Star Catalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
+        <span class="c"># filter out binary stars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         <span class="c"># filter out systems with planets within the IWA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outside_IWA_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         <span class="c"># filter out systems where maximum delta mag is not in allowable orbital range</span>
@@ -157,8 +231,11 @@
         <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp0&#39;</span><span class="p">)</span>
         <span class="c"># filter out systems which do not reach the completeness threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses (do this after filtering)</span>
+        <span class="c"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
+        <span class="c"># if additional filters are desired, need atts fully populated</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsEst&#39;</span><span class="p">)</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsTrue&#39;</span><span class="p">)</span>
         <span class="c"># have target list, no need for catalog now</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span>
         
@@ -176,11 +253,17 @@
         <span class="k">return</span> <span class="s">&#39;Target List class object attributes&#39;</span>
                 
 <div class="viewcode-block" id="TargetList.nan_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.nan_filter">[docs]</a>    <span class="k">def</span> <span class="nf">nan_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Populates Target List with Star Catalog attributes and filters out </span>
-<span class="sd">        values which are nan</span>
+        <span class="sd">&quot;&quot;&quot;Populates Target List and filters out values which are nan</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of Star Catalog attributes</span>
-<span class="sd">        Output: filtered Star Catalog values as Target List object&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            filtered StarCatalog class object attributes as TargetList object</span>
+<span class="sd">            attributes</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># filter out nan values in numerical attributes</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
@@ -200,9 +283,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
                 </div>
 <div class="viewcode-block" id="TargetList.binary_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.binary_filter">[docs]</a>    <span class="k">def</span> <span class="nf">binary_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Removes stars from Target List which have attribut Binary_Cut == True</span>
+        <span class="sd">&quot;&quot;&quot;Removes stars which have attribute Binary_Cut == True</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">==</span> <span class="bp">False</span><span class="p">)</span>
@@ -212,7 +299,11 @@
 <div class="viewcode-block" id="TargetList.life_expectancy_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.life_expectancy_filter">[docs]</a>    <span class="k">def</span> <span class="nf">life_expectancy_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes stars from Target List which have BV &lt; 0.3</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&gt;</span> <span class="mf">0.3</span><span class="p">)</span>
@@ -222,7 +313,11 @@
 <div class="viewcode-block" id="TargetList.main_sequence_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.main_sequence_filter">[docs]</a>    <span class="k">def</span> <span class="nf">main_sequence_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes stars from Target List which are not main sequence</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># indices from Target List to keep</span>
         <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&lt;</span> <span class="mf">0.74</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">+</span> <span class="mf">1.8</span><span class="p">)))</span>
@@ -247,7 +342,11 @@
 <div class="viewcode-block" id="TargetList.fgk_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.fgk_filter">[docs]</a>    <span class="k">def</span> <span class="nf">fgk_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Includes only F, G, K spectral type stars in Target List</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># indices from target list to keep</span>
         <span class="n">iF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s">&#39;F&#39;</span><span class="p">))</span>
@@ -261,11 +360,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="TargetList.vis_mag_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.vis_mag_filter">[docs]</a>    <span class="k">def</span> <span class="nf">vis_mag_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">,</span> <span class="n">Vmagcrit</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars in the target list which are below the maximum </span>
-<span class="sd">        apparent visual magnitude</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars which are below the maximum apparent visual magnitude</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes,</span>
-<span class="sd">        Vmagcrit - maximum apparent visual magnitude&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">            Vmagcrit:</span>
+<span class="sd">                maximum apparent visual magnitude</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">&lt;</span> <span class="n">Vmagcrit</span><span class="p">)</span>
@@ -273,11 +376,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="TargetList.outside_IWA_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.outside_IWA_filter">[docs]</a>    <span class="k">def</span> <span class="nf">outside_IWA_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars in the target list which may have planets with orbital</span>
-<span class="sd">        distributions estimated to fall outside of the IWA of the optical system.</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars with planets with orbits outside of the IWA </span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: atts - list of star catalog object attributes, </span>
-<span class="sd">        Uses: opt - Optical System object, pop - Planet Population object&quot;&quot;&quot;</span>
+<span class="sd">        This method uses the following inherited class objects:</span>
+<span class="sd">            self.opt:</span>
+<span class="sd">                OpticalSys class object</span>
+<span class="sd">            self.pop:</span>
+<span class="sd">                PlanetPopulation class object</span>
+<span class="sd">                </span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">rrange</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">)</span>
@@ -287,22 +398,36 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         </div>
 <div class="viewcode-block" id="TargetList.int_cutoff_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">[docs]</a>    <span class="k">def</span> <span class="nf">int_cutoff_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars in the target list if the calculated integration time</span>
-<span class="sd">        is less than the integration cutoff time</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars if calculated integration time is less than cutoff</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: atts - list of star catalog object attributes, </span>
-<span class="sd">        Uses: rules - Rules object&quot;&quot;&quot;</span>
+<span class="sd">        This method uses the following inherited class object:</span>
+<span class="sd">            self.rules:</span>
+<span class="sd">                Rules class object</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         </div>
 <div class="viewcode-block" id="TargetList.max_dmag_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">[docs]</a>    <span class="k">def</span> <span class="nf">max_dmag_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars in the target list if the maximum delta mag is in the</span>
-<span class="sd">        allowable orbital range</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars if maximum delta mag is in the allowed orbital range</span>
 <span class="sd">        </span>
-<span class="sd">        Input: atts - list of star catalog object attributes, </span>
-<span class="sd">        Uses: pop - Planet Population object, opt - Optical System object&quot;&quot;&quot;</span>
+<span class="sd">        This method uses the following inherited class objects:</span>
+<span class="sd">            self.pop:</span>
+<span class="sd">                PlanetPopulation class object</span>
+<span class="sd">            self.opt:</span>
+<span class="sd">                OpticalSys class object</span>
+<span class="sd">                </span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">                </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">betastar</span> <span class="o">=</span> <span class="mf">1.10472881476178</span> <span class="c"># radians</span>
         
@@ -337,25 +462,33 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">cdMag</span><span class="p">)</span>
         </div>
 <div class="viewcode-block" id="TargetList.completeness_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.completeness_filter">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars in target list if their completeness value is larger</span>
-<span class="sd">        than the minimum value</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars if completeness is larger than the minimum value</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: atts - list of target list attributes</span>
-<span class="sd">        Uses: comp - Completeness object&quot;&quot;&quot;</span>
+<span class="sd">        This method uses the following inherited class object:</span>
+<span class="sd">            self.comp:</span>
+<span class="sd">                Completeness class object</span>
+<span class="sd">                </span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">minComp</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>        
-        
-    </div>
+        </div>
 <div class="viewcode-block" id="TargetList.revise_lists"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">[docs]</a>    <span class="k">def</span> <span class="nf">revise_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">,</span> <span class="n">ind</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Replaces Target List catalog attributes with filtered values</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: atts - list of star catalog object attributes,</span>
-<span class="sd">        ind - numpy array of indices to keep</span>
-<span class="sd">        Output: filtered Star Catalog attributes as Target List attributes&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            atts:</span>
+<span class="sd">                list of StarCatalog class object attribute names</span>
+<span class="sd">            ind:</span>
+<span class="sd">                1D numpy array of indices to keep</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># include maximum integration time with Star Catalog values</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
@@ -365,9 +498,17 @@
 <div class="viewcode-block" id="TargetList.get_module"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.get_module">[docs]</a>    <span class="k">def</span> <span class="nf">get_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Imports specific or Prototype class module</span>
 <span class="sd">        </span>
-<span class="sd">        Input: name - string containing module name</span>
-<span class="sd">        folder - specific module folder</span>
-<span class="sd">        Output: desired class module&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name:</span>
+<span class="sd">                string containing desired class name</span>
+<span class="sd">            folder:</span>
+<span class="sd">                string containing folder housing desired class</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            desiredmodule:</span>
+<span class="sd">                desired module </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
                 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">package</span> <span class="o">=</span> <span class="s">&#39;EXOSIMS.&#39;</span><span class="o">+</span><span class="n">folder</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="n">name</span>
@@ -383,8 +524,9 @@
         <span class="k">return</span> <span class="n">desiredmodule</span>
     </div>
 <div class="viewcode-block" id="TargetList.stellar_mass"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">[docs]</a>    <span class="k">def</span> <span class="nf">stellar_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Populates target list with &#39;true&#39; (self.MsTrue) and &#39;approximate&#39; </span>
-<span class="sd">        (self.MsEst) stellar masses&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Populates target list with &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># &#39;approximate&#39; stellar mass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MsEst</span> <span class="o">=</span> <span class="p">((</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="mf">0.002456</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MV</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">0.09711</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">+</span> <span class="mf">0.4365</span><span class="p">))</span><span class="o">*</span><span class="p">(</span>

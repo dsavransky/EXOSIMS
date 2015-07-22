@@ -52,6 +52,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.Observatory</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">constants</span> <span class="k">as</span> <span class="n">const</span>
@@ -61,26 +62,71 @@
     <span class="sd">&quot;&quot;&quot;Observatory class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
-<span class="sd">    Observatory Definition Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    Observatory Definition Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs: </span>
+<span class="sd">            user specified values</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        settling_time: </span>
+<span class="sd">            instrument settling time after repoint (astropy Quantity with units</span>
+<span class="sd">            of day)</span>
+<span class="sd">        thrust: </span>
+<span class="sd">            occulter slew thrust (astropy Quantity with units of mN)</span>
+<span class="sd">        slewIsp: </span>
+<span class="sd">            occulter slew specific impulse (astropy Quantity with units of s)</span>
+<span class="sd">        sc_mass: </span>
+<span class="sd">            occulter (maneuvering sc) wet mass (astropy Quantity with units of </span>
+<span class="sd">            kg)</span>
+<span class="sd">        dryMass: </span>
+<span class="sd">            occulter (maneuvering sc) dry mass (astropy Quantity with units of </span>
+<span class="sd">            kg)</span>
+<span class="sd">        coMass: </span>
+<span class="sd">            telescope (or non-maneuvering sc) mass (astropy Quantity with units</span>
+<span class="sd">            of kg)</span>
+<span class="sd">        occulterSep: </span>
+<span class="sd">            occulter-telescope distance (astropy Quantity with units of km)</span>
+<span class="sd">        occulterSep2: </span>
+<span class="sd">            2nd occulter separation (astropy Quantity with units of km)</span>
+<span class="sd">        skIsp: </span>
+<span class="sd">            station-keeping specific impulse (astropy Quantity with units of s)</span>
+<span class="sd">        kogood: </span>
+<span class="sd">            1D numpy array of booleans where True is observable target star in </span>
+<span class="sd">            the target list</span>
+<span class="sd">        r_sc: </span>
+<span class="sd">            1D numpy array of observatory postion vector (astropy Quantity with </span>
+<span class="sd">            units of km)</span>
+<span class="sd">        currentSep: </span>
+<span class="sd">            current occulter separation (astropy Quantity with units of km)</span>
+<span class="sd">        flowRate: </span>
+<span class="sd">            slew flow rate (astropy Quantity with units of kg/day)</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;Observatory&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;Observatory&#39;</span>
      
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initializes observatory values with default values or values from </span>
-<span class="sd">        user specification</span>
-<span class="sd">        </span>
-<span class="sd">        Inputs: specs - dictionary containing user specification values&quot;&quot;&quot;</span>
         
         <span class="c"># default Observatory values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">settling_time</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="c"># instrument settling time after repoint (days)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">thrust</span> <span class="o">=</span> <span class="mf">450.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mN</span> <span class="c"># occulter slew thrust (mN)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">slewIsp</span> <span class="o">=</span> <span class="mf">4160.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> <span class="c"># occulter slew specific impulse (s)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span> <span class="o">=</span> <span class="mf">6000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> <span class="c"># occulter (maneuvering sc) initial (wet) mass (kg)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dryMass</span> <span class="o">=</span> <span class="mf">3400.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> <span class="c"># occulter (maneuvering sc) dry mass (kg)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coMass</span> <span class="o">=</span> <span class="mf">5800.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> <span class="c"># telescope (or non-maneuvering sc) mass (kg)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> <span class="o">=</span> <span class="mf">55000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> <span class="c"># occulter-telescope distance (km)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep2</span> <span class="o">=</span> <span class="mf">35000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> <span class="c"># 2nd occulter separation (km)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span> <span class="o">=</span> <span class="mf">220.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> <span class="c"># station-keeping Isp (s)</span>
+        <span class="c"># instrument settling time after repoint (days)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settling_time</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> 
+        <span class="c"># occulter slew thrust (mN)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thrust</span> <span class="o">=</span> <span class="mf">450.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mN</span> 
+        <span class="c"># occulter slew specific impulse (s)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slewIsp</span> <span class="o">=</span> <span class="mf">4160.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> 
+        <span class="c"># occulter (maneuvering sc) initial (wet) mass (kg)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span> <span class="o">=</span> <span class="mf">6000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
+        <span class="c"># occulter (maneuvering sc) dry mass (kg)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dryMass</span> <span class="o">=</span> <span class="mf">3400.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
+        <span class="c"># telescope (or non-maneuvering sc) mass (kg)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coMass</span> <span class="o">=</span> <span class="mf">5800.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
+        <span class="c"># occulter-telescope distance (km)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> <span class="o">=</span> <span class="mf">55000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> 
+        <span class="c"># 2nd occulter separation (km)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep2</span> <span class="o">=</span> <span class="mf">35000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> 
+        <span class="c"># station-keeping Isp (s)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span> <span class="o">=</span> <span class="mf">220.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> 
         
         <span class="c"># replace default values with any user specified values</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -100,9 +146,12 @@
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span>
         
         <span class="c"># initialize values updated by functions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="c"># observatory keepout booleans list</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> <span class="c"># observatory orbit position vector (km)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">currentSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> <span class="c"># current occulter separation</span>
+        <span class="c"># observatory keepout booleans</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> 
+        <span class="c"># observatory orbit position vector (km)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> 
+        <span class="c"># current occulter separation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">currentSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> 
         
         <span class="c"># set values derived from quantities above</span>
         <span class="c"># slew flow rate (kg/day)</span>
@@ -213,15 +262,23 @@
         <span class="k">return</span> <span class="s">&#39;Observatory class object attributes&#39;</span>
         
 <div class="viewcode-block" id="Observatory.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds observatory orbit position vector (km) in heliocentric </span>
-<span class="sd">        equatorial frame and returns True if successful</span>
+        <span class="sd">&quot;&quot;&quot;Finds observatory orbit position vector, returns True if successful</span>
 <span class="sd">        </span>
-<span class="sd">        Input: current absolute time (astropy Time object)</span>
-<span class="sd">        Output: True if successful, False if not</span>
-<span class="sd">        Finds: observatory position vector (numpy array) in self.r_sc</span>
+<span class="sd">        This method finds the observatory position vector (heliocentric </span>
+<span class="sd">        equatorial frame) as a 1D numpy array with astropy Quantity units of km </span>
+<span class="sd">        and stores it in self.r_sc.</span>
 <span class="sd">        </span>
-<span class="sd">        This defines the data type expected, orbits are determined by specific </span>
-<span class="sd">        Observatory classes&quot;&quot;&quot;</span>
+<span class="sd">        This defines the data type expected, orbits are determined by specific</span>
+<span class="sd">        instances of Observatory classes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            time:</span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if successful, False if not</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">)])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span><span class="p">)</span> <span class="c"># finds if all values are finite </span>
@@ -250,16 +307,27 @@
             
         <span class="c">#return success</span>
     </div>
-<div class="viewcode-block" id="Observatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">,</span> <span class="n">catalog</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds Boolean values for each target at current mission time and</span>
-<span class="sd">        returns True if successful</span>
+<div class="viewcode-block" id="Observatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds keepout Boolean values, returns True if successful</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: current absolute time (astropy Time object), star catalog information</span>
-<span class="sd">        Output: True if successful, False if not</span>
-<span class="sd">        Finds:  Boolean values for each target where True is observable and</span>
-<span class="sd">        False is target unobservable (bright object in the keepout zone)&quot;&quot;&quot;</span>
-
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currenttime</span><span class="p">)</span> <span class="c"># update spacecraft orbital position</span>
+<span class="sd">        This method finds the keepout Boolean values for each target star where</span>
+<span class="sd">        True is an observable star and stores the 1D numpy array in self.kogood.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            currenttime:</span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">            catalog:</span>
+<span class="sd">                TargetList or StarCatalog class object</span>
+<span class="sd">            koangle:</span>
+<span class="sd">                telescope keepout angle in degrees</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            True if successful, False if not</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c"># update spacecraft orbital position</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currenttime</span><span class="p">)</span> 
         
         <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">])</span>
         
@@ -273,13 +341,24 @@
         <span class="k">return</span> <span class="n">success</span>
 </div>
 <div class="viewcode-block" id="Observatory.keplerplanet"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">[docs]</a>    <span class="k">def</span> <span class="nf">keplerplanet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">planet</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds heliocentric equatorial position vector (km) for solar system</span>
-<span class="sd">        planets using algorithms 2 and 10 from Vallado.</span>
+        <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
 <span class="sd">        </span>
-<span class="sd">        Input: time - current time (astropy Time object), </span>
-<span class="sd">        planet - object containing ephemeride data from the SolarEph class</span>
-<span class="sd">        Output: r_planet - heliocentric equatorial position vector (km) for </span>
-<span class="sd">        solar system planet&quot;&quot;&quot;</span>
+<span class="sd">        This method uses algorithms 2 and 10 from Vallado 2013 to find </span>
+<span class="sd">        heliocentric equatorial position vectors (astropy Quantity in km) for </span>
+<span class="sd">        solar system objects.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            time:</span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">            planet:</span>
+<span class="sd">                SolarEph class object</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_planet:</span>
+<span class="sd">                heliocentric equatorial position vector in 1D numpy array </span>
+<span class="sd">                (astropy Quantity km)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># find Julian centuries from J2000</span>
         <span class="n">TDB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
@@ -312,11 +391,20 @@
     </div>
 <div class="viewcode-block" id="Observatory.moon_earth"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.moon_earth">[docs]</a>    <span class="k">def</span> <span class="nf">moon_earth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds geocentric equatorial position vector (km) for Earth&#39;s moon</span>
-<span class="sd">        using Algorithm 31 from Vallado.</span>
 <span class="sd">        </span>
-<span class="sd">        Input: time - current time (astropy Time object)</span>
-<span class="sd">        Output: r_moon - geocentric equatorial position vector (km) for</span>
-<span class="sd">        Earth&#39;s moon&quot;&quot;&quot;</span>
+<span class="sd">        This method uses Algorithm 31 from Vallado 2013 to find the geocentric</span>
+<span class="sd">        equatorial position vector for Earth&#39;s moon.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            time:</span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_moon:</span>
+<span class="sd">                geocentric equatorial position vector in 1D numpy array </span>
+<span class="sd">                (astropy Quantity km) </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">TDB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
         <span class="n">la</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">218.32</span> <span class="o">+</span> <span class="mf">481267.8813</span><span class="o">*</span><span class="n">TDB</span> <span class="o">+</span> \
@@ -351,27 +439,38 @@
         <span class="sd">&quot;&quot;&quot;Finds target star position vector (km) for current time (MJD)</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            time : current time (MJD)</span>
-<span class="sd">            catalog : star catalog information</span>
-<span class="sd">            i : index for catalog information</span>
+<span class="sd">            time: </span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">            catalog: </span>
+<span class="sd">                TargetList or StarCatalog class object</span>
+<span class="sd">            i: </span>
+<span class="sd">                index for star catalog information</span>
 
-<span class="sd">        Kwargs:</span>
-<span class="sd">            </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            star position vector in heliocentric equatorial frame (km)</span>
+<span class="sd">            r_star:</span>
+<span class="sd">                star position vector in heliocentric equatorial frame in numpy</span>
+<span class="sd">                1D array (astropy Quantity km)</span>
 <span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">a</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># right ascension value </span>
-        <span class="n">d</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># declination value</span>
-        <span class="n">mua</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># right ascension proper motion (mas/yr)</span>
-        <span class="n">mud</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># declination proper motion (mas/yr)</span>
-        <span class="n">vr</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># radial velocity (km/s)</span>
-        <span class="n">parx</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c"># parallax (mas)</span>
+        
+        <span class="c"># right ascension value</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  
+        <span class="c"># declination value</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+        <span class="c"># right ascension proper motion (mas/yr)</span>
+        <span class="n">mua</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+        <span class="c"># declination proper motion (mas/yr)</span>
+        <span class="n">mud</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+        <span class="c"># radial velocity (km/s)</span>
+        <span class="n">vr</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+        <span class="c"># parallax (mas)</span>
+        <span class="n">parx</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
         
         <span class="c"># helpful units</span>
-        <span class="n">AUyr</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span><span class="p">)</span> <span class="c"># AU/yr in units</span>
-        <span class="n">kms</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> <span class="c"># km/s in units</span>
+        <span class="c"># AU/yr in units</span>
+        <span class="n">AUyr</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span><span class="p">)</span> 
+        <span class="c"># km/s in units</span>
+        <span class="n">kms</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> 
         <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;jyear&#39;</span><span class="p">)</span>
         
         <span class="c"># proper motion magnitudes</span>
@@ -396,11 +495,19 @@
         <span class="k">return</span> <span class="n">r_star</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span>
         </div>
 <div class="viewcode-block" id="Observatory.cent"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.cent">[docs]</a>    <span class="k">def</span> <span class="nf">cent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Takes current time (MJD) and returns TDB, the time in Julian centuries </span>
-<span class="sd">        since the J2000 epoch needed for the algorithm in Vallado</span>
+        <span class="sd">&quot;&quot;&quot;Finds time in Julian centuries since J2000 epoch</span>
 <span class="sd">        </span>
-<span class="sd">        Input: current time (MJD)</span>
-<span class="sd">        Output: time in Julian centuries since the J2000 epoch (TDB)&quot;&quot;&quot;</span>
+<span class="sd">        This quantity is needed for many algorithms from Vallado 2013.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            currenttime:</span>
+<span class="sd">                absolute time (astropy Time)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            TDB:</span>
+<span class="sd">                time in Julian centuries since the J2000 epoch </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;jyear&#39;</span><span class="p">)</span>
         
@@ -411,9 +518,21 @@
 <div class="viewcode-block" id="Observatory.propeph"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.propeph">[docs]</a>    <span class="k">def</span> <span class="nf">propeph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">TDB</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Propagates ephemeride to current time and returns this value</span>
 <span class="sd">        </span>
-<span class="sd">        Input: x - ephemeride list (4 elements), TDB - time in Julian centeries </span>
-<span class="sd">        since the J2000 epoch</span>
-<span class="sd">        Output: y - ephemeride value at current time&quot;&quot;&quot;</span>
+<span class="sd">        This method propagates the ephemerides from Vallado 2013 to the current</span>
+<span class="sd">        time.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                ephemeride list (maximum of 4 elements)</span>
+<span class="sd">            TDB:</span>
+<span class="sd">                time in Julian centuries since the J2000 epoch</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            y:</span>
+<span class="sd">                ephemeride value at current time</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
                 <span class="n">q</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -433,10 +552,22 @@
         <span class="k">return</span> <span class="n">y</span>
         </div>
 <div class="viewcode-block" id="Observatory.eccanom"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.eccanom">[docs]</a>    <span class="k">def</span> <span class="nf">eccanom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds and returns eccentric anomaly given mean anomaly and eccentricity</span>
+        <span class="sd">&quot;&quot;&quot;Finds eccentric anomaly from mean anomaly and eccentricity</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: M - mean anomaly, e - eccentricity</span>
-<span class="sd">        Output: E - eccentric anomaly&quot;&quot;&quot;</span>
+<span class="sd">        This method uses algorithm 2 from Vallado to find the eccentric anomaly</span>
+<span class="sd">        from mean anomaly and eccentricity.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            M:</span>
+<span class="sd">                mean anomaly</span>
+<span class="sd">            e:</span>
+<span class="sd">                eccentricity</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            E:</span>
+<span class="sd">                eccentric anomaly</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="c"># initial guess        </span>
@@ -461,8 +592,16 @@
 <div class="viewcode-block" id="Observatory.rot"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.rot">[docs]</a>    <span class="k">def</span> <span class="nf">rot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">axis</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds the rotation matrix of angle th about the axis value</span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: th - rotation angle, axis - value denoting axis (1,2,3)</span>
-<span class="sd">        Output: rotation matrix defined as numpy array&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            th:</span>
+<span class="sd">                rotation angle in radians</span>
+<span class="sd">            axis: </span>
+<span class="sd">                integer value denoting rotation axis (1,2, or 3)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            rotation matrix defined as numpy array</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> 
@@ -478,15 +617,25 @@
                        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span>
         </div>
 <div class="viewcode-block" id="Observatory.distForces"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.distForces">[docs]</a>    <span class="k">def</span> <span class="nf">distForces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">secondDist</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds disturbance forces on occulter and returns values for lateral</span>
-<span class="sd">        and axial forces in N</span>
+        <span class="sd">&quot;&quot;&quot;Finds lateral and axial disturbance forces on an occulter </span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: time - timekeeping object, targlist - targetlist object, </span>
-<span class="sd">        s_ind - index of target star, secondDist - boolean where True is for</span>
-<span class="sd">        second occulter</span>
+<span class="sd">        Args:</span>
+<span class="sd">            time:</span>
+<span class="sd">                TimeKeeping class object</span>
+<span class="sd">            targlist:</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            s_ind:</span>
+<span class="sd">                index of target star</span>
+<span class="sd">            secondDist:</span>
+<span class="sd">                boolean where True is for second occulter</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dF_lateral:</span>
+<span class="sd">                lateral disturbance force (astropy Quantity N)</span>
+<span class="sd">            dF_axial:</span>
+<span class="sd">                axial disturbance force (astropy Quantity N)</span>
 <span class="sd">        </span>
-<span class="sd">        Outputs: dF_lateral - lateral disturbance force, dF_axial - axial</span>
-<span class="sd">        disturbance force (both have units u.N)&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># determine if looking at forces on first or second occulter</span>
         <span class="k">if</span> <span class="n">secondDist</span><span class="p">:</span>
@@ -496,12 +645,9 @@
         
         <span class="c"># get spacecraft position vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">)</span>
-        <span class="n">r_sc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span>
-        <span class="n">Rmat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">r_Ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Rmat</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">)</span>
+        <span class="n">r_Ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span>
         <span class="c"># sun -&gt; earth position vector</span>
-        <span class="n">r_Es</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Rmat</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
-        
+        <span class="n">r_Es</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Earth</span><span class="p">)</span>
         <span class="c"># sun -&gt; target star vector</span>
         <span class="n">r_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">)</span>
         <span class="c"># Telescope -&gt; target vector and unit vector</span>
@@ -512,20 +658,21 @@
         <span class="c"># Earth-Moon barycenter -&gt; spacecraft vectors</span>
         <span class="n">r_TE</span> <span class="o">=</span> <span class="n">r_Ts</span> <span class="o">-</span> <span class="n">r_Es</span>
         <span class="n">r_OE</span> <span class="o">=</span> <span class="n">r_Os</span> <span class="o">-</span> <span class="n">r_Es</span>
-        
+
         <span class="c"># force on occulter</span>
         <span class="n">F_sO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span><span class="o">*</span><span class="n">r_Os</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Os</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         <span class="n">mEMB</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">/</span><span class="mf">328900.56</span>
         <span class="n">F_EO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span><span class="o">*</span><span class="n">r_OE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_OE</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+
         <span class="n">F_O</span> <span class="o">=</span> <span class="n">F_sO</span> <span class="o">+</span> <span class="n">F_EO</span>
-        
+
         <span class="c"># force on telescope</span>
-        <span class="n">F_sT</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_Ts</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Ts</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
-        <span class="n">F_ET</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_TE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_TE</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">F_sT</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_Ts</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Ts</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">F_ET</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_TE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_TE</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         <span class="n">F_T</span> <span class="o">=</span> <span class="n">F_sT</span> <span class="o">+</span> <span class="n">F_ET</span>
-        
+
         <span class="c"># differential force</span>
-        <span class="n">dF</span> <span class="o">=</span> <span class="p">((</span><span class="n">F_O</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span> <span class="o">+</span> <span class="n">F_T</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+        <span class="n">dF</span> <span class="o">=</span> <span class="p">((</span><span class="n">F_O</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span> <span class="o">-</span> <span class="n">F_T</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         
         <span class="n">dF_axial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dF</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">),</span> <span class="n">u_tT</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">N</span>
         <span class="n">dF_lateral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">dF</span> <span class="o">-</span> <span class="n">dF_axial</span><span class="o">*</span><span class="n">u_tT</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
@@ -534,40 +681,83 @@
         <span class="k">return</span> <span class="n">dF_lateral</span><span class="p">,</span> <span class="n">dF_axial</span>
         </div>
 <div class="viewcode-block" id="Observatory.mass_dec"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.mass_dec">[docs]</a>    <span class="k">def</span> <span class="nf">mass_dec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dF_lateral</span><span class="p">,</span> <span class="n">t_int</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns mass_used and deltaV values needed to decrement spacecraft</span>
-<span class="sd">        mass for station-keeping</span>
+        <span class="sd">&quot;&quot;&quot;Returns mass_used and deltaV </span>
 <span class="sd">        </span>
-<span class="sd">        Inputs: dF_lateral - lateral force on occulter (astropy unit N)</span>
-<span class="sd">        t_int - integration time (astropy unit day)</span>
+<span class="sd">        The values returned by this method are used to decrement spacecraft </span>
+<span class="sd">        mass for station-keeping.</span>
 <span class="sd">        </span>
-<span class="sd">        Outputs: mass_used - mass used in station-keeping (kg)</span>
-<span class="sd">        deltaV - change in velocity required for station-keeping (km/s)&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            dF_lateral:</span>
+<span class="sd">                lateral force on occulter (astropy Quantity N)</span>
+<span class="sd">            t_int:</span>
+<span class="sd">                integration time (astropy Quantity day)</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            mass_used:</span>
+<span class="sd">                mass used in station-keeping (astropy Quantity kg)</span>
+<span class="sd">            deltaV:</span>
+<span class="sd">                change in velocity required for station-keeping (astropy </span>
+<span class="sd">                Quantity km/s)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">intMdot</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">45.</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">5.</span><span class="p">))</span><span class="o">*</span><span class="n">dF_lateral</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">g0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
         <span class="n">mass_used</span> <span class="o">=</span> <span class="p">(</span><span class="n">intMdot</span><span class="o">*</span><span class="n">t_int</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span>
         <span class="n">deltaV</span> <span class="o">=</span> <span class="p">(</span><span class="n">dF_lateral</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sc_mass</span><span class="o">*</span><span class="n">t_int</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">mass_used</span><span class="p">,</span> <span class="n">deltaV</span>
+        <span class="k">return</span> <span class="n">intMdot</span><span class="p">,</span> <span class="n">mass_used</span><span class="p">,</span> <span class="n">deltaV</span>
    </div>
 <div class="viewcode-block" id="Observatory.SolarEph"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph">[docs]</a>    <span class="k">class</span> <span class="nc">SolarEph</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Solar system ephemerides class </span>
 <span class="sd">        </span>
 <span class="sd">        This class takes the constants in Appendix D.4 of Vallado as inputs</span>
 <span class="sd">        and stores them for use in defining solar system ephemerides at a </span>
-<span class="sd">        given time&quot;&quot;&quot;</span>
+<span class="sd">        given time.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            a:</span>
+<span class="sd">                semimajor axis list (in AU)</span>
+<span class="sd">            e:</span>
+<span class="sd">                eccentricity list</span>
+<span class="sd">            i:</span>
+<span class="sd">                inclination list</span>
+<span class="sd">            O:</span>
+<span class="sd">                right ascension of the ascending node list</span>
+<span class="sd">            w:</span>
+<span class="sd">                longitude of periapsis list</span>
+<span class="sd">            lM:</span>
+<span class="sd">                mean longitude list</span>
+<span class="sd">                </span>
+<span class="sd">            Each of these lists has a maximum of 4 elements. The values in </span>
+<span class="sd">            these lists are used to propagate the solar system planetary </span>
+<span class="sd">            ephemerides for a specific solar system planet.</span>
+<span class="sd">        </span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            a:</span>
+<span class="sd">                list of semimajor axis (in AU)</span>
+<span class="sd">            e:</span>
+<span class="sd">                list of eccentricity</span>
+<span class="sd">            i:</span>
+<span class="sd">                list of inclination</span>
+<span class="sd">            O:</span>
+<span class="sd">                list of right ascension of the ascending node</span>
+<span class="sd">            w:</span>
+<span class="sd">                list of longitude of periapsis</span>
+<span class="sd">            lM:</span>
+<span class="sd">                list of mean longitude values</span>
+<span class="sd">            </span>
+<span class="sd">            Each of these lists has a maximum of 4 elements. The values in </span>
+<span class="sd">            these lists are used to propagate the solar system planetary </span>
+<span class="sd">            ephemerides for a specific solar system planet.&quot;&quot;&quot;</span>
         
         <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">lM</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Initializes ephemeride constants</span>
-<span class="sd">            </span>
-<span class="sd">            Inputs: a - semimajor axis (AU), e - eccentricity list, </span>
-<span class="sd">            i - inclination list, O - right ascension of the ascending node list,</span>
-<span class="sd">            w - longitude of periapsis list, lM - mean longitude list</span>
-<span class="sd">            </span>
-<span class="sd">            Each list has four elements&quot;&quot;&quot;</span>
             
-            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> <span class="c"># imported with units of AU</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span> <span class="c"># change to km</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="c"># strip dimensions</span>
+            <span class="c"># attach units of AU</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> 
+            <span class="c"># change to km</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span> 
+            <span class="c"># strip dimensions</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span> 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="c"># store list of dimensionless eccentricity values</span>

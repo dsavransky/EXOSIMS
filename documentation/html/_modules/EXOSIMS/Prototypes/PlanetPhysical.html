@@ -52,13 +52,20 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.PlanetPhysical</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <div class="viewcode-block" id="PlanetPhysical"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical">[docs]</a><span class="k">class</span> <span class="nc">PlanetPhysical</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Planet Physical Model class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Planet Physical Model Module calculations in exoplanet mission simulation&quot;&quot;&quot;</span>
+<span class="sd">    Planet Physical Model Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">modtype</span> <span class="o">=</span> <span class="s">&#39;PlanetPhysical&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;PlanetPhysical&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         

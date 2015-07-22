@@ -59,10 +59,9 @@
     <span class="sd">&quot;&quot;&quot;SIMBAD300 Catalog class</span>
 <span class="sd">    </span>
 <span class="sd">    This class populates the star catalog used in EXOSIMS from the SIMBAD300 </span>
-<span class="sd">    catalog&quot;&quot;&quot;</span>
+<span class="sd">    catalog.&quot;&quot;&quot;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Populates the EXOSIMS star catalog with data from the SIMBAD catalog&quot;&quot;&quot;</span>
        
         <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;SIMBAD300&#39;</span>

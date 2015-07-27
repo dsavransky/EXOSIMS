@@ -528,16 +528,15 @@ simulation.</p>
 <dt>OWA:</dt>
 <dd>Outer Working Angle (astropy Quantity with units of arcsecond)</dd>
 <dt>dMagLim:</dt>
-<dd>limiting delta magnitude</dd>
-<dt>throughput:</dt>
-<dd>optical system throughput (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
-<dt>throughput2:</dt>
-<dd>optical system throughput for systems with second occulter distance
-(can be floating point scalar or scipy.interpolate.interp1d object)</dd>
-<dt>contrast:</dt>
-<dd>optical system suppression level (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
+<dd>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></dd>
+<dt>throughput (callable(lambda,alpha)):</dt>
+<dd>optical system throughput (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
+<dt>contrast (callable(lambda,alpha)):</dt>
+<dd>optical system contrast curve (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
 <dt>dr:</dt>
 <dd>detector dark-current rate per pixel (astropy Quantity with units 
 of 1/s)</dd>
@@ -545,21 +544,26 @@ of 1/s)</dd>
 <dd>detector read noise</dd>
 <dt>t_exp:</dt>
 <dd>exposure time per read (astropy Quantity with units of s)</dd>
-<dt>QE:</dt>
-<dd>detector quantum efficiency (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
+<dt>PSF (callable(lambda,alpha)):</dt>
+<dd>point spread function - 2D ndarray of values, normalized to 1 at the core
+(must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity). Note normalization 
+means that all throughput effects must be contained in the throughput 
+attribute.</dd>
+<dt>QE (callable(lambda)):</dt>
+<dd>detector quantum efficiency (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity).  This represents the primary (detection) detector.</dd>
 <dt>eta2:</dt>
 <dd>post coronagraph attenuation</dd>
 <dt>deltaLambda:</dt>
 <dd>bandpass (astropy Quantity with units of nm)</dd>
-<dt>have2ndDist:</dt>
-<dd>boolean signifying if there is a 2nd occulter</dd>
-<dt>QEchar:</dt>
-<dd>characterization quantum efficiency</dd>
 <dt>telescopeKeepout:</dt>
 <dd>telescope keepout angle in degrees</dd>
 <dt>specLambda:</dt>
-<dd>spectral wavelength of interest (astropy Quantity with units of nm)</dd>
+<dd>spectral wavelength of interest (astropy Quantity with units of nm)
+Note:  probably belongs in postprocessing or rules.</dd>
 <dt>Rspec:</dt>
 <dd>spectral resolving power</dd>
 <dt>Npix:</dt>
@@ -2898,16 +2902,15 @@ simulation.</p>
 <dt>OWA:</dt>
 <dd>Outer Working Angle (astropy Quantity with units of arcsecond)</dd>
 <dt>dMagLim:</dt>
-<dd>limiting delta magnitude</dd>
-<dt>throughput:</dt>
-<dd>optical system throughput (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
-<dt>throughput2:</dt>
-<dd>optical system throughput for systems with second occulter distance
-(can be floating point scalar or scipy.interpolate.interp1d object)</dd>
-<dt>contrast:</dt>
-<dd>optical system suppression level (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
+<dd>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></dd>
+<dt>throughput (callable(lambda,alpha)):</dt>
+<dd>optical system throughput (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
+<dt>contrast (callable(lambda,alpha)):</dt>
+<dd>optical system contrast curve (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
 <dt>dr:</dt>
 <dd>detector dark-current rate per pixel (astropy Quantity with units 
 of 1/s)</dd>
@@ -2915,21 +2918,26 @@ of 1/s)</dd>
 <dd>detector read noise</dd>
 <dt>t_exp:</dt>
 <dd>exposure time per read (astropy Quantity with units of s)</dd>
-<dt>QE:</dt>
-<dd>detector quantum efficiency (can be floating point scalar or 
-scipy.interpolate.interp1d object)</dd>
+<dt>PSF (callable(lambda,alpha)):</dt>
+<dd>point spread function - 2D ndarray of values, normalized to 1 at the core
+(must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity). Note normalization 
+means that all throughput effects must be contained in the throughput 
+attribute.</dd>
+<dt>QE (callable(lambda)):</dt>
+<dd>detector quantum efficiency (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity).  This represents the primary (detection) detector.</dd>
 <dt>eta2:</dt>
 <dd>post coronagraph attenuation</dd>
 <dt>deltaLambda:</dt>
 <dd>bandpass (astropy Quantity with units of nm)</dd>
-<dt>have2ndDist:</dt>
-<dd>boolean signifying if there is a 2nd occulter</dd>
-<dt>QEchar:</dt>
-<dd>characterization quantum efficiency</dd>
 <dt>telescopeKeepout:</dt>
 <dd>telescope keepout angle in degrees</dd>
 <dt>specLambda:</dt>
-<dd>spectral wavelength of interest (astropy Quantity with units of nm)</dd>
+<dd>spectral wavelength of interest (astropy Quantity with units of nm)
+Note:  probably belongs in postprocessing or rules.</dd>
 <dt>Rspec:</dt>
 <dd>spectral resolving power</dd>
 <dt>Npix:</dt>

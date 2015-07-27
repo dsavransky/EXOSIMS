@@ -158,12 +158,25 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
 \subsection{Coding Conventions}
 In order to allow for flexibility in using alternate or user-generated module implementations, the only requirement on any module is that it inherits (either directly or by inheriting another module implementation that inherits the prototype) the appropriate prototype.  
 
+\subsubsection{Module Type}
 It is always possible to check whether a module is an instance of a given prototype, for example:
 \begin{verbatim}
 isinstance(obj,EXOSIMS.Prototypes.Observatory.Observatory)
 \end{verbatim}
 However, it can be tedious to look up all of a given object's base classes so, for convenience, every prototype will provide a private variable \verb+_modtype+, which will always return the name of the prototype and should not be overwritten by any module code.  Thus, if the above example evaluates as \verb+True+, \verb+obj._modtype+ will return \verb+Observatory+.
 
+\subsubsection{Callable Attributes}
+Certain module attributes must be represented in a way that allows them to be parametrized by other values.  For example, the instrument throughput and contrast are functions of both the wavelength and the angular separation, and so must be encodable as such in the optical system module.  To accommodate this, as well as simpler descriptions where these parameters may be treated as static values, these and other attributes are defined as `callable'.  This means that they must be set as objects that can be called in the normal Python fashion, i.e., \verb+object(arg1,arg2,...)+.  
+
+These objects can be function definitions defined in the code, or imported from other modules.  They can be \href{https://docs.python.org/2/reference/expressions.html#lambda}{lambda expressions} defined inline in the code.  Or they can be callable object instances, such as the various \href{http://docs.scipy.org/doc/scipy/reference/interpolate.html}{scipy interpolants}.  In cases where the description is just a single value, these attributes can be defined as dummy functions that always return the same value, for example:
+\begin{verbatim}
+def throughput(wavelength,angle):
+     return 0.5
+\end{verbatim}
+or even more simply:
+\begin{verbatim}
+throughput = lambda wavelength,angle: 0.5
+\end{verbatim}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BACKBONE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -250,11 +263,9 @@ TASKS: \verb+calc_maxintTime+ - maximum integration time for all systems in targ
             \item specs["dMagLim"] \hfill \\
             Limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is 26.
             \item specs["throughput"] \hfill \\
-            Optical system throughput. Default value is 0.5. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
-            \item specs["throughput2"] \hfill \\
-            Optical system throughput for systems with a second occulter distance. Default value is 0.5. This may be a floating point scalar (representing a fixed throughput) or a \verb+scipy.interpolate.interp1d+ object representing variable throughput as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
+            Optical system throughput. Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed throughput, the callable object may always return a single value.
             \item specs["contrast"] \hfill \\
-            Optical system suppression level at IWA. Default value is 1e-10. This may be a floating point scalar (representing a fixed contrast) or a \verb+scipy.interpolate.interp1d+ object representing variable contrast as a function of angular separation.  In the case of the latter, the interpolant must be valid between the IWA and the OWA, inclusive, and must assume an argument in arcseconds.
+            Optical system contrast.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed contrast, may always return a single value. 
             \item specs["dr"] \hfill \\
             Detector dark current rate per pixel. Default value is 0.001.
             \item specs["sigma\_r"] \hfill \\
@@ -268,7 +279,7 @@ TASKS: \verb+calc_maxintTime+ - maximum integration time for all systems in targ
             \item specs["deltaLambda"] \hfill \\
             Detection bandwidth $ \Delta\lambda $ in $ nm $. Default value is 100.
             \item specs["PSF"] \hfill \\
-            Instrument point spread function stored as 2D numpy ndarray.  The core of the PSF should be normalized to 1, so that all throughput terms are combined in the througput variable above.
+            Instrument point spread function.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  Returns a 2D numpy ndarray.  The core of the PSF should be normalized to 1, so that all throughput terms are combined in the througput variable above.
             \item specs["PSFsampling"] \hfill \\
             Sampling of the PSF in arcsec/pixel.
             \item specs["have2ndDist"] \hfill \\
@@ -1028,5 +1039,9 @@ TASKS: \verb+run_sim+ - perform survey simulation, \verb+initial_target+ - find 
 
 \subsection{Survey Ensemble (SE) NEEDS UPDATING}
 The SE module's only task is to run multiple simulations.  While the implementation of this module is not at all dependent on a particular mission design, it can vary to take advantage of available parallel-processing resources.  As the generation of a survey ensemble is an embarrassingly parallel task---every survey simulation is fully independent and can be run as a completely separate process---significant gains in execution time can be achieved with parallelization.  The baseline implementation of this module contains a simple looping function that executes the desired number of simulations sequentially, as well as a locally parallelized version based on IPython Parallel.
+
+Depending on the local setup, the SE implementation could also potentially save time by cloning survey module objects and reinitializing only those sub-modules that have stochastic elements (i.e., the simulated universe).
+
+Another possible implementation variation is to use the SE module to conduct investigations of the effects of varying any normally static parameter.  This could be done, for example, to explore the impact on yield in cases where the non-coronagraph system throughput, or elements of the propulsion system, are mischaracterized prior to launch.  This SE module implementation would overwrite the parameter of interest given in the input specification for every individual survey executed, and saving the true value of the parameter used along with the simulation output.
 
 \end{document}

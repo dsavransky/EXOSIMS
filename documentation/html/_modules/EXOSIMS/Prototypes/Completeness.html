@@ -66,7 +66,7 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        minComp: </span>
+<span class="sd">        minComp (float): </span>
 <span class="sd">            minimum completeness level for detection</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -105,8 +105,10 @@
 <div class="viewcode-block" id="Completeness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
 <span class="sd">        </span>
+<span class="sd">        This method is called from TargetList __init__ method.</span>
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist: </span>
+<span class="sd">            targlist (TargetList): </span>
 <span class="sd">                TargetList class object which, in addition to TargetList class</span>
 <span class="sd">                object attributes, has available:</span>
 <span class="sd">                    targlist.opt: </span>
@@ -121,7 +123,7 @@
 <span class="sd">                        Completeness class object</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            comp0: </span>
+<span class="sd">            comp0 (ndarray): </span>
 <span class="sd">                1D numpy array of completeness values for each target star</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>

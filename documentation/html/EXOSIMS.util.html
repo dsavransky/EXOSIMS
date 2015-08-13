@@ -60,6 +60,31 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-EXOSIMS.util.get_module">
+<span id="exosims-util-get-module-module"></span><h2>EXOSIMS.util.get_module module<a class="headerlink" href="#module-EXOSIMS.util.get_module" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.get_module">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.get_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports specific or Prototype class module</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>name (str):</dt>
+<dd>string containing desired class name</dd>
+<dt>folder (str):</dt>
+<dd>string containing folder housing desired class</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>desiredmodule (object):</dt>
+<dd>desired module</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util.keplerSTM">
 <span id="exosims-util-keplerstm-module"></span><h2>EXOSIMS.util.keplerSTM module<a class="headerlink" href="#module-EXOSIMS.util.keplerSTM" title="Permalink to this headline">¶</a></h2>
 <dl class="data">
@@ -70,19 +95,27 @@
 systems) via their gravitational parameters and state vectors.  Contains methods
 for propagating state vectors forward in time via the Kepler state transition
 matrix.</p>
-<p>Constructor take the following arguments:
-x0 - 6n vector of stacked positions and velocities for n planets
-mu - n vector of standard gravitational parameters mu = G(m+m_s)</p>
-<blockquote>
-<div>where m is the planet mass, m_s is the star mass and G is the
-gravitational constant</div></blockquote>
 <dl class="docutils">
-<dt>epsmult - default multiplier on floating point precision, used as</dt>
-<dd>convergence metric.  Higher values mean faster convergence,
-but sacrifice precision.</dd>
+<dt>Constructor take the following arguments:</dt>
+<dd><dl class="first last docutils">
+<dt>x0 (ndarray):</dt>
+<dd>6n vector of stacked positions and velocities for n planets</dd>
+<dt>mu (ndarray):</dt>
+<dd>n vector of standard gravitational parameters mu = G(m+m_s) where m is
+the planet mass, m_s is the star mass and G is the gravitational
+constant</dd>
+<dt>epsmult (float):</dt>
+<dd>default multiplier on floating point precision, used as convergence
+metric.  Higher values mean faster convergence, but sacrifice precision.</dd>
 </dl>
-<p>Step function (updateState) takes the following arguments:
-dt - time step</p>
+</dd>
+<dt>Step function (updateState) takes the following arguments:</dt>
+<dd><dl class="first last docutils">
+<dt>dt (float):</dt>
+<dd>time step</dd>
+</dl>
+</dd>
+</dl>
 <p>All units must be complementary (i.e., if position is AU and velocity
 is AU/day, mu must be in AU^3/day^2.</p>
 <p>Algorithm from Shepperd, 1984, using Goodyear&#8217;s universal variables
@@ -117,6 +150,22 @@ and continued fraction to solve the Kepler equation.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.util.statsFun">
+<span id="exosims-util-statsfun-module"></span><h2>EXOSIMS.util.statsFun module<a class="headerlink" href="#module-EXOSIMS.util.statsFun" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.statsFun.eqLogSample">
+<code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">eqLogSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>bins=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#eqLogSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.eqLogSample" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.statsFun.simpSample">
+<code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">simpSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>verb=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#simpSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.simpSample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the rejection sampling method to generate a 
+probability distribution according to the given function f, 
+between some range xMin and xMax</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.util" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -132,7 +181,9 @@ and continued fraction to solve the Kepler equation.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.keplerSTM">EXOSIMS.util.keplerSTM module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util">Module contents</a></li>
 </ul>
 </li>

@@ -53,11 +53,12 @@
             
   <h1>Source code for EXOSIMS.Prototypes.SimulatedUniverse</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.keplerSTM</span> <span class="kn">import</span> <span class="n">planSys</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span class="kn">import</span> <span class="nn">EXOSIMS.util.statsFun</span> <span class="kn">as</span> <span class="nn">statsFun</span> 
 
 <div class="viewcode-block" id="SimulatedUniverse"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">[docs]</a><span class="k">class</span> <span class="nc">SimulatedUniverse</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Simulated Universe class template</span>
@@ -73,57 +74,57 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        targlist:</span>
+<span class="sd">        targlist (TargetList):</span>
 <span class="sd">            TargetList class object</span>
-<span class="sd">        planphys:</span>
+<span class="sd">        planphys (PlanetPhysical):</span>
 <span class="sd">            PlanetPhysical class object</span>
-<span class="sd">        opt:</span>
+<span class="sd">        opt (OpticalSys):</span>
 <span class="sd">            OpticalSys class object</span>
-<span class="sd">        pop:</span>
+<span class="sd">        pop (PlanetPopulation):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        rules:</span>
+<span class="sd">        rules (Rules):</span>
 <span class="sd">            Rules class object</span>
-<span class="sd">        zodi:</span>
+<span class="sd">        zodi (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        comp:</span>
+<span class="sd">        comp (Completeness):</span>
 <span class="sd">            Completeness class object</span>
-<span class="sd">        planInds:</span>
-<span class="sd">            1D numpy array of indices mapping planets to target stars in</span>
+<span class="sd">        planInds (ndarray):</span>
+<span class="sd">            1D numpy ndarray of indices mapping planets to target stars in</span>
 <span class="sd">            targlist</span>
-<span class="sd">        nPlans:</span>
+<span class="sd">        nPlans (int):</span>
 <span class="sd">            total number of planets</span>
-<span class="sd">        sysInds:</span>
+<span class="sd">        sysInds (ndarray):</span>
 <span class="sd">            indicies of target stars in targlist with planets</span>
-<span class="sd">        a:</span>
-<span class="sd">            1D numpy array containing semi-major axis for each planet (astropy</span>
-<span class="sd">            Quantity with units of AU)</span>
-<span class="sd">        e:</span>
-<span class="sd">            1D numpy array containing eccentricity for each planet</span>
-<span class="sd">        w:</span>
-<span class="sd">            1D numpy array containing argument of perigee in degrees</span>
-<span class="sd">        O:</span>
-<span class="sd">            1D numpy array containing right ascension of the ascending node in</span>
-<span class="sd">            degrees</span>
-<span class="sd">        Mp:</span>
-<span class="sd">            1D numpy array containing mass for each planet (astropy Quantity</span>
-<span class="sd">            with units of kg)</span>
-<span class="sd">        Rp:</span>
-<span class="sd">            1D numpy array containing radius for each planet (astropy Quantity</span>
-<span class="sd">            with units of km)</span>
-<span class="sd">        r:</span>
-<span class="sd">            numpy array containing position vector for each planet (astropy</span>
-<span class="sd">            Quantity with units of km)</span>
-<span class="sd">        v:</span>
-<span class="sd">            numpy array containing velocity vector for each planet (astropy </span>
-<span class="sd">            Quantity with units of km/s)</span>
-<span class="sd">        p:</span>
-<span class="sd">            1D numpy array containing albedo for each planet</span>
-<span class="sd">        I:</span>
-<span class="sd">            1D numpy array containing inclination in degrees for each planet</span>
-<span class="sd">        rtype:</span>
-<span class="sd">            1D numpy array containing rock/ice fraction for each planet</span>
-<span class="sd">        fzodicurr:</span>
-<span class="sd">            1D numpy array containing exozodi level for each planet</span>
+<span class="sd">        a (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing semi-major axis for each planet </span>
+<span class="sd">            (default units of AU)</span>
+<span class="sd">        e (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing eccentricity for each planet</span>
+<span class="sd">        w (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing argument of perigee in degrees</span>
+<span class="sd">        O (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing right ascension of the ascending node </span>
+<span class="sd">            in degrees</span>
+<span class="sd">        Mp (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing mass for each planet (default units of </span>
+<span class="sd">            kg)</span>
+<span class="sd">        Rp (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing radius for each planet (default units </span>
+<span class="sd">            of km)</span>
+<span class="sd">        r (Quantity):</span>
+<span class="sd">            numpy ndarray containing position vector for each planet (default</span>
+<span class="sd">            units of km)</span>
+<span class="sd">        v (Quantity):</span>
+<span class="sd">            numpy ndarray containing velocity vector for each planet (default </span>
+<span class="sd">            units of km/s)</span>
+<span class="sd">        I (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing inclination in degrees for each planet            </span>
+<span class="sd">        p (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing albedo for each planet        </span>
+<span class="sd">        rtype (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing rock/ice fraction for each planet</span>
+<span class="sd">        fzodicurr (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing exozodi level for each planet</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -146,9 +147,9 @@
                     <span class="n">planphysname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         
         <span class="c"># import TargetList class</span>
-        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_module</span><span class="p">(</span><span class="n">targlistname</span><span class="p">,</span> <span class="s">&#39;TargetList&#39;</span><span class="p">)</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">targlistname</span><span class="p">,</span> <span class="s">&#39;TargetList&#39;</span><span class="p">)</span>
         <span class="c"># import PlanetPhysical class</span>
-        <span class="n">PlanPhys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_module</span><span class="p">(</span><span class="n">planphysname</span><span class="p">,</span> <span class="s">&#39;PlanetPhysical&#39;</span><span class="p">)</span>
+        <span class="n">PlanPhys</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">planphysname</span><span class="p">,</span> <span class="s">&#39;PlanetPhysical&#39;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span> <span class="o">=</span> <span class="n">TL</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">planphys</span> <span class="o">=</span> <span class="n">PlanPhys</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
@@ -218,31 +219,25 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these indices.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
+<span class="sd">        This method uses the following inherited class objects:</span>
 <span class="sd">            self.targlist:</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            planSys:</span>
+<span class="sd">            planSys (ndarray):</span>
 <span class="sd">                1D numpy array containing indices of the target star to which </span>
 <span class="sd">                each planet (each element of the array) belongs</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign one planet to each star in the target list</span>
-        <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">parx</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c"># assign between 0 and 8 planets to each star in the target list</span>
+        <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
+            <span class="n">nump</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+            <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">planSys</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">nump</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)))</span>
         
         <span class="k">return</span> <span class="n">planSys</span>
     </div>
@@ -252,38 +247,19 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class objects:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            a:</span>
-<span class="sd">                1D numpy array containing semi-major axis for each planet </span>
-<span class="sd">                (astropy Quantity with units of AU)</span>
+<span class="sd">            a (Quantity):</span>
+<span class="sd">                1D numpy ndarray containing semi-major axis for each planet </span>
+<span class="sd">                (default units of AU)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets a semi-major axis uniformly distributed between min</span>
-        <span class="c"># and max values from PlanetPopulation class object in AU</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="c"># assign planets a semi-major axis </span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">a</span>
         </div>
@@ -293,39 +269,18 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            e:</span>
-<span class="sd">                1D numpy array containing eccentricity for each planet </span>
+<span class="sd">            e (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing eccentricity for each planet </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets an eccentricity uniformly distributed between min and</span>
-        <span class="c"># max values from PlanetPopulation class object</span>
-        <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,))</span>
+        <span class="c"># assign planets an eccentricity </span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">e</span>
         </div>
@@ -335,40 +290,19 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            w:</span>
-<span class="sd">                1D numpy array containing argument of perigee for each planet </span>
+<span class="sd">            w (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing argument of perigee for each planet </span>
 <span class="sd">                in degrees</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets an argument of perigee uniformly distributed between</span>
-        <span class="c"># 0 and 360 degrees</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="mf">360.</span>
+        <span class="c"># assign planets an argument of perigee </span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arg_perigee</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
                 
         <span class="k">return</span> <span class="n">w</span>
         </div>
@@ -378,40 +312,19 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            O:</span>
-<span class="sd">                1D numpy array containing right ascension of the ascending node</span>
+<span class="sd">            O (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing right ascension of the ascending node</span>
 <span class="sd">                for each planet in degrees</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets right ascension of the ascending node uniformly </span>
-        <span class="c"># distributed between 0 and 360 degrees</span>
-        <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="mf">360.</span>
+        <span class="c"># assign planets right ascension of the ascending node </span>
+        <span class="n">O</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">RAAN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
                 
         <span class="k">return</span> <span class="n">O</span>
         </div>
@@ -421,42 +334,19 @@
 <span class="sd">        This defines the data type expected, specific SimulatedUniverse class</span>
 <span class="sd">        objects will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
-<span class="sd">            self.e:</span>
-<span class="sd">                planet eccentricity</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            R:</span>
-<span class="sd">                1D numpy array containing radius of each planet (astropy </span>
-<span class="sd">                Quantity with units of distance)</span>
+<span class="sd">            R (Quantity):</span>
+<span class="sd">                1D numpy ndarray containing radius of each planet (units of </span>
+<span class="sd">                distance)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets a radius uniformly distributed between min and max</span>
-        <span class="c"># values from PlanetPopulation class object</span>
-        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,))</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span>
+        <span class="c"># assign planets a radius </span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">R</span>
             </div>
@@ -466,44 +356,18 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
-<span class="sd">            self.e:</span>
-<span class="sd">                planet eccentricity</span>
-<span class="sd">            self.Rp:</span>
-<span class="sd">                planet radii</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            M:</span>
-<span class="sd">                1D numpy array containing mass for each planet (astropy </span>
-<span class="sd">                Quantity with units of kg)</span>
+<span class="sd">            M (Quantity):</span>
+<span class="sd">                1D numpy ndarray containing mass for each planet (units of kg)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># assign planets a mass uniformly distributed between 6.3e-5 and 28.5</span>
-        <span class="c"># times the mass of Jupiter</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">6.3e-5</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">28.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,))</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span>
+        <span class="c"># assign planets a mass </span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">M</span>
         </div>
@@ -513,58 +377,37 @@
 <span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
 <span class="sd">        classes will populate these values.</span>
 
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
+<span class="sd">        This method uses the following inherited class object:</span>
 <span class="sd">            self.pop:</span>
 <span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
-<span class="sd">            self.e:</span>
-<span class="sd">                planet eccentricity</span>
-<span class="sd">            self.Rp:</span>
-<span class="sd">                planet radii</span>
-<span class="sd">            self.Mp:</span>
-<span class="sd">                planet masses</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            p:</span>
-<span class="sd">                1D numpy array containing albedo for each planet</span>
+<span class="sd">            p (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing albedo for each planet</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets an albedo uniformly distributed between min and max</span>
         <span class="c"># values from PlanetPopulation class object</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,))</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">albedo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">p</span>
         </div>
 <div class="viewcode-block" id="SimulatedUniverse.planet_inclinations"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations">[docs]</a>    <span class="k">def</span> <span class="nf">planet_inclinations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns each planet an inclination in degrees </span>
 <span class="sd">        </span>
+<span class="sd">        This method uses the following inherited class object:</span>
+<span class="sd">            self.pop:</span>
+<span class="sd">                PlanetPopulation class object</span>
+<span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            I:</span>
-<span class="sd">                1D numpy array containing inclination of each planet in degrees</span>
+<span class="sd">            I (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing inclination of each planet in </span>
+<span class="sd">                degrees</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="mf">2.</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">inclination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">I</span>
         </div>
@@ -575,32 +418,10 @@
 <span class="sd">        objects will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
-<span class="sd">            self.pop:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
 <span class="sd">            self.a:</span>
 <span class="sd">                planet semi-major axis</span>
 <span class="sd">            self.e:</span>
 <span class="sd">                planet eccentricity</span>
-<span class="sd">            self.Rp:</span>
-<span class="sd">                planet radii</span>
 <span class="sd">            self.Mp:</span>
 <span class="sd">                planet masses</span>
 <span class="sd">            self.I:</span>
@@ -611,12 +432,12 @@
 <span class="sd">                planet right ascension of the ascending node in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            r:</span>
-<span class="sd">                numpy array containing initial position vector of each planet </span>
-<span class="sd">                (astropy Quantity with units of km)</span>
-<span class="sd">            v:</span>
-<span class="sd">                numpy array containing initial velocity vector of each planet</span>
-<span class="sd">                (astropy Quantity with units of km/s)</span>
+<span class="sd">            r (Quantity):</span>
+<span class="sd">                numpy ndarray containing initial position vector of each planet </span>
+<span class="sd">                (units of km)</span>
+<span class="sd">            v (Quantity):</span>
+<span class="sd">                numpy ndarray containing initial velocity vector of each planet</span>
+<span class="sd">                (units of km/s)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -704,8 +525,8 @@
 <span class="sd">                planet inclinations</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            rtype:</span>
-<span class="sd">                1D numpy array containing rock/ice fraction for each planet</span>
+<span class="sd">            rtype (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing rock/ice fraction for each planet</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -721,28 +542,24 @@
 <span class="sd">        the Kepler state transition matrix.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            r:</span>
-<span class="sd">                numpy array containing planet position vectors relative to </span>
-<span class="sd">                host stars (astropy Quantity attached)</span>
-<span class="sd">            v: </span>
-<span class="sd">                numpy array containing planet velocity vectors relative to host</span>
-<span class="sd">                stars (astropy Quantity attached)</span>
-<span class="sd">            Mp:</span>
-<span class="sd">                1D numpy array containing planet masses (astropy Quantity </span>
-<span class="sd">                attached)</span>
-<span class="sd">            Ms:</span>
-<span class="sd">                1D numpy array containing target star mass (in M_sun)</span>
-<span class="sd">            dt:</span>
-<span class="sd">                time increment to propagate the system (astropy Quantity </span>
-<span class="sd">                attached)</span>
+<span class="sd">            r (Quantity):</span>
+<span class="sd">                numpy ndarray containing planet position vectors relative to </span>
+<span class="sd">                host stars (units of distance)</span>
+<span class="sd">            v (Quantity): </span>
+<span class="sd">                numpy ndarray containing planet velocity vectors relative to </span>
+<span class="sd">                host stars (units of velocity)</span>
+<span class="sd">            Mp (Quantity):</span>
+<span class="sd">                1D numpy ndarray containing planet masses (units of mass)</span>
+<span class="sd">            Ms (ndarray):</span>
+<span class="sd">                1D numpy ndarray containing target star mass (in M_sun)</span>
+<span class="sd">            dt (Quantity):</span>
+<span class="sd">                time increment to propagate the system (units of time)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            rnew:</span>
-<span class="sd">                numpy array of propagated position vectors (astropy Quantity</span>
-<span class="sd">                with units of km)</span>
-<span class="sd">            vnew:</span>
-<span class="sd">                numpy array of propagated velocity vectors (astropy Quantity</span>
-<span class="sd">                with units of km/day)</span>
+<span class="sd">            rnew (Quantity):</span>
+<span class="sd">                numpy ndarray of propagated position vectors (units of km)</span>
+<span class="sd">            vnew (Quantity):</span>
+<span class="sd">                numpy ndarray of propagated velocity vectors (units of km/day)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -756,7 +573,11 @@
             <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mu</span><span class="p">])</span>
         <span class="c"># use keplerSTM.py to propagate the system</span>
         <span class="n">prop</span> <span class="o">=</span> <span class="n">planSys</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
-        <span class="n">prop</span><span class="o">.</span><span class="n">takeStep</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">prop</span><span class="o">.</span><span class="n">takeStep</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;planSys error&#39;</span><span class="p">)</span>
+            
         <span class="c"># split off position and velocity vectors</span>
         <span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)))</span>
         <span class="n">rind</span><span class="p">,</span> <span class="n">vind</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
@@ -780,13 +601,13 @@
 <span class="sd">        from mean anomaly and eccentricity.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            M:</span>
+<span class="sd">            M (float):</span>
 <span class="sd">                mean anomaly</span>
-<span class="sd">            e:</span>
+<span class="sd">            e (float):</span>
 <span class="sd">                eccentricity</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            E:</span>
+<span class="sd">            E (float):</span>
 <span class="sd">                eccentric anomaly</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -809,35 +630,7 @@
             <span class="n">E</span> <span class="o">=</span> <span class="n">Enew</span>
             <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
                   
-        <span class="k">return</span> <span class="n">E</span>
-        </div>
-<div class="viewcode-block" id="SimulatedUniverse.get_module"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_module">[docs]</a>    <span class="k">def</span> <span class="nf">get_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Imports specific or Prototype class module</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            name:</span>
-<span class="sd">                string containing desired class name</span>
-<span class="sd">            folder:</span>
-<span class="sd">                string containing folder housing desired class</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            desiredclass:</span>
-<span class="sd">                desired class</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-                
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">package</span> <span class="o">=</span> <span class="s">&#39;EXOSIMS.&#39;</span><span class="o">+</span><span class="n">folder</span><span class="o">+</span><span class="s">&#39;.&#39;</span><span class="o">+</span><span class="n">name</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-            <span class="k">print</span> <span class="s">&#39;Imported specific </span><span class="si">%s</span><span class="s"> module </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-            <span class="n">desiredclass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-            <span class="n">package</span> <span class="o">=</span> <span class="s">&#39;EXOSIMS.Prototypes.&#39;</span><span class="o">+</span><span class="n">folder</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-            <span class="k">print</span> <span class="s">&#39;Imported </span><span class="si">%s</span><span class="s"> prototype module&#39;</span> <span class="o">%</span> <span class="n">folder</span>
-            <span class="n">desiredclass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">desiredclass</span></div></div>
+        <span class="k">return</span> <span class="n">E</span></div></div>
 </pre></div>
 
           </div>

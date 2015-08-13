@@ -27,7 +27,7 @@
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="next" title="EXOSIMS.ZodiacalLight package" href="EXOSIMS.ZodiacalLight.html" />
-    <link rel="prev" title="EXOSIMS.Prototypes package" href="EXOSIMS.Prototypes.html" />
+    <link rel="prev" title="EXOSIMS.SimulatedUniverse package" href="EXOSIMS.SimulatedUniverse.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -47,7 +47,7 @@
           <a href="EXOSIMS.ZodiacalLight.html" title="EXOSIMS.ZodiacalLight package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="EXOSIMS.Prototypes.html" title="EXOSIMS.Prototypes package"
+          <a href="EXOSIMS.SimulatedUniverse.html" title="EXOSIMS.SimulatedUniverse package"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
@@ -63,6 +63,28 @@
 <h1>EXOSIMS.StarCatalog package<a class="headerlink" href="#exosims-starcatalog-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.StarCatalog.EXOCAT1">
+<span id="exosims-starcatalog-exocat1-module"></span><h2>EXOSIMS.StarCatalog.EXOCAT1 module<a class="headerlink" href="#module-EXOSIMS.StarCatalog.EXOCAT1" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1">
+<em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.EXOCAT1.</code><code class="descname">EXOCAT1</code><span class="sig-paren">(</span><em>catalogpath=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/EXOCAT1.html#EXOCAT1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
+<p>EXOCAT Catalog class</p>
+<p>This class populates the star catalog used in EXOSIMS from
+Margaret Trunbull&#8217;s EXOCAT catalog, retrieved from the
+NASA Exoplanet Archive as a VOTABLE.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first docutils">
+<dt>stardata (ndarray):</dt>
+<dd>All VOTABLE data</dd>
+</dl>
+<p class="last">All other attributes as in StarCatalog</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.StarCatalog.SIMBAD300Catalog">
 <span id="exosims-starcatalog-simbad300catalog-module"></span><h2>EXOSIMS.StarCatalog.SIMBAD300Catalog module<a class="headerlink" href="#module-EXOSIMS.StarCatalog.SIMBAD300Catalog" title="Permalink to this headline">¶</a></h2>
@@ -88,6 +110,18 @@ catalog</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.StarCatalog.SIMBADRVCatalog">
+<span id="exosims-starcatalog-simbadrvcatalog-module"></span><h2>EXOSIMS.StarCatalog.SIMBADRVCatalog module<a class="headerlink" href="#module-EXOSIMS.StarCatalog.SIMBADRVCatalog" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.StarCatalog.SIMBADRVCatalog.SIMBADRVCatalog">
+<em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.SIMBADRVCatalog.</code><code class="descname">SIMBADRVCatalog</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADRVCatalog.html#SIMBADRVCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADRVCatalog.SIMBADRVCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
+<p>SIMBADRV Catalog class</p>
+<p>This class populates the star catalog used in EXOSIMS from the SIMBADRV 
+catalog.</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.StarCatalog">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.StarCatalog" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -103,16 +137,18 @@ catalog</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.StarCatalog package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.StarCatalog.EXOCAT1">EXOSIMS.StarCatalog.EXOCAT1 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.StarCatalog.SIMBAD300Catalog">EXOSIMS.StarCatalog.SIMBAD300Catalog module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.StarCatalog.SIMBADCatalog">EXOSIMS.StarCatalog.SIMBADCatalog module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.StarCatalog.SIMBADRVCatalog">EXOSIMS.StarCatalog.SIMBADRVCatalog module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.StarCatalog">Module contents</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="EXOSIMS.Prototypes.html"
-                        title="previous chapter">EXOSIMS.Prototypes package</a></p>
+  <p class="topless"><a href="EXOSIMS.SimulatedUniverse.html"
+                        title="previous chapter">EXOSIMS.SimulatedUniverse package</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="EXOSIMS.ZodiacalLight.html"
                         title="next chapter">EXOSIMS.ZodiacalLight package</a></p>

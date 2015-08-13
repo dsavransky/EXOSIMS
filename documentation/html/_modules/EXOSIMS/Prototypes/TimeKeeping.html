@@ -67,21 +67,21 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        missionStart:</span>
-<span class="sd">            mission start time (astropy Time in MJD)</span>
-<span class="sd">        missionLife:</span>
-<span class="sd">            mission lifetime (astropy Quantity with units of year)</span>
-<span class="sd">        extendedLife:</span>
-<span class="sd">            extended mission time (astropy Quantity with units of year)</span>
-<span class="sd">        currenttimeNorm:</span>
-<span class="sd">            current mission time normalized to zero at mission start (astropy</span>
-<span class="sd">            Quantity with units of day)</span>
-<span class="sd">        currenttimeAbs:</span>
-<span class="sd">            current absolute mission time (astropy Time in MJD)</span>
-<span class="sd">        missionFinishAbs:</span>
-<span class="sd">            mission finish absolute time (astropy Time in MJD)</span>
-<span class="sd">        missionFinishNorm:</span>
-<span class="sd">            mission finish normalized time (astropy Quantity with units of day)</span>
+<span class="sd">        missionStart (Time):</span>
+<span class="sd">            mission start time (default astropy Time in MJD)</span>
+<span class="sd">        missionLife (Quantity):</span>
+<span class="sd">            mission lifetime (default units of year)</span>
+<span class="sd">        extendedLife (Quantity):</span>
+<span class="sd">            extended mission time (default units of year)</span>
+<span class="sd">        currenttimeNorm (Quantity):</span>
+<span class="sd">            current mission time normalized to zero at mission start (default</span>
+<span class="sd">            units of day)</span>
+<span class="sd">        currenttimeAbs (Time):</span>
+<span class="sd">            current absolute mission time (default astropy Time in MJD)</span>
+<span class="sd">        missionFinishAbs (Time):</span>
+<span class="sd">            mission finish absolute time (default astropy Time in MJD)</span>
+<span class="sd">        missionFinishNorm (Quantity):</span>
+<span class="sd">            mission finish normalized time (default units of day)</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -136,8 +136,8 @@
         <span class="sd">&quot;&quot;&quot;Updates self.currenttimeNorm and self.currenttimeAbs</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            dt:</span>
-<span class="sd">                time increment (astropy Quantity attached, ie day)</span>
+<span class="sd">            dt (Quantity):</span>
+<span class="sd">                time increment (units of time)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         

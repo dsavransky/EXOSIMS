@@ -83,16 +83,20 @@ True is an observable star and stores the 1D numpy array in self.kogood.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
+<dt>time (Time):</dt>
 <dd>absolute time (astropy Time)</dd>
-<dt>catalog:</dt>
+<dt>catalog (TargetList or StarCatalog):</dt>
 <dd>TargetList or StarCatalog class object</dd>
-<dt>koangle:</dt>
+<dt>koangle (float):</dt>
 <dd>Telescope keepout angle in degrees</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -107,12 +111,16 @@ and returns True if successful.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
+<dt>time (Time):</dt>
 <dd>current absolute time (astropy Time)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 

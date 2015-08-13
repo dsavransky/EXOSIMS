@@ -67,9 +67,9 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        exozodi:</span>
+<span class="sd">        exozodi (float):</span>
 <span class="sd">            exozodi level in zodi</span>
-<span class="sd">        exozodiVar:</span>
+<span class="sd">        exozodiVar (float):</span>
 <span class="sd">            exozodi variation (variance of log-normal distribution)</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -112,12 +112,12 @@
 <span class="sd">        not yet support this conversion).</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            coords:</span>
-<span class="sd">                numpy array of astropy SkyCoord objects with right ascension </span>
+<span class="sd">            coords (SkyCoord):</span>
+<span class="sd">                numpy ndarray of astropy SkyCoord objects with right ascension </span>
 <span class="sd">                and declination in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            el:</span>
+<span class="sd">            el (ndarray):</span>
 <span class="sd">                ecliptic latitudes in degrees</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -135,16 +135,16 @@
 <span class="sd">        This method is called in __init__ of SimulatedUniverse.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            Inds:</span>
-<span class="sd">                1D numpy array of indicies referring back to target list stars</span>
-<span class="sd">            I:</span>
-<span class="sd">                1D numpy array or scalar value of inclination in degrees</span>
-<span class="sd">            targlist:</span>
+<span class="sd">            Inds (ndarray):</span>
+<span class="sd">                1D numpy array of indices referring back to target list stars</span>
+<span class="sd">            I (ndarray):</span>
+<span class="sd">                1D numpy ndarray or scalar value of inclination in degrees</span>
+<span class="sd">            targlist (TargetList):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            fzodicurr:</span>
-<span class="sd">                1D numpy array of exozodiacal light levels</span>
+<span class="sd">            fzodicurr (ndarray):</span>
+<span class="sd">                1D numpy ndarray of exozodiacal light levels</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         

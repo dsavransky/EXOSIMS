@@ -68,17 +68,23 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        FAP:</span>
+<span class="sd">        FAP (float):</span>
 <span class="sd">            False Alarm Probability</span>
-<span class="sd">        MDP:</span>
+<span class="sd">        MDP (float):</span>
 <span class="sd">            Missed Detection Probability</span>
-<span class="sd">        dutyCycle:</span>
+<span class="sd">        dutyCycle (float):</span>
 <span class="sd">            observation duty cycle</span>
-<span class="sd">        intCutoff:</span>
-<span class="sd">            integration cutoff (astropy Quantity with units in day)</span>
-<span class="sd">        K:</span>
+<span class="sd">        intCutoff (Quantity):</span>
+<span class="sd">            integration cutoff (default units of day)</span>
+<span class="sd">        missionPortion (float):</span>
+<span class="sd">            portion of mission devoted to planet-finding</span>
+<span class="sd">        duration (Quantity):</span>
+<span class="sd">            duration of planet-finding operations (default units of day)</span>
+<span class="sd">        nexttimeAvail (Quantity):</span>
+<span class="sd">            next time available for planet-finding (default units of day)</span>
+<span class="sd">        K (float):</span>
 <span class="sd">            threshold value determined by FAP</span>
-<span class="sd">        gamma:</span>
+<span class="sd">        gamma (float):</span>
 <span class="sd">            threshold value determined by MDP</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -96,6 +102,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dutyCycle</span> <span class="o">=</span> <span class="mf">1.</span> 
         <span class="c"># integration cutoff</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intCutoff</span> <span class="o">=</span> <span class="mf">50.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> 
+        <span class="c"># portion of mission devoted to planet-finding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">6.</span>
+        <span class="c"># duration of planet-finding operations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="mf">14.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="c"># next time available for planet-finding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
         <span class="c"># replace default values with any user specified values</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -117,7 +129,7 @@
 <div class="viewcode-block" id="Rules.find_K"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Rules.Rules.find_K">[docs]</a>    <span class="k">def</span> <span class="nf">find_K</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds threshold value determined by FAP</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
+<span class="sd">        Returns (float):</span>
 <span class="sd">            threshold value determined by FAP</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -127,12 +139,38 @@
 <div class="viewcode-block" id="Rules.find_gamma"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Rules.Rules.find_gamma">[docs]</a>    <span class="k">def</span> <span class="nf">find_gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds threshold value determined by MDP</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
+<span class="sd">        Returns (float):</span>
 <span class="sd">            threshold value determined by MDP</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span><span class="o">*</span><span class="n">sp</span><span class="o">.</span><span class="n">erfinv</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MDP</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Rules.duty_cycle"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Rules.Rules.duty_cycle">[docs]</a>    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates available time and duration for planet-finding</span>
+<span class="sd">        </span>
+<span class="sd">        This method updates the available time for planet-finding activities.</span>
+<span class="sd">        Specific classes may optionally update the duration of planet-finding</span>
+<span class="sd">        activities as well. This method defines the input/output expected</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            currenttime (Quantity):</span>
+<span class="sd">                current time in mission simulation (units of time)</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            nexttime (Quantity):</span>
+<span class="sd">                next available time for planet-finding (units of time)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">currenttime</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="c"># update the nexttimeAvail attribute</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+            <span class="n">nexttime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nexttime</span> <span class="o">=</span> <span class="n">currenttime</span>
+        
+        <span class="k">return</span> <span class="n">nexttime</span>
         </div>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Rules object</span>

@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.SimulatedUniverse package &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.StarCatalog package" href="EXOSIMS.StarCatalog.html" />
+    <link rel="prev" title="EXOSIMS.Prototypes package" href="EXOSIMS.Prototypes.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.StarCatalog.html" title="EXOSIMS.StarCatalog package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.Prototypes.html" title="EXOSIMS.Prototypes package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exosims-simulateduniverse-package">
+<h1>EXOSIMS.SimulatedUniverse package<a class="headerlink" href="#exosims-simulateduniverse-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.SimulatedUniverse.PlanetSim">
+<span id="exosims-simulateduniverse-planetsim-module"></span><h2>EXOSIMS.SimulatedUniverse.PlanetSim module<a class="headerlink" href="#module-EXOSIMS.SimulatedUniverse.PlanetSim" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SimulatedUniverse.PlanetSim.</code><code class="descname">PlanetSim</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse</span></code></a></p>
+<dl class="method">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_a">
+<code class="descname">planet_a</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_a"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet semi major axis in km</p>
+<p>Output: a - numpy array containing semi major axis of each planet (astropy 
+unit object in km)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_e">
+<code class="descname">planet_e</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_e"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_e" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet eccentricity</p>
+<p>Output: e - numpy array containing eccentricity of each planet</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_masses">
+<code class="descname">planet_masses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_masses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet mass in kg</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets</p>
+<p>Output: M - numpy array containing masses of each planet (astropy 
+unit object in kg)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_radii">
+<code class="descname">planet_radii</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_radii" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns each planet a radius in km</p>
+<p>This method has access to the following:
+self.targlist - target list object
+self.planphys - planet physical model object
+self.opt - optical system object
+self.pop - planet population object
+self.rules - rules object
+self.zodi - zodiacal light object
+self.comp - completeness object
+self.planInds - indices mapping planet to target star
+self.nPlans - number of planets
+self.sysInds - indices of target stars with planets
+self.Mp - planet masses</p>
+<p>Output: R - numpy array containing radius of each planet (astropy 
+unit object in km)</p>
+<p>This defines the data type expected, specific SimulatedUniverse class
+objects will populate these values more realistically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_to_star">
+<code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_to_star" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns planets to stars and returns index of star in target star
+list</p>
+<p>Output: planSys - numpy array containing indices of the target star 
+each planet (element in the list) belongs to
+This defines the data type expected, specific SimulatedUniverse class
+objects will populate these indices more realistically</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.SimulatedUniverse">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.SimulatedUniverse" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXOSIMS.SimulatedUniverse package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SimulatedUniverse.PlanetSim">EXOSIMS.SimulatedUniverse.PlanetSim module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SimulatedUniverse">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.Prototypes.html"
+                        title="previous chapter">EXOSIMS.Prototypes package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.StarCatalog.html"
+                        title="next chapter">EXOSIMS.StarCatalog package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/EXOSIMS.SimulatedUniverse.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/EXOSIMS.SimulatedUniverse.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

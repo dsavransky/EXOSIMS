@@ -69,22 +69,34 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        arange:</span>
-<span class="sd">            1D numpy array containing minimum and maximum semi-major axis </span>
-<span class="sd">            (astropy Quantity with units of AU)</span>
-<span class="sd">        erange:</span>
-<span class="sd">            1D numpy array containing minimum and maximum eccentricity</span>
-<span class="sd">        prange:</span>
-<span class="sd">            1D numpy array containing minimum and maximum albedo</span>
-<span class="sd">        Rrange:</span>
-<span class="sd">            1D numpy array containing minimum and maximum planetary radius </span>
-<span class="sd">            (astropy Quantity with units of km)</span>
-<span class="sd">        scaleOrbits:</span>
+<span class="sd">        arange (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum semi-major axis </span>
+<span class="sd">            (default units of AU)</span>
+<span class="sd">        erange (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum eccentricity</span>
+<span class="sd">        wrange (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum argument of perigee</span>
+<span class="sd">            in degrees</span>
+<span class="sd">        Orange (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum right ascension of</span>
+<span class="sd">            the ascending node in degrees</span>
+<span class="sd">        prange (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum albedo</span>
+<span class="sd">        Irange (ndarray):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum orbital inclination</span>
+<span class="sd">            in degrees</span>
+<span class="sd">        Rrange (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum planetary radius </span>
+<span class="sd">            (default units of km)</span>
+<span class="sd">        Mprange (Quantity):</span>
+<span class="sd">            1D numpy ndarray containing minimum and maximum planetary mass</span>
+<span class="sd">            (default units of kg)</span>
+<span class="sd">        scaleOrbits (bool):</span>
 <span class="sd">            boolean which signifies if planetary orbits should be scaled by the</span>
 <span class="sd">            square root of the luminosity</span>
-<span class="sd">        rrange:</span>
+<span class="sd">        rrange (Quantity):</span>
 <span class="sd">            1D numpy array containing minimum and maximum orbital radius</span>
-<span class="sd">            (astropy Quantity with units of km)</span>
+<span class="sd">            (default units of km)</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -105,18 +117,42 @@
         <span class="n">e_max</span> <span class="o">=</span> <span class="mf">1.</span> 
         <span class="c"># eccentricity range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">erange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e_min</span><span class="p">,</span> <span class="n">e_max</span><span class="p">])</span> 
+        <span class="c"># minimum argument of perigee in degrees</span>
+        <span class="n">w_min</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="c"># maximum argument of perigee in degrees</span>
+        <span class="n">w_max</span> <span class="o">=</span> <span class="mf">360.</span>
+        <span class="c"># argument of perigee range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">w_min</span><span class="p">,</span> <span class="n">w_max</span><span class="p">])</span>
+        <span class="c"># minimum right ascension of the ascending node in degrees</span>
+        <span class="n">O_min</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="c"># maximum right ascension of the ascending node in degrees</span>
+        <span class="n">O_max</span> <span class="o">=</span> <span class="mf">360.</span>
+        <span class="c"># right ascension of the ascending node range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Orange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">O_min</span><span class="p">,</span> <span class="n">O_max</span><span class="p">])</span>
         <span class="c"># minimum albedo</span>
         <span class="n">p_min</span> <span class="o">=</span> <span class="mf">0.0004</span> 
         <span class="c"># maximum albedo</span>
         <span class="n">p_max</span> <span class="o">=</span> <span class="mf">0.6</span> 
         <span class="c"># albedo range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p_min</span><span class="p">,</span> <span class="n">p_max</span><span class="p">])</span> 
+        <span class="c"># minimum inclination</span>
+        <span class="n">I_min</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="c"># maximum inclination</span>
+        <span class="n">I_max</span> <span class="o">=</span> <span class="mf">360.</span>
+        <span class="c"># inclination range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Irange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">I_min</span><span class="p">,</span> <span class="n">I_max</span><span class="p">])</span>
         <span class="c"># minimum planetary radius</span>
         <span class="n">R_min</span> <span class="o">=</span> <span class="mf">0.027</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span> 
         <span class="c"># maximum planetary radius</span>
         <span class="n">R_max</span> <span class="o">=</span> <span class="mf">2.04</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span> 
         <span class="c"># planetary radius range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">R_min</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">R_max</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> 
+        <span class="c"># minimum planetary mass</span>
+        <span class="n">Mp_min</span> <span class="o">=</span> <span class="mf">6.3e-5</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span>
+        <span class="c"># maximum planetary mass</span>
+        <span class="n">Mp_max</span> <span class="o">=</span> <span class="mf">28.5</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span>
+        <span class="c"># planetary mass range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Mp_min</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">Mp_max</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span>
         <span class="c"># scale planetary orbits by sqrt(L)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaleOrbits</span> <span class="o">=</span> <span class="bp">False</span> 
         
@@ -132,6 +168,14 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>                    
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;e_max&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;w_min&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;w_max&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;O_min&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;O_max&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;p_min&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;p_max&#39;</span><span class="p">:</span>
@@ -140,6 +184,10 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;R_max&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;Mp_min&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;Mp_max&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">])</span>
                     
@@ -159,7 +207,167 @@
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Planet Population class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s">&#39;Planet Population class object attributes&#39;</span>
+        
+<div class="viewcode-block" id="PlanetPopulation.semi_axis"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis">[docs]</a>    <span class="k">def</span> <span class="nf">semi_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for semi-major axis in AU</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                semi-major axis value in AU</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.eccentricity"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eccentricity">[docs]</a>    <span class="k">def</span> <span class="nf">eccentricity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for eccentricity</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                eccentricity value</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.arg_perigee"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arg_perigee">[docs]</a>    <span class="k">def</span> <span class="nf">arg_perigee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for argument of perigee in degrees</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                argument of perigee in degrees</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.RAAN"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.RAAN">[docs]</a>    <span class="k">def</span> <span class="nf">RAAN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for right ascension of the ascending node</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and</span>
+<span class="sd">        maximum values in degrees.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                right ascension of the ascending node in degrees</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.radius"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.radius">[docs]</a>    <span class="k">def</span> <span class="nf">radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for planet radius in km</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values in km.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                planet radius in km</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.mass"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.mass">[docs]</a>    <span class="k">def</span> <span class="nf">mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for planetary mass in kg</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values in kg.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                planet mass in kg</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.albedo"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.albedo">[docs]</a>    <span class="k">def</span> <span class="nf">albedo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for planetary albedo</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                planet albedo</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function value</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span>
+        </div>
+<div class="viewcode-block" id="PlanetPopulation.inclination"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.inclination">[docs]</a>    <span class="k">def</span> <span class="nf">inclination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for planet orbital inclination (degrees)</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype gives a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x:</span>
+<span class="sd">                planet orbital inclination in degrees</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pdf:</span>
+<span class="sd">                probability density function</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">pdf</span></div></div>
 </pre></div>
 
           </div>

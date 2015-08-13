@@ -73,18 +73,19 @@
 <span class="sd">        and returns True if successful.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            time:</span>
+<span class="sd">            time (Time):</span>
 <span class="sd">                current absolute time (astropy Time)</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            True if successful, False if not</span>
+<span class="sd">            success (bool):</span>
+<span class="sd">                True if successful, False if not</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mf">28.5</span> <span class="c"># orbital inclination in degrees</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-        <span class="n">O</span> <span class="o">=</span> <span class="mf">175.</span> <span class="c"># right ascension of the ascending node in degrees</span>
+        <span class="n">O</span> <span class="o">=</span> <span class="mf">228.</span> <span class="c"># right ascension of the ascending node in degrees</span>
         <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">O</span><span class="p">)</span>
         <span class="c"># orbital period is one sidereal day</span>
         <span class="n">f</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">pi</span> <span class="c"># orbital frequency (2*pi/period)</span>
@@ -115,15 +116,16 @@
 <span class="sd">        True is an observable star and stores the 1D numpy array in self.kogood.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            time:</span>
+<span class="sd">            time (Time):</span>
 <span class="sd">                absolute time (astropy Time)</span>
-<span class="sd">            catalog:</span>
+<span class="sd">            catalog (TargetList or StarCatalog):</span>
 <span class="sd">                TargetList or StarCatalog class object</span>
-<span class="sd">            koangle:</span>
+<span class="sd">            koangle (float):</span>
 <span class="sd">                Telescope keepout angle in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            True if successful, False if not</span>
+<span class="sd">            success (bool):</span>
+<span class="sd">                True if successful, False if not</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         

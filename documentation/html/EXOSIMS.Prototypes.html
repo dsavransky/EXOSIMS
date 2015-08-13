@@ -26,8 +26,8 @@
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
-    <link rel="next" title="EXOSIMS.StarCatalog package" href="EXOSIMS.StarCatalog.html" />
-    <link rel="prev" title="EXOSIMS.OpticalSys package" href="EXOSIMS.OpticalSys.html" />
+    <link rel="next" title="EXOSIMS.SimulatedUniverse package" href="EXOSIMS.SimulatedUniverse.html" />
+    <link rel="prev" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -44,10 +44,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="EXOSIMS.StarCatalog.html" title="EXOSIMS.StarCatalog package"
+          <a href="EXOSIMS.SimulatedUniverse.html" title="EXOSIMS.SimulatedUniverse package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="EXOSIMS.OpticalSys.html" title="EXOSIMS.OpticalSys package"
+          <a href="EXOSIMS.PlanetPopulation.html" title="EXOSIMS.PlanetPopulation package"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
@@ -82,7 +82,7 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>minComp: </dt>
+<dt>minComp (float): </dt>
 <dd>minimum completeness level for detection</dd>
 </dl>
 </dd>
@@ -91,10 +91,11 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">
 <code class="descname">target_completeness</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates completeness values for target stars</p>
+<p>This method is called from TargetList __init__ method.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist: </dt>
+<dt>targlist (TargetList): </dt>
 <dd><p class="first">TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote class="last">
@@ -116,7 +117,7 @@ object attributes, has available:</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>comp0: </dt>
+<dt>comp0 (ndarray): </dt>
 <dd>1D numpy array of completeness values for each target star</dd>
 </dl>
 </dd>
@@ -144,38 +145,32 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>settling_time: </dt>
-<dd>instrument settling time after repoint (astropy Quantity with units
-of day)</dd>
-<dt>thrust: </dt>
-<dd>occulter slew thrust (astropy Quantity with units of mN)</dd>
-<dt>slewIsp: </dt>
-<dd>occulter slew specific impulse (astropy Quantity with units of s)</dd>
-<dt>sc_mass: </dt>
-<dd>occulter (maneuvering sc) wet mass (astropy Quantity with units of 
-kg)</dd>
-<dt>dryMass: </dt>
-<dd>occulter (maneuvering sc) dry mass (astropy Quantity with units of 
-kg)</dd>
-<dt>coMass: </dt>
-<dd>telescope (or non-maneuvering sc) mass (astropy Quantity with units
-of kg)</dd>
-<dt>occulterSep: </dt>
-<dd>occulter-telescope distance (astropy Quantity with units of km)</dd>
-<dt>occulterSep2: </dt>
-<dd>2nd occulter separation (astropy Quantity with units of km)</dd>
-<dt>skIsp: </dt>
-<dd>station-keeping specific impulse (astropy Quantity with units of s)</dd>
-<dt>kogood: </dt>
-<dd>1D numpy array of booleans where True is observable target star in 
-the target list</dd>
-<dt>r_sc: </dt>
-<dd>1D numpy array of observatory postion vector (astropy Quantity with 
-units of km)</dd>
-<dt>currentSep: </dt>
-<dd>current occulter separation (astropy Quantity with units of km)</dd>
-<dt>flowRate: </dt>
-<dd>slew flow rate (astropy Quantity with units of kg/day)</dd>
+<dt>settling_time (Quantity): </dt>
+<dd>instrument settling time after repoint (default with units of day)</dd>
+<dt>thrust (Quantity): </dt>
+<dd>occulter slew thrust (default with units of mN)</dd>
+<dt>slewIsp (Quantity): </dt>
+<dd>occulter slew specific impulse (default with units of s)</dd>
+<dt>sc_mass (Quantity): </dt>
+<dd>occulter (maneuvering sc) wet mass (default with units of kg)</dd>
+<dt>dryMass (Quantity): </dt>
+<dd>occulter (maneuvering sc) dry mass (default with units of kg)</dd>
+<dt>coMass (Quantity): </dt>
+<dd>telescope (or non-maneuvering sc) mass (default with units of kg)</dd>
+<dt>occulterSep (Quantity): </dt>
+<dd>occulter-telescope distance (default with units of km)</dd>
+<dt>skIsp (Quantity): </dt>
+<dd>station-keeping specific impulse (default with units of s)</dd>
+<dt>kogood (ndarray): </dt>
+<dd>1D numpy ndarray of booleans where True is observable target star 
+in the target list</dd>
+<dt>r_sc (Quantity): </dt>
+<dd>1D numpy ndarray of observatory postion vector (default with units 
+of km)</dd>
+<dt>currentSep (Quantity): </dt>
+<dd>current occulter separation (default with units of km)</dd>
+<dt>flowRate (Quantity): </dt>
+<dd>slew flow rate (default with units of kg/day)</dd>
 </dl>
 </dd>
 </dl>
@@ -189,17 +184,17 @@ given time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first docutils">
-<dt>a:</dt>
+<dt>a (list):</dt>
 <dd>semimajor axis list (in AU)</dd>
-<dt>e:</dt>
+<dt>e (list):</dt>
 <dd>eccentricity list</dd>
-<dt>i:</dt>
+<dt>i (list):</dt>
 <dd>inclination list</dd>
-<dt>O:</dt>
+<dt>O (list):</dt>
 <dd>right ascension of the ascending node list</dd>
-<dt>w:</dt>
+<dt>w (list):</dt>
 <dd>longitude of periapsis list</dd>
-<dt>lM:</dt>
+<dt>lM (list):</dt>
 <dd>mean longitude list</dd>
 </dl>
 <p class="last">Each of these lists has a maximum of 4 elements. The values in 
@@ -208,17 +203,17 @@ ephemerides for a specific solar system planet.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first docutils">
-<dt>a:</dt>
+<dt>a (list):</dt>
 <dd>list of semimajor axis (in AU)</dd>
-<dt>e:</dt>
+<dt>e (list):</dt>
 <dd>list of eccentricity</dd>
-<dt>i:</dt>
+<dt>i (list):</dt>
 <dd>list of inclination</dd>
-<dt>O:</dt>
+<dt>O (list):</dt>
 <dd>list of right ascension of the ascending node</dd>
-<dt>w:</dt>
+<dt>w (list):</dt>
 <dd>list of longitude of periapsis</dd>
-<dt>lM:</dt>
+<dt>lM (list):</dt>
 <dd>list of mean longitude values</dd>
 </dl>
 <p class="last">Each of these lists has a maximum of 4 elements. The values in 
@@ -236,13 +231,13 @@ ephemerides for a specific solar system planet.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>currenttime:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>currenttime (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>TDB:</dt>
+<dt>TDB (float):</dt>
 <dd>time in Julian centuries since the J2000 epoch</dd>
 </dl>
 </dd>
@@ -251,27 +246,25 @@ ephemerides for a specific solar system planet.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.distForces">
-<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>time</em>, <em>targlist</em>, <em>s_ind</em>, <em>secondDist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>time</em>, <em>targlist</em>, <em>s_ind</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds lateral and axial disturbance forces on an occulter</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
+<dt>time (TimeKeeping):</dt>
 <dd>TimeKeeping class object</dd>
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of target star</dd>
-<dt>secondDist:</dt>
-<dd>boolean where True is for second occulter</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>dF_lateral:</dt>
-<dd>lateral disturbance force (astropy Quantity N)</dd>
-<dt>dF_axial:</dt>
-<dd>axial disturbance force (astropy Quantity N)</dd>
+<dt>dF_lateral (Quantity):</dt>
+<dd>lateral disturbance force (units of N)</dd>
+<dt>dF_axial (Quantity):</dt>
+<dd>axial disturbance force (units of N)</dd>
 </dl>
 </dd>
 </dl>
@@ -286,15 +279,15 @@ from mean anomaly and eccentricity.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
+<dt>M (float):</dt>
 <dd>mean anomaly</dd>
-<dt>e:</dt>
+<dt>e (float):</dt>
 <dd>eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>E:</dt>
+<dt>E (float):</dt>
 <dd>eccentric anomaly</dd>
 </dl>
 </dd>
@@ -310,16 +303,20 @@ True is an observable star and stores the 1D numpy array in self.kogood.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>currenttime:</dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>catalog:</dt>
+<dt>currenttime (Time):</dt>
+<dd>absolute time</dd>
+<dt>catalog (TargetList or StarCatalog):</dt>
 <dd>TargetList or StarCatalog class object</dd>
-<dt>koangle:</dt>
+<dt>koangle (float):</dt>
 <dd>telescope keepout angle in degrees</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -333,17 +330,17 @@ solar system objects.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>planet:</dt>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
+<dt>planet (SolarEph):</dt>
 <dd>SolarEph class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_planet:</dt>
-<dd>heliocentric equatorial position vector in 1D numpy array 
-(astropy Quantity km)</dd>
+<dt>r_planet (Quantity):</dt>
+<dd>heliocentric equatorial position vector in 1D numpy ndarray 
+(units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -358,19 +355,21 @@ mass for station-keeping.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dF_lateral:</dt>
-<dd>lateral force on occulter (astropy Quantity N)</dd>
-<dt>t_int:</dt>
-<dd>integration time (astropy Quantity day)</dd>
+<dt>dF_lateral (Quantity):</dt>
+<dd>lateral force on occulter (units of force)</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>mass_used:</dt>
-<dd>mass used in station-keeping (astropy Quantity kg)</dd>
-<dt>deltaV:</dt>
-<dd>change in velocity required for station-keeping (astropy 
-Quantity km/s)</dd>
+<dt>intMdot (Quantity):</dt>
+<dd>mass flow rate (units like kg/day)</dd>
+<dt>mass_used (Quantity):</dt>
+<dd>mass used in station-keeping (units of mass)</dd>
+<dt>deltaV (Quantity):</dt>
+<dd>change in velocity required for station-keeping (velocity units
+like km/s)</dd>
 </dl>
 </dd>
 </dl>
@@ -385,15 +384,15 @@ equatorial position vector for Earth&#8217;s moon.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_moon:</dt>
-<dd>geocentric equatorial position vector in 1D numpy array 
-(astropy Quantity km)</dd>
+<dt>r_moon (Quantity):</dt>
+<dd>geocentric equatorial position vector in 1D numpy array (units 
+of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -411,12 +410,16 @@ instances of Observatory classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -429,15 +432,15 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>x:</dt>
+<dt>x (list):</dt>
 <dd>ephemeride list (maximum of 4 elements)</dd>
-<dt>TDB:</dt>
+<dt>TDB (float):</dt>
 <dd>time in Julian centuries since the J2000 epoch</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>y:</dt>
+<dt>y (float):</dt>
 <dd>ephemeride value at current time</dd>
 </dl>
 </dd>
@@ -451,14 +454,14 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>th:</dt>
+<dt>th (float):</dt>
 <dd>rotation angle in radians</dd>
-<dt>axis: </dt>
+<dt>axis (int): </dt>
 <dd>integer value denoting rotation axis (1,2, or 3)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
-<dd>rotation matrix defined as numpy array</dd>
+<dd>rotation matrix defined as numpy ndarray</dd>
 </dl>
 </dd></dl>
 
@@ -469,19 +472,19 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time: </dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>catalog: </dt>
+<dt>time (Time): </dt>
+<dd>absolute time</dd>
+<dt>catalog (TargetList or StarCatalog): </dt>
 <dd>TargetList or StarCatalog class object</dd>
-<dt>i: </dt>
+<dt>i (int): </dt>
 <dd>index for star catalog information</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_star:</dt>
-<dd>star position vector in heliocentric equatorial frame in numpy
-1D array (astropy Quantity km)</dd>
+<dt>r_star (Quantity):</dt>
+<dd>star position vector in heliocentric equatorial frame in 1D 
+numpy ndarray (units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -509,73 +512,79 @@ simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>lam:</dt>
-<dd>detection wavelength (astropy Quantity with units of nm)</dd>
-<dt>shapeFac:</dt>
-<dd>shape factor where shapeFac*diameter**2 = Area</dd>
-<dt>pupilArea:</dt>
-<dd>entrance pupil area (astropy Quantity with units of m**2)</dd>
-<dt>SNchar:</dt>
+<dt>lam (Quantity):</dt>
+<dd>detection wavelength (default units of nm)</dd>
+<dt>shapeFac (float):</dt>
+<dd>shape factor (also known as fill factor) where 
+<span class="math">\(shapeFac * diameter^2 = Area\)</span></dd>
+<dt>pupilArea (Quantity):</dt>
+<dd>entrance pupil area (default units of m<sup>2</sup>)</dd>
+<dt>SNchar (float):</dt>
 <dd>Signal to Noise Ratio for characterization</dd>
-<dt>haveOcculter:</dt>
+<dt>haveOcculter (bool):</dt>
 <dd>boolean signifying if the system has an occulter</dd>
-<dt>pixelArea:</dt>
-<dd>pixel area (astropy Quantity with units of m**2)</dd>
-<dt>focalLength:</dt>
-<dd>focal length (astropy Quantity with units of m)</dd>
-<dt>IWA:</dt>
-<dd>Inner Working Angle (astropy Quantity with units of arcsecond)</dd>
-<dt>OWA:</dt>
-<dd>Outer Working Angle (astropy Quantity with units of arcsecond)</dd>
-<dt>dMagLim:</dt>
+<dt>pixelArea (Quantity):</dt>
+<dd>pixel area (default units of m<sup>2</sup>)</dd>
+<dt>focalLength (Quantity):</dt>
+<dd>focal length (default units of m)</dd>
+<dt>IWA (Quantity):</dt>
+<dd>Inner Working Angle (default units of arcsecond)</dd>
+<dt>OWA (Quantity):</dt>
+<dd>Outer Working Angle (default units of arcsecond)</dd>
+<dt>dMagLim (float):</dt>
 <dd>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></dd>
-<dt>throughput (callable(lambda,alpha)):</dt>
+<dt>throughput (callable(lam,alpha)):</dt>
 <dd>optical system throughput (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity).</dd>
-<dt>contrast (callable(lambda,alpha)):</dt>
+<dt>contrast (callable(lam,alpha)):</dt>
 <dd>optical system contrast curve (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity).</dd>
-<dt>dr:</dt>
-<dd>detector dark-current rate per pixel (astropy Quantity with units 
-of 1/s)</dd>
-<dt>sigma_r:</dt>
+<dt>dr (Quantity):</dt>
+<dd>detector dark-current rate per pixel (default units of 1/s)</dd>
+<dt>sigma_r (float):</dt>
 <dd>detector read noise</dd>
-<dt>t_exp:</dt>
-<dd>exposure time per read (astropy Quantity with units of s)</dd>
-<dt>PSF (callable(lambda,alpha)):</dt>
+<dt>t_exp (Quantity):</dt>
+<dd>exposure time per read (default units of s)</dd>
+<dt>PSF (callable(lam,alpha)):</dt>
 <dd>point spread function - 2D ndarray of values, normalized to 1 at the core
 (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity). Note normalization 
 means that all throughput effects must be contained in the throughput 
 attribute.</dd>
-<dt>QE (callable(lambda)):</dt>
+<dt>PSFSampling (Quantity):</dt>
+<dd>Sampling of PSF in arcsec/pixel (default units of arcsec)</dd>
+<dt>QE (callable(lam)):</dt>
 <dd>detector quantum efficiency (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity).  This represents the primary (detection) detector.</dd>
-<dt>eta2:</dt>
+<dt>eta2 (float):</dt>
 <dd>post coronagraph attenuation</dd>
-<dt>deltaLambda:</dt>
-<dd>bandpass (astropy Quantity with units of nm)</dd>
-<dt>telescopeKeepout:</dt>
+<dt>deltaLambda (Quantity):</dt>
+<dd>bandpass (default units of nm)</dd>
+<dt>telescopeKeepout (float):</dt>
 <dd>telescope keepout angle in degrees</dd>
-<dt>specLambda:</dt>
-<dd>spectral wavelength of interest (astropy Quantity with units of nm)
+<dt>specLambda (Quantity):</dt>
+<dd>spectral wavelength of interest (default units of nm)
 Note:  probably belongs in postprocessing or rules.</dd>
-<dt>Rspec:</dt>
-<dd>spectral resolving power</dd>
-<dt>Npix:</dt>
+<dt>Rspec (float):</dt>
+<dd>spectral resolving power <span class="math">\(\lambda/\Delta\lambda\)</span></dd>
+<dt>Npix (float):</dt>
 <dd>number of noise pixels</dd>
-<dt>Ndark:</dt>
+<dt>Ndark (float):</dt>
 <dd>number of dark frames used</dd>
+<dt>optical_oh (Quantity):</dt>
+<dd>optical system overhead (default units of day)</dd>
+<dt>darkHole (Quantity):</dt>
+<dd>dark hole size (default units of rad)</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is 
@@ -583,25 +592,22 @@ determined by specific OpticalSys classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>universe:</dt>
+<dt>universe (SimulatedUniverse):</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>planInds:</dt>
+<dt>planInds (ndarray):</dt>
 <dd>planet index linking back to target star</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>intTime:</dt>
-<dd>1D numpy array of integration times (astropy Quantity with 
-units of day)</dd>
+<dt>intTime (Quantity):</dt>
+<dd>1D numpy ndarray of integration times (default units of day)</dd>
 </dl>
 </dd>
 </dl>
@@ -618,7 +624,7 @@ determined by specific OpticalSys classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd><p class="first">TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote class="last">
@@ -640,9 +646,9 @@ object attributes, has available:</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>maxintTime:</dt>
-<dd>1D numpy array of maximum integration times (astropy Quantity 
-with units of day)</dd>
+<dt>maxintTime (Quantity):</dt>
+<dd>1D numpy ndarray of maximum integration times (default units of
+day)</dd>
 </dl>
 </dd>
 </dl>
@@ -690,25 +696,213 @@ simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>arange:</dt>
-<dd>1D numpy array containing minimum and maximum semi-major axis 
-(astropy Quantity with units of AU)</dd>
-<dt>erange:</dt>
-<dd>1D numpy array containing minimum and maximum eccentricity</dd>
-<dt>prange:</dt>
-<dd>1D numpy array containing minimum and maximum albedo</dd>
-<dt>Rrange:</dt>
-<dd>1D numpy array containing minimum and maximum planetary radius 
-(astropy Quantity with units of km)</dd>
-<dt>scaleOrbits:</dt>
+<dt>arange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum semi-major axis 
+(default units of AU)</dd>
+<dt>erange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum eccentricity</dd>
+<dt>wrange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum argument of perigee
+in degrees</dd>
+<dt>Orange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum right ascension of
+the ascending node in degrees</dd>
+<dt>prange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum albedo</dd>
+<dt>Irange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum orbital inclination
+in degrees</dd>
+<dt>Rrange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum planetary radius 
+(default units of km)</dd>
+<dt>Mprange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum planetary mass
+(default units of kg)</dd>
+<dt>scaleOrbits (bool):</dt>
 <dd>boolean which signifies if planetary orbits should be scaled by the
 square root of the luminosity</dd>
-<dt>rrange:</dt>
+<dt>rrange (Quantity):</dt>
 <dd>1D numpy array containing minimum and maximum orbital radius
-(astropy Quantity with units of km)</dd>
+(default units of km)</dd>
 </dl>
 </dd>
 </dl>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.RAAN">
+<code class="descname">RAAN</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.RAAN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.RAAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for right ascension of the ascending node</p>
+<p>The prototype gives a uniform distribution between the minimum and
+maximum values in degrees.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>right ascension of the ascending node in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.albedo">
+<code class="descname">albedo</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.albedo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary albedo</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet albedo</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arg_perigee">
+<code class="descname">arg_perigee</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.arg_perigee"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arg_perigee" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for argument of perigee in degrees</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>argument of perigee in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eccentricity">
+<code class="descname">eccentricity</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eccentricity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for eccentricity</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>eccentricity value</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.inclination">
+<code class="descname">inclination</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.inclination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.inclination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planet orbital inclination (degrees)</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet orbital inclination in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.mass">
+<code class="descname">mass</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary mass in kg</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values in kg.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet mass in kg</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.radius">
+<code class="descname">radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planet radius in km</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values in km.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet radius in km</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis">
+<code class="descname">semi_axis</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.semi_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for semi-major axis in AU</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>semi-major axis value in AU</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -738,20 +932,20 @@ and MD (Missed Detection) where True gives the case.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans signifying if each planet is 
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans signifying if each planet is 
 observable</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>FA:</dt>
+<dt>FA (bool):</dt>
 <dd>False Alarm boolean</dd>
-<dt>DET:</dt>
+<dt>DET (bool):</dt>
 <dd>Detection boolean</dd>
-<dt>MD:</dt>
+<dt>MD (bool):</dt>
 <dd>Missed Detection boolean</dd>
 </dl>
 </dd>
@@ -779,27 +973,56 @@ Rules Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>FAP:</dt>
+<dt>FAP (float):</dt>
 <dd>False Alarm Probability</dd>
-<dt>MDP:</dt>
+<dt>MDP (float):</dt>
 <dd>Missed Detection Probability</dd>
-<dt>dutyCycle:</dt>
+<dt>dutyCycle (float):</dt>
 <dd>observation duty cycle</dd>
-<dt>intCutoff:</dt>
-<dd>integration cutoff (astropy Quantity with units in day)</dd>
-<dt>K:</dt>
+<dt>intCutoff (Quantity):</dt>
+<dd>integration cutoff (default units of day)</dd>
+<dt>missionPortion (float):</dt>
+<dd>portion of mission devoted to planet-finding</dd>
+<dt>duration (Quantity):</dt>
+<dd>duration of planet-finding operations (default units of day)</dd>
+<dt>nexttimeAvail (Quantity):</dt>
+<dd>next time available for planet-finding (default units of day)</dd>
+<dt>K (float):</dt>
 <dd>threshold value determined by FAP</dd>
-<dt>gamma:</dt>
+<dt>gamma (float):</dt>
 <dd>threshold value determined by MDP</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Rules.Rules.duty_cycle">
+<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates available time and duration for planet-finding</p>
+<p>This method updates the available time for planet-finding activities.
+Specific classes may optionally update the duration of planet-finding
+activities as well. This method defines the input/output expected</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>currenttime (Quantity):</dt>
+<dd>current time in mission simulation (units of time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>nexttime (Quantity):</dt>
+<dd>next available time for planet-finding (units of time)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.Rules.find_K">
 <code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_K"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_K" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by FAP</p>
 <dl class="docutils">
-<dt>Returns:</dt>
+<dt>Returns (float):</dt>
 <dd>threshold value determined by FAP</dd>
 </dl>
 </dd></dl>
@@ -809,7 +1032,7 @@ Rules Module calculations in exoplanet mission simulation.</p>
 <code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by MDP</p>
 <dl class="docutils">
-<dt>Returns:</dt>
+<dt>Returns (float):</dt>
 <dd>threshold value determined by MDP</dd>
 </dl>
 </dd></dl>
@@ -837,57 +1060,57 @@ TargetList, PlanetPhysical</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>planphys:</dt>
+<dt>planphys (PlanetPhysical):</dt>
 <dd>PlanetPhysical class object</dd>
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
-<dt>planInds:</dt>
-<dd>1D numpy array of indices mapping planets to target stars in
+<dt>planInds (ndarray):</dt>
+<dd>1D numpy ndarray of indices mapping planets to target stars in
 targlist</dd>
-<dt>nPlans:</dt>
+<dt>nPlans (int):</dt>
 <dd>total number of planets</dd>
-<dt>sysInds:</dt>
+<dt>sysInds (ndarray):</dt>
 <dd>indicies of target stars in targlist with planets</dd>
-<dt>a:</dt>
-<dd>1D numpy array containing semi-major axis for each planet (astropy
-Quantity with units of AU)</dd>
-<dt>e:</dt>
-<dd>1D numpy array containing eccentricity for each planet</dd>
-<dt>w:</dt>
-<dd>1D numpy array containing argument of perigee in degrees</dd>
-<dt>O:</dt>
-<dd>1D numpy array containing right ascension of the ascending node in
-degrees</dd>
-<dt>Mp:</dt>
-<dd>1D numpy array containing mass for each planet (astropy Quantity
-with units of kg)</dd>
-<dt>Rp:</dt>
-<dd>1D numpy array containing radius for each planet (astropy Quantity
-with units of km)</dd>
-<dt>r:</dt>
-<dd>numpy array containing position vector for each planet (astropy
-Quantity with units of km)</dd>
-<dt>v:</dt>
-<dd>numpy array containing velocity vector for each planet (astropy 
-Quantity with units of km/s)</dd>
-<dt>p:</dt>
-<dd>1D numpy array containing albedo for each planet</dd>
-<dt>I:</dt>
-<dd>1D numpy array containing inclination in degrees for each planet</dd>
-<dt>rtype:</dt>
-<dd>1D numpy array containing rock/ice fraction for each planet</dd>
-<dt>fzodicurr:</dt>
-<dd>1D numpy array containing exozodi level for each planet</dd>
+<dt>a (Quantity):</dt>
+<dd>1D numpy ndarray containing semi-major axis for each planet 
+(default units of AU)</dd>
+<dt>e (ndarray):</dt>
+<dd>1D numpy ndarray containing eccentricity for each planet</dd>
+<dt>w (ndarray):</dt>
+<dd>1D numpy ndarray containing argument of perigee in degrees</dd>
+<dt>O (ndarray):</dt>
+<dd>1D numpy ndarray containing right ascension of the ascending node 
+in degrees</dd>
+<dt>Mp (Quantity):</dt>
+<dd>1D numpy ndarray containing mass for each planet (default units of 
+kg)</dd>
+<dt>Rp (Quantity):</dt>
+<dd>1D numpy ndarray containing radius for each planet (default units 
+of km)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing position vector for each planet (default
+units of km)</dd>
+<dt>v (Quantity):</dt>
+<dd>numpy ndarray containing velocity vector for each planet (default 
+units of km/s)</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray containing inclination in degrees for each planet</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray containing albedo for each planet</dd>
+<dt>rtype (ndarray):</dt>
+<dd>1D numpy ndarray containing rock/ice fraction for each planet</dd>
+<dt>fzodicurr (ndarray):</dt>
+<dd>1D numpy ndarray containing exozodi level for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -900,38 +1123,16 @@ from mean anomaly and eccentricity.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
+<dt>M (float):</dt>
 <dd>mean anomaly</dd>
-<dt>e:</dt>
+<dt>e (float):</dt>
 <dd>eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>E:</dt>
+<dt>E (float):</dt>
 <dd>eccentric anomaly</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredclass:</dt>
-<dd>desired class</dd>
 </dl>
 </dd>
 </dl>
@@ -944,36 +1145,16 @@ from mean anomaly and eccentricity.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>O:</dt>
-<dd>1D numpy array containing right ascension of the ascending node
+<dt>O (ndarray):</dt>
+<dd>1D numpy ndarray containing right ascension of the ascending node
 for each planet in degrees</dd>
 </dl>
 </dd>
@@ -987,35 +1168,17 @@ for each planet in degrees</dd>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>a:</dt>
-<dd>1D numpy array containing semi-major axis for each planet 
-(astropy Quantity with units of AU)</dd>
+<dt>a (Quantity):</dt>
+<dd>1D numpy ndarray containing semi-major axis for each planet 
+(default units of AU)</dd>
 </dl>
 </dd>
 </dl>
@@ -1028,42 +1191,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
-<dt>self.Mp:</dt>
-<dd>planet masses</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>p:</dt>
-<dd>1D numpy array containing albedo for each planet</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray containing albedo for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -1076,36 +1213,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>e:</dt>
-<dd>1D numpy array containing eccentricity for each planet</dd>
+<dt>e (ndarray):</dt>
+<dd>1D numpy ndarray containing eccentricity for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -1116,10 +1233,17 @@ classes will populate these values.</p>
 <code class="descname">planet_inclinations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_inclinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet an inclination in degrees</p>
 <dl class="docutils">
+<dt>This method uses the following inherited class object:</dt>
+<dd><dl class="first last docutils">
+<dt>self.pop:</dt>
+<dd>PlanetPopulation class object</dd>
+</dl>
+</dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>I:</dt>
-<dd>1D numpy array containing inclination of each planet in degrees</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray containing inclination of each planet in 
+degrees</dd>
 </dl>
 </dd>
 </dl>
@@ -1132,41 +1256,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
-<dd>1D numpy array containing mass for each planet (astropy 
-Quantity with units of kg)</dd>
+<dt>M (Quantity):</dt>
+<dd>1D numpy ndarray containing mass for each planet (units of kg)</dd>
 </dl>
 </dd>
 </dl>
@@ -1181,32 +1280,10 @@ objects will populate these values.</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
-<dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
 <dt>self.a:</dt>
 <dd>planet semi-major axis</dd>
 <dt>self.e:</dt>
 <dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
 <dt>self.Mp:</dt>
 <dd>planet masses</dd>
 <dt>self.I:</dt>
@@ -1219,12 +1296,12 @@ objects will populate these values.</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r:</dt>
-<dd>numpy array containing initial position vector of each planet 
-(astropy Quantity with units of km)</dd>
-<dt>v:</dt>
-<dd>numpy array containing initial velocity vector of each planet
-(astropy Quantity with units of km/s)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing initial position vector of each planet 
+(units of km)</dd>
+<dt>v (Quantity):</dt>
+<dd>numpy ndarray containing initial velocity vector of each planet
+(units of km/s)</dd>
 </dl>
 </dd>
 </dl>
@@ -1237,39 +1314,17 @@ objects will populate these values.</p>
 <p>This defines the data type expected, specific SimulatedUniverse class
 objects will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>R:</dt>
-<dd>1D numpy array containing radius of each planet (astropy 
-Quantity with units of distance)</dd>
+<dt>R (Quantity):</dt>
+<dd>1D numpy ndarray containing radius of each planet (units of 
+distance)</dd>
 </dl>
 </dd>
 </dl>
@@ -1320,8 +1375,8 @@ classes will populate these values.</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>rtype:</dt>
-<dd>1D numpy array containing rock/ice fraction for each planet</dd>
+<dt>rtype (ndarray):</dt>
+<dd>1D numpy ndarray containing rock/ice fraction for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -1334,27 +1389,17 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these indices.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
 <dt>self.targlist:</dt>
 <dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>planSys:</dt>
+<dt>planSys (ndarray):</dt>
 <dd>1D numpy array containing indices of the target star to which 
 each planet (each element of the array) belongs</dd>
 </dl>
@@ -1369,36 +1414,16 @@ each planet (each element of the array) belongs</dd>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>w:</dt>
-<dd>1D numpy array containing argument of perigee for each planet 
+<dt>w (ndarray):</dt>
+<dd>1D numpy ndarray containing argument of perigee for each planet 
 in degrees</dd>
 </dl>
 </dd>
@@ -1415,30 +1440,26 @@ the Kepler state transition matrix.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>r:</dt>
-<dd>numpy array containing planet position vectors relative to 
-host stars (astropy Quantity attached)</dd>
-<dt>v: </dt>
-<dd>numpy array containing planet velocity vectors relative to host
-stars (astropy Quantity attached)</dd>
-<dt>Mp:</dt>
-<dd>1D numpy array containing planet masses (astropy Quantity 
-attached)</dd>
-<dt>Ms:</dt>
-<dd>1D numpy array containing target star mass (in M_sun)</dd>
-<dt>dt:</dt>
-<dd>time increment to propagate the system (astropy Quantity 
-attached)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing planet position vectors relative to 
+host stars (units of distance)</dd>
+<dt>v (Quantity): </dt>
+<dd>numpy ndarray containing planet velocity vectors relative to 
+host stars (units of velocity)</dd>
+<dt>Mp (Quantity):</dt>
+<dd>1D numpy ndarray containing planet masses (units of mass)</dd>
+<dt>Ms (ndarray):</dt>
+<dd>1D numpy ndarray containing target star mass (in M_sun)</dd>
+<dt>dt (Quantity):</dt>
+<dd>time increment to propagate the system (units of time)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>rnew:</dt>
-<dd>numpy array of propagated position vectors (astropy Quantity
-with units of km)</dd>
-<dt>vnew:</dt>
-<dd>numpy array of propagated velocity vectors (astropy Quantity
-with units of km/day)</dd>
+<dt>rnew (Quantity):</dt>
+<dd>numpy ndarray of propagated position vectors (units of km)</dd>
+<dt>vnew (Quantity):</dt>
+<dd>numpy ndarray of propagated velocity vectors (units of km/day)</dd>
 </dl>
 </dd>
 </dl>
@@ -1459,53 +1480,53 @@ Star Catalog Module calculations in exoplanet mission simulation.</p>
 <dl class="docutils">
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>Name:</dt>
-<dd>1D numpy array of star names</dd>
-<dt>Type:</dt>
-<dd>1D numpy array of star types</dd>
-<dt>Spec:</dt>
-<dd>1D numpy array of spectral types</dd>
-<dt>parx:</dt>
-<dd>1D numpy array of parallax in milliarcseconds</dd>
-<dt>Umag:</dt>
-<dd>1D numpy array of U magnitude</dd>
-<dt>Bmag:</dt>
-<dd>1D numpy array of B magnitude</dd>
-<dt>Vmag:</dt>
-<dd>1D numpy array of V magnitude</dd>
-<dt>Rmag:</dt>
-<dd>1D numpy array of R magnitude</dd>
-<dt>Imag:</dt>
-<dd>1D numpy array of I magnitude</dd>
-<dt>Jmag:</dt>
-<dd>1D numpy array of J magnitude</dd>
-<dt>Hmag:</dt>
-<dd>1D numpy array of H magnitude</dd>
-<dt>Kmag:</dt>
-<dd>1D numpy array of K magnitude</dd>
-<dt>dist:</dt>
-<dd>1D numpy array of distance in parsecs to star</dd>
-<dt>BV:</dt>
-<dd>1D numpy array of B-V Johnson magnitude</dd>
-<dt>MV:</dt>
-<dd>1D numpy array of absolute V magnitude</dd>
-<dt>BC:</dt>
-<dd>1D numpy array of bolometric correction</dd>
-<dt>L:</dt>
-<dd>1D numpy array of stellar luminosity in Solar luminosities</dd>
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects containing right ascension
+<dt>Name (ndarray):</dt>
+<dd>1D numpy ndarray of star names</dd>
+<dt>Type (ndarray):</dt>
+<dd>1D numpy ndarray of star types</dd>
+<dt>Spec (ndarray):</dt>
+<dd>1D numpy ndarray of spectral types</dd>
+<dt>parx (ndarray):</dt>
+<dd>1D numpy ndarray of parallax in milliarcseconds</dd>
+<dt>Umag (ndarray):</dt>
+<dd>1D numpy ndarray of U magnitude</dd>
+<dt>Bmag (ndarray):</dt>
+<dd>1D numpy ndarray of B magnitude</dd>
+<dt>Vmag (ndarray):</dt>
+<dd>1D numpy ndarray of V magnitude</dd>
+<dt>Rmag (ndarray):</dt>
+<dd>1D numpy ndarray of R magnitude</dd>
+<dt>Imag (ndarray):</dt>
+<dd>1D numpy ndarray of I magnitude</dd>
+<dt>Jmag (ndarray):</dt>
+<dd>1D numpy ndarray of J magnitude</dd>
+<dt>Hmag (ndarray):</dt>
+<dd>1D numpy ndarray of H magnitude</dd>
+<dt>Kmag (ndarray):</dt>
+<dd>1D numpy ndarray of K magnitude</dd>
+<dt>dist (ndarray):</dt>
+<dd>1D numpy ndarray of distance in parsecs to star</dd>
+<dt>BV (ndarray):</dt>
+<dd>1D numpy ndarray of B-V Johnson magnitude</dd>
+<dt>MV (ndarray):</dt>
+<dd>1D numpy ndarray of absolute V magnitude</dd>
+<dt>BC (ndarray):</dt>
+<dd>1D numpy ndarray of bolometric correction</dd>
+<dt>L (ndarray):</dt>
+<dd>1D numpy ndarray of stellar luminosity in Solar luminosities</dd>
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects containing right ascension
 and declination in degrees</dd>
-<dt>pmra:</dt>
-<dd>1D numpy array of proper motion in right ascension in
+<dt>pmra (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in right ascension in
 milliarcseconds/year</dd>
-<dt>pmdec:</dt>
-<dd>1D numpy array of proper motion in declination in 
+<dt>pmdec (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in declination in 
 milliarcseconds/year</dd>
-<dt>rv:</dt>
-<dd>1D numpy array of radial velocity in km/s</dd>
-<dt>Binary_Cut:</dt>
-<dd>1D numpy array of booleans where True is a star with a companion 
+<dt>rv (ndarray):</dt>
+<dd>1D numpy ndarray of radial velocity in km/s</dd>
+<dt>Binary_Cut (ndarray):</dt>
+<dd>1D numpy ndarray of booleans where True is a star with a companion 
 closer than 10 arcsec</dd>
 </dl>
 </dd>
@@ -1520,13 +1541,13 @@ directory.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>matpath:</dt>
+<dt>matpath (str):</dt>
 <dd>path to .mat file</dd>
-<dt>pklpath:</dt>
+<dt>pklpath (str):</dt>
 <dd>pat to .pkl file to be written</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
+<dt>Returns (bool):</dt>
 <dd>True if successful, False if not</dd>
 </dl>
 <p>Stores pickled dictionary file with same name as .mat file (and 
@@ -1543,11 +1564,11 @@ housed in the StarCatalog directory and returns True if successful.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>filename:</dt>
+<dt>filename (str):</dt>
 <dd>name of the pickled dictionary file with extension .pkl</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
+<dt>Returns (bool):</dt>
 <dd>True if successful, False if not</dd>
 </dl>
 </dd></dl>
@@ -1575,28 +1596,30 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>simuni:</dt>
+<dt>simuni (SimulatedUniverse):</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>obs:</dt>
+<dt>obs (Observatory):</dt>
 <dd>Observatory class object</dd>
-<dt>timekeeping:</dt>
+<dt>timekeeping (TimeKeeping):</dt>
 <dd>TimeKeeping class object</dd>
-<dt>post:</dt>
+<dt>post (PostProcessing):</dt>
 <dd>PostProcessing class object</dd>
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>planphys:</dt>
+<dt>planphys (PlanetPhysical):</dt>
 <dd>PlanetPhysical class object</dd>
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
+<dt>DRM (list):</dt>
+<dd>list containing results of survey simulation</dd>
 </dl>
 </dd>
 </dl>
@@ -1609,27 +1632,26 @@ IWA and inside OWA.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>r:</dt>
-<dd>numpy array of planet position vectors (astropy Quantity 
-attached)</dd>
-<dt>dist:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray of planet position vectors (units of distance)</dd>
+<dt>dist (float):</dt>
 <dd>target star distance (in pc)</dd>
-<dt>IWA:</dt>
-<dd>instrument inner working angle (astropy Quantity attached)</dd>
-<dt>OWA:</dt>
-<dd>instrument outer working angle (astropy Quantity or radians)</dd>
+<dt>IWA (Quantity):</dt>
+<dd>instrument inner working angle (angle units)</dd>
+<dt>OWA (Quantity):</dt>
+<dd>instrument outer working angle (angle units)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>updated 1D numpy array of booleans indicating if an observation
-of each planet is possible</dd>
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity with units of km)</dd>
+<dt>observationPossible (ndarray):</dt>
+<dd>updated 1D numpy ndarray of booleans indicating if an 
+observation of each planet is possible</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -1642,26 +1664,25 @@ of each planet is possible</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each 
-planet is possible</dd>
-<dt>r:</dt>
-<dd>numpy array of planet position vectors (astropy Quantity 
-attached)</dd>
-<dt>Rp:</dt>
-<dd>1D numpy array of planet radii (astropy Quantity attached)</dd>
-<dt>p:</dt>
-<dd>1D numpy array of planet albedos</dd>
-<dt>dMagLim:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray of planet position vectors (units of distance)</dd>
+<dt>Rp (Quantity):</dt>
+<dd>1D numpy ndarray of planet radii (units of distance)</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray of planet albedos</dd>
+<dt>dMagLim (float):</dt>
 <dd>limiting difference in brightness between planet and star</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
+<dt>observationPossible (ndarray):</dt>
 <dd>updated 1D numpy array of booleans indicating if an observation
 of each planet is possible</dd>
-<dt>dMag:</dt>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude (difference between star and planet magnitude)</dd>
 </dl>
 </dd>
@@ -1689,32 +1710,32 @@ of each planet is possible</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>t_int:</dt>
-<dd>integration time (astropy Quantity attached)</dd>
-<dt>t_trueint:</dt>
-<dd>1D numpy array of calculated integration times for planets
-(astropy Quantity attached)</dd>
-<dt>s_ind:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+<dt>t_trueint (Quantity):</dt>
+<dd>1D numpy ndarray of calculated integration times for planets
+(units of time)</dd>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>pInds:</dt>
-<dd>1D numpy array of planet indices</dd>
-<dt>t_char_calc:</dt>
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>t_char_calc (bool):</dt>
 <dd>boolean where True is for characterization calculations</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>t_int:</dt>
-<dd>true integration time for planetary system (astropy Quantity
-with units of day) (t_char_calc = False) or maximum 
-characterization time for planetary system (t_char_calc = True)</dd>
-<dt>observationPossible:</dt>
-<dd>updated 1D numpy array of booleans indicating if an observation
-or characterization of each planet is possible</dd>
-<dt>chargo:</dt>
+<dt>t_int (Quantity):</dt>
+<dd>true integration time for planetary system (units of day) 
+(t_char_calc = False) or maximum characterization time for 
+planetary system (t_char_calc = True)</dd>
+<dt>observationPossible (ndarray):</dt>
+<dd>updated 1D numpy ndarray of booleans indicating if an 
+observation or characterization of each planet is possible</dd>
+<dt>chargo (bool):</dt>
 <dd>boolean where True is to encode characterization data 
 (t_char_calc = True only)</dd>
 </dl>
@@ -1742,44 +1763,44 @@ dictionary.</p>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dMag:</dt>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>DRM:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>DRM (dict):</dt>
 <dd>dictionary containing simulation results</dd>
-<dt>FA:</dt>
+<dt>FA (bool):</dt>
 <dd>Boolean signifying False Alarm</dd>
-<dt>DET:</dt>
+<dt>DET (bool):</dt>
 <dd>Boolean signifying DETection</dd>
-<dt>MD:</dt>
+<dt>MD (bool):</dt>
 <dd>Boolean signifying Missed Detection</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of star in target list</dd>
-<dt>pInds:</dt>
+<dt>pInds (ndarray):</dt>
 <dd>idices of planets belonging to target star</dd>
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>observed:</dt>
-<dd>1D numpy array indicating number of observations for each
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>observed (ndarray):</dt>
+<dd>1D numpy ndarray indicating number of observations for each
 planet</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dMag:</dt>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>DRM:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>DRM (dict):</dt>
 <dd>dictionary containing simulation results</dd>
-<dt>observed:</dt>
-<dd>1D numpy array indicating number of observations for each 
+<dt>observed (ndarray):</dt>
+<dd>1D numpy ndarray indicating number of observations for each 
 planet</dd>
 </dl>
 </dd>
@@ -1788,7 +1809,7 @@ planet</dd>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.find_t_char">
-<code class="descname">find_t_char</code><span class="sig-paren">(</span><em>throughput</em>, <em>contrast</em>, <em>Ip</em>, <em>FA</em>, <em>s_ind</em>, <em>pInds</em>, <em>first</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_t_char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.find_t_char" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_t_char</code><span class="sig-paren">(</span><em>throughput</em>, <em>contrast</em>, <em>Ip</em>, <em>FA</em>, <em>s_ind</em>, <em>pInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_t_char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.find_t_char" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds characterization time</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
@@ -1803,74 +1824,24 @@ planet</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>throughput:</dt>
+<dt>throughput (float):</dt>
 <dd>scalar value for throughput</dd>
-<dt>contrast:</dt>
+<dt>contrast (float):</dt>
 <dd>scalar value for contrast</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>FA:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>FA (bool):</dt>
 <dd>False Alarm boolean</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of current target star in target list</dd>
-<dt>pInds:</dt>
+<dt>pInds (ndarray):</dt>
 <dd>indices of planets belonging to target star</dd>
-<dt>first:</dt>
-<dd>boolean where True is first characterization, False is second</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>t_char:</dt>
-<dd>characterization time (astropy Quantity with units of day)</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.find_thru_cont">
-<code class="descname">find_thru_cont</code><span class="sig-paren">(</span><em>data</em>, <em>s</em>, <em>dist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_thru_cont"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.find_thru_cont" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds scalar value for throughput or contrast</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>data:</dt>
-<dd>scalar value or scipy.interpolate.interp1d object of throughput
-or contrast (OpticalSys.throughput, OpticalSys.throughput2, or
-OpticalSys.contrast)</dd>
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dist:</dt>
-<dd>distance to target star (in pc)</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>calc:</dt>
-<dd>scalar value for throughput or contrast</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredmodule:</dt>
-<dd>desired module</dd>
+<dt>t_char (Quantity):</dt>
+<dd>characterization time (units of s)</dd>
 </dl>
 </dd>
 </dl>
@@ -1909,8 +1880,134 @@ OpticalSys.contrast)</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of initial target star</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">
+<code class="descname">next_target</code><span class="sig-paren">(</span><em>s_ind</em>, <em>revisit_list</em>, <em>extended_list</em>, <em>DRM</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds index of next target star</p>
+<p>This method chooses the next target star index at random based on which
+stars are available.</p>
+<p>This method makes use of the following class objects inherited by the
+SurveySimulation class object:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>self.timekeeping:</dt>
+<dd>TimeKeeping class object</dd>
+<dt>self.obs:</dt>
+<dd>Observatory class object</dd>
+<dt>self.rules:</dt>
+<dd>Rules class object</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>s_ind (int):</dt>
+<dd>index of current target star</dd>
+<dt>revisit_list (ndarray):</dt>
+<dd>numpy ndarray of containing index and time (in days) of targets 
+to revisit</dd>
+<dt>extended_list (ndarray):</dt>
+<dd>1D numpy ndarray of star indices for extended mission time</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary of simulation results</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>new_s_ind (int):</dt>
+<dd>index of next target star</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary of simulation results</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_characterization">
+<code class="descname">observation_characterization</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>pInds</em>, <em>s_ind</em>, <em>spectra</em>, <em>s</em>, <em>Ip</em>, <em>DRM</em>, <em>FA</em>, <em>t_int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_characterization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_characterization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if characterizations are possible and relevant information</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>s_ind (int):</dt>
+<dd>target star index</dd>
+<dt>spectra (ndarray):</dt>
+<dd>numpy ndarray of values indicating if planet spectra has been
+captured</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux)</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>FA (bool):</dt>
+<dd>False Alarm boolean</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>FA (bool):</dt>
+<dd>False Alarm boolean</dd>
+<dt>spectra (ndarray):</dt>
+<dd>numpy ndarray of values indicating if planet spectra has been
+captured</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection">
+<code class="descname">observation_detection</code><span class="sig-paren">(</span><em>pInds</em>, <em>s_ind</em>, <em>DRM</em>, <em>planPosTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if planet observations are possible and relevant information</p>
+<p>This method makes use of the following inherited class objects:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>s_ind (int):</dt>
+<dd>target star index</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing simulation results</dd>
+<dt>planPosTime (Quantity):</dt>
+<dd>1D numpy ndarray containing times of planet positions (units of
+time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
+<dd>1D numpy ndarray of delta magnitude, difference in magnitude 
+between planet and star</dd>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</dd>
 </dl>
 </dd>
 </dl>
@@ -1970,29 +2067,27 @@ OpticalSys.contrast)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dt:</dt>
-<dd>propagation time (astropy Quantity attached)</dd>
-<dt>s_ind:</dt>
+<dt>dt (Quantity):</dt>
+<dd>propagation time (units of time)</dd>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>r:</dt>
-<dd>planet position vector as 1D numpy array (astropy Quantity 
-attached)</dd>
-<dt>v:</dt>
-<dd>planet velocity vector as 1D numpy array (astropy Quantity 
-attached)</dd>
-<dt>Mp:</dt>
-<dd>planetary mass (astropy Quantity attached)</dd>
-<dt>MsTrue:</dt>
+<dt>r (Quantity):</dt>
+<dd>planet position vector as 1D numpy ndarray (units of distance)</dd>
+<dt>v (Quantity):</dt>
+<dd>planet velocity vector as 1D numpy ndarray (units of velocity)</dd>
+<dt>Mp (Quantity):</dt>
+<dd>planetary mass (units of mass)</dd>
+<dt>MsTrue (float):</dt>
 <dd>stellar mass (in M_sun)</dd>
-<dt>Rp:</dt>
-<dd>planet radius (astropy Quantity attached)</dd>
-<dt>p:</dt>
+<dt>Rp (Quantity):</dt>
+<dd>planet radius (units of distance)</dd>
+<dt>p (ndarray):</dt>
 <dd>planet albedo</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>obsRes:</dt>
+<dt>obsRes (int):</dt>
 <dd>-1 if star is inside the keepout zone, 0 if planet is not 
 visible, or 1 if planet is visible</dd>
 </dl>
@@ -2024,73 +2119,72 @@ Completeness</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
-<dt>Name:</dt>
-<dd>1D numpy array of star names</dd>
-<dt>Type:</dt>
-<dd>1D numpy array of star types</dd>
-<dt>Spec:</dt>
-<dd>1D numpy array of spectral types</dd>
-<dt>parx:</dt>
-<dd>1D numpy array of parallax in milliarcseconds</dd>
-<dt>Umag:</dt>
-<dd>1D numpy array of U magnitude</dd>
-<dt>Bmag:</dt>
-<dd>1D numpy array of B magnitude</dd>
-<dt>Vmag:</dt>
-<dd>1D numpy array of V magnitude</dd>
-<dt>Rmag:</dt>
-<dd>1D numpy array of R magnitude</dd>
-<dt>Imag:</dt>
-<dd>1D numpy array of I magnitude</dd>
-<dt>Jmag:</dt>
-<dd>1D numpy array of J magnitude</dd>
-<dt>Hmag:</dt>
-<dd>1D numpy array of H magnitude</dd>
-<dt>Kmag:</dt>
-<dd>1D numpy array of K magnitude</dd>
-<dt>dist:</dt>
-<dd>1D numpy array of distance in parsecs to star</dd>
-<dt>BV:</dt>
-<dd>1D numpy array of B-V Johnson magnitude</dd>
-<dt>MV:</dt>
-<dd>1D numpy array of absolute V magnitude</dd>
-<dt>BC:</dt>
-<dd>1D numpy array of bolometric correction</dd>
-<dt>L:</dt>
-<dd>1D numpy array of stellar luminosity in Solar luminosities</dd>
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects containing right ascension
+<dt>Name (ndarray):</dt>
+<dd>1D numpy ndarray of star names</dd>
+<dt>Type (ndarray):</dt>
+<dd>1D numpy ndarray of star types</dd>
+<dt>Spec (ndarray):</dt>
+<dd>1D numpy ndarray of spectral types</dd>
+<dt>parx (ndarray):</dt>
+<dd>1D numpy ndarray of parallax in milliarcseconds</dd>
+<dt>Umag (ndarray):</dt>
+<dd>1D numpy ndarray of U magnitude</dd>
+<dt>Bmag (ndarray):</dt>
+<dd>1D numpy ndarray of B magnitude</dd>
+<dt>Vmag (ndarray):</dt>
+<dd>1D numpy ndarray of V magnitude</dd>
+<dt>Rmag (ndarray):</dt>
+<dd>1D numpy ndarray of R magnitude</dd>
+<dt>Imag (ndarray):</dt>
+<dd>1D numpy ndarray of I magnitude</dd>
+<dt>Jmag (ndarray):</dt>
+<dd>1D numpy ndarray of J magnitude</dd>
+<dt>Hmag (ndarray):</dt>
+<dd>1D numpy ndarray of H magnitude</dd>
+<dt>Kmag (ndarray):</dt>
+<dd>1D numpy ndarray of K magnitude</dd>
+<dt>dist (ndarray):</dt>
+<dd>1D numpy ndarray of distance in parsecs to star</dd>
+<dt>BV (ndarray):</dt>
+<dd>1D numpy ndarray of B-V Johnson magnitude</dd>
+<dt>MV (ndarray):</dt>
+<dd>1D numpy ndarray of absolute V magnitude</dd>
+<dt>BC (ndarray):</dt>
+<dd>1D numpy ndarray of bolometric correction</dd>
+<dt>L (ndarray):</dt>
+<dd>1D numpy ndarray of stellar luminosity in Solar luminosities</dd>
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects containing right ascension
 and declination in degrees</dd>
-<dt>pmra:</dt>
-<dd>1D numpy array of proper motion in right ascension in
+<dt>pmra (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in right ascension in
 milliarcseconds/year</dd>
-<dt>pmdec:</dt>
-<dd>1D numpy array of proper motion in declination in 
+<dt>pmdec (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in declination in 
 milliarcseconds/year</dd>
-<dt>rv:</dt>
-<dd>1D numpy array of radial velocity in km/s</dd>
-<dt>Binary_Cut:</dt>
-<dd>1D numpy array of booleans where True is a star with a companion 
+<dt>rv (ndarray):</dt>
+<dd>1D numpy ndarray of radial velocity in km/s</dd>
+<dt>Binary_Cut (ndarray):</dt>
+<dd>1D numpy ndarray of booleans where True is a star with a companion 
 closer than 10 arcsec</dd>
-<dt>maxintTime:</dt>
-<dd>1D numpy array containing maximum integration time (astropy 
-Quantity with units of day)</dd>
-<dt>comp0:</dt>
-<dd>1D numpy array containing completeness value for each target star</dd>
-<dt>MsEst:</dt>
-<dd>1D numpy array containing &#8216;approximate&#8217; stellar mass in M_sun</dd>
-<dt>MsTrue:</dt>
-<dd>1D numpy array containing &#8216;true&#8217; stellar mass in M_sun</dd>
+<dt>maxintTime (Quantity):</dt>
+<dd>1D numpy ndarray containing maximum integration time (units of time)</dd>
+<dt>comp0 (ndarray):</dt>
+<dd>1D numpy ndarray containing completeness value for each target star</dd>
+<dt>MsEst (ndarray):</dt>
+<dd>1D numpy ndarray containing &#8216;approximate&#8217; stellar mass in M_sun</dd>
+<dt>MsTrue (ndarray):</dt>
+<dd>1D numpy ndarray containing &#8216;true&#8217; stellar mass in M_sun</dd>
 </dl>
 </dd>
 </dl>
@@ -2101,7 +2195,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2121,7 +2215,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2135,30 +2229,8 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredmodule:</dt>
-<dd>desired module</dd>
 </dl>
 </dd>
 </dl>
@@ -2177,7 +2249,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2191,7 +2263,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2205,7 +2277,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2227,7 +2299,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2241,13 +2313,10 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
-<dd>filtered StarCatalog class object attributes as TargetList object
-attributes</dd>
 </dl>
 </dd></dl>
 
@@ -2266,7 +2335,7 @@ attributes</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -2280,10 +2349,10 @@ attributes</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-<dt>ind:</dt>
-<dd>1D numpy array of indices to keep</dd>
+<dt>ind (ndarray):</dt>
+<dd>1D numpy ndarray of indices to keep</dd>
 </dl>
 </dd>
 </dl>
@@ -2293,6 +2362,8 @@ attributes</dd>
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">
 <code class="descname">stellar_mass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.stellar_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Populates target list with &#8216;true&#8217; and &#8216;approximate&#8217; stellar masses</p>
+<p>This method calculates stellar mass via the formula relating absolute V
+magnitude and stellar mass.  The values are in terms of M_sun.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2302,9 +2373,9 @@ attributes</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-<dt>Vmagcrit:</dt>
+<dt>Vmagcrit (float):</dt>
 <dd>maximum apparent visual magnitude</dd>
 </dl>
 </dd>
@@ -2332,21 +2403,21 @@ Time Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>missionStart:</dt>
-<dd>mission start time (astropy Time in MJD)</dd>
-<dt>missionLife:</dt>
-<dd>mission lifetime (astropy Quantity with units of year)</dd>
-<dt>extendedLife:</dt>
-<dd>extended mission time (astropy Quantity with units of year)</dd>
-<dt>currenttimeNorm:</dt>
-<dd>current mission time normalized to zero at mission start (astropy
-Quantity with units of day)</dd>
-<dt>currenttimeAbs:</dt>
-<dd>current absolute mission time (astropy Time in MJD)</dd>
-<dt>missionFinishAbs:</dt>
-<dd>mission finish absolute time (astropy Time in MJD)</dd>
-<dt>missionFinishNorm:</dt>
-<dd>mission finish normalized time (astropy Quantity with units of day)</dd>
+<dt>missionStart (Time):</dt>
+<dd>mission start time (default astropy Time in MJD)</dd>
+<dt>missionLife (Quantity):</dt>
+<dd>mission lifetime (default units of year)</dd>
+<dt>extendedLife (Quantity):</dt>
+<dd>extended mission time (default units of year)</dd>
+<dt>currenttimeNorm (Quantity):</dt>
+<dd>current mission time normalized to zero at mission start (default
+units of day)</dd>
+<dt>currenttimeAbs (Time):</dt>
+<dd>current absolute mission time (default astropy Time in MJD)</dd>
+<dt>missionFinishAbs (Time):</dt>
+<dd>mission finish absolute time (default astropy Time in MJD)</dd>
+<dt>missionFinishNorm (Quantity):</dt>
+<dd>mission finish normalized time (default units of day)</dd>
 </dl>
 </dd>
 </dl>
@@ -2357,8 +2428,8 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dt:</dt>
-<dd>time increment (astropy Quantity attached, ie day)</dd>
+<dt>dt (Quantity):</dt>
+<dd>time increment (units of time)</dd>
 </dl>
 </dd>
 </dl>
@@ -2385,9 +2456,9 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>exozodi:</dt>
+<dt>exozodi (float):</dt>
 <dd>exozodi level in zodi</dd>
-<dt>exozodiVar:</dt>
+<dt>exozodiVar (float):</dt>
 <dd>exozodi variation (variance of log-normal distribution)</dd>
 </dl>
 </dd>
@@ -2402,14 +2473,14 @@ not yet support this conversion).</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects with right ascension 
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects with right ascension 
 and declination in degrees</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>el:</dt>
+<dt>el (ndarray):</dt>
 <dd>ecliptic latitudes in degrees</dd>
 </dl>
 </dd>
@@ -2424,18 +2495,18 @@ and declination in degrees</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>Inds:</dt>
-<dd>1D numpy array of indicies referring back to target list stars</dd>
-<dt>I:</dt>
-<dd>1D numpy array or scalar value of inclination in degrees</dd>
-<dt>targlist:</dt>
+<dt>Inds (ndarray):</dt>
+<dd>1D numpy array of indices referring back to target list stars</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray or scalar value of inclination in degrees</dd>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>fzodicurr:</dt>
-<dd>1D numpy array of exozodiacal light levels</dd>
+<dt>fzodicurr (ndarray):</dt>
+<dd>1D numpy ndarray of exozodiacal light levels</dd>
 </dl>
 </dd>
 </dl>
@@ -2462,7 +2533,7 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>minComp: </dt>
+<dt>minComp (float): </dt>
 <dd>minimum completeness level for detection</dd>
 </dl>
 </dd>
@@ -2471,10 +2542,11 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dt id="EXOSIMS.Prototypes.Completeness.target_completeness">
 <code class="descname">target_completeness</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.target_completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates completeness values for target stars</p>
+<p>This method is called from TargetList __init__ method.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist: </dt>
+<dt>targlist (TargetList): </dt>
 <dd><p class="first">TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote class="last">
@@ -2496,7 +2568,7 @@ object attributes, has available:</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>comp0: </dt>
+<dt>comp0 (ndarray): </dt>
 <dd>1D numpy array of completeness values for each target star</dd>
 </dl>
 </dd>
@@ -2521,38 +2593,32 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>settling_time: </dt>
-<dd>instrument settling time after repoint (astropy Quantity with units
-of day)</dd>
-<dt>thrust: </dt>
-<dd>occulter slew thrust (astropy Quantity with units of mN)</dd>
-<dt>slewIsp: </dt>
-<dd>occulter slew specific impulse (astropy Quantity with units of s)</dd>
-<dt>sc_mass: </dt>
-<dd>occulter (maneuvering sc) wet mass (astropy Quantity with units of 
-kg)</dd>
-<dt>dryMass: </dt>
-<dd>occulter (maneuvering sc) dry mass (astropy Quantity with units of 
-kg)</dd>
-<dt>coMass: </dt>
-<dd>telescope (or non-maneuvering sc) mass (astropy Quantity with units
-of kg)</dd>
-<dt>occulterSep: </dt>
-<dd>occulter-telescope distance (astropy Quantity with units of km)</dd>
-<dt>occulterSep2: </dt>
-<dd>2nd occulter separation (astropy Quantity with units of km)</dd>
-<dt>skIsp: </dt>
-<dd>station-keeping specific impulse (astropy Quantity with units of s)</dd>
-<dt>kogood: </dt>
-<dd>1D numpy array of booleans where True is observable target star in 
-the target list</dd>
-<dt>r_sc: </dt>
-<dd>1D numpy array of observatory postion vector (astropy Quantity with 
-units of km)</dd>
-<dt>currentSep: </dt>
-<dd>current occulter separation (astropy Quantity with units of km)</dd>
-<dt>flowRate: </dt>
-<dd>slew flow rate (astropy Quantity with units of kg/day)</dd>
+<dt>settling_time (Quantity): </dt>
+<dd>instrument settling time after repoint (default with units of day)</dd>
+<dt>thrust (Quantity): </dt>
+<dd>occulter slew thrust (default with units of mN)</dd>
+<dt>slewIsp (Quantity): </dt>
+<dd>occulter slew specific impulse (default with units of s)</dd>
+<dt>sc_mass (Quantity): </dt>
+<dd>occulter (maneuvering sc) wet mass (default with units of kg)</dd>
+<dt>dryMass (Quantity): </dt>
+<dd>occulter (maneuvering sc) dry mass (default with units of kg)</dd>
+<dt>coMass (Quantity): </dt>
+<dd>telescope (or non-maneuvering sc) mass (default with units of kg)</dd>
+<dt>occulterSep (Quantity): </dt>
+<dd>occulter-telescope distance (default with units of km)</dd>
+<dt>skIsp (Quantity): </dt>
+<dd>station-keeping specific impulse (default with units of s)</dd>
+<dt>kogood (ndarray): </dt>
+<dd>1D numpy ndarray of booleans where True is observable target star 
+in the target list</dd>
+<dt>r_sc (Quantity): </dt>
+<dd>1D numpy ndarray of observatory postion vector (default with units 
+of km)</dd>
+<dt>currentSep (Quantity): </dt>
+<dd>current occulter separation (default with units of km)</dd>
+<dt>flowRate (Quantity): </dt>
+<dd>slew flow rate (default with units of kg/day)</dd>
 </dl>
 </dd>
 </dl>
@@ -2566,17 +2632,17 @@ given time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first docutils">
-<dt>a:</dt>
+<dt>a (list):</dt>
 <dd>semimajor axis list (in AU)</dd>
-<dt>e:</dt>
+<dt>e (list):</dt>
 <dd>eccentricity list</dd>
-<dt>i:</dt>
+<dt>i (list):</dt>
 <dd>inclination list</dd>
-<dt>O:</dt>
+<dt>O (list):</dt>
 <dd>right ascension of the ascending node list</dd>
-<dt>w:</dt>
+<dt>w (list):</dt>
 <dd>longitude of periapsis list</dd>
-<dt>lM:</dt>
+<dt>lM (list):</dt>
 <dd>mean longitude list</dd>
 </dl>
 <p class="last">Each of these lists has a maximum of 4 elements. The values in 
@@ -2585,17 +2651,17 @@ ephemerides for a specific solar system planet.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first docutils">
-<dt>a:</dt>
+<dt>a (list):</dt>
 <dd>list of semimajor axis (in AU)</dd>
-<dt>e:</dt>
+<dt>e (list):</dt>
 <dd>list of eccentricity</dd>
-<dt>i:</dt>
+<dt>i (list):</dt>
 <dd>list of inclination</dd>
-<dt>O:</dt>
+<dt>O (list):</dt>
 <dd>list of right ascension of the ascending node</dd>
-<dt>w:</dt>
+<dt>w (list):</dt>
 <dd>list of longitude of periapsis</dd>
-<dt>lM:</dt>
+<dt>lM (list):</dt>
 <dd>list of mean longitude values</dd>
 </dl>
 <p class="last">Each of these lists has a maximum of 4 elements. The values in 
@@ -2613,13 +2679,13 @@ ephemerides for a specific solar system planet.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>currenttime:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>currenttime (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>TDB:</dt>
+<dt>TDB (float):</dt>
 <dd>time in Julian centuries since the J2000 epoch</dd>
 </dl>
 </dd>
@@ -2628,27 +2694,25 @@ ephemerides for a specific solar system planet.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.distForces">
-<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>time</em>, <em>targlist</em>, <em>s_ind</em>, <em>secondDist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>time</em>, <em>targlist</em>, <em>s_ind</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds lateral and axial disturbance forces on an occulter</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
+<dt>time (TimeKeeping):</dt>
 <dd>TimeKeeping class object</dd>
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of target star</dd>
-<dt>secondDist:</dt>
-<dd>boolean where True is for second occulter</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>dF_lateral:</dt>
-<dd>lateral disturbance force (astropy Quantity N)</dd>
-<dt>dF_axial:</dt>
-<dd>axial disturbance force (astropy Quantity N)</dd>
+<dt>dF_lateral (Quantity):</dt>
+<dd>lateral disturbance force (units of N)</dd>
+<dt>dF_axial (Quantity):</dt>
+<dd>axial disturbance force (units of N)</dd>
 </dl>
 </dd>
 </dl>
@@ -2663,15 +2727,15 @@ from mean anomaly and eccentricity.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
+<dt>M (float):</dt>
 <dd>mean anomaly</dd>
-<dt>e:</dt>
+<dt>e (float):</dt>
 <dd>eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>E:</dt>
+<dt>E (float):</dt>
 <dd>eccentric anomaly</dd>
 </dl>
 </dd>
@@ -2687,16 +2751,20 @@ True is an observable star and stores the 1D numpy array in self.kogood.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>currenttime:</dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>catalog:</dt>
+<dt>currenttime (Time):</dt>
+<dd>absolute time</dd>
+<dt>catalog (TargetList or StarCatalog):</dt>
 <dd>TargetList or StarCatalog class object</dd>
-<dt>koangle:</dt>
+<dt>koangle (float):</dt>
 <dd>telescope keepout angle in degrees</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -2710,17 +2778,17 @@ solar system objects.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>planet:</dt>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
+<dt>planet (SolarEph):</dt>
 <dd>SolarEph class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_planet:</dt>
-<dd>heliocentric equatorial position vector in 1D numpy array 
-(astropy Quantity km)</dd>
+<dt>r_planet (Quantity):</dt>
+<dd>heliocentric equatorial position vector in 1D numpy ndarray 
+(units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -2735,19 +2803,21 @@ mass for station-keeping.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dF_lateral:</dt>
-<dd>lateral force on occulter (astropy Quantity N)</dd>
-<dt>t_int:</dt>
-<dd>integration time (astropy Quantity day)</dd>
+<dt>dF_lateral (Quantity):</dt>
+<dd>lateral force on occulter (units of force)</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>mass_used:</dt>
-<dd>mass used in station-keeping (astropy Quantity kg)</dd>
-<dt>deltaV:</dt>
-<dd>change in velocity required for station-keeping (astropy 
-Quantity km/s)</dd>
+<dt>intMdot (Quantity):</dt>
+<dd>mass flow rate (units like kg/day)</dd>
+<dt>mass_used (Quantity):</dt>
+<dd>mass used in station-keeping (units of mass)</dd>
+<dt>deltaV (Quantity):</dt>
+<dd>change in velocity required for station-keeping (velocity units
+like km/s)</dd>
 </dl>
 </dd>
 </dl>
@@ -2762,15 +2832,15 @@ equatorial position vector for Earth&#8217;s moon.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_moon:</dt>
-<dd>geocentric equatorial position vector in 1D numpy array 
-(astropy Quantity km)</dd>
+<dt>r_moon (Quantity):</dt>
+<dd>geocentric equatorial position vector in 1D numpy array (units 
+of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -2788,12 +2858,16 @@ instances of Observatory classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time:</dt>
-<dd>absolute time (astropy Time)</dd>
+<dt>time (Time):</dt>
+<dd>absolute time</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>success (bool):</dt>
 <dd>True if successful, False if not</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -2806,15 +2880,15 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>x:</dt>
+<dt>x (list):</dt>
 <dd>ephemeride list (maximum of 4 elements)</dd>
-<dt>TDB:</dt>
+<dt>TDB (float):</dt>
 <dd>time in Julian centuries since the J2000 epoch</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>y:</dt>
+<dt>y (float):</dt>
 <dd>ephemeride value at current time</dd>
 </dl>
 </dd>
@@ -2828,14 +2902,14 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>th:</dt>
+<dt>th (float):</dt>
 <dd>rotation angle in radians</dd>
-<dt>axis: </dt>
+<dt>axis (int): </dt>
 <dd>integer value denoting rotation axis (1,2, or 3)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
-<dd>rotation matrix defined as numpy array</dd>
+<dd>rotation matrix defined as numpy ndarray</dd>
 </dl>
 </dd></dl>
 
@@ -2846,19 +2920,19 @@ time.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>time: </dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>catalog: </dt>
+<dt>time (Time): </dt>
+<dd>absolute time</dd>
+<dt>catalog (TargetList or StarCatalog): </dt>
 <dd>TargetList or StarCatalog class object</dd>
-<dt>i: </dt>
+<dt>i (int): </dt>
 <dd>index for star catalog information</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r_star:</dt>
-<dd>star position vector in heliocentric equatorial frame in numpy
-1D array (astropy Quantity km)</dd>
+<dt>r_star (Quantity):</dt>
+<dd>star position vector in heliocentric equatorial frame in 1D 
+numpy ndarray (units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -2883,73 +2957,79 @@ simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>lam:</dt>
-<dd>detection wavelength (astropy Quantity with units of nm)</dd>
-<dt>shapeFac:</dt>
-<dd>shape factor where shapeFac*diameter**2 = Area</dd>
-<dt>pupilArea:</dt>
-<dd>entrance pupil area (astropy Quantity with units of m**2)</dd>
-<dt>SNchar:</dt>
+<dt>lam (Quantity):</dt>
+<dd>detection wavelength (default units of nm)</dd>
+<dt>shapeFac (float):</dt>
+<dd>shape factor (also known as fill factor) where 
+<span class="math">\(shapeFac * diameter^2 = Area\)</span></dd>
+<dt>pupilArea (Quantity):</dt>
+<dd>entrance pupil area (default units of m<sup>2</sup>)</dd>
+<dt>SNchar (float):</dt>
 <dd>Signal to Noise Ratio for characterization</dd>
-<dt>haveOcculter:</dt>
+<dt>haveOcculter (bool):</dt>
 <dd>boolean signifying if the system has an occulter</dd>
-<dt>pixelArea:</dt>
-<dd>pixel area (astropy Quantity with units of m**2)</dd>
-<dt>focalLength:</dt>
-<dd>focal length (astropy Quantity with units of m)</dd>
-<dt>IWA:</dt>
-<dd>Inner Working Angle (astropy Quantity with units of arcsecond)</dd>
-<dt>OWA:</dt>
-<dd>Outer Working Angle (astropy Quantity with units of arcsecond)</dd>
-<dt>dMagLim:</dt>
+<dt>pixelArea (Quantity):</dt>
+<dd>pixel area (default units of m<sup>2</sup>)</dd>
+<dt>focalLength (Quantity):</dt>
+<dd>focal length (default units of m)</dd>
+<dt>IWA (Quantity):</dt>
+<dd>Inner Working Angle (default units of arcsecond)</dd>
+<dt>OWA (Quantity):</dt>
+<dd>Outer Working Angle (default units of arcsecond)</dd>
+<dt>dMagLim (float):</dt>
 <dd>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></dd>
-<dt>throughput (callable(lambda,alpha)):</dt>
+<dt>throughput (callable(lam,alpha)):</dt>
 <dd>optical system throughput (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity).</dd>
-<dt>contrast (callable(lambda,alpha)):</dt>
+<dt>contrast (callable(lam,alpha)):</dt>
 <dd>optical system contrast curve (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity).</dd>
-<dt>dr:</dt>
-<dd>detector dark-current rate per pixel (astropy Quantity with units 
-of 1/s)</dd>
-<dt>sigma_r:</dt>
+<dt>dr (Quantity):</dt>
+<dd>detector dark-current rate per pixel (default units of 1/s)</dd>
+<dt>sigma_r (float):</dt>
 <dd>detector read noise</dd>
-<dt>t_exp:</dt>
-<dd>exposure time per read (astropy Quantity with units of s)</dd>
-<dt>PSF (callable(lambda,alpha)):</dt>
+<dt>t_exp (Quantity):</dt>
+<dd>exposure time per read (default units of s)</dd>
+<dt>PSF (callable(lam,alpha)):</dt>
 <dd>point spread function - 2D ndarray of values, normalized to 1 at the core
 (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity) and angular separation (astropy Quantity). Note normalization 
 means that all throughput effects must be contained in the throughput 
 attribute.</dd>
-<dt>QE (callable(lambda)):</dt>
+<dt>PSFSampling (Quantity):</dt>
+<dd>Sampling of PSF in arcsec/pixel (default units of arcsec)</dd>
+<dt>QE (callable(lam)):</dt>
 <dd>detector quantum efficiency (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
 Quantity).  This represents the primary (detection) detector.</dd>
-<dt>eta2:</dt>
+<dt>eta2 (float):</dt>
 <dd>post coronagraph attenuation</dd>
-<dt>deltaLambda:</dt>
-<dd>bandpass (astropy Quantity with units of nm)</dd>
-<dt>telescopeKeepout:</dt>
+<dt>deltaLambda (Quantity):</dt>
+<dd>bandpass (default units of nm)</dd>
+<dt>telescopeKeepout (float):</dt>
 <dd>telescope keepout angle in degrees</dd>
-<dt>specLambda:</dt>
-<dd>spectral wavelength of interest (astropy Quantity with units of nm)
+<dt>specLambda (Quantity):</dt>
+<dd>spectral wavelength of interest (default units of nm)
 Note:  probably belongs in postprocessing or rules.</dd>
-<dt>Rspec:</dt>
-<dd>spectral resolving power</dd>
-<dt>Npix:</dt>
+<dt>Rspec (float):</dt>
+<dd>spectral resolving power <span class="math">\(\lambda/\Delta\lambda\)</span></dd>
+<dt>Npix (float):</dt>
 <dd>number of noise pixels</dd>
-<dt>Ndark:</dt>
+<dt>Ndark (float):</dt>
 <dd>number of dark frames used</dd>
+<dt>optical_oh (Quantity):</dt>
+<dd>optical system overhead (default units of day)</dd>
+<dt>darkHole (Quantity):</dt>
+<dd>dark hole size (default units of rad)</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is 
@@ -2957,25 +3037,22 @@ determined by specific OpticalSys classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>universe:</dt>
+<dt>universe (SimulatedUniverse):</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>planInds:</dt>
+<dt>planInds (ndarray):</dt>
 <dd>planet index linking back to target star</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>intTime:</dt>
-<dd>1D numpy array of integration times (astropy Quantity with 
-units of day)</dd>
+<dt>intTime (Quantity):</dt>
+<dd>1D numpy ndarray of integration times (default units of day)</dd>
 </dl>
 </dd>
 </dl>
@@ -2992,7 +3069,7 @@ determined by specific OpticalSys classes.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd><p class="first">TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote class="last">
@@ -3014,9 +3091,9 @@ object attributes, has available:</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>maxintTime:</dt>
-<dd>1D numpy array of maximum integration times (astropy Quantity 
-with units of day)</dd>
+<dt>maxintTime (Quantity):</dt>
+<dd>1D numpy ndarray of maximum integration times (default units of
+day)</dd>
 </dl>
 </dd>
 </dl>
@@ -3058,25 +3135,213 @@ simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>arange:</dt>
-<dd>1D numpy array containing minimum and maximum semi-major axis 
-(astropy Quantity with units of AU)</dd>
-<dt>erange:</dt>
-<dd>1D numpy array containing minimum and maximum eccentricity</dd>
-<dt>prange:</dt>
-<dd>1D numpy array containing minimum and maximum albedo</dd>
-<dt>Rrange:</dt>
-<dd>1D numpy array containing minimum and maximum planetary radius 
-(astropy Quantity with units of km)</dd>
-<dt>scaleOrbits:</dt>
+<dt>arange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum semi-major axis 
+(default units of AU)</dd>
+<dt>erange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum eccentricity</dd>
+<dt>wrange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum argument of perigee
+in degrees</dd>
+<dt>Orange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum right ascension of
+the ascending node in degrees</dd>
+<dt>prange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum albedo</dd>
+<dt>Irange (ndarray):</dt>
+<dd>1D numpy ndarray containing minimum and maximum orbital inclination
+in degrees</dd>
+<dt>Rrange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum planetary radius 
+(default units of km)</dd>
+<dt>Mprange (Quantity):</dt>
+<dd>1D numpy ndarray containing minimum and maximum planetary mass
+(default units of kg)</dd>
+<dt>scaleOrbits (bool):</dt>
 <dd>boolean which signifies if planetary orbits should be scaled by the
 square root of the luminosity</dd>
-<dt>rrange:</dt>
+<dt>rrange (Quantity):</dt>
 <dd>1D numpy array containing minimum and maximum orbital radius
-(astropy Quantity with units of km)</dd>
+(default units of km)</dd>
 </dl>
 </dd>
 </dl>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.RAAN">
+<code class="descname">RAAN</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.RAAN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.RAAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for right ascension of the ascending node</p>
+<p>The prototype gives a uniform distribution between the minimum and
+maximum values in degrees.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>right ascension of the ascending node in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.albedo">
+<code class="descname">albedo</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.albedo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary albedo</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet albedo</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.arg_perigee">
+<code class="descname">arg_perigee</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.arg_perigee"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.arg_perigee" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for argument of perigee in degrees</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>argument of perigee in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.eccentricity">
+<code class="descname">eccentricity</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.eccentricity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for eccentricity</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>eccentricity value</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.inclination">
+<code class="descname">inclination</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.inclination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.inclination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planet orbital inclination (degrees)</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet orbital inclination in degrees</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.mass">
+<code class="descname">mass</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary mass in kg</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values in kg.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet mass in kg</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.radius">
+<code class="descname">radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planet radius in km</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values in km.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>planet radius in km</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.semi_axis">
+<code class="descname">semi_axis</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.semi_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.semi_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for semi-major axis in AU</p>
+<p>The prototype gives a uniform distribution between the minimum and 
+maximum values.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>x:</dt>
+<dd>semi-major axis value in AU</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>pdf:</dt>
+<dd>probability density function value</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -3103,20 +3368,20 @@ and MD (Missed Detection) where True gives the case.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans signifying if each planet is 
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans signifying if each planet is 
 observable</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>FA:</dt>
+<dt>FA (bool):</dt>
 <dd>False Alarm boolean</dd>
-<dt>DET:</dt>
+<dt>DET (bool):</dt>
 <dd>Detection boolean</dd>
-<dt>MD:</dt>
+<dt>MD (bool):</dt>
 <dd>Missed Detection boolean</dd>
 </dl>
 </dd>
@@ -3141,27 +3406,56 @@ Rules Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>FAP:</dt>
+<dt>FAP (float):</dt>
 <dd>False Alarm Probability</dd>
-<dt>MDP:</dt>
+<dt>MDP (float):</dt>
 <dd>Missed Detection Probability</dd>
-<dt>dutyCycle:</dt>
+<dt>dutyCycle (float):</dt>
 <dd>observation duty cycle</dd>
-<dt>intCutoff:</dt>
-<dd>integration cutoff (astropy Quantity with units in day)</dd>
-<dt>K:</dt>
+<dt>intCutoff (Quantity):</dt>
+<dd>integration cutoff (default units of day)</dd>
+<dt>missionPortion (float):</dt>
+<dd>portion of mission devoted to planet-finding</dd>
+<dt>duration (Quantity):</dt>
+<dd>duration of planet-finding operations (default units of day)</dd>
+<dt>nexttimeAvail (Quantity):</dt>
+<dd>next time available for planet-finding (default units of day)</dd>
+<dt>K (float):</dt>
 <dd>threshold value determined by FAP</dd>
-<dt>gamma:</dt>
+<dt>gamma (float):</dt>
 <dd>threshold value determined by MDP</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Rules.duty_cycle">
+<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates available time and duration for planet-finding</p>
+<p>This method updates the available time for planet-finding activities.
+Specific classes may optionally update the duration of planet-finding
+activities as well. This method defines the input/output expected</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>currenttime (Quantity):</dt>
+<dd>current time in mission simulation (units of time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>nexttime (Quantity):</dt>
+<dd>next available time for planet-finding (units of time)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.find_K">
 <code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_K"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_K" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by FAP</p>
 <dl class="docutils">
-<dt>Returns:</dt>
+<dt>Returns (float):</dt>
 <dd>threshold value determined by FAP</dd>
 </dl>
 </dd></dl>
@@ -3171,7 +3465,7 @@ Rules Module calculations in exoplanet mission simulation.</p>
 <code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by MDP</p>
 <dl class="docutils">
-<dt>Returns:</dt>
+<dt>Returns (float):</dt>
 <dd>threshold value determined by MDP</dd>
 </dl>
 </dd></dl>
@@ -3196,57 +3490,57 @@ TargetList, PlanetPhysical</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>planphys:</dt>
+<dt>planphys (PlanetPhysical):</dt>
 <dd>PlanetPhysical class object</dd>
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
-<dt>planInds:</dt>
-<dd>1D numpy array of indices mapping planets to target stars in
+<dt>planInds (ndarray):</dt>
+<dd>1D numpy ndarray of indices mapping planets to target stars in
 targlist</dd>
-<dt>nPlans:</dt>
+<dt>nPlans (int):</dt>
 <dd>total number of planets</dd>
-<dt>sysInds:</dt>
+<dt>sysInds (ndarray):</dt>
 <dd>indicies of target stars in targlist with planets</dd>
-<dt>a:</dt>
-<dd>1D numpy array containing semi-major axis for each planet (astropy
-Quantity with units of AU)</dd>
-<dt>e:</dt>
-<dd>1D numpy array containing eccentricity for each planet</dd>
-<dt>w:</dt>
-<dd>1D numpy array containing argument of perigee in degrees</dd>
-<dt>O:</dt>
-<dd>1D numpy array containing right ascension of the ascending node in
-degrees</dd>
-<dt>Mp:</dt>
-<dd>1D numpy array containing mass for each planet (astropy Quantity
-with units of kg)</dd>
-<dt>Rp:</dt>
-<dd>1D numpy array containing radius for each planet (astropy Quantity
-with units of km)</dd>
-<dt>r:</dt>
-<dd>numpy array containing position vector for each planet (astropy
-Quantity with units of km)</dd>
-<dt>v:</dt>
-<dd>numpy array containing velocity vector for each planet (astropy 
-Quantity with units of km/s)</dd>
-<dt>p:</dt>
-<dd>1D numpy array containing albedo for each planet</dd>
-<dt>I:</dt>
-<dd>1D numpy array containing inclination in degrees for each planet</dd>
-<dt>rtype:</dt>
-<dd>1D numpy array containing rock/ice fraction for each planet</dd>
-<dt>fzodicurr:</dt>
-<dd>1D numpy array containing exozodi level for each planet</dd>
+<dt>a (Quantity):</dt>
+<dd>1D numpy ndarray containing semi-major axis for each planet 
+(default units of AU)</dd>
+<dt>e (ndarray):</dt>
+<dd>1D numpy ndarray containing eccentricity for each planet</dd>
+<dt>w (ndarray):</dt>
+<dd>1D numpy ndarray containing argument of perigee in degrees</dd>
+<dt>O (ndarray):</dt>
+<dd>1D numpy ndarray containing right ascension of the ascending node 
+in degrees</dd>
+<dt>Mp (Quantity):</dt>
+<dd>1D numpy ndarray containing mass for each planet (default units of 
+kg)</dd>
+<dt>Rp (Quantity):</dt>
+<dd>1D numpy ndarray containing radius for each planet (default units 
+of km)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing position vector for each planet (default
+units of km)</dd>
+<dt>v (Quantity):</dt>
+<dd>numpy ndarray containing velocity vector for each planet (default 
+units of km/s)</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray containing inclination in degrees for each planet</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray containing albedo for each planet</dd>
+<dt>rtype (ndarray):</dt>
+<dd>1D numpy ndarray containing rock/ice fraction for each planet</dd>
+<dt>fzodicurr (ndarray):</dt>
+<dd>1D numpy ndarray containing exozodi level for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -3259,38 +3553,16 @@ from mean anomaly and eccentricity.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
+<dt>M (float):</dt>
 <dd>mean anomaly</dd>
-<dt>e:</dt>
+<dt>e (float):</dt>
 <dd>eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>E:</dt>
+<dt>E (float):</dt>
 <dd>eccentric anomaly</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredclass:</dt>
-<dd>desired class</dd>
 </dl>
 </dd>
 </dl>
@@ -3303,36 +3575,16 @@ from mean anomaly and eccentricity.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>O:</dt>
-<dd>1D numpy array containing right ascension of the ascending node
+<dt>O (ndarray):</dt>
+<dd>1D numpy ndarray containing right ascension of the ascending node
 for each planet in degrees</dd>
 </dl>
 </dd>
@@ -3346,35 +3598,17 @@ for each planet in degrees</dd>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>a:</dt>
-<dd>1D numpy array containing semi-major axis for each planet 
-(astropy Quantity with units of AU)</dd>
+<dt>a (Quantity):</dt>
+<dd>1D numpy ndarray containing semi-major axis for each planet 
+(default units of AU)</dd>
 </dl>
 </dd>
 </dl>
@@ -3387,42 +3621,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
-<dt>self.Mp:</dt>
-<dd>planet masses</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>p:</dt>
-<dd>1D numpy array containing albedo for each planet</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray containing albedo for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -3435,36 +3643,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>e:</dt>
-<dd>1D numpy array containing eccentricity for each planet</dd>
+<dt>e (ndarray):</dt>
+<dd>1D numpy ndarray containing eccentricity for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -3475,10 +3663,17 @@ classes will populate these values.</p>
 <code class="descname">planet_inclinations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_inclinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.planet_inclinations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet an inclination in degrees</p>
 <dl class="docutils">
+<dt>This method uses the following inherited class object:</dt>
+<dd><dl class="first last docutils">
+<dt>self.pop:</dt>
+<dd>PlanetPopulation class object</dd>
+</dl>
+</dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>I:</dt>
-<dd>1D numpy array containing inclination of each planet in degrees</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray containing inclination of each planet in 
+degrees</dd>
 </dl>
 </dd>
 </dl>
@@ -3491,41 +3686,16 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>M:</dt>
-<dd>1D numpy array containing mass for each planet (astropy 
-Quantity with units of kg)</dd>
+<dt>M (Quantity):</dt>
+<dd>1D numpy ndarray containing mass for each planet (units of kg)</dd>
 </dl>
 </dd>
 </dl>
@@ -3540,32 +3710,10 @@ objects will populate these values.</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
-<dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
 <dt>self.a:</dt>
 <dd>planet semi-major axis</dd>
 <dt>self.e:</dt>
 <dd>planet eccentricity</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
 <dt>self.Mp:</dt>
 <dd>planet masses</dd>
 <dt>self.I:</dt>
@@ -3578,12 +3726,12 @@ objects will populate these values.</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>r:</dt>
-<dd>numpy array containing initial position vector of each planet 
-(astropy Quantity with units of km)</dd>
-<dt>v:</dt>
-<dd>numpy array containing initial velocity vector of each planet
-(astropy Quantity with units of km/s)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing initial position vector of each planet 
+(units of km)</dd>
+<dt>v (Quantity):</dt>
+<dd>numpy ndarray containing initial velocity vector of each planet
+(units of km/s)</dd>
 </dl>
 </dd>
 </dl>
@@ -3596,39 +3744,17 @@ objects will populate these values.</p>
 <p>This defines the data type expected, specific SimulatedUniverse class
 objects will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>R:</dt>
-<dd>1D numpy array containing radius of each planet (astropy 
-Quantity with units of distance)</dd>
+<dt>R (Quantity):</dt>
+<dd>1D numpy ndarray containing radius of each planet (units of 
+distance)</dd>
 </dl>
 </dd>
 </dl>
@@ -3679,8 +3805,8 @@ classes will populate these values.</p>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>rtype:</dt>
-<dd>1D numpy array containing rock/ice fraction for each planet</dd>
+<dt>rtype (ndarray):</dt>
+<dd>1D numpy ndarray containing rock/ice fraction for each planet</dd>
 </dl>
 </dd>
 </dl>
@@ -3693,27 +3819,17 @@ classes will populate these values.</p>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these indices.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
 <dt>self.targlist:</dt>
 <dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>planSys:</dt>
+<dt>planSys (ndarray):</dt>
 <dd>1D numpy array containing indices of the target star to which 
 each planet (each element of the array) belongs</dd>
 </dl>
@@ -3728,36 +3844,16 @@ each planet (each element of the array) belongs</dd>
 <p>This method defines the data type expected, specific SimulatedUniverse 
 classes will populate these values.</p>
 <dl class="docutils">
-<dt>This method has access to the following:</dt>
+<dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp: </dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>w:</dt>
-<dd>1D numpy array containing argument of perigee for each planet 
+<dt>w (ndarray):</dt>
+<dd>1D numpy ndarray containing argument of perigee for each planet 
 in degrees</dd>
 </dl>
 </dd>
@@ -3774,30 +3870,26 @@ the Kepler state transition matrix.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>r:</dt>
-<dd>numpy array containing planet position vectors relative to 
-host stars (astropy Quantity attached)</dd>
-<dt>v: </dt>
-<dd>numpy array containing planet velocity vectors relative to host
-stars (astropy Quantity attached)</dd>
-<dt>Mp:</dt>
-<dd>1D numpy array containing planet masses (astropy Quantity 
-attached)</dd>
-<dt>Ms:</dt>
-<dd>1D numpy array containing target star mass (in M_sun)</dd>
-<dt>dt:</dt>
-<dd>time increment to propagate the system (astropy Quantity 
-attached)</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray containing planet position vectors relative to 
+host stars (units of distance)</dd>
+<dt>v (Quantity): </dt>
+<dd>numpy ndarray containing planet velocity vectors relative to 
+host stars (units of velocity)</dd>
+<dt>Mp (Quantity):</dt>
+<dd>1D numpy ndarray containing planet masses (units of mass)</dd>
+<dt>Ms (ndarray):</dt>
+<dd>1D numpy ndarray containing target star mass (in M_sun)</dd>
+<dt>dt (Quantity):</dt>
+<dd>time increment to propagate the system (units of time)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>rnew:</dt>
-<dd>numpy array of propagated position vectors (astropy Quantity
-with units of km)</dd>
-<dt>vnew:</dt>
-<dd>numpy array of propagated velocity vectors (astropy Quantity
-with units of km/day)</dd>
+<dt>rnew (Quantity):</dt>
+<dd>numpy ndarray of propagated position vectors (units of km)</dd>
+<dt>vnew (Quantity):</dt>
+<dd>numpy ndarray of propagated velocity vectors (units of km/day)</dd>
 </dl>
 </dd>
 </dl>
@@ -3815,53 +3907,53 @@ Star Catalog Module calculations in exoplanet mission simulation.</p>
 <dl class="docutils">
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>Name:</dt>
-<dd>1D numpy array of star names</dd>
-<dt>Type:</dt>
-<dd>1D numpy array of star types</dd>
-<dt>Spec:</dt>
-<dd>1D numpy array of spectral types</dd>
-<dt>parx:</dt>
-<dd>1D numpy array of parallax in milliarcseconds</dd>
-<dt>Umag:</dt>
-<dd>1D numpy array of U magnitude</dd>
-<dt>Bmag:</dt>
-<dd>1D numpy array of B magnitude</dd>
-<dt>Vmag:</dt>
-<dd>1D numpy array of V magnitude</dd>
-<dt>Rmag:</dt>
-<dd>1D numpy array of R magnitude</dd>
-<dt>Imag:</dt>
-<dd>1D numpy array of I magnitude</dd>
-<dt>Jmag:</dt>
-<dd>1D numpy array of J magnitude</dd>
-<dt>Hmag:</dt>
-<dd>1D numpy array of H magnitude</dd>
-<dt>Kmag:</dt>
-<dd>1D numpy array of K magnitude</dd>
-<dt>dist:</dt>
-<dd>1D numpy array of distance in parsecs to star</dd>
-<dt>BV:</dt>
-<dd>1D numpy array of B-V Johnson magnitude</dd>
-<dt>MV:</dt>
-<dd>1D numpy array of absolute V magnitude</dd>
-<dt>BC:</dt>
-<dd>1D numpy array of bolometric correction</dd>
-<dt>L:</dt>
-<dd>1D numpy array of stellar luminosity in Solar luminosities</dd>
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects containing right ascension
+<dt>Name (ndarray):</dt>
+<dd>1D numpy ndarray of star names</dd>
+<dt>Type (ndarray):</dt>
+<dd>1D numpy ndarray of star types</dd>
+<dt>Spec (ndarray):</dt>
+<dd>1D numpy ndarray of spectral types</dd>
+<dt>parx (ndarray):</dt>
+<dd>1D numpy ndarray of parallax in milliarcseconds</dd>
+<dt>Umag (ndarray):</dt>
+<dd>1D numpy ndarray of U magnitude</dd>
+<dt>Bmag (ndarray):</dt>
+<dd>1D numpy ndarray of B magnitude</dd>
+<dt>Vmag (ndarray):</dt>
+<dd>1D numpy ndarray of V magnitude</dd>
+<dt>Rmag (ndarray):</dt>
+<dd>1D numpy ndarray of R magnitude</dd>
+<dt>Imag (ndarray):</dt>
+<dd>1D numpy ndarray of I magnitude</dd>
+<dt>Jmag (ndarray):</dt>
+<dd>1D numpy ndarray of J magnitude</dd>
+<dt>Hmag (ndarray):</dt>
+<dd>1D numpy ndarray of H magnitude</dd>
+<dt>Kmag (ndarray):</dt>
+<dd>1D numpy ndarray of K magnitude</dd>
+<dt>dist (ndarray):</dt>
+<dd>1D numpy ndarray of distance in parsecs to star</dd>
+<dt>BV (ndarray):</dt>
+<dd>1D numpy ndarray of B-V Johnson magnitude</dd>
+<dt>MV (ndarray):</dt>
+<dd>1D numpy ndarray of absolute V magnitude</dd>
+<dt>BC (ndarray):</dt>
+<dd>1D numpy ndarray of bolometric correction</dd>
+<dt>L (ndarray):</dt>
+<dd>1D numpy ndarray of stellar luminosity in Solar luminosities</dd>
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects containing right ascension
 and declination in degrees</dd>
-<dt>pmra:</dt>
-<dd>1D numpy array of proper motion in right ascension in
+<dt>pmra (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in right ascension in
 milliarcseconds/year</dd>
-<dt>pmdec:</dt>
-<dd>1D numpy array of proper motion in declination in 
+<dt>pmdec (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in declination in 
 milliarcseconds/year</dd>
-<dt>rv:</dt>
-<dd>1D numpy array of radial velocity in km/s</dd>
-<dt>Binary_Cut:</dt>
-<dd>1D numpy array of booleans where True is a star with a companion 
+<dt>rv (ndarray):</dt>
+<dd>1D numpy ndarray of radial velocity in km/s</dd>
+<dt>Binary_Cut (ndarray):</dt>
+<dd>1D numpy ndarray of booleans where True is a star with a companion 
 closer than 10 arcsec</dd>
 </dl>
 </dd>
@@ -3876,13 +3968,13 @@ directory.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>matpath:</dt>
+<dt>matpath (str):</dt>
 <dd>path to .mat file</dd>
-<dt>pklpath:</dt>
+<dt>pklpath (str):</dt>
 <dd>pat to .pkl file to be written</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
+<dt>Returns (bool):</dt>
 <dd>True if successful, False if not</dd>
 </dl>
 <p>Stores pickled dictionary file with same name as .mat file (and 
@@ -3899,11 +3991,11 @@ housed in the StarCatalog directory and returns True if successful.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>filename:</dt>
+<dt>filename (str):</dt>
 <dd>name of the pickled dictionary file with extension .pkl</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
+<dt>Returns (bool):</dt>
 <dd>True if successful, False if not</dd>
 </dl>
 </dd></dl>
@@ -3928,28 +4020,30 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>simuni:</dt>
+<dt>simuni (SimulatedUniverse):</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>obs:</dt>
+<dt>obs (Observatory):</dt>
 <dd>Observatory class object</dd>
-<dt>timekeeping:</dt>
+<dt>timekeeping (TimeKeeping):</dt>
 <dd>TimeKeeping class object</dd>
-<dt>post:</dt>
+<dt>post (PostProcessing):</dt>
 <dd>PostProcessing class object</dd>
-<dt>targlist:</dt>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
-<dt>planphys:</dt>
+<dt>planphys (PlanetPhysical):</dt>
 <dd>PlanetPhysical class object</dd>
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
+<dt>DRM (list):</dt>
+<dd>list containing results of survey simulation</dd>
 </dl>
 </dd>
 </dl>
@@ -3962,27 +4056,26 @@ IWA and inside OWA.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>r:</dt>
-<dd>numpy array of planet position vectors (astropy Quantity 
-attached)</dd>
-<dt>dist:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray of planet position vectors (units of distance)</dd>
+<dt>dist (float):</dt>
 <dd>target star distance (in pc)</dd>
-<dt>IWA:</dt>
-<dd>instrument inner working angle (astropy Quantity attached)</dd>
-<dt>OWA:</dt>
-<dd>instrument outer working angle (astropy Quantity or radians)</dd>
+<dt>IWA (Quantity):</dt>
+<dd>instrument inner working angle (angle units)</dd>
+<dt>OWA (Quantity):</dt>
+<dd>instrument outer working angle (angle units)</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>updated 1D numpy array of booleans indicating if an observation
-of each planet is possible</dd>
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity with units of km)</dd>
+<dt>observationPossible (ndarray):</dt>
+<dd>updated 1D numpy ndarray of booleans indicating if an 
+observation of each planet is possible</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of km)</dd>
 </dl>
 </dd>
 </dl>
@@ -3995,26 +4088,25 @@ of each planet is possible</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each 
-planet is possible</dd>
-<dt>r:</dt>
-<dd>numpy array of planet position vectors (astropy Quantity 
-attached)</dd>
-<dt>Rp:</dt>
-<dd>1D numpy array of planet radii (astropy Quantity attached)</dd>
-<dt>p:</dt>
-<dd>1D numpy array of planet albedos</dd>
-<dt>dMagLim:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>r (Quantity):</dt>
+<dd>numpy ndarray of planet position vectors (units of distance)</dd>
+<dt>Rp (Quantity):</dt>
+<dd>1D numpy ndarray of planet radii (units of distance)</dd>
+<dt>p (ndarray):</dt>
+<dd>1D numpy ndarray of planet albedos</dd>
+<dt>dMagLim (float):</dt>
 <dd>limiting difference in brightness between planet and star</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
+<dt>observationPossible (ndarray):</dt>
 <dd>updated 1D numpy array of booleans indicating if an observation
 of each planet is possible</dd>
-<dt>dMag:</dt>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude (difference between star and planet magnitude)</dd>
 </dl>
 </dd>
@@ -4042,32 +4134,32 @@ of each planet is possible</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>t_int:</dt>
-<dd>integration time (astropy Quantity attached)</dd>
-<dt>t_trueint:</dt>
-<dd>1D numpy array of calculated integration times for planets
-(astropy Quantity attached)</dd>
-<dt>s_ind:</dt>
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+<dt>t_trueint (Quantity):</dt>
+<dd>1D numpy ndarray of calculated integration times for planets
+(units of time)</dd>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>pInds:</dt>
-<dd>1D numpy array of planet indices</dd>
-<dt>t_char_calc:</dt>
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>t_char_calc (bool):</dt>
 <dd>boolean where True is for characterization calculations</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>t_int:</dt>
-<dd>true integration time for planetary system (astropy Quantity
-with units of day) (t_char_calc = False) or maximum 
-characterization time for planetary system (t_char_calc = True)</dd>
-<dt>observationPossible:</dt>
-<dd>updated 1D numpy array of booleans indicating if an observation
-or characterization of each planet is possible</dd>
-<dt>chargo:</dt>
+<dt>t_int (Quantity):</dt>
+<dd>true integration time for planetary system (units of day) 
+(t_char_calc = False) or maximum characterization time for 
+planetary system (t_char_calc = True)</dd>
+<dt>observationPossible (ndarray):</dt>
+<dd>updated 1D numpy ndarray of booleans indicating if an 
+observation or characterization of each planet is possible</dd>
+<dt>chargo (bool):</dt>
 <dd>boolean where True is to encode characterization data 
 (t_char_calc = True only)</dd>
 </dl>
@@ -4095,44 +4187,44 @@ dictionary.</p>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dMag:</dt>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>DRM:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>DRM (dict):</dt>
 <dd>dictionary containing simulation results</dd>
-<dt>FA:</dt>
+<dt>FA (bool):</dt>
 <dd>Boolean signifying False Alarm</dd>
-<dt>DET:</dt>
+<dt>DET (bool):</dt>
 <dd>Boolean signifying DETection</dd>
-<dt>MD:</dt>
+<dt>MD (bool):</dt>
 <dd>Boolean signifying Missed Detection</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of star in target list</dd>
-<dt>pInds:</dt>
+<dt>pInds (ndarray):</dt>
 <dd>idices of planets belonging to target star</dd>
-<dt>observationPossible:</dt>
-<dd>1D numpy array of booleans indicating if an observation of each
-planet is possible</dd>
-<dt>observed:</dt>
-<dd>1D numpy array indicating number of observations for each
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>observed (ndarray):</dt>
+<dd>1D numpy ndarray indicating number of observations for each
 planet</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dMag:</dt>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
 <dd>delta magnitude</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>DRM:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>DRM (dict):</dt>
 <dd>dictionary containing simulation results</dd>
-<dt>observed:</dt>
-<dd>1D numpy array indicating number of observations for each 
+<dt>observed (ndarray):</dt>
+<dd>1D numpy ndarray indicating number of observations for each 
 planet</dd>
 </dl>
 </dd>
@@ -4141,7 +4233,7 @@ planet</dd>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.find_t_char">
-<code class="descname">find_t_char</code><span class="sig-paren">(</span><em>throughput</em>, <em>contrast</em>, <em>Ip</em>, <em>FA</em>, <em>s_ind</em>, <em>pInds</em>, <em>first</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_t_char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.find_t_char" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_t_char</code><span class="sig-paren">(</span><em>throughput</em>, <em>contrast</em>, <em>Ip</em>, <em>FA</em>, <em>s_ind</em>, <em>pInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_t_char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.find_t_char" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds characterization time</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
@@ -4156,74 +4248,24 @@ planet</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>throughput:</dt>
+<dt>throughput (float):</dt>
 <dd>scalar value for throughput</dd>
-<dt>contrast:</dt>
+<dt>contrast (float):</dt>
 <dd>scalar value for contrast</dd>
-<dt>Ip:</dt>
-<dd>irradiance (astropy Quantity attached)</dd>
-<dt>FA:</dt>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux per time)</dd>
+<dt>FA (bool):</dt>
 <dd>False Alarm boolean</dd>
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of current target star in target list</dd>
-<dt>pInds:</dt>
+<dt>pInds (ndarray):</dt>
 <dd>indices of planets belonging to target star</dd>
-<dt>first:</dt>
-<dd>boolean where True is first characterization, False is second</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>t_char:</dt>
-<dd>characterization time (astropy Quantity with units of day)</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.find_thru_cont">
-<code class="descname">find_thru_cont</code><span class="sig-paren">(</span><em>data</em>, <em>s</em>, <em>dist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.find_thru_cont"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.find_thru_cont" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds scalar value for throughput or contrast</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>data:</dt>
-<dd>scalar value or scipy.interpolate.interp1d object of throughput
-or contrast (OpticalSys.throughput, OpticalSys.throughput2, or
-OpticalSys.contrast)</dd>
-<dt>s:</dt>
-<dd>apparent separation (astropy Quantity attached)</dd>
-<dt>dist:</dt>
-<dd>distance to target star (in pc)</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>calc:</dt>
-<dd>scalar value for throughput or contrast</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredmodule:</dt>
-<dd>desired module</dd>
+<dt>t_char (Quantity):</dt>
+<dd>characterization time (units of s)</dd>
 </dl>
 </dd>
 </dl>
@@ -4262,8 +4304,134 @@ OpticalSys.contrast)</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>s_ind:</dt>
+<dt>s_ind (int):</dt>
 <dd>index of initial target star</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.next_target">
+<code class="descname">next_target</code><span class="sig-paren">(</span><em>s_ind</em>, <em>revisit_list</em>, <em>extended_list</em>, <em>DRM</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds index of next target star</p>
+<p>This method chooses the next target star index at random based on which
+stars are available.</p>
+<p>This method makes use of the following class objects inherited by the
+SurveySimulation class object:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>self.timekeeping:</dt>
+<dd>TimeKeeping class object</dd>
+<dt>self.obs:</dt>
+<dd>Observatory class object</dd>
+<dt>self.rules:</dt>
+<dd>Rules class object</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>s_ind (int):</dt>
+<dd>index of current target star</dd>
+<dt>revisit_list (ndarray):</dt>
+<dd>numpy ndarray of containing index and time (in days) of targets 
+to revisit</dd>
+<dt>extended_list (ndarray):</dt>
+<dd>1D numpy ndarray of star indices for extended mission time</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary of simulation results</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>new_s_ind (int):</dt>
+<dd>index of next target star</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary of simulation results</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.observation_characterization">
+<code class="descname">observation_characterization</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>pInds</em>, <em>s_ind</em>, <em>spectra</em>, <em>s</em>, <em>Ip</em>, <em>DRM</em>, <em>FA</em>, <em>t_int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_characterization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.observation_characterization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if characterizations are possible and relevant information</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>s_ind (int):</dt>
+<dd>target star index</dd>
+<dt>spectra (ndarray):</dt>
+<dd>numpy ndarray of values indicating if planet spectra has been
+captured</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of flux)</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>FA (bool):</dt>
+<dd>False Alarm boolean</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>FA (bool):</dt>
+<dd>False Alarm boolean</dd>
+<dt>spectra (ndarray):</dt>
+<dd>numpy ndarray of values indicating if planet spectra has been
+captured</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.observation_detection">
+<code class="descname">observation_detection</code><span class="sig-paren">(</span><em>pInds</em>, <em>s_ind</em>, <em>DRM</em>, <em>planPosTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.observation_detection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if planet observations are possible and relevant information</p>
+<p>This method makes use of the following inherited class objects:</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>pInds (ndarray):</dt>
+<dd>1D numpy ndarray of planet indices</dd>
+<dt>s_ind (int):</dt>
+<dd>target star index</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing simulation results</dd>
+<dt>planPosTime (Quantity):</dt>
+<dd>1D numpy ndarray containing times of planet positions (units of
+time)</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>observationPossible (ndarray):</dt>
+<dd>1D numpy ndarray of booleans indicating if an observation of 
+each planet is possible</dd>
+<dt>t_int (Quantity):</dt>
+<dd>integration time (units of time)</dd>
+<dt>DRM (dict):</dt>
+<dd>dictionary containing survey simulation results</dd>
+<dt>s (Quantity):</dt>
+<dd>apparent separation (units of distance)</dd>
+<dt>dMag (ndarray):</dt>
+<dd>1D numpy ndarray of delta magnitude, difference in magnitude 
+between planet and star</dd>
+<dt>Ip (Quantity):</dt>
+<dd>irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</dd>
 </dl>
 </dd>
 </dl>
@@ -4323,29 +4491,27 @@ OpticalSys.contrast)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dt:</dt>
-<dd>propagation time (astropy Quantity attached)</dd>
-<dt>s_ind:</dt>
+<dt>dt (Quantity):</dt>
+<dd>propagation time (units of time)</dd>
+<dt>s_ind (int):</dt>
 <dd>target star index</dd>
-<dt>r:</dt>
-<dd>planet position vector as 1D numpy array (astropy Quantity 
-attached)</dd>
-<dt>v:</dt>
-<dd>planet velocity vector as 1D numpy array (astropy Quantity 
-attached)</dd>
-<dt>Mp:</dt>
-<dd>planetary mass (astropy Quantity attached)</dd>
-<dt>MsTrue:</dt>
+<dt>r (Quantity):</dt>
+<dd>planet position vector as 1D numpy ndarray (units of distance)</dd>
+<dt>v (Quantity):</dt>
+<dd>planet velocity vector as 1D numpy ndarray (units of velocity)</dd>
+<dt>Mp (Quantity):</dt>
+<dd>planetary mass (units of mass)</dd>
+<dt>MsTrue (float):</dt>
 <dd>stellar mass (in M_sun)</dd>
-<dt>Rp:</dt>
-<dd>planet radius (astropy Quantity attached)</dd>
-<dt>p:</dt>
+<dt>Rp (Quantity):</dt>
+<dd>planet radius (units of distance)</dd>
+<dt>p (ndarray):</dt>
 <dd>planet albedo</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>obsRes:</dt>
+<dt>obsRes (int):</dt>
 <dd>-1 if star is inside the keepout zone, 0 if planet is not 
 visible, or 1 if planet is visible</dd>
 </dl>
@@ -4374,73 +4540,72 @@ Completeness</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>opt:</dt>
+<dt>opt (OpticalSys):</dt>
 <dd>OpticalSys class object</dd>
-<dt>pop:</dt>
+<dt>pop (PlanetPopulation):</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>rules:</dt>
+<dt>rules (Rules):</dt>
 <dd>Rules class object</dd>
-<dt>zodi:</dt>
+<dt>zodi (ZodiacalLight):</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>comp:</dt>
+<dt>comp (Completeness):</dt>
 <dd>Completeness class object</dd>
-<dt>Name:</dt>
-<dd>1D numpy array of star names</dd>
-<dt>Type:</dt>
-<dd>1D numpy array of star types</dd>
-<dt>Spec:</dt>
-<dd>1D numpy array of spectral types</dd>
-<dt>parx:</dt>
-<dd>1D numpy array of parallax in milliarcseconds</dd>
-<dt>Umag:</dt>
-<dd>1D numpy array of U magnitude</dd>
-<dt>Bmag:</dt>
-<dd>1D numpy array of B magnitude</dd>
-<dt>Vmag:</dt>
-<dd>1D numpy array of V magnitude</dd>
-<dt>Rmag:</dt>
-<dd>1D numpy array of R magnitude</dd>
-<dt>Imag:</dt>
-<dd>1D numpy array of I magnitude</dd>
-<dt>Jmag:</dt>
-<dd>1D numpy array of J magnitude</dd>
-<dt>Hmag:</dt>
-<dd>1D numpy array of H magnitude</dd>
-<dt>Kmag:</dt>
-<dd>1D numpy array of K magnitude</dd>
-<dt>dist:</dt>
-<dd>1D numpy array of distance in parsecs to star</dd>
-<dt>BV:</dt>
-<dd>1D numpy array of B-V Johnson magnitude</dd>
-<dt>MV:</dt>
-<dd>1D numpy array of absolute V magnitude</dd>
-<dt>BC:</dt>
-<dd>1D numpy array of bolometric correction</dd>
-<dt>L:</dt>
-<dd>1D numpy array of stellar luminosity in Solar luminosities</dd>
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects containing right ascension
+<dt>Name (ndarray):</dt>
+<dd>1D numpy ndarray of star names</dd>
+<dt>Type (ndarray):</dt>
+<dd>1D numpy ndarray of star types</dd>
+<dt>Spec (ndarray):</dt>
+<dd>1D numpy ndarray of spectral types</dd>
+<dt>parx (ndarray):</dt>
+<dd>1D numpy ndarray of parallax in milliarcseconds</dd>
+<dt>Umag (ndarray):</dt>
+<dd>1D numpy ndarray of U magnitude</dd>
+<dt>Bmag (ndarray):</dt>
+<dd>1D numpy ndarray of B magnitude</dd>
+<dt>Vmag (ndarray):</dt>
+<dd>1D numpy ndarray of V magnitude</dd>
+<dt>Rmag (ndarray):</dt>
+<dd>1D numpy ndarray of R magnitude</dd>
+<dt>Imag (ndarray):</dt>
+<dd>1D numpy ndarray of I magnitude</dd>
+<dt>Jmag (ndarray):</dt>
+<dd>1D numpy ndarray of J magnitude</dd>
+<dt>Hmag (ndarray):</dt>
+<dd>1D numpy ndarray of H magnitude</dd>
+<dt>Kmag (ndarray):</dt>
+<dd>1D numpy ndarray of K magnitude</dd>
+<dt>dist (ndarray):</dt>
+<dd>1D numpy ndarray of distance in parsecs to star</dd>
+<dt>BV (ndarray):</dt>
+<dd>1D numpy ndarray of B-V Johnson magnitude</dd>
+<dt>MV (ndarray):</dt>
+<dd>1D numpy ndarray of absolute V magnitude</dd>
+<dt>BC (ndarray):</dt>
+<dd>1D numpy ndarray of bolometric correction</dd>
+<dt>L (ndarray):</dt>
+<dd>1D numpy ndarray of stellar luminosity in Solar luminosities</dd>
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects containing right ascension
 and declination in degrees</dd>
-<dt>pmra:</dt>
-<dd>1D numpy array of proper motion in right ascension in
+<dt>pmra (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in right ascension in
 milliarcseconds/year</dd>
-<dt>pmdec:</dt>
-<dd>1D numpy array of proper motion in declination in 
+<dt>pmdec (ndarray):</dt>
+<dd>1D numpy ndarray of proper motion in declination in 
 milliarcseconds/year</dd>
-<dt>rv:</dt>
-<dd>1D numpy array of radial velocity in km/s</dd>
-<dt>Binary_Cut:</dt>
-<dd>1D numpy array of booleans where True is a star with a companion 
+<dt>rv (ndarray):</dt>
+<dd>1D numpy ndarray of radial velocity in km/s</dd>
+<dt>Binary_Cut (ndarray):</dt>
+<dd>1D numpy ndarray of booleans where True is a star with a companion 
 closer than 10 arcsec</dd>
-<dt>maxintTime:</dt>
-<dd>1D numpy array containing maximum integration time (astropy 
-Quantity with units of day)</dd>
-<dt>comp0:</dt>
-<dd>1D numpy array containing completeness value for each target star</dd>
-<dt>MsEst:</dt>
-<dd>1D numpy array containing &#8216;approximate&#8217; stellar mass in M_sun</dd>
-<dt>MsTrue:</dt>
-<dd>1D numpy array containing &#8216;true&#8217; stellar mass in M_sun</dd>
+<dt>maxintTime (Quantity):</dt>
+<dd>1D numpy ndarray containing maximum integration time (units of time)</dd>
+<dt>comp0 (ndarray):</dt>
+<dd>1D numpy ndarray containing completeness value for each target star</dd>
+<dt>MsEst (ndarray):</dt>
+<dd>1D numpy ndarray containing &#8216;approximate&#8217; stellar mass in M_sun</dd>
+<dt>MsTrue (ndarray):</dt>
+<dd>1D numpy ndarray containing &#8216;true&#8217; stellar mass in M_sun</dd>
 </dl>
 </dd>
 </dl>
@@ -4451,7 +4616,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4471,7 +4636,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4485,30 +4650,8 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.TargetList.get_module">
-<code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>name:</dt>
-<dd>string containing desired class name</dd>
-<dt>folder:</dt>
-<dd>string containing folder housing desired class</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>desiredmodule:</dt>
-<dd>desired module</dd>
 </dl>
 </dd>
 </dl>
@@ -4527,7 +4670,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4541,7 +4684,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4555,7 +4698,7 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4577,7 +4720,7 @@ Quantity with units of day)</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4591,13 +4734,10 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
-<dt>Returns:</dt>
-<dd>filtered StarCatalog class object attributes as TargetList object
-attributes</dd>
 </dl>
 </dd></dl>
 
@@ -4616,7 +4756,7 @@ attributes</dd>
 </dd>
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
 </dl>
 </dd>
@@ -4630,10 +4770,10 @@ attributes</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-<dt>ind:</dt>
-<dd>1D numpy array of indices to keep</dd>
+<dt>ind (ndarray):</dt>
+<dd>1D numpy ndarray of indices to keep</dd>
 </dl>
 </dd>
 </dl>
@@ -4643,6 +4783,8 @@ attributes</dd>
 <dt id="EXOSIMS.Prototypes.TargetList.stellar_mass">
 <code class="descname">stellar_mass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.stellar_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.stellar_mass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Populates target list with &#8216;true&#8217; and &#8216;approximate&#8217; stellar masses</p>
+<p>This method calculates stellar mass via the formula relating absolute V
+magnitude and stellar mass.  The values are in terms of M_sun.</p>
 </dd></dl>
 
 <dl class="method">
@@ -4652,9 +4794,9 @@ attributes</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>atts:</dt>
+<dt>atts (list):</dt>
 <dd>list of StarCatalog class object attribute names</dd>
-<dt>Vmagcrit:</dt>
+<dt>Vmagcrit (float):</dt>
 <dd>maximum apparent visual magnitude</dd>
 </dl>
 </dd>
@@ -4679,21 +4821,21 @@ Time Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>missionStart:</dt>
-<dd>mission start time (astropy Time in MJD)</dd>
-<dt>missionLife:</dt>
-<dd>mission lifetime (astropy Quantity with units of year)</dd>
-<dt>extendedLife:</dt>
-<dd>extended mission time (astropy Quantity with units of year)</dd>
-<dt>currenttimeNorm:</dt>
-<dd>current mission time normalized to zero at mission start (astropy
-Quantity with units of day)</dd>
-<dt>currenttimeAbs:</dt>
-<dd>current absolute mission time (astropy Time in MJD)</dd>
-<dt>missionFinishAbs:</dt>
-<dd>mission finish absolute time (astropy Time in MJD)</dd>
-<dt>missionFinishNorm:</dt>
-<dd>mission finish normalized time (astropy Quantity with units of day)</dd>
+<dt>missionStart (Time):</dt>
+<dd>mission start time (default astropy Time in MJD)</dd>
+<dt>missionLife (Quantity):</dt>
+<dd>mission lifetime (default units of year)</dd>
+<dt>extendedLife (Quantity):</dt>
+<dd>extended mission time (default units of year)</dd>
+<dt>currenttimeNorm (Quantity):</dt>
+<dd>current mission time normalized to zero at mission start (default
+units of day)</dd>
+<dt>currenttimeAbs (Time):</dt>
+<dd>current absolute mission time (default astropy Time in MJD)</dd>
+<dt>missionFinishAbs (Time):</dt>
+<dd>mission finish absolute time (default astropy Time in MJD)</dd>
+<dt>missionFinishNorm (Quantity):</dt>
+<dd>mission finish normalized time (default units of day)</dd>
 </dl>
 </dd>
 </dl>
@@ -4704,8 +4846,8 @@ Quantity with units of day)</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>dt:</dt>
-<dd>time increment (astropy Quantity attached, ie day)</dd>
+<dt>dt (Quantity):</dt>
+<dd>time increment (units of time)</dd>
 </dl>
 </dd>
 </dl>
@@ -4729,9 +4871,9 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </dd>
 <dt>Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>exozodi:</dt>
+<dt>exozodi (float):</dt>
 <dd>exozodi level in zodi</dd>
-<dt>exozodiVar:</dt>
+<dt>exozodiVar (float):</dt>
 <dd>exozodi variation (variance of log-normal distribution)</dd>
 </dl>
 </dd>
@@ -4746,14 +4888,14 @@ not yet support this conversion).</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>coords:</dt>
-<dd>numpy array of astropy SkyCoord objects with right ascension 
+<dt>coords (SkyCoord):</dt>
+<dd>numpy ndarray of astropy SkyCoord objects with right ascension 
 and declination in degrees</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>el:</dt>
+<dt>el (ndarray):</dt>
 <dd>ecliptic latitudes in degrees</dd>
 </dl>
 </dd>
@@ -4768,18 +4910,18 @@ and declination in degrees</dd>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd><dl class="first last docutils">
-<dt>Inds:</dt>
-<dd>1D numpy array of indicies referring back to target list stars</dd>
-<dt>I:</dt>
-<dd>1D numpy array or scalar value of inclination in degrees</dd>
-<dt>targlist:</dt>
+<dt>Inds (ndarray):</dt>
+<dd>1D numpy array of indices referring back to target list stars</dd>
+<dt>I (ndarray):</dt>
+<dd>1D numpy ndarray or scalar value of inclination in degrees</dd>
+<dt>targlist (TargetList):</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>fzodicurr:</dt>
-<dd>1D numpy array of exozodiacal light levels</dd>
+<dt>fzodicurr (ndarray):</dt>
+<dd>1D numpy ndarray of exozodiacal light levels</dd>
 </dl>
 </dd>
 </dl>
@@ -4819,11 +4961,11 @@ and declination in degrees</dd>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="EXOSIMS.OpticalSys.html"
-                        title="previous chapter">EXOSIMS.OpticalSys package</a></p>
+  <p class="topless"><a href="EXOSIMS.PlanetPopulation.html"
+                        title="previous chapter">EXOSIMS.PlanetPopulation package</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="EXOSIMS.StarCatalog.html"
-                        title="next chapter">EXOSIMS.StarCatalog package</a></p>
+  <p class="topless"><a href="EXOSIMS.SimulatedUniverse.html"
+                        title="next chapter">EXOSIMS.SimulatedUniverse package</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">

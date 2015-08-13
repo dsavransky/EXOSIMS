@@ -68,67 +68,73 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        lam:</span>
-<span class="sd">            detection wavelength (astropy Quantity with units of nm)</span>
-<span class="sd">        shapeFac:</span>
-<span class="sd">            shape factor where shapeFac*diameter**2 = Area</span>
-<span class="sd">        pupilArea:</span>
-<span class="sd">            entrance pupil area (astropy Quantity with units of m**2)</span>
-<span class="sd">        SNchar:</span>
+<span class="sd">        lam (Quantity):</span>
+<span class="sd">            detection wavelength (default units of nm)</span>
+<span class="sd">        shapeFac (float):</span>
+<span class="sd">            shape factor (also known as fill factor) where </span>
+<span class="sd">            :math:`shapeFac * diameter^2 = Area`</span>
+<span class="sd">        pupilArea (Quantity):</span>
+<span class="sd">            entrance pupil area (default units of m\ :sup:`2`)</span>
+<span class="sd">        SNchar (float):</span>
 <span class="sd">            Signal to Noise Ratio for characterization</span>
-<span class="sd">        haveOcculter:</span>
+<span class="sd">        haveOcculter (bool):</span>
 <span class="sd">            boolean signifying if the system has an occulter</span>
-<span class="sd">        pixelArea:</span>
-<span class="sd">            pixel area (astropy Quantity with units of m**2)</span>
-<span class="sd">        focalLength:</span>
-<span class="sd">            focal length (astropy Quantity with units of m)</span>
-<span class="sd">        IWA:</span>
-<span class="sd">            Inner Working Angle (astropy Quantity with units of arcsecond)</span>
-<span class="sd">        OWA:</span>
-<span class="sd">            Outer Working Angle (astropy Quantity with units of arcsecond)</span>
-<span class="sd">        dMagLim:</span>
+<span class="sd">        pixelArea (Quantity):</span>
+<span class="sd">            pixel area (default units of m\ :sup:`2`)</span>
+<span class="sd">        focalLength (Quantity):</span>
+<span class="sd">            focal length (default units of m)</span>
+<span class="sd">        IWA (Quantity):</span>
+<span class="sd">            Inner Working Angle (default units of arcsecond)</span>
+<span class="sd">        OWA (Quantity):</span>
+<span class="sd">            Outer Working Angle (default units of arcsecond)</span>
+<span class="sd">        dMagLim (float):</span>
 <span class="sd">            limiting delta magnitude. **Note: wavelength dependent?**</span>
-<span class="sd">        throughput (callable(lambda,alpha)):</span>
+<span class="sd">        throughput (callable(lam,alpha)):</span>
 <span class="sd">            optical system throughput (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity) and angular separation (astropy Quantity).</span>
-<span class="sd">        contrast (callable(lambda,alpha)):</span>
+<span class="sd">        contrast (callable(lam,alpha)):</span>
 <span class="sd">            optical system contrast curve (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity) and angular separation (astropy Quantity).</span>
-<span class="sd">        dr:</span>
-<span class="sd">            detector dark-current rate per pixel (astropy Quantity with units </span>
-<span class="sd">            of 1/s)</span>
-<span class="sd">        sigma_r:</span>
+<span class="sd">        dr (Quantity):</span>
+<span class="sd">            detector dark-current rate per pixel (default units of 1/s)</span>
+<span class="sd">        sigma_r (float):</span>
 <span class="sd">            detector read noise</span>
-<span class="sd">        t_exp:</span>
-<span class="sd">            exposure time per read (astropy Quantity with units of s)</span>
-<span class="sd">        PSF (callable(lambda,alpha)):</span>
+<span class="sd">        t_exp (Quantity):</span>
+<span class="sd">            exposure time per read (default units of s)</span>
+<span class="sd">        PSF (callable(lam,alpha)):</span>
 <span class="sd">            point spread function - 2D ndarray of values, normalized to 1 at the core</span>
 <span class="sd">            (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity) and angular separation (astropy Quantity). Note normalization </span>
 <span class="sd">            means that all throughput effects must be contained in the throughput </span>
 <span class="sd">            attribute.</span>
-<span class="sd">        QE (callable(lambda)):</span>
+<span class="sd">        PSFSampling (Quantity):</span>
+<span class="sd">            Sampling of PSF in arcsec/pixel (default units of arcsec)</span>
+<span class="sd">        QE (callable(lam)):</span>
 <span class="sd">            detector quantum efficiency (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity).  This represents the primary (detection) detector. </span>
-<span class="sd">        eta2:</span>
+<span class="sd">        eta2 (float):</span>
 <span class="sd">            post coronagraph attenuation</span>
-<span class="sd">        deltaLambda:</span>
-<span class="sd">            bandpass (astropy Quantity with units of nm)</span>
-<span class="sd">        telescopeKeepout:</span>
+<span class="sd">        deltaLambda (Quantity):</span>
+<span class="sd">            bandpass (default units of nm)</span>
+<span class="sd">        telescopeKeepout (float):</span>
 <span class="sd">            telescope keepout angle in degrees</span>
-<span class="sd">        specLambda:</span>
-<span class="sd">            spectral wavelength of interest (astropy Quantity with units of nm)</span>
+<span class="sd">        specLambda (Quantity):</span>
+<span class="sd">            spectral wavelength of interest (default units of nm)</span>
 <span class="sd">            Note:  probably belongs in postprocessing or rules.</span>
-<span class="sd">        Rspec:</span>
-<span class="sd">            spectral resolving power</span>
-<span class="sd">        Npix:</span>
+<span class="sd">        Rspec (float):</span>
+<span class="sd">            spectral resolving power :math:`\lambda/\Delta\lambda`</span>
+<span class="sd">        Npix (float):</span>
 <span class="sd">            number of noise pixels</span>
-<span class="sd">        Ndark:</span>
+<span class="sd">        Ndark (float):</span>
 <span class="sd">            number of dark frames used</span>
+<span class="sd">        optical_oh (Quantity):</span>
+<span class="sd">            optical system overhead (default units of day)</span>
+<span class="sd">        darkHole (Quantity):</span>
+<span class="sd">            dark hole size (default units of rad)</span>
 <span class="sd">            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -158,11 +164,9 @@
         <span class="c"># limiting delta magnitude</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">=</span> <span class="mf">26.</span> 
         <span class="c"># optical system throughput</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">throughput</span> <span class="o">=</span> <span class="mf">0.5</span> 
-        <span class="c"># second throughput (for use with a second occulter)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">throughput2</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">throughput</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="mf">0.5</span> 
         <span class="c"># optical system designed suppression level</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span> <span class="o">=</span> <span class="mf">1.e-10</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">contrast</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="mf">1.e-10</span> 
         <span class="c"># detector dark-current rate per pixel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dr</span> <span class="o">=</span> <span class="mf">0.001</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> 
         <span class="c"># detector read noise (e/s)</span>
@@ -170,15 +174,15 @@
         <span class="c"># exposure time per read (s)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">t_exp</span> <span class="o">=</span> <span class="mf">1000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> 
         <span class="c"># detection quantum efficiency</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">QE</span> <span class="o">=</span> <span class="mf">0.5</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">QE</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">:</span> <span class="mf">0.5</span> 
         <span class="c"># post coronagraph attenuation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eta2</span> <span class="o">=</span> <span class="mf">0.57</span> 
         <span class="c"># bandpass (nm)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">deltaLambda</span> <span class="o">=</span> <span class="mf">100.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span> 
-        <span class="c"># boolean signifying if there is a 2nd occulter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">have2ndDist</span> <span class="o">=</span> <span class="bp">False</span> 
-        <span class="c"># characterization quantum efficiency</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">QEchar</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="c"># point spread function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PSF</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+        <span class="c"># sampling of PSF in arcsec/pixel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PSFSampling</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
         <span class="c"># keepout angle in degrees</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">telescopeKeepout</span> <span class="o">=</span> <span class="mf">45.</span>
         <span class="c"># spectral wavelength of interest</span>
@@ -189,6 +193,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Npix</span> <span class="o">=</span> <span class="mf">14.3</span>
         <span class="c"># number of dark frames used</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ndark</span> <span class="o">=</span> <span class="mf">10.</span>
+        <span class="c"># optical system overhead time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optical_oh</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="c"># dark hole size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">darkHole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
         
         <span class="c"># replace default values with any user specified values</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -242,7 +250,7 @@
 <span class="sd">        determined by specific OpticalSys classes.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist:</span>
+<span class="sd">            targlist (TargetList):</span>
 <span class="sd">                TargetList class object which, in addition to TargetList class</span>
 <span class="sd">                object attributes, has available:</span>
 <span class="sd">                    targlist.opt:</span>
@@ -257,9 +265,9 @@
 <span class="sd">                        Completeness object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            maxintTime:</span>
-<span class="sd">                1D numpy array of maximum integration times (astropy Quantity </span>
-<span class="sd">                with units of day)</span>
+<span class="sd">            maxintTime (Quantity):</span>
+<span class="sd">                1D numpy ndarray of maximum integration times (default units of</span>
+<span class="sd">                day)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -268,7 +276,7 @@
         
         <span class="k">return</span> <span class="n">maxintTime</span>
         </div>
-<div class="viewcode-block" id="OpticalSys.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">rules</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSys.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">rules</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called by a method in the SurveySimulation object class.</span>
@@ -277,23 +285,20 @@
 <span class="sd">        determined by specific OpticalSys classes.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist:</span>
+<span class="sd">            targlist (TargetList):</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            opt:</span>
-<span class="sd">                OpticalSys class object</span>
-<span class="sd">            rules:</span>
+<span class="sd">            rules (Rules):</span>
 <span class="sd">                Rules class object</span>
-<span class="sd">            universe:</span>
+<span class="sd">            universe (SimulatedUniverse):</span>
 <span class="sd">                SimulatedUniverse class object</span>
-<span class="sd">            s_ind:</span>
+<span class="sd">            s_ind (int):</span>
 <span class="sd">                target star index</span>
-<span class="sd">            planInds:</span>
+<span class="sd">            planInds (ndarray):</span>
 <span class="sd">                planet index linking back to target star</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            intTime:</span>
-<span class="sd">                1D numpy array of integration times (astropy Quantity with </span>
-<span class="sd">                units of day)</span>
+<span class="sd">            intTime (Quantity):</span>
+<span class="sd">                1D numpy ndarray of integration times (default units of day)</span>
 <span class="sd">      </span>
 <span class="sd">      &quot;&quot;&quot;</span>
         

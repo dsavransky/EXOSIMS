@@ -64,16 +64,19 @@
 <span class="sd">matrix.</span>
 
 <span class="sd">Constructor take the following arguments:</span>
-<span class="sd">x0 - 6n vector of stacked positions and velocities for n planets</span>
-<span class="sd">mu - n vector of standard gravitational parameters mu = G(m+m_s)</span>
-<span class="sd">     where m is the planet mass, m_s is the star mass and G is the</span>
-<span class="sd">     gravitational constant</span>
-<span class="sd">epsmult - default multiplier on floating point precision, used as</span>
-<span class="sd">     convergence metric.  Higher values mean faster convergence,</span>
-<span class="sd">     but sacrifice precision.</span>
+<span class="sd">    x0 (ndarray):</span>
+<span class="sd">        6n vector of stacked positions and velocities for n planets</span>
+<span class="sd">    mu (ndarray):</span>
+<span class="sd">        n vector of standard gravitational parameters mu = G(m+m_s) where m is </span>
+<span class="sd">        the planet mass, m_s is the star mass and G is the gravitational </span>
+<span class="sd">        constant</span>
+<span class="sd">    epsmult (float):</span>
+<span class="sd">        default multiplier on floating point precision, used as convergence </span>
+<span class="sd">        metric.  Higher values mean faster convergence, but sacrifice precision.</span>
 
 <span class="sd">Step function (updateState) takes the following arguments:</span>
-<span class="sd">dt - time step</span>
+<span class="sd">    dt (float):</span>
+<span class="sd">        time step</span>
 
 <span class="sd">All units must be complementary (i.e., if position is AU and velocity</span>
 <span class="sd">is AU/day, mu must be in AU^3/day^2.</span>
@@ -155,11 +158,11 @@
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39;t,dt&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">t</span><span class="p">,</span><span class="n">dt</span><span class="p">)))</span>
-            <span class="k">print</span> <span class="s">&#39;max t,dt val&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">t</span><span class="p">,</span><span class="n">dt</span><span class="p">))))</span>
-            <span class="k">print</span> <span class="s">&#39;max t - dt&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">))</span>
-            <span class="k">print</span> <span class="s">&#39;max (t - dt)/eps&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Failed to converge on t.&#39;</span><span class="p">);</span>
+<span class="c">#            print &#39;t,dt&#39;,np.abs(np.hstack((t,dt)))</span>
+<span class="c">#            print &#39;max t,dt val&#39;,np.max(np.abs(np.hstack((t,dt))))</span>
+<span class="c">#            print &#39;max t - dt&#39;, np.max(np.abs(t-dt))</span>
+<span class="c">#            print &#39;max (t - dt)/eps&#39;,np.max(np.abs(t-dt))/np.finfo(float).eps</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Failed to converge on t.&#39;</span><span class="p">);</span>
 
         <span class="c">#Kepler solution</span>
         <span class="n">f</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">U2</span>
@@ -200,9 +203,9 @@
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39;max dG&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">G</span><span class="o">-</span><span class="n">Gprev</span><span class="p">))</span>
-            <span class="k">print</span> <span class="s">&#39;max (dG)/eps&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">G</span><span class="o">-</span><span class="n">Gprev</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Failed to converge on G, most likely due to divergence in continued fractions.&#39;</span><span class="p">);</span>
+<span class="c">#            print &#39;max dG&#39;, np.max(np.abs(G-Gprev))</span>
+<span class="c">#            print &#39;max (dG)/eps&#39;,np.max(np.abs(G-Gprev))/np.finfo(float).eps</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Failed to converge on G, most likely due to divergence in continued fractions.&#39;</span><span class="p">);</span>
 
 
         <span class="k">return</span> <span class="n">G</span>

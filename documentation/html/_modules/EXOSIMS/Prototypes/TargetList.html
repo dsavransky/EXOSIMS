@@ -164,12 +164,11 @@
         <span class="c"># initialize names to prototype module names</span>
         <span class="n">catalogname</span> <span class="o">=</span> <span class="s">&#39;StarCatalog&#39;</span> 
         <span class="n">optsysname</span> <span class="o">=</span> <span class="s">&#39;OpticalSys&#39;</span> 
-        <span class="n">popname</span> <span class="o">=</span> <span class="s">&#39;PlanetPopulation&#39;</span>
         <span class="n">rulesname</span> <span class="o">=</span> <span class="s">&#39;Rules&#39;</span>
         <span class="n">zodiname</span> <span class="o">=</span> <span class="s">&#39;ZodiacalLight&#39;</span>
         <span class="n">compname</span> <span class="o">=</span> <span class="s">&#39;Completeness&#39;</span>
                 
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;catalogname&#39;</span><span class="p">,</span> <span class="s">&#39;optsysname&#39;</span><span class="p">,</span> <span class="s">&#39;popname&#39;</span><span class="p">,</span> <span class="s">&#39;rulesname&#39;</span><span class="p">,</span> <span class="s">&#39;zodiname&#39;</span><span class="p">,</span> <span class="s">&#39;compname&#39;</span><span class="p">]</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;catalogname&#39;</span><span class="p">,</span> <span class="s">&#39;optsysname&#39;</span><span class="p">,</span> <span class="s">&#39;rulesname&#39;</span><span class="p">,</span> <span class="s">&#39;zodiname&#39;</span><span class="p">,</span> <span class="s">&#39;compname&#39;</span><span class="p">]</span>
         <span class="c"># rewrite if named in specs</span>
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
@@ -177,8 +176,6 @@
                     <span class="n">catalogname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;optsysname&#39;</span><span class="p">:</span>
                     <span class="n">optsysname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-                <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;popname&#39;</span><span class="p">:</span>
-                    <span class="n">popname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;rulesname&#39;</span><span class="p">:</span>
                     <span class="n">rulesname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;zodiname&#39;</span><span class="p">:</span>
@@ -190,8 +187,6 @@
         <span class="n">Cat</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">catalogname</span><span class="p">,</span> <span class="s">&#39;StarCatalog&#39;</span><span class="p">)</span>
         <span class="c"># import OpticalSys class</span>
         <span class="n">Opt</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">optsysname</span><span class="p">,</span> <span class="s">&#39;OpticalSys&#39;</span><span class="p">)</span>
-        <span class="c"># import PlanetPopulation class</span>
-        <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">popname</span><span class="p">,</span> <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">)</span>
         <span class="c"># import Rules class</span>
         <span class="n">Rules</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">rulesname</span><span class="p">,</span> <span class="s">&#39;Rules&#39;</span><span class="p">)</span>
         <span class="c"># import ZodiacalLight class</span>
@@ -201,10 +196,10 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">cat</span> <span class="o">=</span> <span class="n">Cat</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># star catalog data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="n">Opt</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># optical system object class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="n">Pop</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># planet population object class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="n">Rules</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># rules object class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span> <span class="o">=</span> <span class="n">Zodi</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># zodiacal light model object class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="n">Comp</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># completeness model object class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">pop</span> <span class="c"># planet population object class</span>
         
         <span class="c"># list of Star Catalog attributes</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -213,33 +208,35 @@
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         <span class="c"># filter out nan attribute values from Star Catalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
+        <span class="c"># populate completion values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c"># include completeness now that it is set</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp0&#39;</span><span class="p">)</span>
+        <span class="c"># populate maximum integration time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c"># include integration time now that it is set</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;maxintTime&#39;</span><span class="p">)</span>
+        <span class="c"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
+        <span class="c"># if additional filters are desired, need atts fully populated</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsEst&#39;</span><span class="p">)</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsTrue&#39;</span><span class="p">)</span>
+        
         <span class="c"># filter out binary stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         <span class="c"># filter out systems with planets within the IWA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outside_IWA_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         <span class="c"># filter out systems where maximum delta mag is not in allowable orbital range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_dmag_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># populate maximum integration time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c"># include integration time now that it is set</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;maxintTime&#39;</span><span class="p">)</span>
         <span class="c"># filter out systems where integration time is longer than maximum time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">int_cutoff_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># populate completion values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c"># include completeness now that it is set</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp0&#39;</span><span class="p">)</span>
         <span class="c"># filter out systems which do not reach the completeness threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
-        <span class="c"># if additional filters are desired, need atts fully populated</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsEst&#39;</span><span class="p">)</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsTrue&#39;</span><span class="p">)</span>
+        
         <span class="c"># have target list, no need for catalog now</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span>
         
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TargetList.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Target List object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Target List object, this method</span>
@@ -251,7 +248,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Target List class object attributes&#39;</span>
-                
+                </div>
 <div class="viewcode-block" id="TargetList.nan_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.nan_filter">[docs]</a>    <span class="k">def</span> <span class="nf">nan_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates Target List and filters out values which are nan</span>
 <span class="sd">        </span>
@@ -471,7 +468,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">minComp</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>        
         </div>
 <div class="viewcode-block" id="TargetList.revise_lists"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">[docs]</a>    <span class="k">def</span> <span class="nf">revise_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">,</span> <span class="n">ind</span><span class="p">):</span>
@@ -489,7 +486,8 @@
             <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="n">ind</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="n">ind</span><span class="p">])</span>
     </div>
 <div class="viewcode-block" id="TargetList.stellar_mass"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">[docs]</a>    <span class="k">def</span> <span class="nf">stellar_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates target list with &#39;true&#39; and &#39;approximate&#39; stellar masses</span>

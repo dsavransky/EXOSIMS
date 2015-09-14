@@ -64,8 +64,83 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="exosims-planetpopulation-planetfunc-module">
-<h2>EXOSIMS.PlanetPopulation.PlanetFunc module<a class="headerlink" href="#exosims-planetpopulation-planetfunc-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.PlanetPopulation.PlanetFunc">
+<span id="exosims-planetpopulation-planetfunc-module"></span><h2>EXOSIMS.PlanetPopulation.PlanetFunc module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.PlanetFunc" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc">
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.PlanetFunc.</code><code class="descname">PlanetFunc</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation</span></code></a></p>
+<p>Planet Functions inherits all methods and attributes of the
+PlanetPopulation class</p>
+<p>This class contains functions to describe to probablity distribution
+of each parameter and the number of planets in the model</p>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.eccentricity">
+<code class="descname">eccentricity</code><span class="sig-paren">(</span><em>x</em>, <em>sigma=0.25</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.eccentricity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides PDF of semi-major axis</p>
+<p>Function is a Rayleigh distribution
+Kipping et. al (2013)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.inds_select">
+<code class="descname">inds_select</code><span class="sig-paren">(</span><em>x</em>, <em>low</em>, <em>high</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.inds_select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.inds_select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds indices meeting specific conditions</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of values</li>
+<li><strong>low</strong> (<em>float</em>) &#8211; Lower bound</li>
+<li><strong>high</strong> (<em>fload</em>) &#8211; Upper bound</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>inds</strong> &#8211;</p>
+<p>1D numpy ndarray of indices meeting the conditions</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.mass">
+<code class="descname">mass</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides PDF of exoplanet masses</p>
+<p>Function is an exponential
+Marcey et. al (2005)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.plot">
+<code class="descname">plot</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to plot PDFs as histograms in order to view their accuracy</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.radius">
+<code class="descname">radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides PDF of planet radius</p>
+<p>Function is a peacewise normal distribution
+Fressin et. al (2013)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.semi_axis">
+<code class="descname">semi_axis</code><span class="sig-paren">(</span><em>x</em>, <em>beta=-0.61</em>, <em>s0=35</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.semi_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.semi_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides PDF of semi-major axis</p>
+<p>Function is logarithmic
+Cumming et. al (2008)</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.PlanetPopulation">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
@@ -82,7 +157,7 @@
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.PlanetPopulation package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#exosims-planetpopulation-planetfunc-module">EXOSIMS.PlanetPopulation.PlanetFunc module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.PlanetFunc">EXOSIMS.PlanetPopulation.PlanetFunc module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation">Module contents</a></li>
 </ul>
 </li>

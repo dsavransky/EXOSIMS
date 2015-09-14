@@ -112,9 +112,9 @@
         <span class="c"># semi-major axis range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a_min</span><span class="p">,</span> <span class="n">a_max</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> 
         <span class="c"># minimum eccentricity</span>
-        <span class="n">e_min</span> <span class="o">=</span> <span class="mf">0.001</span> 
+        <span class="n">e_min</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span> 
         <span class="c"># maximum eccentricity</span>
-        <span class="n">e_max</span> <span class="o">=</span> <span class="mf">1.</span> 
+        <span class="n">e_max</span> <span class="o">=</span> <span class="mf">0.8</span> 
         <span class="c"># eccentricity range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">erange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e_min</span><span class="p">,</span> <span class="n">e_max</span><span class="p">])</span> 
         <span class="c"># minimum argument of perigee in degrees</span>
@@ -196,7 +196,7 @@
         <span class="c"># orbital radius range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rrange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
                 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PlanetPopulation.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Planet Population object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Planet Population object, this </span>
@@ -208,7 +208,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Planet Population class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="PlanetPopulation.semi_axis"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis">[docs]</a>    <span class="k">def</span> <span class="nf">semi_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Probability density function for semi-major axis in AU</span>
 <span class="sd">        </span>
@@ -216,11 +216,11 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                semi-major axis value in AU</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -236,11 +236,11 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                eccentricity value</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -256,11 +256,11 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                argument of perigee in degrees</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -276,11 +276,11 @@
 <span class="sd">        maximum values in degrees.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                right ascension of the ascending node in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -296,11 +296,11 @@
 <span class="sd">        maximum values in km.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                planet radius in km</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -316,11 +316,11 @@
 <span class="sd">        maximum values in kg.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                planet mass in kg</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -336,11 +336,11 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                planet albedo</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function value</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -356,11 +356,11 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            x:</span>
+<span class="sd">            x (float):</span>
 <span class="sd">                planet orbital inclination in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            pdf:</span>
+<span class="sd">            pdf (float):</span>
 <span class="sd">                probability density function</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>

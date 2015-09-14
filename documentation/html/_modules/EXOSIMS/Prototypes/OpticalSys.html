@@ -89,11 +89,11 @@
 <span class="sd">            Outer Working Angle (default units of arcsecond)</span>
 <span class="sd">        dMagLim (float):</span>
 <span class="sd">            limiting delta magnitude. **Note: wavelength dependent?**</span>
-<span class="sd">        throughput (callable(lam,alpha)):</span>
+<span class="sd">        throughput (callable(lam, alpha)):</span>
 <span class="sd">            optical system throughput (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity) and angular separation (astropy Quantity).</span>
-<span class="sd">        contrast (callable(lam,alpha)):</span>
+<span class="sd">        contrast (callable(lam, alpha)):</span>
 <span class="sd">            optical system contrast curve (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
 <span class="sd">            Quantity) and angular separation (astropy Quantity).</span>
@@ -103,7 +103,7 @@
 <span class="sd">            detector read noise</span>
 <span class="sd">        t_exp (Quantity):</span>
 <span class="sd">            exposure time per read (default units of s)</span>
-<span class="sd">        PSF (callable(lam,alpha)):</span>
+<span class="sd">        PSF (callable(lam, alpha)):</span>
 <span class="sd">            point spread function - 2D ndarray of values, normalized to 1 at the core</span>
 <span class="sd">            (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy</span>
@@ -227,7 +227,7 @@
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span>
                 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSys.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Optical System object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Optical System object, this </span>
@@ -239,7 +239,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Optical System class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="OpticalSys.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
 <span class="sd">        </span>

@@ -157,19 +157,14 @@
         <span class="c"># bring inherited class objects to top level of Simulated Universe</span>
         <span class="c"># optical system class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">opt</span> 
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">opt</span>
         <span class="c"># planet population class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">pop</span> 
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">pop</span>
         <span class="c"># rules class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">rules</span> 
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">rules</span>
         <span class="c"># zodiacal light class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">zodi</span> 
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">zodi</span>
         <span class="c"># completeness class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">comp</span> 
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">comp</span>
         
         <span class="c"># planets mapped to target stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">planInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_to_star</span><span class="p">()</span>
@@ -200,7 +195,7 @@
         <span class="c"># exozodi levels for systems with planets</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SimulatedUniverse.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Simulated Universe object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Simulated Universe object, </span>
@@ -212,7 +207,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Simulated Universe class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="SimulatedUniverse.planet_to_star"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star">[docs]</a>    <span class="k">def</span> <span class="nf">planet_to_star</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns index of star in target star list to each planet</span>
 <span class="sd">        </span>
@@ -432,13 +427,11 @@
 <span class="sd">                planet right ascension of the ascending node in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            r (Quantity):</span>
+<span class="sd">            r, v (Quantity, Quantity):</span>
 <span class="sd">                numpy ndarray containing initial position vector of each planet </span>
-<span class="sd">                (units of km)</span>
-<span class="sd">            v (Quantity):</span>
-<span class="sd">                numpy ndarray containing initial velocity vector of each planet</span>
-<span class="sd">                (units of km/s)</span>
-<span class="sd">        </span>
+<span class="sd">                (units of km), numpy ndarray containing initial velocity vector </span>
+<span class="sd">                of each planet (units of km/s)</span>
+<span class="sd">                </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">Omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="p">)</span>
@@ -556,17 +549,20 @@
 <span class="sd">                time increment to propagate the system (units of time)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            rnew (Quantity):</span>
-<span class="sd">                numpy ndarray of propagated position vectors (units of km)</span>
-<span class="sd">            vnew (Quantity):</span>
+<span class="sd">            rnew, vnew (Quantity, Quantity):</span>
+<span class="sd">                numpy ndarray of propagated position vectors (units of km),</span>
 <span class="sd">                numpy ndarray of propagated velocity vectors (units of km/day)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># stack dimensionless positions and velocities</span>
         <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)):</span>
-            <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+                
         <span class="c"># calculate vector of gravitational parameter    </span>
         <span class="n">mu</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">mu</span><span class="p">):</span>

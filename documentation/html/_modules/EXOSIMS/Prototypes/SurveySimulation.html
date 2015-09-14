@@ -56,6 +56,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
 
 <div class="viewcode-block" id="SurveySimulation"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation">[docs]</a><span class="k">class</span> <span class="nc">SurveySimulation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -143,25 +144,18 @@
         
         <span class="c"># bring inherited class objects to top level of Survey Simulation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">opt</span> <span class="c"># optical system class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">opt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">rules</span> <span class="c"># rules class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">rules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">pop</span> <span class="c"># planet population class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">pop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">zodi</span> <span class="c"># zodiacal light class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">zodi</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">comp</span> <span class="c"># completeness class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">comp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">planphys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">planphys</span> <span class="c"># planet physical model class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">planphys</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">targlist</span> <span class="c"># target list class object</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">simuni</span><span class="o">.</span><span class="n">targlist</span>
         
         <span class="c"># initialize values updated by functions</span>
         <span class="c"># list of simulation results, each item is a dictionary</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>        
     
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SurveySimulation.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Survey Simulation object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Survey Simulation object, this </span>
@@ -173,7 +167,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Survey Simulation class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="SurveySimulation.run_sim"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim">[docs]</a>    <span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs the survey simulation </span>
 <span class="sd">        </span>
@@ -202,6 +196,8 @@
 <span class="sd">                TargetList class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
+<span class="sd">            string (str):</span>
+<span class="sd">                String &#39;Simulation results in .DRM&#39;</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -237,6 +233,7 @@
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;Current mission time&#39;</span>
             <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
+            <span class="n">obsbegin</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
             <span class="c"># dictionary containing results</span>
             <span class="n">DRM</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c"># store target star index</span>
@@ -324,6 +321,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">revisit_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">revisit_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s_ind</span><span class="p">,</span> <span class="n">t_rev</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])))</span>
             
+            <span class="n">obsend</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
             <span class="c"># find next available time for planet-finding</span>
             <span class="n">nexttime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rules</span><span class="o">.</span><span class="n">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
           
@@ -331,8 +329,11 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">timekeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
             
+            <span class="c"># update completeness values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">)</span>
+            
             <span class="c"># acquire a new target star index</span>
-            <span class="n">s_ind</span><span class="p">,</span> <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="n">revisit_list</span><span class="p">,</span> <span class="n">extended_list</span><span class="p">,</span> <span class="n">DRM</span><span class="p">)</span>
+            <span class="n">s_ind</span><span class="p">,</span> <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="p">,</span> <span class="n">revisit_list</span><span class="p">,</span> <span class="n">extended_list</span><span class="p">,</span> <span class="n">DRM</span><span class="p">)</span>
             
             <span class="c"># append result values to self.DRM</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DRM</span><span class="p">)</span>
@@ -428,20 +429,13 @@
 <span class="sd">                time)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            observationPossible (ndarray):</span>
+<span class="sd">            observationPossible, t_int, DRM, s, dMag, Ip (ndarray, Quantity, dict, Quantity, ndarray, Quantity):</span>
 <span class="sd">                1D numpy ndarray of booleans indicating if an observation of </span>
-<span class="sd">                each planet is possible</span>
-<span class="sd">            t_int (Quantity):</span>
-<span class="sd">                integration time (units of time)</span>
-<span class="sd">            DRM (dict):</span>
-<span class="sd">                dictionary containing survey simulation results</span>
-<span class="sd">            s (Quantity):</span>
-<span class="sd">                apparent separation (units of distance)</span>
-<span class="sd">            dMag (ndarray):</span>
-<span class="sd">                1D numpy ndarray of delta magnitude, difference in magnitude </span>
-<span class="sd">                between planet and star</span>
-<span class="sd">            Ip (Quantity):</span>
-<span class="sd">                irradiance (units of :math:`1/(m^2*nm*s)`)</span>
+<span class="sd">                each planet is possible, integration time (units of time), </span>
+<span class="sd">                dictionary containing survey simulation results, apparent </span>
+<span class="sd">                separation (units of distance), 1D numpy ndarray of delta </span>
+<span class="sd">                magnitude, difference in magnitude between planet and star,</span>
+<span class="sd">                irradiance (units of :math:`1/(m^2*nm*s)`)                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -545,13 +539,10 @@
 <span class="sd">                integration time (units of time)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            DRM (dict):</span>
-<span class="sd">                dictionary containing survey simulation results</span>
-<span class="sd">            FA (bool):</span>
-<span class="sd">                False Alarm boolean</span>
-<span class="sd">            spectra (ndarray):</span>
-<span class="sd">                numpy ndarray of values indicating if planet spectra has been</span>
-<span class="sd">                captured</span>
+<span class="sd">            DRM, FA, spectra (dict, bool, ndarray):</span>
+<span class="sd">                dictionary containing survey simulation results, False Alarm </span>
+<span class="sd">                boolean, numpy ndarray of values indicating if planet spectra </span>
+<span class="sd">                has been captured                </span>
 <span class="sd">                </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -652,11 +643,10 @@
 <span class="sd">                instrument outer working angle (angle units)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            observationPossible (ndarray):</span>
+<span class="sd">            observationPossible, s (ndarray, Quantity):</span>
 <span class="sd">                updated 1D numpy ndarray of booleans indicating if an </span>
-<span class="sd">                observation of each planet is possible</span>
-<span class="sd">            s (Quantity):</span>
-<span class="sd">                apparent separation (units of km)</span>
+<span class="sd">                observation of each planet is possible, apparent separation </span>
+<span class="sd">                (units of km)                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -685,11 +675,10 @@
 <span class="sd">                limiting difference in brightness between planet and star</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            observationPossible (ndarray):</span>
+<span class="sd">            observationPossible, dMag (ndarray, ndarray):</span>
 <span class="sd">                updated 1D numpy array of booleans indicating if an observation</span>
-<span class="sd">                of each planet is possible</span>
-<span class="sd">            dMag (ndarray):</span>
-<span class="sd">                delta magnitude (difference between star and planet magnitude)</span>
+<span class="sd">                of each planet is possible, delta magnitude (difference between </span>
+<span class="sd">                star and planet magnitude)                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -736,16 +725,13 @@
 <span class="sd">                boolean where True is for characterization calculations</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            t_int (Quantity):</span>
+<span class="sd">            t_int, observationPossible, chargo (Quantity, ndarray, bool):</span>
 <span class="sd">                true integration time for planetary system (units of day) </span>
 <span class="sd">                (t_char_calc = False) or maximum characterization time for </span>
-<span class="sd">                planetary system (t_char_calc = True)</span>
-<span class="sd">            observationPossible (ndarray):</span>
-<span class="sd">                updated 1D numpy ndarray of booleans indicating if an </span>
-<span class="sd">                observation or characterization of each planet is possible</span>
-<span class="sd">            chargo (bool):</span>
-<span class="sd">                boolean where True is to encode characterization data </span>
-<span class="sd">                (t_char_calc = True only)</span>
+<span class="sd">                planetary system (t_char_calc = True), updated 1D numpy ndarray </span>
+<span class="sd">                of booleans indicating if an observation or characterization of </span>
+<span class="sd">                each planet is possible, boolean where True is to encode </span>
+<span class="sd">                characterization data (t_char_calc = True only)                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># set chargo to False initially</span>
@@ -839,7 +825,7 @@
             <span class="n">rendmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rend</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
             <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">rend</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="n">rendmag</span><span class="p">)</span>
             <span class="n">Phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            <span class="n">dMagend</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Phi</span><span class="p">)</span> <span class="o">+</span> <span class="mf">5.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rendmag</span><span class="p">)</span>
+            <span class="n">dMagend</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Phi</span><span class="p">)</span> <span class="o">+</span> <span class="mf">5.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rendmag</span><span class="p">)</span>
            
             <span class="k">if</span> <span class="n">dMagend</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">dMagLim</span> <span class="ow">and</span> <span class="n">send</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">IWA</span><span class="p">):</span>
                 <span class="n">obsRes</span> <span class="o">=</span> <span class="mi">1</span>
@@ -892,17 +878,11 @@
 <span class="sd">                planet</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            s (Quantity):</span>
-<span class="sd">                apparent separation (units of distance)</span>
-<span class="sd">            dMag (ndarray):</span>
-<span class="sd">                delta magnitude</span>
-<span class="sd">            Ip (Quantity):</span>
-<span class="sd">                irradiance (units of flux per time)</span>
-<span class="sd">            DRM (dict):</span>
-<span class="sd">                dictionary containing simulation results</span>
-<span class="sd">            observed (ndarray):</span>
-<span class="sd">                1D numpy ndarray indicating number of observations for each </span>
-<span class="sd">                planet</span>
+<span class="sd">            s, dMag, Ip, DRM, observed (Quantity, ndarray, Quantity, dict, ndarray):</span>
+<span class="sd">                apparent separation (units of distance), delta magnitude, </span>
+<span class="sd">                irradiance (units of flux per time), dictionary containing </span>
+<span class="sd">                simulation results, 1D numpy ndarray indicating number of </span>
+<span class="sd">                observations for each planet                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># default DRM detection status to null detection</span>
@@ -996,7 +976,7 @@
 
         <span class="k">return</span> <span class="n">t_char</span>
         </div>
-<div class="viewcode-block" id="SurveySimulation.next_target"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">[docs]</a>    <span class="k">def</span> <span class="nf">next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">revisit_list</span><span class="p">,</span> <span class="n">extended_list</span><span class="p">,</span> <span class="n">DRM</span><span class="p">):</span>
+<div class="viewcode-block" id="SurveySimulation.next_target"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">[docs]</a>    <span class="k">def</span> <span class="nf">next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">revisit_list</span><span class="p">,</span> <span class="n">extended_list</span><span class="p">,</span> <span class="n">DRM</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds index of next target star</span>
 <span class="sd">        </span>
 <span class="sd">        This method chooses the next target star index at random based on which</span>
@@ -1014,6 +994,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            s_ind (int):</span>
 <span class="sd">                index of current target star</span>
+<span class="sd">            targlist (TargetList):</span>
+<span class="sd">                Target List module</span>
 <span class="sd">            revisit_list (ndarray):</span>
 <span class="sd">                numpy ndarray of containing index and time (in days) of targets </span>
 <span class="sd">                to revisit</span>
@@ -1023,10 +1005,8 @@
 <span class="sd">                dictionary of simulation results</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            new_s_ind (int):</span>
-<span class="sd">                index of next target star</span>
-<span class="sd">            DRM (dict):</span>
-<span class="sd">                dictionary of simulation results</span>
+<span class="sd">            new_s_ind, DRM (int, dict):</span>
+<span class="sd">                index of next target star, dictionary of simulation results                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         

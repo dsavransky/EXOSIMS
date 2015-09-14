@@ -74,61 +74,79 @@
 <p>This class contains all variables and methods specific to the WFIRST
 optical system needed to perform Optical System Module calculations
 in exoplanet mission simulation.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>**specs:</dt>
-<dd>user specified values</dd>
-</dl>
-</dd>
-<dt>Attributes:</dt>
-<dd><dl class="first last docutils">
-<dt>dAlpha:</dt>
-<dd>pixel size in square arcseconds (astropy Quantity in arcsec**2)</dd>
-<dt>Psi:</dt>
-<dd>instrument specific value &#8216;sharpness&#8217; derived from PSF</dd>
-<dt>Xi:</dt>
-<dd>instrument specific value derived from PSF</dd>
-<dt>P1:</dt>
-<dd>instrument specific value derived from PSF</dd>
-<dt>alphaBar:</dt>
-<dd>instrument specific value</dd>
-<dt>Ta:</dt>
-<dd>Airy throughput</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.dAlpha">
+<code class="descname">dAlpha</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.dAlpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>pixel size in square arcseconds (astropy Quantity in arcsec**2)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Psi">
+<code class="descname">Psi</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Psi" title="Permalink to this definition">¶</a></dt>
+<dd><p>instrument specific value &#8216;sharpness&#8217; derived from PSF</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Xi">
+<code class="descname">Xi</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Xi" title="Permalink to this definition">¶</a></dt>
+<dd><p>instrument specific value derived from PSF</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.P1">
+<code class="descname">P1</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.P1" title="Permalink to this definition">¶</a></dt>
+<dd><p>instrument specific value derived from PSF</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.alphaBar">
+<code class="descname">alphaBar</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.alphaBar" title="Permalink to this definition">¶</a></dt>
+<dd><p>instrument specific value</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Ta">
+<code class="descname">Ta</code><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.Ta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Airy throughput</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime">
 <code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called from a method in the SurveySimulation class
 object.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>rules:</dt>
-<dd>Rules class object</dd>
-<dt>universe:</dt>
-<dd>SimulatedUniverse class object</dd>
-<dt>s_ind:</dt>
-<dd>target star index</dd>
-<dt>planInds:</dt>
-<dd>planet indices linking back to target star</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>intTime:</dt>
-<dd>1D numpy array of integration times (astropy Quantity with 
-units of day)</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>targlist</strong> &#8211; TargetList class object</li>
+<li><strong>opt</strong> &#8211; OpticalSys class object</li>
+<li><strong>rules</strong> &#8211; Rules class object</li>
+<li><strong>universe</strong> &#8211; SimulatedUniverse class object</li>
+<li><strong>s_ind</strong> &#8211; target star index</li>
+<li><strong>planInds</strong> &#8211; planet indices linking back to target star</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">1D numpy array of integration times (astropy Quantity with
+units of day)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -136,11 +154,11 @@ units of day)</dd>
 <code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds maximum integration time for target systems</p>
 <p>This method is called in the __init__ for the TargetList class object.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>targlist:</dt>
-<dd><dl class="first last docutils">
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> &#8211; <dl class="docutils">
 <dt>TargetList class object which also has access to:</dt>
 <dd><dl class="first last docutils">
 <dt>targlist.zodi:</dt>
@@ -150,17 +168,15 @@ units of day)</dd>
 </dl>
 </dd>
 </dl>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>maxintTime:</dt>
-<dd>1D numpy array containing maximum integration time for target
-list stars (astropy Quantity with units of day)</dd>
-</dl>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
+list stars (astropy Quantity with units of day)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.maxintTime">maxintTime</a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

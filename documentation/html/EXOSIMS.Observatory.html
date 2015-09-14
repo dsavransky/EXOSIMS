@@ -27,7 +27,7 @@
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="next" title="EXOSIMS.OpticalSys package" href="EXOSIMS.OpticalSys.html" />
-    <link rel="prev" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="prev" title="EXOSIMS.Completeness package" href="EXOSIMS.Completeness.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -47,7 +47,7 @@
           <a href="EXOSIMS.OpticalSys.html" title="EXOSIMS.OpticalSys package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="EXOSIMS.html" title="EXOSIMS package"
+          <a href="EXOSIMS.Completeness.html" title="EXOSIMS.Completeness package"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
@@ -80,48 +80,50 @@ in exoplanet mission simulation.</p>
 <dd><p>Finds keepout Boolean values, returns True if successful</p>
 <p>This method finds the keepout Boolean values for each target star where
 True is an observable star and stores the 1D numpy array in self.kogood.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>time (Time):</dt>
-<dd>absolute time (astropy Time)</dd>
-<dt>catalog (TargetList or StarCatalog):</dt>
-<dd>TargetList or StarCatalog class object</dd>
-<dt>koangle (float):</dt>
-<dd>Telescope keepout angle in degrees</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>success (bool):</dt>
-<dd>True if successful, False if not</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>time</strong> (<em>Time</em>) &#8211; absolute time (astropy Time)</li>
+<li><strong>catalog</strong> (<em>TargetList or StarCatalog</em>) &#8211; TargetList or StarCatalog class object</li>
+<li><strong>koangle</strong> (<em>float</em>) &#8211; Telescope keepout angle in degrees</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>success</strong> &#8211;</p>
+<p>True if successful, False if not</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit">
 <code class="descname">orbit</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds WFIRST geosynchronous circular orbit position vector</p>
-<p>This method finds the WFIRST geosynchronous circular orbit position 
+<p>This method finds the WFIRST geosynchronous circular orbit position
 vector as 1D numpy array (astropy Quantity with units of km) in the
 heliocentric equatorial frame, stores this vector in self.r_sc,
 and returns True if successful.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>time (Time):</dt>
-<dd>current absolute time (astropy Time)</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>success (bool):</dt>
-<dd>True if successful, False if not</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>Time</em>) &#8211; current absolute time (astropy Time)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>success</strong> &#8211;<p>True if successful, False if not</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -149,8 +151,8 @@ and returns True if successful.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="EXOSIMS.html"
-                        title="previous chapter">EXOSIMS package</a></p>
+  <p class="topless"><a href="EXOSIMS.Completeness.html"
+                        title="previous chapter">EXOSIMS.Completeness package</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="EXOSIMS.OpticalSys.html"
                         title="next chapter">EXOSIMS.OpticalSys package</a></p>

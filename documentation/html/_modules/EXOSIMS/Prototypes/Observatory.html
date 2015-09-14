@@ -245,7 +245,7 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">Pluto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Plutoa</span><span class="p">,</span> <span class="n">Plutoe</span><span class="p">,</span> <span class="n">Plutoi</span><span class="p">,</span> <span class="n">PlutoO</span><span class="p">,</span> <span class="n">Plutow</span><span class="p">,</span> <span class="n">PlutolM</span><span class="p">)</span>
         
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Observatory.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Observatory object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Observatory object, this method</span>
@@ -257,7 +257,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Observatory class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="Observatory.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds observatory orbit position vector, returns True if successful</span>
 <span class="sd">        </span>
@@ -425,9 +425,8 @@
 <span class="sd">                index for star catalog information</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            r_star (Quantity):</span>
-<span class="sd">                star position vector in heliocentric equatorial frame in 1D </span>
-<span class="sd">                numpy ndarray (units of km)</span>
+<span class="sd">            r_star (Quantity): star position vector in heliocentric equatorial </span>
+<span class="sd">                frame in 1D numpy ndarray (units of km)</span>
 <span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -577,7 +576,8 @@
 <span class="sd">                integer value denoting rotation axis (1,2, or 3)</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            rotation matrix defined as numpy ndarray</span>
+<span class="sd">            matrix (ndarray):</span>
+<span class="sd">                rotation matrix defined as numpy ndarray</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -606,10 +606,8 @@
 <span class="sd">                index of target star</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            dF_lateral (Quantity):</span>
-<span class="sd">                lateral disturbance force (units of N)</span>
-<span class="sd">            dF_axial (Quantity):</span>
-<span class="sd">                axial disturbance force (units of N)</span>
+<span class="sd">            dF_lateral, dF_axial (Quantity, Quantity):</span>
+<span class="sd">                lateral and axial disturbance forces (units of N)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -666,14 +664,12 @@
 <span class="sd">                integration time (units of time)</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            intMdot (Quantity):</span>
-<span class="sd">                mass flow rate (units like kg/day) </span>
-<span class="sd">            mass_used (Quantity):</span>
-<span class="sd">                mass used in station-keeping (units of mass)</span>
-<span class="sd">            deltaV (Quantity):</span>
-<span class="sd">                change in velocity required for station-keeping (velocity units</span>
+<span class="sd">            intMdot, mass_used, deltaV (Quantity, Quantity, Quantity):</span>
+<span class="sd">                mass flow rate (units like kg/day), </span>
+<span class="sd">                mass used in station-keeping (units of mass), </span>
+<span class="sd">                change in velocity required for station-keeping (velocity units </span>
 <span class="sd">                like km/s)</span>
-<span class="sd">        </span>
+<span class="sd">                        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">intMdot</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">45.</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">5.</span><span class="p">))</span><span class="o">*</span><span class="n">dF_lateral</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">g0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
@@ -703,9 +699,9 @@
 <span class="sd">            lM (list):</span>
 <span class="sd">                mean longitude list</span>
 <span class="sd">                </span>
-<span class="sd">            Each of these lists has a maximum of 4 elements. The values in </span>
-<span class="sd">            these lists are used to propagate the solar system planetary </span>
-<span class="sd">            ephemerides for a specific solar system planet.</span>
+<span class="sd">        Each of these lists has a maximum of 4 elements. The values in </span>
+<span class="sd">        these lists are used to propagate the solar system planetary </span>
+<span class="sd">        ephemerides for a specific solar system planet.</span>
 <span class="sd">        </span>
 <span class="sd">        Attributes:</span>
 <span class="sd">            a (list):</span>
@@ -721,9 +717,9 @@
 <span class="sd">            lM (list):</span>
 <span class="sd">                list of mean longitude values</span>
 <span class="sd">            </span>
-<span class="sd">            Each of these lists has a maximum of 4 elements. The values in </span>
-<span class="sd">            these lists are used to propagate the solar system planetary </span>
-<span class="sd">            ephemerides for a specific solar system planet.&quot;&quot;&quot;</span>
+<span class="sd">        Each of these lists has a maximum of 4 elements. The values in </span>
+<span class="sd">        these lists are used to propagate the solar system planetary </span>
+<span class="sd">        ephemerides for a specific solar system planet.&quot;&quot;&quot;</span>
         
         <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">lM</span><span class="p">):</span>
             
@@ -746,7 +742,7 @@
             <span class="c"># store list of mean longitude values (degrees)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lM</span> <span class="o">=</span> <span class="n">lM</span>
         
-        <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Observatory.SolarEph.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.__str__">[docs]</a>        <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;String representation of the SolarEph object</span>
 <span class="sd">            </span>
 <span class="sd">            When the command &#39;print&#39; is used on the SolarEph object, this </span>
@@ -756,7 +752,7 @@
             <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
             
-            <span class="k">return</span> <span class="s">&#39;SolarEph class object attributes&#39;</span></div></div>
+            <span class="k">return</span> <span class="s">&#39;SolarEph class object attributes&#39;</span></div></div></div>
 </pre></div>
 
           </div>

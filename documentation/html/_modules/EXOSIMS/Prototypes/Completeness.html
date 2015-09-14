@@ -54,6 +54,7 @@
   <h1>Source code for EXOSIMS.Prototypes.Completeness</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
 
 <div class="viewcode-block" id="Completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness">[docs]</a><span class="k">class</span> <span class="nc">Completeness</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Completeness class template</span>
@@ -74,6 +75,16 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;Completeness&#39;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="c"># get desired Planet Population module</span>
+        <span class="c"># initialize name to Prototype</span>
+        <span class="n">popname</span> <span class="o">=</span> <span class="s">&#39;PlanetPopulation&#39;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;popname&#39;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="n">popname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        
+        <span class="c"># import PlanetPopulation class</span>
+        <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">popname</span><span class="p">,</span> <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="n">Pop</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># planet population object class</span>
         
         <span class="c"># default values </span>
         <span class="c"># minimum completeness level for detection</span>
@@ -87,7 +98,7 @@
         <span class="c"># set values derived from quantities above</span>
 
     
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Completeness.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Completeness object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Completeness object, this </span>
@@ -101,7 +112,7 @@
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s">&#39;Completeness class object attributes&#39;</span>
-        
+        </div>
 <div class="viewcode-block" id="Completeness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
 <span class="sd">        </span>
@@ -129,6 +140,32 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">comp0</span>
+        </div>
+<div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            s_ind (int):</span>
+<span class="sd">                index of star just observed</span>
+<span class="sd">            targlist (TargetList):</span>
+<span class="sd">                TargetList module</span>
+<span class="sd">            obsbegin (Quantity):</span>
+<span class="sd">                time of observation begin</span>
+<span class="sd">            obsend (Quantity):</span>
+<span class="sd">                time of observation end</span>
+<span class="sd">            nexttime (Quantity):</span>
+<span class="sd">                time of next observational period</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            comp0 (ndarray):</span>
+<span class="sd">                1D numpy ndarray of completeness values for each star in the </span>
+<span class="sd">                target list</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># prototype returns the &quot;virgin&quot; completeness value</span>
+        <span class="n">comp0</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">comp0</span>
         
         <span class="k">return</span> <span class="n">comp0</span></div></div>
 </pre></div>

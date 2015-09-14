@@ -74,15 +74,14 @@
 <p>This class populates the star catalog used in EXOSIMS from
 Margaret Trunbull&#8217;s EXOCAT catalog, retrieved from the
 NASA Exoplanet Archive as a VOTABLE.</p>
-<dl class="docutils">
-<dt>Attributes:</dt>
-<dd><dl class="first docutils">
-<dt>stardata (ndarray):</dt>
-<dd>All VOTABLE data</dd>
-</dl>
-<p class="last">All other attributes as in StarCatalog</p>
-</dd>
-</dl>
+<dl class="attribute">
+<dt id="EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1.stardata">
+<code class="descname">stardata</code><a class="headerlink" href="#EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1.stardata" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em></p>
+<p>All VOTABLE data</p>
+</dd></dl>
+
+<p>All other attributes as in StarCatalog</p>
 </dd></dl>
 
 </div>
@@ -91,9 +90,9 @@ NASA Exoplanet Archive as a VOTABLE.</p>
 <dl class="class">
 <dt id="EXOSIMS.StarCatalog.SIMBAD300Catalog.SIMBAD300Catalog">
 <em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.SIMBAD300Catalog.</code><code class="descname">SIMBAD300Catalog</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBAD300Catalog.html#SIMBAD300Catalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBAD300Catalog.SIMBAD300Catalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog" title="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog</span></code></a></p>
 <p>SIMBAD300 Catalog class</p>
-<p>This class populates the star catalog used in EXOSIMS from the SIMBAD300 
+<p>This class populates the star catalog used in EXOSIMS from the SIMBAD300
 catalog.</p>
 </dd></dl>
 
@@ -102,11 +101,64 @@ catalog.</p>
 <span id="exosims-starcatalog-simbadcatalog-module"></span><h2>EXOSIMS.StarCatalog.SIMBADCatalog module<a class="headerlink" href="#module-EXOSIMS.StarCatalog.SIMBADCatalog" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog">
-<em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.SIMBADCatalog.</code><code class="descname">SIMBADCatalog</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.SIMBADCatalog.</code><code class="descname">SIMBADCatalog</code><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
 <p>SIMBAD Catalog class</p>
-<p>This class populates the star catalog used in EXOSIMS from the SIMBAD 
-catalog</p>
+<p>This class provides the functions to populate the star catalog used in
+EXOSIMS from the SIMBAD star catalog data.</p>
+<dl class="method">
+<dt id="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.SIMBAD_mat2pkl">
+<code class="descname">SIMBAD_mat2pkl</code><span class="sig-paren">(</span><em>matpath</em>, <em>pklpath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog.SIMBAD_mat2pkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.SIMBAD_mat2pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes pickled dictionary file from .mat file</p>
+<p>This method takes a .mat star catalog, converts it to a Python
+dictionary, pickles the dictionary, and stores it in the StarCatalog
+directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>matpath</strong> (<em>str</em>) &#8211; path to .mat file</li>
+<li><strong>pklpath</strong> (<em>str</em>) &#8211; pat to .pkl file to be written</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>bool</strong> &#8211;</p>
+<p>True if successful, False if not</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Stores pickled dictionary file with same name as .mat file (and
+extension of .pkl) containing lists of required values needed to
+populate the Star Catalog object in StarCatalog directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl">
+<code class="descname">populatepkl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog.populatepkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populates the star catalog and returns True if successful</p>
+<p>This method populates the star catalog from a pickled dictionary file
+housed in the StarCatalog directory and returns True if successful.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; name of the pickled dictionary file with extension .pkl</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>bool</strong> &#8211;<p>True if successful, False if not</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -115,9 +167,9 @@ catalog</p>
 <dl class="class">
 <dt id="EXOSIMS.StarCatalog.SIMBADRVCatalog.SIMBADRVCatalog">
 <em class="property">class </em><code class="descclassname">EXOSIMS.StarCatalog.SIMBADRVCatalog.</code><code class="descname">SIMBADRVCatalog</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADRVCatalog.html#SIMBADRVCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADRVCatalog.SIMBADRVCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog" title="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog</span></code></a></p>
 <p>SIMBADRV Catalog class</p>
-<p>This class populates the star catalog used in EXOSIMS from the SIMBADRV 
+<p>This class populates the star catalog used in EXOSIMS from the SIMBADRV
 catalog.</p>
 </dd></dl>
 

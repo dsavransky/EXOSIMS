@@ -80,20 +80,19 @@ the model from Lindler.</p>
 <dd><p>Empirically derived variation of zodiacal light with viewing angle</p>
 <p>This method encodes the empirically derived formula for zodiacal light
 with viewing angle from Lindler.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>beta (ndarray):</dt>
-<dd>angle in degrees</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>f (ndarray):</dt>
-<dd>zodiacal light in zodi</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>ndarray</em>) &#8211; angle in degrees</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>zodiacal light in zodi</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -101,24 +100,27 @@ with viewing angle from Lindler.</p>
 <code class="descname">fzodi</code><span class="sig-paren">(</span><em>Inds</em>, <em>I</em>, <em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/LindlerZodiacalLight.html#LindlerZodiacalLight.fzodi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.LindlerZodiacalLight.LindlerZodiacalLight.fzodi" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns exozodi levels for systems with planets</p>
 <p>This method is called in __init__ of SimulatedUniverse.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><dl class="first last docutils">
-<dt>Inds (ndarray):</dt>
-<dd>1D numpy ndarray of indicies referring back to target list stars</dd>
-<dt>I (ndarray):</dt>
-<dd>1D numpy ndarray or scalar value of inclination in degrees</dd>
-<dt>targlist (TargetList):</dt>
-<dd>TargetList class object</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>fzodicurr (ndarray):</dt>
-<dd>1D numpy ndarray of exozodiacal light levels</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Inds</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indicies referring back to target list stars</li>
+<li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>fzodicurr</strong> &#8211;</p>
+<p>1D numpy ndarray of exozodiacal light levels</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

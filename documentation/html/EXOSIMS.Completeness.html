@@ -1,0 +1,362 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.Completeness package &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
+    <link rel="prev" title="EXOSIMS package" href="EXOSIMS.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.Observatory.html" title="EXOSIMS.Observatory package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.html" title="EXOSIMS package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exosims-completeness-package">
+<h1>EXOSIMS.Completeness package<a class="headerlink" href="#exosims-completeness-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.Completeness.BrownCompleteness">
+<span id="exosims-completeness-browncompleteness-module"></span><h2>EXOSIMS.Completeness.BrownCompleteness module<a class="headerlink" href="#module-EXOSIMS.Completeness.BrownCompleteness" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Completeness.BrownCompleteness.</code><code class="descname">BrownCompleteness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness" title="EXOSIMS.Prototypes.Completeness.Completeness"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.Completeness.Completeness</span></code></a></p>
+<p>Completeness class template</p>
+<p>This class contains all variables and methods necessary to perform
+Completeness Module calculations in exoplanet mission simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp">
+<code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>minimum completeness level for detection</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets">
+<code class="descname">Nplanets</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>number of planets for initial completeness Monte Carlo simulation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC">
+<code class="descname">EVPOC</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>interp2d</em></p>
+<p>scipy interp2d object to find initial completeness values</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds">
+<code class="descname">obsinds</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em></p>
+<p>1D numpy ndarray containing target list star indices of stars
+which have been observed during simulation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime">
+<code class="descname">initialobstime</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>1D numpy ndarray with units of time attached containing the
+initial observation time of each star in obsinds</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated">
+<code class="descname">accumulated</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em></p>
+<p>accumulated completeness value for observed stars in obsinds</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp">
+<code class="descname">tcomp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>1D numpy ndarray with units of day containing time to compare</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non">
+<code class="descname">non</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em></p>
+<p>1D numpy ndarray containing completeness value for planets which
+are not observable at any time</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>String representation of Completeness object</p>
+<p>When the command &#8216;print&#8217; is used on the Completeness object, this
+method will return the values contained in the object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update">
+<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>s_ind</em>, <em>targlist</em>, <em>obsbegin</em>, <em>obsend</em>, <em>nexttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates completeness value for stars previously observed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>s_ind</strong> (<em>int</em>) &#8211; index of star just observed</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
+<li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
+<li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
+<li><strong>nexttime</strong> (<em>Quantity</em>) &#8211; time of next observational period</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>comp0</strong> &#8211;</p>
+<p>1D numpy ndarray of completeness values for each star in the
+target list</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.genC">
+<code class="descname">genC</code><span class="sig-paren">(</span><em>Cpath</em>, <em>nplan</em>, <em>xedges</em>, <em>yedges</em>, <em>steps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.genC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.genC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets completeness interpolant for initial completeness</p>
+<p>This function either loads a completeness .comp file based on specified
+Planet Population module or performs Monte Carlo simulations to get
+the 2D completeness values needed for interpolation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Cpath</strong> (<em>str</em>) &#8211; path to 2D completeness value array</li>
+<li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used in each simulation</li>
+<li><strong>xedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of y edge of 2d histogram (dMag)</li>
+<li><strong>steps</strong> (<em>int</em>) &#8211; number of simulations to perform</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>C</strong> &#8211;</p>
+<p>2D numpy ndarray of completeness values</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.genplans">
+<code class="descname">genplans</code><span class="sig-paren">(</span><em>nplan</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.genplans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.genplans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates planet data needed for Monte Carlo simulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>int</em>) &#8211; number of planets</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s, dMag, a</strong> &#8211;<p>planet separations (in AU), difference in brightness</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity, ndarray, Quantity</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.hist">
+<code class="descname">hist</code><span class="sig-paren">(</span><em>nplan</em>, <em>xedges</em>, <em>yedges</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.hist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns completeness histogram for Monte Carlo simulation</p>
+<p>This function uses the inherited Planet Population module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used</li>
+<li><strong>xedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of y edge of 2d histogram (dMag)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>h</strong> &#8211;</p>
+<p>2D numpy ndarray containing completeness histogram</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.target_completeness">
+<code class="descname">target_completeness</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.target_completeness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates completeness values for target stars</p>
+<p>This method is called from TargetList __init__ method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
+object attributes, has available:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>targlist.opt:</dt>
+<dd>OpticalSys class object</dd>
+<dt>targlist.rules:</dt>
+<dd>Rules class object</dd>
+<dt>targlist.zodi:</dt>
+<dd>ZodiacalLight class object</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;<p>1D numpy array of completeness values for each target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.Completeness">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.Completeness" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXOSIMS.Completeness package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Completeness.BrownCompleteness">EXOSIMS.Completeness.BrownCompleteness module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Completeness">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.html"
+                        title="previous chapter">EXOSIMS package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.Observatory.html"
+                        title="next chapter">EXOSIMS.Observatory package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/EXOSIMS.Completeness.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/EXOSIMS.Completeness.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -67,7 +67,7 @@ The terminology used to describe the software implementation is loosely based on
 \begin{figure}[ht]
     \begin{center}
         \begin{tabular}{c}
-             \includegraphics[width=0.8\textwidth]{codeflow3}
+             \includegraphics[width=0.9\textwidth]{codeflow3}
         \end{tabular}
     \end{center}
     \caption{Flowchart of mission simulation. Each box represents a component software module which interacts with other modules as indicated by the arrows. The simulation modules pass all input modules along with their own output.  Thus, the Survey Ensemble module has access to all of the input modules and all of the upstream simulation modules.}
@@ -124,6 +124,7 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
             \item astropy.time
             \item astropy.units
         \end{itemize}
+    \item copy
     \item importlib
     \item numpy
         \begin{itemize}
@@ -138,6 +139,7 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
         \begin{itemize}
             \item scipy.io
             \item scipy.special
+            \item scipy.interpolate
         \end{itemize}
 \end{itemize}
 }
@@ -284,7 +286,114 @@ These parameters apply to all simulations:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Input Modules}\label{sec:modules}
-The input modules include Star Catalog, Optical System, Planet Population, Rules, Zodiacal Light, Completeness, Planet Physical Model, Observatory, Time Keeping, and Post-Processing.  These modules encode and/or generate all of the information necessary to perform mission simulations.  The specific mission design determines the functionality of each input module, while inputs and outputs of these modules remain the same (in terms of data type and variable representations).  This section defines the functionality, major tasks, input, output, and interface of each of these modules.
+The input modules include Planet Population, Star Catalog, Optical System, Rules, Zodiacal Light, Planet Physical Model, Observatory, Time Keeping, and Post-Processing.  These modules encode and/or generate all of the information necessary to perform mission simulations.  The specific mission design determines the functionality of each input module, while inputs and outputs of these modules remain the same (in terms of data type and variable representations).  This section defines the functionality, major tasks, input, output, and interface of each of these modules.
+
+% PLANET POPULATION NEEDS UPDATING
+
+\subsection{Planet Population NEEDS UPDATING}
+The Planet Population module encodes the density functions of all required planetary parameters, both physical and orbital. These include semi-major axis, eccentricity, orbital orientation, radius, mass, and albedo (see ~\ref{sec:pdfs}). Certain parameter models may be empirically derived while others may come from analyses of observational surveys.  This module also encodes the limits on all parameters to be used for sampling the distributions and determining derived cutoff values such as the maximum target distance for a given instrument's IWA.
+
+The Planet Population module does not model the physics of planetary orbits or the amount of light reflected or emitted by a given planet, but rather encodes the statistics of planetary occurrence and properties. 
+
+\label{sec:planetpopulation}
+\subsubsection{Planet Population Object Attribute Initialization Input/Output Description} 
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[User specification] \hfill \\
+        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Planet Population object attributes will be assigned the default values listed.
+        \begin{description}
+            \item specs["a\_min"] \hfill \\
+            Minimum semi-major axis in $ AU $. Default value is 0.01.
+            \item specs["a\_max"] \hfill \\
+            Maximum semi-major axis in $ AU $. Default value is 10.0.
+            \item specs["e\_min"] \hfill \\
+            Minimum eccentricity. Default value is 0.001.
+            \item specs["e\_max"] \hfill \\
+            Maximum eccentricity. Default value is 0.999.
+            \item specs["w\_min"] \hfill \\
+            Minimum argument of perigee in degrees. Default value is 0.
+            \item specs["w\_max"] \hfill \\
+            Maximum argument of perigee in degrees. Default value is 360.
+            \item specs["O\_min"] \hfill \\
+            Minimum right ascension of the ascending node. Default value is 0.
+            \item specs["O\_max"] \hfill \\
+            Maximum right ascension of the ascending node. Default value is 360.
+            \item specs["p\_min"] \hfill \\
+            Minimum planetary albedo. Default value is 0.0004.
+            \item specs["p\_max"] \hfill \\
+            Maximum planetary albedo. Default value is 0.6.
+            \item specs["I\_min"] \hfill \\
+            Minimum inclination in degrees. Default value is 0.
+            \item specs["I\_max"] \hfill \\
+            Maximum inclination in degrees. Default value is 360.
+            \item specs["R\_min"] \hfill \\
+            Minimum planetary radius in $ km $. Default value is 1930.
+            \item specs["R\_max"] \hfill \\
+            Maximum planetary radius in $ km $. Default value is 145844.
+            \item specs["Mp\_min"] \hfill \\
+            Minimum planetary mass in $ kg $. Default value is 1.196e+23.
+            \item specs["Mp\_max"] \hfill \\
+            Maximum planetary mass in $ kg $. Default value is 5.411e+28.
+            \item specs["scaleOrbits"] \hfill \\
+            Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
+        \end{description}
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[PlanetPopulation.arange] \hfill \\
+        Semi-major axis range defined as numpy.array([a\_min, a\_max]) (astropy Quantity object initially set in $ AU $)
+        \item[PlanetPopulation.erange] \hfill \\
+        Eccentricity range defined as numpy.array([e\_min, e\_max])
+        \item[PlanetPopulation.wrange] \hfill \\
+        Argument of perigee range defined as numpy.array([w\_min, w\_max])
+        \item[PlanetPopulation.Orange] \hfill \\
+        Right ascension of the ascending node range defined as numpy.array([O\_min, O\_max])
+        \item[PlanetPopulation.prange] \hfill \\
+        Planetary albedo range defined as numpy.array([p\_min, p\_max])
+        \item[PlanetPopulation.Irange] \hfill \\
+        Planetary orbital inclination range defined as numpy.array([I\_min, I\_max])
+        \item[PlanetPopulation.Rrange] \hfill \\
+        Planetary radius range defined as numpy.array([R\_min, R\_max]) (astropy Quantity object or astropy constant objects, e.g., astropy.constant.R\_earth initially set in $ km $)
+        \item[PlanetPopulation.Mprange] \hfill \\
+        Planetary mass range defined as numpy.array([Mp\_min, Mp\_max]) (astropy Quantity object initially set in $ kg $)
+        \item[PlanetPopulation.scaleOrbits] \hfill \\
+        Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
+        \item[PlanetPopulation.rrange] \hfill \\
+        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity object initially set in $ km $)
+        
+    \end{description}
+\end{itemize}
+
+\subsubsection{Planet Population Probability Density Functions} \label{sec:pdfs}
+Each of the probability density functions contained in the Planet Population module are implemented as functions.  The input to these functions is the quantity of interest and the output is value of the probability density function.  These functions are provided so that the Simulated Universe module may sample these quantities from the probability density functions and create a simulated universe of synthetic planets.  The required functions are given as follows:
+
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[semi\_axis] \hfill \\
+        Probability density function for semi-major axis
+        \item[eccentricity] \hfill \\
+        Probability density function for eccentricity
+        \item[arg\_perigee] \hfill \\
+        Probability density function for argument of perigee
+        \item[RAAN] \hfill \\
+        Probability density function for right ascension of the ascending node
+        \item[radius] \hfill \\
+        Probability density function for planetary radius
+        \item[mass] \hfill \\
+        Probability density function for planetary mass
+        \item[albedo] \hfill \\
+        Probability density function for planetary albedo
+        \item[inclination] \hfill \\
+        Probability density function for orbital inclination
+    \end{description}
+\end{itemize}
 
 % STAR CATALOG
 
@@ -552,112 +661,6 @@ The \verb+calc_intTime+ task calculates the integration time required for a spec
     \end{description}
 \end{itemize}
 
-% PLANET POPULATION NEEDS UPDATING
-
-\subsection{Planet Population NEEDS UPDATING}
-The Planet Population module encodes the density functions of all required planetary parameters, both physical and orbital. These include semi-major axis, eccentricity, orbital orientation, radius, mass, and albedo (see ~\ref{sec:pdfs}). Certain parameter models may be empirically derived while others may come from analyses of observational surveys.  This module also encodes the limits on all parameters to be used for sampling the distributions and determining derived cutoff values such as the maximum target distance for a given instrument's IWA.
-
-The Planet Population module does not model the physics of planetary orbits or the amount of light reflected or emitted by a given planet, but rather encodes the statistics of planetary occurrence and properties. 
-
-\label{sec:planetpopulation}
-\subsubsection{Planet Population Object Attribute Initialization Input/Output Description} 
-\subsubsection*{Inputs}
-\begin{itemize}
-    \item
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Planet Population object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["a\_min"] \hfill \\
-            Minimum semi-major axis in $ AU $. Default value is 0.1.
-            \item specs["a\_max"] \hfill \\
-            Maximum semi-major axis in $ AU $. Default value is 1.0.
-            \item specs["e\_min"] \hfill \\
-            Minimum eccentricity. Default value is 0.
-            \item specs["e\_max"] \hfill \\
-            Maximum eccentricity. Default value is 0.8.
-            \item specs["w\_min"] \hfill \\
-            Minimum argument of perigee in degrees. Default value is 0.
-            \item specs["w\_max"] \hfill \\
-            Maximum argument of perigee in degrees. Default value is 360.
-            \item specs["O\_min"] \hfill \\
-            Minimum right ascension of the ascending node. Default value is 0.
-            \item specs["O\_max"] \hfill \\
-            Maximum right ascension of the ascending node. Default value is 360.
-            \item specs["p\_min"] \hfill \\
-            Minimum planetary albedo. Default value is 0.1.
-            \item specs["p\_max"] \hfill \\
-            Maximum planetary albedo. Default value is 0.5.
-            \item specs["I\_min"] \hfill \\
-            Minimum inclination in degrees. Default value is 0.
-            \item specs["I\_max"] \hfill \\
-            Maximum inclination in degrees. Default value is 360.
-            \item specs["R\_min"] \hfill \\
-            Minimum planetary radius in $ km $. Default value is 1930.
-            \item specs["R\_max"] \hfill \\
-            Maximum planetary radius in $ km $. Default value is 145844.
-            \item specs["Mp\_min"] \hfill \\
-            Minimum planetary mass in $ kg $. Default value is 1.196e+23.
-            \item specs["Mp\_max"] \hfill \\
-            Maximum planetary mass in $ kg $. Default value is 5.411e+28.
-            \item specs["scaleOrbits"] \hfill \\
-            Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is True.
-        \end{description}
-    \end{description}
-\end{itemize}
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item
-    \begin{description}
-        \item[PlanetPopulation.arange] \hfill \\
-        Semi-major axis range defined as numpy.array([a\_min, a\_max]) (astropy Quantity object initially set in $ AU $)
-        \item[PlanetPopulation.erange] \hfill \\
-        Eccentricity range defined as numpy.array([e\_min, e\_max])
-        \item[PlanetPopulation.wrange] \hfill \\
-        Argument of perigee range defined as numpy.array([w\_min, w\_max])
-        \item[PlanetPopulation.Orange] \hfill \\
-        Right ascension of the ascending node range defined as numpy.array([O\_min, O\_max])
-        \item[PlanetPopulation.prange] \hfill \\
-        Planetary albedo range defined as numpy.array([p\_min, p\_max])
-        \item[PlanetPopulation.Irange] \hfill \\
-        Planetary orbital inclination range defined as numpy.array([I\_min, I\_max])
-        \item[PlanetPopulation.Rrange] \hfill \\
-        Planetary radius range defined as numpy.array([R\_min, R\_max]) (astropy Quantity object or astropy constant objects, e.g., astropy.constant.R\_earth initially set in $ km $)
-        \item[PlanetPopulation.Mprange] \hfill \\
-        Planetary mass range defined as numpy.array([Mp\_min, Mp\_max]) (astropy Quantity object initially set in $ kg $)
-        \item[PlanetPopulation.scaleOrbits] \hfill \\
-        Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
-        \item[PlanetPopulation.rrange] \hfill \\
-        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity object initially set in $ km $)
-        
-    \end{description}
-\end{itemize}
-
-\subsubsection{Planet Population Probability Density Functions} \label{sec:pdfs}
-Each of the probability density functions contained in the Planet Population module are implemented as functions.  The input to these functions is the quantity of interest and the output is value of the probability density function.  These functions are provided so that the Simulated Universe module may sample these quantities from the probability density functions and create a simulated universe of synthetic planets.  The required functions are given as follows:
-
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[semi\_axis] \hfill \\
-        Probability density function for semi-major axis
-        \item[eccentricity] \hfill \\
-        Probability density function for eccentricity
-        \item[arg\_perigee] \hfill \\
-        Probability density function for argument of perigee
-        \item[RAAN] \hfill \\
-        Probability density function for right ascension of the ascending node
-        \item[radius] \hfill \\
-        Probability density function for planetary radius
-        \item[mass] \hfill \\
-        Probability density function for planetary mass
-        \item[albedo] \hfill \\
-        Probability density function for planetary albedo
-        \item[inclination] \hfill \\
-        Probability density function for orbital inclination
-    \end{description}
-\end{itemize}
 
 % RULES NEEDS UPDATING
 
@@ -776,7 +779,7 @@ The Zodiacal Light module contains the \verb+fzodi+ task.  This task calculates 
     \caption{\label{fig:zodiacallightmodule} Depiction of Zodiacal Light module task including inputs and outputs (see ~\ref{sec:fzoditask}).}
 \end{figure}
 
-\subsubsection{Zodiacal Light Object Attribute Initialization Input/Output Description ORGANIZE LATER}
+\subsubsection{Zodiacal Light Object Attribute Initialization Input/Output Description}
 \subsubsection*{Input}
 \begin{itemize}
     \item
@@ -828,64 +831,12 @@ The \verb+fzodi+ task returns exozodi levels for planetary systems.  This functi
     \end{description}
 \end{itemize}
 
-% COMPLETENESS
-
-\subsection{Completeness (NEEDS UPDATING)}\label{sec:completeness}
-
-\subsubsection{Completeness Object Attribute Initialization Input/Output Description ORGANIZE LATER}
-
-\subsubsection*{Input}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Completeness object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["minComp"] \hfill \\
-            Minimum completeness level for detection
-        \end{description}
-    \end{description}
-\end{itemize}
-
-\subsubsection*{Output}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[Completeness.minComp] \hfill \\
-        Minimum completeness level for detection
-    \end{description}
-\end{itemize}
-
-TASKS: \verb+target_completeness(targlist)+ - generate completeness values for each target system ~\ref{sec:targetcompletenesstask}
-
-\subsubsection{target\_completeness Task Input/Output Description}
-\label{sec:targetcompletenesstask}
-The \verb+target_completeness+ task generates completeness values for each star in the target list.
-
-\subsubsection*{Inputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of functionality and attributes
-    \end{description}
-\end{itemize}
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[comp0] \hfill \\
-        1D NumPy ndarray containing completeness values for each star in the target list
-    \end{description}
-\end{itemize}
-
 % PLANET PHYSICAL MODEL NEEDS UPDATING
 
 \subsection{Planet Physical Model NEEDS UPDATING} \label{sec:planetphysicalmodel}
 The Planet Physical Model module contains models of the light emitted or reflected by planets in the wavelength bands under investigation by the current mission simulation.  It takes as inputs the physical quantities sampled from the distributions in the Planet Population module and generates synthetic spectra (or band photometry, as appropriate).  The specific implementation of this module can vary greatly, and can be based on any of the many available planetary albedo, spectra and phase curve models.
 
- Planet Physical Model TASKS:
+Planet Physical Model TASKS:
 
 % OBSERVATORY
 
@@ -1167,12 +1118,101 @@ The \verb+det_occur+ task determines if a planet detection has occurred.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Simulation Modules}
-The simulation modules include Target List, Simulated Universe, Survey Simulation and Survey Ensemble. These modules perform tasks which require inputs from one or more input modules as well as calling function implementations in other simulation modules.
+The simulation modules include Completeness, Target List, Simulated Universe, Survey Simulation and Survey Ensemble. These modules perform tasks which require inputs from one or more input modules as well as calling function implementations in other simulation modules.
+
+% COMPLETENESS
+
+\subsection{Completeness (NEEDS UPDATING)}\label{sec:completeness}
+The Completeness module takes in information from the Planet Population module to determine initial completeness and update completeness values for target list stars when called upon.
+
+The Completeness module contains the following tasks: \verb+target_completeness+ and \verb+completeness_update+. \verb+target_completeness+ generates initial completeness values for each star in the target list (see ~\ref{sec:targetcompletenesstask}). \verb+completeness_update+ updates the completeness values following an observation (see ~\ref{sec:completenessupdatetask}).
+
+\subsubsection{Completeness Object Attribute Initialization Input/Output Description}
+
+\subsubsection*{Input}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[User specification] \hfill \\
+        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Completeness object attributes will be assigned the default values listed.
+        \begin{description}
+            \item specs["popname"] \hfill \\
+            String containing name of desired Planet Population module. Default is Planet Population prototype module.
+            \item specs["minComp"] \hfill \\
+            Minimum completeness level for detection
+        \end{description}
+    \end{description}
+    \item[PlanetPopulation] \hfill \\
+    Output of Planet Population module given by above specs["popname"] (see \ref{sec:planetpopulation})
+\end{itemize}
+
+\subsubsection*{Output}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[Completeness.pop] \hfill \\
+        Output of Planet Population module (see \ref{sec:planetpopulation})
+        \item[Completeness.minComp] \hfill \\
+        Minimum completeness level for detection
+    \end{description}
+\end{itemize}
+
+\subsubsection{target\_completeness Task Input/Output Description}
+\label{sec:targetcompletenesstask}
+The \verb+target_completeness+ task generates completeness values for each star in the target list.
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[targlist] \hfill \\
+        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of functionality and attributes
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[comp0] \hfill \\
+        1D NumPy ndarray containing completeness values for each star in the target list
+    \end{description}
+\end{itemize}
+
+\subsubsection{completeness\_update Task Input/Output Description}
+\label{sec:completenessupdatetask}
+The \verb+completeness_update+ task updates the completeness values for each star in the target list following an observation.
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[s\_ind] \hfill \\
+        index of star in target list just observed
+        \item[targlist] \hfill \\
+        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of functionality and attributes
+        \item[obsbegin] \hfill \\
+        Mission time when the observation of \verb+s_ind+ began (astropy Quantity object with units of time)
+        \item[obsend] \hfill \\
+        Mission time when the observation of \verb+s_ind+ ended (astropy Quantity object with units of time)
+        \item[nexttime] \hfill \\
+        Mission time of next observational period (astropy Quantity object with units of time)
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Output}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[comp0] \hfill \\
+        1D NumPy ndarray of updated completeness values for each star in the target list
+    \end{description}
+\end{itemize}
 
 % TARGET LIST NEEDS UPDATING
 
 \subsection{Target List NEEDS UPDATING}
-The Target List module takes in information from the Optical System, Star Catalog, Planet Population, and Observatory input modules and generates the target list for the simulated survey.  This list can either contain all of the targets where a planet with specified parameter ranges could be observed or a list of pre-determined targets such as in the case of a mission which only seeks to observe stars where planets are known to exist from previous surveys.  The final target list encodes all of the same information as is provided by the Star Catalog module.
+The Target List module takes in information from the Optical System, Star Catalog, Planet Population, and Observatory input modules and Completeness simulation module to generate the target list for the simulated survey.  This list can either contain all of the targets where a planet with specified parameter ranges could be observed or a list of pre-determined targets such as in the case of a mission which only seeks to observe stars where planets are known to exist from previous surveys.  The final target list encodes all of the same information as is provided by the Star Catalog module.
 
 \label{sec:targetlist}
 \subsubsection{Target List Object Attribute Initialization Input/Output Description}
@@ -1187,8 +1227,6 @@ The Target List module takes in information from the Optical System, Star Catalo
                 String containing name of desired Star Catalog module. Default is Star Catalog prototype module.
                 \item specs["optsysname"] \hfill \\
                 String containing name of desired Optical System module. Default is Optical System prototype module.
-                \item specs["popname"] \hfill \\
-                String containing name of desired Planet Population module. Default is Planet Population prototype module.
                 \item specs["rulesname"] \hfill \\
                 String containing name of desired Rules module. Default is Rules prototype module.
                 \item specs["zodiname"] \hfill \\
@@ -1226,7 +1264,7 @@ The Target List module takes in information from the Optical System, Star Catalo
         \item[TargetList.zodi] \hfill \\
         Output of Zodiacal Light module (see \ref{sec:zodiacallight})
         \item[TargetList.comp] \hfill \\
-        Output of Completeness module (see \ref{sec:completeness}
+        Output of Completeness module (see \ref{sec:completeness})
         \item[TargetList.maxintTime] \hfill \\
         1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSys.calc_maxintTime+ ~\ref{sec:calcmaxintTimetask} (astropy Quantity object with units of time)
         \item[TargetList.comp0] \hfill \\
@@ -1851,6 +1889,8 @@ The \verb+next_target+ sub-task is called from the \verb+run_sim+ task to determ
     \begin{description}
         \item[s\_ind] \hfill \\
         Index of current star from the target list
+        \item[targlist] \hfill \\
+        Target List module (see \ref{sec:targetlist})
         \item[revisit\_list] \hfill \\
         NumPy ndarray containing index of target star and time in days of target stars from the target list to revisit
         \item[extended\_list] \hfill \\

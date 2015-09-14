@@ -52,10 +52,11 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.StarCatalog.SIMBAD300Catalog</h1><div class="highlight"><pre>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.StarCatalog</span> <span class="kn">import</span> <span class="n">StarCatalog</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.StarCatalog.SIMBADCatalog</span> <span class="kn">import</span> <span class="n">SIMBADCatalog</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
 
-<div class="viewcode-block" id="SIMBAD300Catalog"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBAD300Catalog.SIMBAD300Catalog">[docs]</a><span class="k">class</span> <span class="nc">SIMBAD300Catalog</span><span class="p">(</span><span class="n">StarCatalog</span><span class="p">):</span>
+<div class="viewcode-block" id="SIMBAD300Catalog"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBAD300Catalog.SIMBAD300Catalog">[docs]</a><span class="k">class</span> <span class="nc">SIMBAD300Catalog</span><span class="p">(</span><span class="n">SIMBADCatalog</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;SIMBAD300 Catalog class</span>
 <span class="sd">    </span>
 <span class="sd">    This class populates the star catalog used in EXOSIMS from the SIMBAD300 </span>
@@ -65,7 +66,7 @@
        
         <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;SIMBAD300&#39;</span>
-        <span class="n">StarCatalog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">SIMBADCatalog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">pklpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;.pkl&#39;</span><span class="p">)</span>
         <span class="n">matpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;.mat&#39;</span><span class="p">)</span>
         

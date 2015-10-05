@@ -52,14 +52,6 @@ EXOSIMS.Prototypes.PostProcessing module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.Prototypes.Rules module
--------------------------------
-
-.. automodule:: EXOSIMS.Prototypes.Rules
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.Prototypes.SimulatedUniverse module
 -------------------------------------------
 

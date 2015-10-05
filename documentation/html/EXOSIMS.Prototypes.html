@@ -143,8 +143,6 @@ object attributes, has available:</p>
 <dd>OpticalSys class object</dd>
 <dt>targlist.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.rules:</dt>
-<dd>Rules class object</dd>
 <dt>targlist.zodi:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
@@ -875,6 +873,13 @@ Note:  probably belongs in postprocessing or rules.</p>
 <p>dark hole size (default units of rad)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.intCutoff">
+<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.intCutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>integration cutoff (default units of day)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.__str__" title="Permalink to this definition">¶</a></dt>
@@ -885,7 +890,7 @@ method will print the attribute values contained in the object</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is
@@ -896,7 +901,6 @@ determined by specific OpticalSys classes.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>rules</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.Rules.Rules" title="EXOSIMS.Prototypes.Rules.Rules"><em>Rules</em></a>) &#8211; Rules class object</li>
 <li><strong>universe</strong> (<a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse" title="EXOSIMS.SimulatedUniverse"><em>SimulatedUniverse</em></a>) &#8211; SimulatedUniverse class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; target star index</li>
 <li><strong>planInds</strong> (<em>ndarray</em>) &#8211; planet index linking back to target star</li>
@@ -935,8 +939,6 @@ object attributes, has available:</p>
 <dd>OpticalSys class object</dd>
 <dt>targlist.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.rules:</dt>
-<dd>Rules class object</dd>
 <dt>targlist.zodi:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
@@ -1278,6 +1280,20 @@ Post Processing Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.FAP">
+<code class="descname">FAP</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.FAP" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>False Alarm Probability</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.MDP">
+<code class="descname">MDP</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.MDP" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>Missed Detection Probability</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.__str__" title="Permalink to this definition">¶</a></dt>
@@ -1288,7 +1304,7 @@ this method will return the values contained in the object</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">
-<code class="descname">det_occur</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>rules</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
+<code class="descname">det_occur</code><span class="sig-paren">(</span><em>observationPossible</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines if a detection has occurred and returns booleans</p>
 <p>This method returns three booleans: FA (False Alarm), DET (DETection),
 and MD (Missed Detection) where True gives the case.</p>
@@ -1296,167 +1312,14 @@ and MD (Missed Detection) where True gives the case.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>observationPossible</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of booleans signifying if each planet is
-observable</li>
-<li><strong>rules</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.Rules.Rules" title="EXOSIMS.Prototypes.Rules.Rules"><em>Rules</em></a>) &#8211; Rules class object</li>
-</ul>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>observationPossible</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of booleans signifying if each planet is
+observable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>FA, DET, MD, NULL</strong> &#8211;<p>False Alarm boolean, Detection boolean, Missed Detection boolean,
+Null detection boolean</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>FA, DET, MD</strong> &#8211;</p>
-<p>False Alarm boolean, Detection boolean, Missed Detection boolean</p>
-</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool, bool, bool</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-EXOSIMS.Prototypes.Rules">
-<span id="exosims-prototypes-rules-module"></span><h2>EXOSIMS.Prototypes.Rules module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Rules" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.Prototypes.Rules.Rules">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Rules.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Rules class template</p>
-<p>This class contains all variables and methods necessary to perform
-Rules Module calculations in exoplanet mission simulation.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.FAP">
-<code class="descname">FAP</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.FAP" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>False Alarm Probability</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.MDP">
-<code class="descname">MDP</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.MDP" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>Missed Detection Probability</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.dutyCycle">
-<code class="descname">dutyCycle</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.dutyCycle" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>observation duty cycle</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.intCutoff">
-<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.intCutoff" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>integration cutoff (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.missionPortion">
-<code class="descname">missionPortion</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.missionPortion" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>portion of mission devoted to planet-finding</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.duration">
-<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.duration" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>duration of planet-finding operations (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.nexttimeAvail">
-<code class="descname">nexttimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.nexttimeAvail" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>next time available for planet-finding (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.K">
-<code class="descname">K</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.K" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>threshold value determined by FAP</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.gamma">
-<code class="descname">gamma</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.gamma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>threshold value determined by MDP</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.__str__" title="Permalink to this definition">¶</a></dt>
-<dd><p>String representation of the Rules object</p>
-<p>When the command &#8216;print&#8217; is used on the Rules object, this method will
-print the attribute values contained in the object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.duty_cycle">
-<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates available time and duration for planet-finding</p>
-<p>This method updates the available time for planet-finding activities.
-Specific classes may optionally update the duration of planet-finding
-activities as well. This method defines the input/output expected</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Quantity</em>) &#8211; current time in mission simulation (units of time)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;<p>next available time for planet-finding (units of time)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.find_K">
-<code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_K"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_K" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds threshold value determined by FAP</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>K</strong> &#8211;<p>threshold value determined by FAP</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.Rules.find_gamma">
-<code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds threshold value determined by MDP</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>gamma</strong> &#8211;<p>threshold value determined by MDP</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool, bool, bool, bool</td>
 </tr>
 </tbody>
 </table>
@@ -1510,13 +1373,6 @@ TargetList, PlanetPhysical</p>
 <code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.pop" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1912,63 +1768,6 @@ distance)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_rtypes">
-<code class="descname">planet_rtypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_rtypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_rtypes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns rock/ice fraction for each rocky/icy planet</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method has access to the following:</dt>
-<dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
-<dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.Mp:</dt>
-<dd>planet masses</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
-<dt>self.r:</dt>
-<dd>planet position vectors</dd>
-<dt>self.v:</dt>
-<dd>planet velocity vectors</dd>
-<dt>self.p:</dt>
-<dd>planet albedos</dd>
-<dt>self.I:</dt>
-<dd>planet inclinations</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>rtype</strong> &#8211;<p>1D numpy ndarray containing rock/ice fraction for each planet</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star">
 <code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns index of star in target star list to each planet</p>
@@ -2318,13 +2117,6 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.zodi">
 <code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.zodi" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
@@ -2586,8 +2378,6 @@ observations for each planet</p>
 <dd>PostProcessing class object</dd>
 <dt>self.opt:</dt>
 <dd>OpticalSys class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
 <dt>self.zodi:</dt>
@@ -2628,8 +2418,6 @@ SurveySimulation class object:</p>
 <dd>TimeKeeping class object</dd>
 <dt>self.obs:</dt>
 <dd>Observatory class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 </dl>
 </div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
@@ -2747,8 +2535,6 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dd>PostProcessing class object</dd>
 <dt>self.opt:</dt>
 <dd>OpticalSys class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
 <dt>self.zodi:</dt>
@@ -2835,8 +2621,7 @@ visible, or 1 if planet is visible</p>
 <p>This class contains all variables and functions necessary to perform
 Target List Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-StarCatalog, OpticalSys, PlanetPopulation, Rules, ZodiacalLight,
-Completeness</p>
+StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2857,13 +2642,6 @@ Completeness</p>
 <code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.pop" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -3350,12 +3128,55 @@ units of day)</p>
 <p>mission finish normalized time (default units of day)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionPortion">
+<code class="descname">missionPortion</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionPortion" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>portion of mission devoted to planet-finding</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration">
+<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>duration of planet-finding operations (default units of day)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nexttimeAvail">
+<code class="descname">nexttimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nexttimeAvail" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>next time available for planet-finding (default units of day)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of the Time Keeping object</p>
 <p>When the command &#8216;print&#8217; is used on the Time Keeping object, this
 method will return the values contained in the object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duty_cycle">
+<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duty_cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates available time and duration for planet-finding</p>
+<p>This method updates the available time for planet-finding activities.
+Specific classes may optionally update the duration of planet-finding
+activities as well. This method defines the input/output expected</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Quantity</em>) &#8211; current time in mission simulation (units of time)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;<p>next available time for planet-finding (units of time)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3547,8 +3368,6 @@ object attributes, has available:</p>
 <dd>OpticalSys class object</dd>
 <dt>targlist.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.rules:</dt>
-<dd>Rules class object</dd>
 <dt>targlist.zodi:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
@@ -4273,6 +4092,13 @@ Note:  probably belongs in postprocessing or rules.</p>
 <p>dark hole size (default units of rad)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSys.intCutoff">
+<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.intCutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>integration cutoff (default units of day)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.__str__" title="Permalink to this definition">¶</a></dt>
@@ -4283,7 +4109,7 @@ method will print the attribute values contained in the object</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is
@@ -4294,7 +4120,6 @@ determined by specific OpticalSys classes.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>rules</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.Rules.Rules" title="EXOSIMS.Prototypes.Rules.Rules"><em>Rules</em></a>) &#8211; Rules class object</li>
 <li><strong>universe</strong> (<a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse" title="EXOSIMS.SimulatedUniverse"><em>SimulatedUniverse</em></a>) &#8211; SimulatedUniverse class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; target star index</li>
 <li><strong>planInds</strong> (<em>ndarray</em>) &#8211; planet index linking back to target star</li>
@@ -4333,8 +4158,6 @@ object attributes, has available:</p>
 <dd>OpticalSys class object</dd>
 <dt>targlist.pop:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.rules:</dt>
-<dd>Rules class object</dd>
 <dt>targlist.zodi:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
@@ -4667,6 +4490,20 @@ Post Processing Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PostProcessing.FAP">
+<code class="descname">FAP</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.FAP" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>False Alarm Probability</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PostProcessing.MDP">
+<code class="descname">MDP</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.MDP" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>Missed Detection Probability</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.__str__" title="Permalink to this definition">¶</a></dt>
@@ -4677,7 +4514,7 @@ this method will return the values contained in the object</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.det_occur">
-<code class="descname">det_occur</code><span class="sig-paren">(</span><em>observationPossible</em>, <em>rules</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
+<code class="descname">det_occur</code><span class="sig-paren">(</span><em>observationPossible</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines if a detection has occurred and returns booleans</p>
 <p>This method returns three booleans: FA (False Alarm), DET (DETection),
 and MD (Missed Detection) where True gives the case.</p>
@@ -4685,20 +4522,14 @@ and MD (Missed Detection) where True gives the case.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>observationPossible</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of booleans signifying if each planet is
-observable</li>
-<li><strong>rules</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.Rules.Rules" title="EXOSIMS.Prototypes.Rules.Rules"><em>Rules</em></a>) &#8211; Rules class object</li>
-</ul>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>observationPossible</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of booleans signifying if each planet is
+observable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>FA, DET, MD, NULL</strong> &#8211;<p>False Alarm boolean, Detection boolean, Missed Detection boolean,
+Null detection boolean</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>FA, DET, MD</strong> &#8211;</p>
-<p>False Alarm boolean, Detection boolean, Missed Detection boolean</p>
-</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool, bool, bool</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool, bool, bool, bool</td>
 </tr>
 </tbody>
 </table>
@@ -4708,7 +4539,7 @@ observable</li>
 
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Rules">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Rules class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -4786,7 +4617,7 @@ Rules Module calculations in exoplanet mission simulation.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.__str__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of the Rules object</p>
 <p>When the command &#8216;print&#8217; is used on the Rules object, this method will
 print the attribute values contained in the object</p>
@@ -4794,7 +4625,7 @@ print the attribute values contained in the object</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.duty_cycle">
-<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
+<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates available time and duration for planet-finding</p>
 <p>This method updates the available time for planet-finding activities.
 Specific classes may optionally update the duration of planet-finding
@@ -4816,7 +4647,7 @@ activities as well. This method defines the input/output expected</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.find_K">
-<code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_K"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_K" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_K" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by FAP</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -4833,7 +4664,7 @@ activities as well. This method defines the input/output expected</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Rules.find_gamma">
-<code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Rules.html#Rules.find_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds threshold value determined by MDP</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -4893,13 +4724,6 @@ TargetList, PlanetPhysical</p>
 <code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.pop" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -5295,63 +5119,6 @@ distance)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.planet_rtypes">
-<code class="descname">planet_rtypes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_rtypes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.planet_rtypes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns rock/ice fraction for each rocky/icy planet</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method has access to the following:</dt>
-<dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
-<dd>TargetList class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
-<dd>PlanetPopulation class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
-<dt>self.zodi:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
-<dd>Completeness object</dd>
-<dt>self.planInds:</dt>
-<dd>indices mapping planets to target stars</dd>
-<dt>self.nPlans:</dt>
-<dd>total number of planets</dd>
-<dt>self.sysInds:</dt>
-<dd>indices of target stars in the target list with planets</dd>
-<dt>self.Mp:</dt>
-<dd>planet masses</dd>
-<dt>self.Rp:</dt>
-<dd>planet radii</dd>
-<dt>self.r:</dt>
-<dd>planet position vectors</dd>
-<dt>self.v:</dt>
-<dd>planet velocity vectors</dd>
-<dt>self.p:</dt>
-<dd>planet albedos</dd>
-<dt>self.I:</dt>
-<dd>planet inclinations</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>rtype</strong> &#8211;<p>1D numpy ndarray containing rock/ice fraction for each planet</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.planet_to_star">
 <code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns index of star in target star list to each planet</p>
@@ -5695,13 +5462,6 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.zodi">
 <code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.zodi" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
@@ -5963,8 +5723,6 @@ observations for each planet</p>
 <dd>PostProcessing class object</dd>
 <dt>self.opt:</dt>
 <dd>OpticalSys class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
 <dt>self.zodi:</dt>
@@ -6005,8 +5763,6 @@ SurveySimulation class object:</p>
 <dd>TimeKeeping class object</dd>
 <dt>self.obs:</dt>
 <dd>Observatory class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 </dl>
 </div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
@@ -6124,8 +5880,6 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dd>PostProcessing class object</dd>
 <dt>self.opt:</dt>
 <dd>OpticalSys class object</dd>
-<dt>self.rules:</dt>
-<dd>Rules class object</dd>
 <dt>self.pop:</dt>
 <dd>PlanetPopulation class object</dd>
 <dt>self.zodi:</dt>
@@ -6209,8 +5963,7 @@ visible, or 1 if planet is visible</p>
 <p>This class contains all variables and functions necessary to perform
 Target List Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-StarCatalog, OpticalSys, PlanetPopulation, Rules, ZodiacalLight,
-Completeness</p>
+StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -6231,13 +5984,6 @@ Completeness</p>
 <code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.pop" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.rules">
-<code class="descname">rules</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.rules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Rules</em></p>
-<p>Rules class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -6721,12 +6467,55 @@ units of day)</p>
 <p>mission finish normalized time (default units of day)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.missionPortion">
+<code class="descname">missionPortion</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.missionPortion" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>portion of mission devoted to planet-finding</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.duration">
+<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.duration" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>duration of planet-finding operations (default units of day)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.nexttimeAvail">
+<code class="descname">nexttimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.nexttimeAvail" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>next time available for planet-finding (default units of day)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of the Time Keeping object</p>
 <p>When the command &#8216;print&#8217; is used on the Time Keeping object, this
 method will return the values contained in the object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.duty_cycle">
+<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.duty_cycle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.duty_cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates available time and duration for planet-finding</p>
+<p>This method updates the available time for planet-finding activities.
+Specific classes may optionally update the duration of planet-finding
+activities as well. This method defines the input/output expected</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Quantity</em>) &#8211; current time in mission simulation (units of time)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;<p>next available time for planet-finding (units of time)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -6854,7 +6643,6 @@ and declination in degrees</td>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysical">EXOSIMS.Prototypes.PlanetPhysical module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPopulation">EXOSIMS.Prototypes.PlanetPopulation module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PostProcessing">EXOSIMS.Prototypes.PostProcessing module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Rules">EXOSIMS.Prototypes.Rules module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SimulatedUniverse">EXOSIMS.Prototypes.SimulatedUniverse module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.StarCatalog">EXOSIMS.Prototypes.StarCatalog module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveySimulation">EXOSIMS.Prototypes.SurveySimulation module</a></li>

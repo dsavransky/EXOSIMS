@@ -135,6 +135,8 @@
 <span class="sd">            optical system overhead (default units of day)</span>
 <span class="sd">        darkHole (Quantity):</span>
 <span class="sd">            dark hole size (default units of rad)</span>
+<span class="sd">        intCutoff (Quantity):</span>
+<span class="sd">            integration cutoff (default units of day)</span>
 <span class="sd">            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -197,6 +199,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">optical_oh</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="c"># dark hole size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">darkHole</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+        <span class="c"># integration cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intCutoff</span> <span class="o">=</span> <span class="mf">50.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> 
         
         <span class="c"># replace default values with any user specified values</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -220,6 +224,8 @@
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;t_exp&#39;</span><span class="p">:</span>
                     <span class="c"># set t_exp with proper units</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;intCutoff&#39;</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">])</span>
                     
@@ -257,8 +263,6 @@
 <span class="sd">                        OpticalSys class object</span>
 <span class="sd">                    targlist.pop:</span>
 <span class="sd">                        PlanetPopulation class object</span>
-<span class="sd">                    targlist.rules:</span>
-<span class="sd">                        Rules class object</span>
 <span class="sd">                    targlist.zodi:</span>
 <span class="sd">                        ZodiacalLight class object</span>
 <span class="sd">                    targlist.comp:</span>
@@ -276,7 +280,7 @@
         
         <span class="k">return</span> <span class="n">maxintTime</span>
         </div>
-<div class="viewcode-block" id="OpticalSys.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">rules</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSys.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called by a method in the SurveySimulation object class.</span>
@@ -287,8 +291,6 @@
 <span class="sd">        Args:</span>
 <span class="sd">            targlist (TargetList):</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            rules (Rules):</span>
-<span class="sd">                Rules class object</span>
 <span class="sd">            universe (SimulatedUniverse):</span>
 <span class="sd">                SimulatedUniverse class object</span>
 <span class="sd">            s_ind (int):</span>

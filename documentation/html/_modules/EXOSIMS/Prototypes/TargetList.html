@@ -65,8 +65,7 @@
 <span class="sd">    Target List Module calculations in exoplanet mission simulation.</span>
 <span class="sd">    </span>
 <span class="sd">    It inherits the following class objects which are defined in __init__:</span>
-<span class="sd">    StarCatalog, OpticalSys, PlanetPopulation, Rules, ZodiacalLight, </span>
-<span class="sd">    Completeness</span>
+<span class="sd">    StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
@@ -77,8 +76,6 @@
 <span class="sd">            OpticalSys class object</span>
 <span class="sd">        pop (PlanetPopulation):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        rules (Rules):</span>
-<span class="sd">            Rules class object</span>
 <span class="sd">        zodi (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
 <span class="sd">        comp (Completeness):</span>
@@ -201,11 +198,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="n">Comp</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># completeness model object class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp</span><span class="o">.</span><span class="n">pop</span> <span class="c"># planet population object class</span>
         
-        <span class="c"># list of Star Catalog attributes</span>
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="c"># list of possible Star Catalog attributes</span>
+        <span class="n">atts</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">,</span> <span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;Spec&#39;</span><span class="p">,</span> <span class="s">&#39;parx&#39;</span><span class="p">,</span> <span class="s">&#39;Umag&#39;</span><span class="p">,</span> <span class="s">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s">&#39;Rmag&#39;</span><span class="p">,</span> 
+                <span class="s">&#39;Imag&#39;</span><span class="p">,</span> <span class="s">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s">&#39;Kmag&#39;</span><span class="p">,</span> <span class="s">&#39;dist&#39;</span><span class="p">,</span> <span class="s">&#39;BV&#39;</span><span class="p">,</span> <span class="s">&#39;MV&#39;</span><span class="p">,</span> <span class="s">&#39;BC&#39;</span><span class="p">,</span> <span class="s">&#39;L&#39;</span><span class="p">,</span> 
+                <span class="s">&#39;coords&#39;</span><span class="p">,</span> <span class="s">&#39;pmra&#39;</span><span class="p">,</span> <span class="s">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s">&#39;rv&#39;</span><span class="p">,</span> <span class="s">&#39;Binary_Cut&#39;</span><span class="p">]</span>
         <span class="c"># bring Star Catalog values to top level of Target List</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">MaskedArray</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            
         <span class="c"># filter out nan attribute values from Star Catalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         <span class="c"># populate completion values</span>
@@ -260,7 +263,12 @@
         
         <span class="c"># filter out nan values in numerical attributes</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">unicode_</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">unicode_</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
                     <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
                     <span class="n">i2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>

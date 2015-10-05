@@ -138,7 +138,7 @@
         <span class="c"># minimum inclination</span>
         <span class="n">I_min</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="c"># maximum inclination</span>
-        <span class="n">I_max</span> <span class="o">=</span> <span class="mf">360.</span>
+        <span class="n">I_max</span> <span class="o">=</span> <span class="mf">180.</span>
         <span class="c"># inclination range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Irange</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">I_min</span><span class="p">,</span> <span class="n">I_max</span><span class="p">])</span>
         <span class="c"># minimum planetary radius</span>
@@ -365,7 +365,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="n">pdf</span></div></div>
 </pre></div>

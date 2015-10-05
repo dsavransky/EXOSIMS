@@ -13,7 +13,6 @@ Subpackages
     EXOSIMS.PlanetPopulation
     EXOSIMS.PostProcessing
     EXOSIMS.Prototypes
-    EXOSIMS.Rules
     EXOSIMS.SimulatedUniverse
     EXOSIMS.StarCatalog
     EXOSIMS.SurveySimulation

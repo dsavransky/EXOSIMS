@@ -82,8 +82,6 @@
 <span class="sd">            OpticalSys class object</span>
 <span class="sd">        pop (PlanetPopulation):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        rules (Rules):</span>
-<span class="sd">            Rules class object</span>
 <span class="sd">        zodi (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
 <span class="sd">        comp (Completeness):</span>
@@ -159,8 +157,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">opt</span> 
         <span class="c"># planet population class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">pop</span> 
-        <span class="c"># rules class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">rules</span> 
         <span class="c"># zodiacal light class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">zodi</span> 
         <span class="c"># completeness class object</span>
@@ -190,8 +186,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_inclinations</span><span class="p">()</span>
         <span class="c"># planet initial positions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_pos_vel</span><span class="p">()</span> 
-        <span class="c"># rock/ice fraction for rocky/icy planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_rtypes</span><span class="p">()</span>
         <span class="c"># exozodi levels for systems with planets</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="p">)</span>
 
@@ -476,56 +470,6 @@
         <span class="n">v</span> <span class="o">=</span> <span class="n">v1</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">A</span><span class="o">*</span><span class="n">r2</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
-        </div>
-<div class="viewcode-block" id="SimulatedUniverse.planet_rtypes"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_rtypes">[docs]</a>    <span class="k">def</span> <span class="nf">planet_rtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns rock/ice fraction for each rocky/icy planet </span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.planphys:</span>
-<span class="sd">                PlanetPhysical class object</span>
-<span class="sd">            self.opt:</span>
-<span class="sd">                OpticalSys class object</span>
-<span class="sd">            self.pop:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">            self.rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            self.zodi:</span>
-<span class="sd">                ZodiacalLight class object</span>
-<span class="sd">            self.comp: </span>
-<span class="sd">                Completeness object</span>
-<span class="sd">            self.planInds:</span>
-<span class="sd">                indices mapping planets to target stars</span>
-<span class="sd">            self.nPlans:</span>
-<span class="sd">                total number of planets</span>
-<span class="sd">            self.sysInds:</span>
-<span class="sd">                indices of target stars in the target list with planets</span>
-<span class="sd">            self.Mp:</span>
-<span class="sd">                planet masses</span>
-<span class="sd">            self.Rp:</span>
-<span class="sd">                planet radii</span>
-<span class="sd">            self.r:</span>
-<span class="sd">                planet position vectors</span>
-<span class="sd">            self.v:</span>
-<span class="sd">                planet velocity vectors</span>
-<span class="sd">            self.p:</span>
-<span class="sd">                planet albedos</span>
-<span class="sd">            self.I:</span>
-<span class="sd">                planet inclinations</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            rtype (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing rock/ice fraction for each planet</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">rtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">rtype</span>
         </div>
 <div class="viewcode-block" id="SimulatedUniverse.prop_system"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.prop_system">[docs]</a>    <span class="k">def</span> <span class="nf">prop_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">Mp</span><span class="p">,</span> <span class="n">Ms</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Propagates planet state vectors (position and velocity) </span>

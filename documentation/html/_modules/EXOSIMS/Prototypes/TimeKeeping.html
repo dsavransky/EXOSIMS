@@ -82,6 +82,12 @@
 <span class="sd">            mission finish absolute time (default astropy Time in MJD)</span>
 <span class="sd">        missionFinishNorm (Quantity):</span>
 <span class="sd">            mission finish normalized time (default units of day)</span>
+<span class="sd">        missionPortion (float):</span>
+<span class="sd">            portion of mission devoted to planet-finding</span>
+<span class="sd">        duration (Quantity):</span>
+<span class="sd">            duration of planet-finding operations (default units of day)</span>
+<span class="sd">        nexttimeAvail (Quantity):</span>
+<span class="sd">            next time available for planet-finding (default units of day)</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -96,6 +102,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">=</span> <span class="mf">6.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="c"># extended mission time astropy unit object in years</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
+        <span class="c"># portion of mission devoted to planet-finding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">6.</span>
+        <span class="c"># duration of planet-finding operations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="mf">14.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="c"># next time available for planet-finding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
         <span class="c"># replace default values with user specified values</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -105,6 +117,10 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">],</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;mjd&#39;</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;missionLife&#39;</span> <span class="ow">or</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;extendedLife&#39;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;duration&#39;</span> <span class="ow">or</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;nexttimeAvail&#39;</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="n">att</span><span class="p">])</span>
                     
         <span class="c"># initialize values updated by functions</span>
         <span class="c"># current mission time astropy unit object in days</span>
@@ -143,6 +159,32 @@
         
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+=</span> <span class="n">dt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>
+        </div>
+<div class="viewcode-block" id="TimeKeeping.duty_cycle"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duty_cycle">[docs]</a>    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates available time and duration for planet-finding</span>
+<span class="sd">        </span>
+<span class="sd">        This method updates the available time for planet-finding activities.</span>
+<span class="sd">        Specific classes may optionally update the duration of planet-finding</span>
+<span class="sd">        activities as well. This method defines the input/output expected</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            currenttime (Quantity):</span>
+<span class="sd">                current time in mission simulation (units of time)</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            nexttime (Quantity):</span>
+<span class="sd">                next available time for planet-finding (units of time)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">currenttime</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="c"># update the nexttimeAvail attribute</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+            <span class="n">nexttime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nexttime</span> <span class="o">=</span> <span class="n">currenttime</span>
+        
+        <span class="k">return</span> <span class="n">nexttime</span>
         
         </div></div>
 </pre></div>

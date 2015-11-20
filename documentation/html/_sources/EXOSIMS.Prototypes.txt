@@ -4,6 +4,14 @@ EXOSIMS.Prototypes package
 Submodules
 ----------
 
+EXOSIMS.Prototypes.BackgroundSources module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.Prototypes.BackgroundSources
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.Prototypes.Completeness module
 --------------------------------------
 
@@ -20,18 +28,18 @@ EXOSIMS.Prototypes.Observatory module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.Prototypes.OpticalSys module
-------------------------------------
+EXOSIMS.Prototypes.OpticalSystem module
+---------------------------------------
 
-.. automodule:: EXOSIMS.Prototypes.OpticalSys
+.. automodule:: EXOSIMS.Prototypes.OpticalSystem
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.Prototypes.PlanetPhysical module
-----------------------------------------
+EXOSIMS.Prototypes.PlanetPhysicalModel module
+---------------------------------------------
 
-.. automodule:: EXOSIMS.Prototypes.PlanetPhysical
+.. automodule:: EXOSIMS.Prototypes.PlanetPhysicalModel
     :members:
     :undoc-members:
     :show-inheritance:
@@ -64,6 +72,14 @@ EXOSIMS.Prototypes.StarCatalog module
 -------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.StarCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.Prototypes.SurveyEnsemble module
+----------------------------------------
+
+.. automodule:: EXOSIMS.Prototypes.SurveyEnsemble
     :members:
     :undoc-members:
     :show-inheritance:

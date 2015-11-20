@@ -4,7 +4,7 @@ import numpy as np
 
 class StarCatalog(object):
     """Star Catalog class template
-    
+     
     This class contains all variables and methods necessary to perform
     Star Catalog Module calculations in exoplanet mission simulation.
     
@@ -62,31 +62,31 @@ class StarCatalog(object):
 
     _modtype = 'StarCatalog'
     
-    def __init__(self):
+    def __init__(self,ntargs=0,**specs):
         
-        self.Name = np.array([]) # list of star names
-        self.Type = np.array([]) # list of star types
-        self.Spec = np.array([]) # list of spectral types
-        self.parx = np.array([]) # list of parallax in milliarcseconds
-        self.Umag = np.array([]) # list of U magnitude
-        self.Bmag = np.array([]) # list of B magnitude
-        self.Vmag = np.array([]) # list of V magnitude
-        self.Rmag = np.array([]) # list of R magnitude
-        self.Imag = np.array([]) # list of I magnitude
-        self.Jmag = np.array([]) # list of J magnitude
-        self.Hmag = np.array([]) # list of H magnitude
-        self.Kmag = np.array([]) # list of K magnitude
-        self.dist = np.array([]) # list of distance in parsecs (dist = 1000/parx)
-        self.BV = np.array([]) # list of B-V Johnson magnitude
-        self.MV = np.array([]) # list of absolute V magnitude (MV = -5 * log(1000/parx) + 5 - Vmag) 
-        self.BC = np.array([]) # list of bolometric correction
-        self.L = np.array([]) # list of stellar luminosity in Solar luminosities
+        self.Name = np.zeros(ntargs) # list of star names
+        self.Type = np.zeros(ntargs) # list of star types
+        self.Spec = np.zeros(ntargs) # list of spectral types
+        self.parx = np.zeros(ntargs) # list of parallax in milliarcseconds
+        self.Umag = np.zeros(ntargs) # list of U magnitude
+        self.Bmag = np.zeros(ntargs) # list of B magnitude
+        self.Vmag = np.zeros(ntargs) # list of V magnitude
+        self.Rmag = np.zeros(ntargs) # list of R magnitude
+        self.Imag = np.zeros(ntargs) # list of I magnitude
+        self.Jmag = np.zeros(ntargs) # list of J magnitude
+        self.Hmag = np.zeros(ntargs) # list of H magnitude
+        self.Kmag = np.zeros(ntargs) # list of K magnitude
+        self.dist = np.zeros(ntargs) # list of distance in parsecs (dist = 1000/parx)
+        self.BV = np.zeros(ntargs) # list of B-V Johnson magnitude
+        self.MV = np.zeros(ntargs) # list of absolute V magnitude (MV = -5 * log(1000/parx) + 5 - Vmag) 
+        self.BC = np.zeros(ntargs) # list of bolometric correction
+        self.L = np.zeros(ntargs) # list of stellar luminosity in Solar luminosities
         # list of astropy SkyCoord objects of right ascension and declination in degrees        
-        self.coords = SkyCoord(ra=[], dec=[], unit='deg')
-        self.pmra = np.array([]) # list of proper motion in right ascension in milliarcseconds/year
-        self.pmdec = np.array([]) # list of proper motion in declination in milliarcseconds/year
-        self.rv = np.array([]) # list of radial velocity in kilometers/second
-        self.Binary_Cut = np.array([]) # boolean list where True is companion closer than 10 arcsec
+        self.coords = SkyCoord(ra=np.zeros(ntargs), dec=np.zeros(ntargs), unit='deg')
+        self.pmra = np.zeros(ntargs) # list of proper motion in right ascension in milliarcseconds/year
+        self.pmdec = np.zeros(ntargs) # list of proper motion in declination in milliarcseconds/year
+        self.rv = np.zeros(ntargs) # list of radial velocity in kilometers/second
+        self.Binary_Cut = np.zeros(ntargs,dtype=bool) # boolean list where True is companion closer than 10 arcsec
                 
         
     def __str__(self):

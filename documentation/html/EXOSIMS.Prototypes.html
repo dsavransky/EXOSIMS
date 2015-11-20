@@ -33,26 +33,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="EXOSIMS.SimulatedUniverse.html" title="EXOSIMS.SimulatedUniverse package"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="EXOSIMS.PlanetPopulation.html" title="EXOSIMS.PlanetPopulation package"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -63,6 +44,63 @@
 <h1>EXOSIMS.Prototypes package<a class="headerlink" href="#exosims-prototypes-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.Prototypes.BackgroundSources">
+<span id="exosims-prototypes-backgroundsources-module"></span><h2>EXOSIMS.Prototypes.BackgroundSources module<a class="headerlink" href="#module-EXOSIMS.Prototypes.BackgroundSources" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.BackgroundSources.BackgroundSources">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.BackgroundSources.</code><code class="descname">BackgroundSources</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources.BackgroundSources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>BackgroundSources class prototype</p>
+<p>This module provides functionality to return the number density of background
+sources for a given target position and dark hole depth.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<p>Attributes: None</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.BackgroundSources.BackgroundSources.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources.BackgroundSources.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>String representation of Background Sources module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.BackgroundSources.BackgroundSources.dNbackground">
+<code class="descname">dNbackground</code><span class="sig-paren">(</span><em>coords</em>, <em>intDepths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources.dNbackground"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources.BackgroundSources.dNbackground" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns background source number densities</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>coords</strong> (<em>array-like of SkyCoord</em>) &#8211; numpy ndarray or list of astropy SkyCoord objects representing
+the coordinates of one or more targets</li>
+<li><strong>(array-like of Floats)</strong> (<em>intDepths</em>) &#8211; numpy ndarray or list of floating point values representing
+absolute magnitudes of the dark hole for each target.
+Must be of same length as coords.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>dN</strong> &#8211;</p>
+<p>Number density of background sources in number per square
+arcminute.  Same length as inputs.</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.Prototypes.Completeness">
 <span id="exosims-prototypes-completeness-module"></span><h2>EXOSIMS.Prototypes.Completeness module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
@@ -106,7 +144,7 @@ method will return the values contained in the object</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of star just observed</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
 <li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
 <li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
 <li><strong>nexttime</strong> (<em>Quantity</em>) &#8211; time of next observational period</li>
@@ -135,15 +173,15 @@ target list</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>targlist.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>targlist.pop:</dt>
+<dt>targlist.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>targlist.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.zodi:</dt>
+<dt>targlist.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
 <dd>Completeness class object</dd>
@@ -385,7 +423,7 @@ will print the attribute values contained in the object</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>time</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TimeKeeping" title="EXOSIMS.Prototypes.TimeKeeping"><em>TimeKeeping</em></a>) &#8211; TimeKeeping class object</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of target star</li>
 </ul>
 </td>
@@ -653,11 +691,11 @@ star position vector in heliocentric equatorial</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-EXOSIMS.Prototypes.OpticalSys">
-<span id="exosims-prototypes-opticalsys-module"></span><h2>EXOSIMS.Prototypes.OpticalSys module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSys" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.Prototypes.OpticalSystem">
+<span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSys.</code><code class="descname">OpticalSys</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -672,79 +710,79 @@ simulation.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.lam">
-<code class="descname">lam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.lam" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.lam">
+<code class="descname">lam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.lam" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>detection wavelength (default units of nm)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.shapeFac">
-<code class="descname">shapeFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.shapeFac" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.shapeFac">
+<code class="descname">shapeFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.shapeFac" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>shape factor (also known as fill factor) where
 <span class="math">\(shapeFac * diameter^2 = Area\)</span></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.pupilArea">
-<code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.pupilArea" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea">
+<code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>entrance pupil area (default units of m<sup>2</sup>)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.SNchar">
-<code class="descname">SNchar</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.SNchar" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SNchar">
+<code class="descname">SNchar</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SNchar" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>Signal to Noise Ratio for characterization</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.haveOcculter">
-<code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.haveOcculter" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter">
+<code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>bool</em></p>
 <p>boolean signifying if the system has an occulter</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.pixelArea">
-<code class="descname">pixelArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.pixelArea" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pixelArea">
+<code class="descname">pixelArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pixelArea" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>pixel area (default units of m<sup>2</sup>)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.focalLength">
-<code class="descname">focalLength</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.focalLength" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.focalLength">
+<code class="descname">focalLength</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.focalLength" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>focal length (default units of m)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.IWA">
-<code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.IWA" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA">
+<code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Inner Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.OWA">
-<code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.OWA" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA">
+<code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Outer Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.dMagLim">
-<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.dMagLim" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
+<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.throughput">
-<code class="descname">throughput</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.throughput" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.throughput">
+<code class="descname">throughput</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.throughput" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>optical system throughput (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -752,8 +790,8 @@ Quantity) and angular separation (astropy Quantity).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.contrast">
-<code class="descname">contrast</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.contrast" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.contrast">
+<code class="descname">contrast</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.contrast" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>optical system contrast curve (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -761,29 +799,29 @@ Quantity) and angular separation (astropy Quantity).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.dr">
-<code class="descname">dr</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.dr" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dr">
+<code class="descname">dr</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dr" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>detector dark-current rate per pixel (default units of 1/s)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.sigma_r">
-<code class="descname">sigma_r</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.sigma_r" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.sigma_r">
+<code class="descname">sigma_r</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.sigma_r" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>detector read noise</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.t_exp">
-<code class="descname">t_exp</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.t_exp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.t_exp">
+<code class="descname">t_exp</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.t_exp" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>exposure time per read (default units of s)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.PSF">
-<code class="descname">PSF</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.PSF" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSF">
+<code class="descname">PSF</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSF" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>point spread function - 2D ndarray of values, normalized to 1 at the core
 (must be callable - can be lambda, function,
@@ -794,15 +832,15 @@ attribute.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.PSFSampling">
-<code class="descname">PSFSampling</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.PSFSampling" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSFSampling">
+<code class="descname">PSFSampling</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSFSampling" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Sampling of PSF in arcsec/pixel (default units of arcsec)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.QE">
-<code class="descname">QE</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.QE" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.QE">
+<code class="descname">QE</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.QE" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam)</em></p>
 <p>detector quantum efficiency (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -810,97 +848,97 @@ Quantity).  This represents the primary (detection) detector.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.eta2">
-<code class="descname">eta2</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.eta2" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.eta2">
+<code class="descname">eta2</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.eta2" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>post coronagraph attenuation</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.deltaLambda">
-<code class="descname">deltaLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.deltaLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLambda">
+<code class="descname">deltaLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLambda" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>bandpass (default units of nm)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.telescopeKeepout">
-<code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout">
+<code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>telescope keepout angle in degrees</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.specLambda">
-<code class="descname">specLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.specLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLambda">
+<code class="descname">specLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLambda" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>spectral wavelength of interest (default units of nm)
 Note:  probably belongs in postprocessing or rules.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.Rspec">
-<code class="descname">Rspec</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.Rspec" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Rspec">
+<code class="descname">Rspec</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Rspec" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>spectral resolving power <span class="math">\(\lambda/\Delta\lambda\)</span></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.Npix">
-<code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.Npix" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix">
+<code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>number of noise pixels</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.Ndark">
-<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.Ndark" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark">
+<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>number of dark frames used</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.optical_oh">
-<code class="descname">optical_oh</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.optical_oh" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.optical_oh">
+<code class="descname">optical_oh</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.optical_oh" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>optical system overhead (default units of day)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.darkHole">
-<code class="descname">darkHole</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.darkHole" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.darkHole">
+<code class="descname">darkHole</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.darkHole" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>dark hole size (default units of rad)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.intCutoff">
-<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.intCutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff">
+<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>integration cutoff (default units of day)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.__str__" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of the Optical System object</p>
 <p>When the command &#8216;print&#8217; is used on the Optical System object, this
 method will print the attribute values contained in the object</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is
-determined by specific OpticalSys classes.</p>
+determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>universe</strong> (<a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse" title="EXOSIMS.SimulatedUniverse"><em>SimulatedUniverse</em></a>) &#8211; SimulatedUniverse class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; target star index</li>
 <li><strong>planInds</strong> (<em>ndarray</em>) &#8211; planet index linking back to target star</li>
@@ -920,28 +958,28 @@ determined by specific OpticalSys classes.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">
+<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds maximum integration time for target systems</p>
 <p>This method is called in the __init__ method of the TargetList class
 object.</p>
 <p>This method defines the data type expected, maximum integration time is
-determined by specific OpticalSys classes.</p>
+determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>targlist.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>targlist.pop:</dt>
+<dt>targlist.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>targlist.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.zodi:</dt>
+<dt>targlist.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>targlist.comp:</dt>
+<dt>targlist.Completeness:</dt>
 <dd>Completeness object</dd>
 </dl>
 </div></blockquote>
@@ -960,11 +998,11 @@ day)</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-EXOSIMS.Prototypes.PlanetPhysical">
-<span id="exosims-prototypes-planetphysical-module"></span><h2>EXOSIMS.Prototypes.PlanetPhysical module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPhysical" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.Prototypes.PlanetPhysicalModel">
+<span id="exosims-prototypes-planetphysicalmodel-module"></span><h2>EXOSIMS.Prototypes.PlanetPhysicalModel module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPhysicalModel" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPhysical.</code><code class="descname">PlanetPhysical</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysical.html#PlanetPhysical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPhysicalModel.</code><code class="descname">PlanetPhysicalModel</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Physical Model class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -978,8 +1016,8 @@ Planet Physical Model Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysical.html#PlanetPhysical.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysical.PlanetPhysical.__str__" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of Planet Physical Model object</p>
 <p>When the command &#8216;print&#8217; is used on the Planet Physical Model object,
 this method will return the values contained in the object</p>
@@ -1338,7 +1376,7 @@ Null detection boolean</p>
 <p>This class contains all variables and functions necessary to perform
 Simulated Universe Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-TargetList, PlanetPhysical</p>
+TargetList, PlanetPhysicalModel</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1348,43 +1386,43 @@ TargetList, PlanetPhysical</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.targlist">
-<code class="descname">targlist</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.targlist" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList">
+<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TargetList</em></p>
 <p>TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planphys">
-<code class="descname">planphys</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planphys" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysical</em></p>
-<p>PlanetPhysical class object</p>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPhysicalModel">
+<code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -1394,7 +1432,7 @@ TargetList, PlanetPhysical</p>
 <code class="descname">planInds</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planInds" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em></p>
 <p>1D numpy ndarray of indices mapping planets to target stars in
-targlist</p>
+TargetList</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1408,7 +1446,7 @@ targlist</p>
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.sysInds">
 <code class="descname">sysInds</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.sysInds" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em></p>
-<p>indicies of target stars in targlist with planets</p>
+<p>indicies of target stars in TargetList with planets</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1546,7 +1584,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1574,7 +1612,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1602,7 +1640,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1629,7 +1667,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1654,7 +1692,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1682,7 +1720,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1748,7 +1786,7 @@ objects will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1776,9 +1814,9 @@ classes will populate these indices.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1806,7 +1844,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -1867,7 +1905,7 @@ numpy ndarray of propagated velocity vectors (units of km/day)</p>
 <span id="exosims-prototypes-starcatalog-module"></span><h2>EXOSIMS.Prototypes.StarCatalog module<a class="headerlink" href="#module-EXOSIMS.Prototypes.StarCatalog" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.StarCatalog.</code><code class="descname">StarCatalog</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.StarCatalog.</code><code class="descname">StarCatalog</code><span class="sig-paren">(</span><em>ntargs=0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Star Catalog class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -2041,11 +2079,30 @@ will return the values contained in the object</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.Prototypes.SurveyEnsemble">
+<span id="exosims-prototypes-surveyensemble-module"></span><h2>EXOSIMS.Prototypes.SurveyEnsemble module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SurveyEnsemble" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveyEnsemble.</code><code class="descname">SurveyEnsemble</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Survey Ensemble prototype</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<p>Attributes:</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.Prototypes.SurveySimulation">
 <span id="exosims-prototypes-surveysimulation-module"></span><h2>EXOSIMS.Prototypes.SurveySimulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Survey Simulation class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -2061,71 +2118,71 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.simuni">
-<code class="descname">simuni</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.simuni" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.SimulatedUniverse">
+<code class="descname">SimulatedUniverse</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>SimulatedUniverse</em></p>
 <p>SimulatedUniverse class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.obs">
-<code class="descname">obs</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.obs" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.Observatory">
+<code class="descname">Observatory</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Observatory</em></p>
 <p>Observatory class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.timekeeping">
-<code class="descname">timekeeping</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.timekeeping" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TimeKeeping">
+<code class="descname">TimeKeeping</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TimeKeeping" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TimeKeeping</em></p>
 <p>TimeKeeping class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.post">
-<code class="descname">post</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.post" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PostProcessing">
+<code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PostProcessing" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PostProcessing</em></p>
 <p>PostProcessing class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.targlist">
-<code class="descname">targlist</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.targlist" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList">
+<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TargetList</em></p>
 <p>TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.planphys">
-<code class="descname">planphys</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.planphys" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysical</em></p>
-<p>PlanetPhysical class object</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPhysicalModel">
+<code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -2218,16 +2275,16 @@ star and planet magnitude)</p>
 <dl class="docutils">
 <dt>This method makes use of the following inherited objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -2274,11 +2331,11 @@ dictionary.</p>
 <dl class="docutils">
 <dt>This method accesses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -2326,11 +2383,11 @@ observations for each planet</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -2368,25 +2425,25 @@ observations for each planet</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.obs:</dt>
-<dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.Observatory:</dt>
+<dd>Observatoryervatory class object</dd>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.post:</dt>
+<dt>self.PostProcessing:</dt>
 <dd>PostProcessing class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
-<dd>Completeness class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.Completeness:</dt>
+<dd>Completenessleteness class object</dd>
+<dt>self.PlanetPhysicalModel:</dt>
+<dd>PlanetPhysicalModel class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -2414,9 +2471,9 @@ stars are available.</p>
 SurveySimulation class object:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
 </dl>
 </div></blockquote>
@@ -2426,7 +2483,7 @@ SurveySimulation class object:</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of current target star</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; Target List module</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; Target List module</li>
 <li><strong>revisit_list</strong> (<em>ndarray</em>) &#8211; numpy ndarray of containing index and time (in days) of targets
 to revisit</li>
 <li><strong>extended_list</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of star indices for extended mission time</li>
@@ -2525,25 +2582,25 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.post:</dt>
+<dt>self.PostProcessing:</dt>
 <dd>PostProcessing class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
+<dt>self.Completeness:</dt>
 <dd>Completeness class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.PlanetPhysicalModel:</dt>
+<dd>PlanetPhysicalModel class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -2568,14 +2625,14 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dl class="docutils">
 <dt>This method makes use of the following inherited objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -2621,7 +2678,7 @@ visible, or 1 if planet is visible</p>
 <p>This class contains all variables and functions necessary to perform
 Target List Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
+StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2631,29 +2688,29 @@ StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -2873,7 +2930,7 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.comp:</dt>
+<dt>self.Completeness:</dt>
 <dd>Completeness class object</dd>
 </dl>
 </dd>
@@ -2959,10 +3016,10 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -2997,9 +3054,9 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -3270,7 +3327,7 @@ and declination in degrees</td>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>Inds</strong> (<em>ndarray</em>) &#8211; 1D numpy array of indices referring back to target list stars</li>
 <li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 </ul>
 </td>
 </tr>
@@ -3291,6 +3348,60 @@ and declination in degrees</td>
 </div>
 <div class="section" id="module-EXOSIMS.Prototypes">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.Prototypes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Prototypes.BackgroundSources">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">BackgroundSources</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>BackgroundSources class prototype</p>
+<p>This module provides functionality to return the number density of background
+sources for a given target position and dark hole depth.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<p>Attributes: None</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.BackgroundSources.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>String representation of Background Sources module</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.BackgroundSources.dNbackground">
+<code class="descname">dNbackground</code><span class="sig-paren">(</span><em>coords</em>, <em>intDepths</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/BackgroundSources.html#BackgroundSources.dNbackground"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.BackgroundSources.dNbackground" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns background source number densities</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>coords</strong> (<em>array-like of SkyCoord</em>) &#8211; numpy ndarray or list of astropy SkyCoord objects representing
+the coordinates of one or more targets</li>
+<li><strong>(array-like of Floats)</strong> (<em>intDepths</em>) &#8211; numpy ndarray or list of floating point values representing
+absolute magnitudes of the dark hole for each target.
+Must be of same length as coords.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>dN</strong> &#8211;</p>
+<p>Number density of background sources in number per square
+arcminute.  Same length as inputs.</p>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Completeness">
 <em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness" title="Permalink to this definition">¶</a></dt>
@@ -3331,7 +3442,7 @@ method will return the values contained in the object</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of star just observed</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
 <li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
 <li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
 <li><strong>nexttime</strong> (<em>Quantity</em>) &#8211; time of next observational period</li>
@@ -3360,15 +3471,15 @@ target list</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>targlist.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>targlist.pop:</dt>
+<dt>targlist.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>targlist.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.zodi:</dt>
+<dt>targlist.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
 <dt>targlist.comp:</dt>
 <dd>Completeness class object</dd>
@@ -3607,7 +3718,7 @@ will print the attribute values contained in the object</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>time</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TimeKeeping" title="EXOSIMS.Prototypes.TimeKeeping"><em>TimeKeeping</em></a>) &#8211; TimeKeeping class object</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of target star</li>
 </ul>
 </td>
@@ -3875,8 +3986,8 @@ star position vector in heliocentric equatorial</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="EXOSIMS.Prototypes.OpticalSys">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">OpticalSys</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -3891,79 +4002,79 @@ simulation.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.lam">
-<code class="descname">lam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.lam" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.lam">
+<code class="descname">lam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.lam" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>detection wavelength (default units of nm)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.shapeFac">
-<code class="descname">shapeFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.shapeFac" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.shapeFac">
+<code class="descname">shapeFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.shapeFac" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>shape factor (also known as fill factor) where
 <span class="math">\(shapeFac * diameter^2 = Area\)</span></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.pupilArea">
-<code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.pupilArea" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.pupilArea">
+<code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.pupilArea" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>entrance pupil area (default units of m<sup>2</sup>)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.SNchar">
-<code class="descname">SNchar</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.SNchar" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.SNchar">
+<code class="descname">SNchar</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.SNchar" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>Signal to Noise Ratio for characterization</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.haveOcculter">
-<code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.haveOcculter" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.haveOcculter">
+<code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.haveOcculter" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>bool</em></p>
 <p>boolean signifying if the system has an occulter</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.pixelArea">
-<code class="descname">pixelArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.pixelArea" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.pixelArea">
+<code class="descname">pixelArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.pixelArea" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>pixel area (default units of m<sup>2</sup>)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.focalLength">
-<code class="descname">focalLength</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.focalLength" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.focalLength">
+<code class="descname">focalLength</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.focalLength" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>focal length (default units of m)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.IWA">
-<code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.IWA" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.IWA">
+<code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.IWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Inner Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.OWA">
-<code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.OWA" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OWA">
+<code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Outer Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.dMagLim">
-<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.dMagLim" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.dMagLim">
+<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.throughput">
-<code class="descname">throughput</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.throughput" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.throughput">
+<code class="descname">throughput</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.throughput" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>optical system throughput (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -3971,8 +4082,8 @@ Quantity) and angular separation (astropy Quantity).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.contrast">
-<code class="descname">contrast</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.contrast" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.contrast">
+<code class="descname">contrast</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.contrast" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>optical system contrast curve (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -3980,29 +4091,29 @@ Quantity) and angular separation (astropy Quantity).</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.dr">
-<code class="descname">dr</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.dr" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.dr">
+<code class="descname">dr</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.dr" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>detector dark-current rate per pixel (default units of 1/s)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.sigma_r">
-<code class="descname">sigma_r</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.sigma_r" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.sigma_r">
+<code class="descname">sigma_r</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.sigma_r" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>detector read noise</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.t_exp">
-<code class="descname">t_exp</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.t_exp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.t_exp">
+<code class="descname">t_exp</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.t_exp" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>exposure time per read (default units of s)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.PSF">
-<code class="descname">PSF</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.PSF" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.PSF">
+<code class="descname">PSF</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.PSF" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam, alpha)</em></p>
 <p>point spread function - 2D ndarray of values, normalized to 1 at the core
 (must be callable - can be lambda, function,
@@ -4013,15 +4124,15 @@ attribute.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.PSFSampling">
-<code class="descname">PSFSampling</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.PSFSampling" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.PSFSampling">
+<code class="descname">PSFSampling</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.PSFSampling" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>Sampling of PSF in arcsec/pixel (default units of arcsec)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.QE">
-<code class="descname">QE</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.QE" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.QE">
+<code class="descname">QE</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.QE" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>callable(lam)</em></p>
 <p>detector quantum efficiency (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
@@ -4029,97 +4140,97 @@ Quantity).  This represents the primary (detection) detector.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.eta2">
-<code class="descname">eta2</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.eta2" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.eta2">
+<code class="descname">eta2</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.eta2" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>post coronagraph attenuation</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.deltaLambda">
-<code class="descname">deltaLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.deltaLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.deltaLambda">
+<code class="descname">deltaLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.deltaLambda" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>bandpass (default units of nm)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.telescopeKeepout">
-<code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.telescopeKeepout">
+<code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>telescope keepout angle in degrees</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.specLambda">
-<code class="descname">specLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.specLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.specLambda">
+<code class="descname">specLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.specLambda" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>spectral wavelength of interest (default units of nm)
 Note:  probably belongs in postprocessing or rules.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.Rspec">
-<code class="descname">Rspec</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.Rspec" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.Rspec">
+<code class="descname">Rspec</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.Rspec" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>spectral resolving power <span class="math">\(\lambda/\Delta\lambda\)</span></p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.Npix">
-<code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.Npix" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.Npix">
+<code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.Npix" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>number of noise pixels</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.Ndark">
-<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.Ndark" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.Ndark">
+<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.Ndark" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>number of dark frames used</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.optical_oh">
-<code class="descname">optical_oh</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.optical_oh" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.optical_oh">
+<code class="descname">optical_oh</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.optical_oh" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>optical system overhead (default units of day)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.darkHole">
-<code class="descname">darkHole</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.darkHole" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.darkHole">
+<code class="descname">darkHole</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.darkHole" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>dark hole size (default units of rad)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSys.intCutoff">
-<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.intCutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.intCutoff">
+<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.intCutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>integration cutoff (default units of day)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.__str__" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of the Optical System object</p>
 <p>When the command &#8216;print&#8217; is used on the Optical System object, this
 method will print the attribute values contained in the object</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation object class.</p>
 <p>This method defines the data type expected, integration time is
-determined by specific OpticalSys classes.</p>
+determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>universe</strong> (<a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse" title="EXOSIMS.SimulatedUniverse"><em>SimulatedUniverse</em></a>) &#8211; SimulatedUniverse class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; target star index</li>
 <li><strong>planInds</strong> (<em>ndarray</em>) &#8211; planet index linking back to target star</li>
@@ -4139,28 +4250,28 @@ determined by specific OpticalSys classes.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSys.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSys.html#OpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.calc_maxintTime">
+<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds maximum integration time for target systems</p>
 <p>This method is called in the __init__ method of the TargetList class
 object.</p>
 <p>This method defines the data type expected, maximum integration time is
-determined by specific OpticalSys classes.</p>
+determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
 object attributes, has available:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>targlist.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>targlist.pop:</dt>
+<dt>targlist.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>targlist.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>targlist.zodi:</dt>
+<dt>targlist.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>targlist.comp:</dt>
+<dt>targlist.Completeness:</dt>
 <dd>Completeness object</dd>
 </dl>
 </div></blockquote>
@@ -4179,8 +4290,8 @@ day)</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="EXOSIMS.Prototypes.PlanetPhysical">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">PlanetPhysical</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysical.html#PlanetPhysical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysical" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">PlanetPhysicalModel</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Physical Model class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -4194,8 +4305,8 @@ Planet Physical Model Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPhysical.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysical.html#PlanetPhysical.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysical.__str__" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.__str__" title="Permalink to this definition">¶</a></dt>
 <dd><p>String representation of Planet Physical Model object</p>
 <p>When the command &#8216;print&#8217; is used on the Planet Physical Model object,
 this method will return the values contained in the object</p>
@@ -4538,150 +4649,6 @@ Null detection boolean</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="EXOSIMS.Prototypes.Rules">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">Rules</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Rules class template</p>
-<p>This class contains all variables and methods necessary to perform
-Rules Module calculations in exoplanet mission simulation.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.FAP">
-<code class="descname">FAP</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.FAP" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>False Alarm Probability</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.MDP">
-<code class="descname">MDP</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.MDP" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>Missed Detection Probability</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.dutyCycle">
-<code class="descname">dutyCycle</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.dutyCycle" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>observation duty cycle</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.intCutoff">
-<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.intCutoff" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>integration cutoff (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.missionPortion">
-<code class="descname">missionPortion</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.missionPortion" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>portion of mission devoted to planet-finding</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.duration">
-<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.duration" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>duration of planet-finding operations (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.nexttimeAvail">
-<code class="descname">nexttimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.nexttimeAvail" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>next time available for planet-finding (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.K">
-<code class="descname">K</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.K" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>threshold value determined by FAP</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Rules.gamma">
-<code class="descname">gamma</code><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.gamma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>threshold value determined by MDP</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.__str__" title="Permalink to this definition">¶</a></dt>
-<dd><p>String representation of the Rules object</p>
-<p>When the command &#8216;print&#8217; is used on the Rules object, this method will
-print the attribute values contained in the object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.duty_cycle">
-<code class="descname">duty_cycle</code><span class="sig-paren">(</span><em>currenttime</em><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.duty_cycle" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates available time and duration for planet-finding</p>
-<p>This method updates the available time for planet-finding activities.
-Specific classes may optionally update the duration of planet-finding
-activities as well. This method defines the input/output expected</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Quantity</em>) &#8211; current time in mission simulation (units of time)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;<p>next available time for planet-finding (units of time)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.find_K">
-<code class="descname">find_K</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_K" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds threshold value determined by FAP</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>K</strong> &#8211;<p>threshold value determined by FAP</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Rules.find_gamma">
-<code class="descname">find_gamma</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#EXOSIMS.Prototypes.Rules.find_gamma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds threshold value determined by MDP</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>gamma</strong> &#8211;<p>threshold value determined by MDP</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse">
 <em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
@@ -4689,7 +4656,7 @@ activities as well. This method defines the input/output expected</p>
 <p>This class contains all variables and functions necessary to perform
 Simulated Universe Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-TargetList, PlanetPhysical</p>
+TargetList, PlanetPhysicalModel</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -4699,43 +4666,43 @@ TargetList, PlanetPhysical</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.targlist">
-<code class="descname">targlist</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.targlist" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.TargetList">
+<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TargetList</em></p>
 <p>TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.planphys">
-<code class="descname">planphys</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.planphys" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysical</em></p>
-<p>PlanetPhysical class object</p>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.PlanetPhysicalModel">
+<code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -4745,7 +4712,7 @@ TargetList, PlanetPhysical</p>
 <code class="descname">planInds</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.planInds" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em></p>
 <p>1D numpy ndarray of indices mapping planets to target stars in
-targlist</p>
+TargetList</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -4759,7 +4726,7 @@ targlist</p>
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.sysInds">
 <code class="descname">sysInds</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.sysInds" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em></p>
-<p>indicies of target stars in targlist with planets</p>
+<p>indicies of target stars in TargetList with planets</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -4897,7 +4864,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -4925,7 +4892,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -4953,7 +4920,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -4980,7 +4947,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5005,7 +4972,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5033,7 +5000,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5099,7 +5066,7 @@ objects will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5127,9 +5094,9 @@ classes will populate these indices.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5157,7 +5124,7 @@ classes will populate these values.</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5215,7 +5182,7 @@ numpy ndarray of propagated velocity vectors (units of km/day)</p>
 
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.StarCatalog">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">StarCatalog</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">StarCatalog</code><span class="sig-paren">(</span><em>ntargs=0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Star Catalog class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -5389,8 +5356,24 @@ will return the values contained in the object</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="EXOSIMS.Prototypes.SurveyEnsemble">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">SurveyEnsemble</code><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Survey Ensemble prototype</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<p>Attributes:</p>
+</dd></dl>
+
+<dl class="class">
 <dt id="EXOSIMS.Prototypes.SurveySimulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Survey Simulation class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -5406,71 +5389,71 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.simuni">
-<code class="descname">simuni</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.simuni" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SimulatedUniverse">
+<code class="descname">SimulatedUniverse</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>SimulatedUniverse</em></p>
 <p>SimulatedUniverse class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.obs">
-<code class="descname">obs</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.obs" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.Observatory">
+<code class="descname">Observatory</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Observatory</em></p>
 <p>Observatory class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.timekeeping">
-<code class="descname">timekeeping</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.timekeeping" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.TimeKeeping">
+<code class="descname">TimeKeeping</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.TimeKeeping" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TimeKeeping</em></p>
 <p>TimeKeeping class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.post">
-<code class="descname">post</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.post" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.PostProcessing">
+<code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.PostProcessing" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PostProcessing</em></p>
 <p>PostProcessing class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.targlist">
-<code class="descname">targlist</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.targlist" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.TargetList">
+<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>TargetList</em></p>
 <p>TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.planphys">
-<code class="descname">planphys</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.planphys" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysical</em></p>
-<p>PlanetPhysical class object</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.PlanetPhysicalModel">
+<code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -5563,16 +5546,16 @@ star and planet magnitude)</p>
 <dl class="docutils">
 <dt>This method makes use of the following inherited objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -5619,11 +5602,11 @@ dictionary.</p>
 <dl class="docutils">
 <dt>This method accesses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -5671,11 +5654,11 @@ observations for each planet</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -5713,25 +5696,25 @@ observations for each planet</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.obs:</dt>
-<dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.Observatory:</dt>
+<dd>Observatoryervatory class object</dd>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.post:</dt>
+<dt>self.PostProcessing:</dt>
 <dd>PostProcessing class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
-<dd>Completeness class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.Completeness:</dt>
+<dd>Completenessleteness class object</dd>
+<dt>self.PlanetPhysicalModel:</dt>
+<dd>PlanetPhysicalModel class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -5759,9 +5742,9 @@ stars are available.</p>
 SurveySimulation class object:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
 </dl>
 </div></blockquote>
@@ -5771,7 +5754,7 @@ SurveySimulation class object:</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of current target star</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; Target List module</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; Target List module</li>
 <li><strong>revisit_list</strong> (<em>ndarray</em>) &#8211; numpy ndarray of containing index and time (in days) of targets
 to revisit</li>
 <li><strong>extended_list</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of star indices for extended mission time</li>
@@ -5870,25 +5853,25 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dl class="docutils">
 <dt>This method has access to the following:</dt>
 <dd><dl class="first last docutils">
-<dt>self.simuni:</dt>
+<dt>self.SimulatedUniverse:</dt>
 <dd>SimulatedUniverse class object</dd>
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.post:</dt>
+<dt>self.PostProcessing:</dt>
 <dd>PostProcessing class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.zodi:</dt>
+<dt>self.ZodiacalLight:</dt>
 <dd>ZodiacalLight class object</dd>
-<dt>self.comp:</dt>
+<dt>self.Completeness:</dt>
 <dd>Completeness class object</dd>
-<dt>self.planphys:</dt>
-<dd>PlanetPhysical class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.PlanetPhysicalModel:</dt>
+<dd>PlanetPhysicalModel class object</dd>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
 </dl>
 </dd>
@@ -5913,14 +5896,14 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <dl class="docutils">
 <dt>This method makes use of the following inherited objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.obs:</dt>
+<dt>self.Observatory:</dt>
 <dd>Observatory class object</dd>
-<dt>self.timekeeping:</dt>
+<dt>self.TimeKeeping:</dt>
 <dd>TimeKeeping class object</dd>
-<dt>self.targlist:</dt>
+<dt>self.TargetList:</dt>
 <dd>TargetList class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -5963,7 +5946,7 @@ visible, or 1 if planet is visible</p>
 <p>This class contains all variables and functions necessary to perform
 Target List Module calculations in exoplanet mission simulation.</p>
 <p>It inherits the following class objects which are defined in __init__:
-StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
+StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -5973,29 +5956,29 @@ StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.opt">
-<code class="descname">opt</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.opt" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSys</em></p>
-<p>OpticalSys class object</p>
+<dt id="EXOSIMS.Prototypes.TargetList.OpticalSystem">
+<code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>OpticalSystem</em></p>
+<p>OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.pop">
-<code class="descname">pop</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.pop" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPopulation</em></p>
 <p>PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.zodi">
-<code class="descname">zodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.zodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.ZodiacalLight">
+<code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
 <p>ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.comp">
-<code class="descname">comp</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.comp" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.TargetList.Completeness">
+<code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Completeness</em></p>
 <p>Completeness class object</p>
 </dd></dl>
@@ -6215,7 +6198,7 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class object:</dt>
 <dd><dl class="first last docutils">
-<dt>self.comp:</dt>
+<dt>self.Completeness:</dt>
 <dd>Completeness class object</dd>
 </dl>
 </dd>
@@ -6301,10 +6284,10 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.pop:</dt>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
 </dl>
 </dd>
 </dl>
@@ -6339,9 +6322,9 @@ will return the values contained in the object</p>
 <dl class="docutils">
 <dt>This method uses the following inherited class objects:</dt>
 <dd><dl class="first last docutils">
-<dt>self.opt:</dt>
-<dd>OpticalSys class object</dd>
-<dt>self.pop:</dt>
+<dt>self.OpticalSystem:</dt>
+<dd>OpticalSystem class object</dd>
+<dt>self.PlanetPopulation:</dt>
 <dd>PlanetPopulation class object</dd>
 </dl>
 </dd>
@@ -6606,7 +6589,7 @@ and declination in degrees</td>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>Inds</strong> (<em>ndarray</em>) &#8211; 1D numpy array of indices referring back to target list stars</li>
 <li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.TargetList" title="EXOSIMS.Prototypes.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 </ul>
 </td>
 </tr>
@@ -6637,14 +6620,16 @@ and declination in degrees</td>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.Prototypes package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.BackgroundSources">EXOSIMS.Prototypes.BackgroundSources module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Completeness">EXOSIMS.Prototypes.Completeness module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Observatory">EXOSIMS.Prototypes.Observatory module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.OpticalSys">EXOSIMS.Prototypes.OpticalSys module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysical">EXOSIMS.Prototypes.PlanetPhysical module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.OpticalSystem">EXOSIMS.Prototypes.OpticalSystem module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysicalModel">EXOSIMS.Prototypes.PlanetPhysicalModel module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPopulation">EXOSIMS.Prototypes.PlanetPopulation module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PostProcessing">EXOSIMS.Prototypes.PostProcessing module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SimulatedUniverse">EXOSIMS.Prototypes.SimulatedUniverse module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.StarCatalog">EXOSIMS.Prototypes.StarCatalog module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveyEnsemble">EXOSIMS.Prototypes.SurveyEnsemble module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveySimulation">EXOSIMS.Prototypes.SurveySimulation module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.TargetList">EXOSIMS.Prototypes.TargetList module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Prototypes.TimeKeeping">EXOSIMS.Prototypes.TimeKeeping module</a></li>
@@ -6653,13 +6638,17 @@ and declination in degrees</td>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="EXOSIMS.PlanetPopulation.html"
-                        title="previous chapter">EXOSIMS.PlanetPopulation package</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="EXOSIMS.SimulatedUniverse.html"
-                        title="next chapter">EXOSIMS.SimulatedUniverse package</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
+      <li>Previous: <a href="EXOSIMS.PlanetPopulation.html" title="previous chapter">EXOSIMS.PlanetPopulation package</a></li>
+      <li>Next: <a href="EXOSIMS.SimulatedUniverse.html" title="next chapter">EXOSIMS.SimulatedUniverse package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -6689,11 +6678,11 @@ and declination in degrees</td>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/EXOSIMS.Prototypes.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-class PlanetPhysical(object):
+class PlanetPhysicalModel(object):
     """Planet Physical Model class template
     
     This class contains all variables and functions necessary to perform 
@@ -11,7 +11,7 @@ class PlanetPhysical(object):
             
     """
 
-    _modtype = 'PlanetPhysical'
+    _modtype = 'PlanetPhysicalModel'
     
     def __init__(self, **specs):
         

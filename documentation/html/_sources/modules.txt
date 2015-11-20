@@ -1,7 +1,0 @@
-EXOSIMS
-=======
-
-.. toctree::
-   :maxdepth: 4
-
-   EXOSIMS

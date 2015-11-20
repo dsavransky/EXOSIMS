@@ -31,20 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -75,7 +62,7 @@
         
             <span class="c"># assign one planet to each star in the target list</span>
             <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
                     <span class="n">nump</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
                     <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">planSys</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">nump</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)))</span>
             <span class="k">return</span> <span class="n">planSys</span>
@@ -85,13 +72,12 @@
             <span class="sd">&quot;&quot;&quot;Assigns each planet mass in kg</span>
 <span class="sd">            </span>
 <span class="sd">            This method has access to the following:</span>
-<span class="sd">            self.targlist - target list object</span>
-<span class="sd">            self.planphys - planet physical model object</span>
-<span class="sd">            self.opt - optical system object</span>
-<span class="sd">            self.pop - planet population object</span>
-<span class="sd">            self.rules - rules object</span>
-<span class="sd">            self.zodi - zodiacal light object</span>
-<span class="sd">            self.comp - completeness object</span>
+<span class="sd">            self.TargetList - target list object</span>
+<span class="sd">            self.PlanetPhysicalModel - planet physical model object</span>
+<span class="sd">            self.OpticalSystem - optical system object</span>
+<span class="sd">            self.PlanetPopulation - planet population object</span>
+<span class="sd">            self.ZodiacalLight - zodiacal light object</span>
+<span class="sd">            self.Completeness - completeness object</span>
 <span class="sd">            self.planInds - indices mapping planet to target star</span>
 <span class="sd">            self.nPlans - number of planets</span>
 <span class="sd">            self.sysInds - indices of target stars with planets</span>
@@ -102,7 +88,7 @@
 <span class="sd">            This defines the data type expected, specific SimulatedUniverse class</span>
 <span class="sd">            objects will populate these values more realistically&quot;&quot;&quot;</span>
             
-            <span class="n">mass_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">mass_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
             
             <span class="c"># assign all planets the mass of earth in kg</span>
             <span class="n">M</span> <span class="o">=</span> <span class="p">([</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">mass_pdf</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span>
@@ -118,7 +104,7 @@
             
             
 
-            <span class="n">semi_axis_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">semi_axis_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">semi_axis_pdf</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
             <span class="k">return</span> <span class="n">a</span>
         
@@ -128,7 +114,7 @@
 <span class="sd">            </span>
 <span class="sd">            Output: e - numpy array containing eccentricity of each planet&quot;&quot;&quot;</span>
             
-            <span class="n">eccentricity_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">eccentricity_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">eccentricity_pdf</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">e</span>
         
@@ -137,13 +123,13 @@
             <span class="sd">&quot;&quot;&quot;Assigns each planet a radius in km</span>
 <span class="sd">            </span>
 <span class="sd">            This method has access to the following:</span>
-<span class="sd">            self.targlist - target list object</span>
-<span class="sd">            self.planphys - planet physical model object</span>
-<span class="sd">            self.opt - optical system object</span>
-<span class="sd">            self.pop - planet population object</span>
+<span class="sd">            self.TargetList - target list object</span>
+<span class="sd">            self.PlanetPhysicalModel - planet physical model object</span>
+<span class="sd">            self.OpticalSystem - optical system object</span>
+<span class="sd">            self.PlanetPopulation - planet population object</span>
 <span class="sd">            self.rules - rules object</span>
-<span class="sd">            self.zodi - zodiacal light object</span>
-<span class="sd">            self.comp - completeness object</span>
+<span class="sd">            self.ZodiacalLight - zodiacal light object</span>
+<span class="sd">            self.Completeness - completeness object</span>
 <span class="sd">            self.planInds - indices mapping planet to target star</span>
 <span class="sd">            self.nPlans - number of planets</span>
 <span class="sd">            self.sysInds - indices of target stars with planets</span>
@@ -155,7 +141,7 @@
 <span class="sd">            This defines the data type expected, specific SimulatedUniverse class</span>
 <span class="sd">            objects will populate these values more realistically&quot;&quot;&quot;</span>
             
-            <span class="n">radii_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">22.6</span><span class="p">)</span>
+            <span class="n">radii_pdf</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">22.6</span><span class="p">)</span>
             <span class="c"># assign all planets the radius of earth in km</span>
             <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">radii_pdf</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
             
@@ -169,7 +155,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
@@ -192,7 +186,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

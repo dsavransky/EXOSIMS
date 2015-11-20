@@ -276,22 +276,22 @@ The JSON specification file will contain a series of objects with members enumer
       "readRate": value
     }
   ],
-  modules: [
-    "planetPopulation": "HZEarthTwins",
-    "starCatalog": "exocat3",
-    "opticalSystem": "hybridOpticalSystem1",
-    "zodiacalLight": "10xSolZodi",
-    "backgroundSources": "besanconModel",
-    "planetPhysicalModel": "fortneyPlanets",
-    "observatory": "WFIRSTGeo",
-    "timeKeeping": "UTCtime",
-    "postProcessing": "KLIPpost",
-    "completeness": "BrownCompleteness",
-    "targetList": "WFIRSTtargets",
-    "simulatedUniverse": "simUniverse1",
-    "surveySimulation": "backbone1",
-    "surveyEnsemble": "localIpythonEnsemble"
-  ]
+  modules: {
+    "PlanetPopulation": "HZEarthTwins",
+    "StarCatalog": "exocat3",
+    "OpticalSystem": "hybridOpticalSystem1",
+    "ZodiacalLight": "10xSolZodi",
+    "BackgroundSources": "besanconModel",
+    "PlanetPhysicalModel": "fortneyPlanets",
+    "Observatory": "WFIRSTGeo",
+    "TimeKeeping": "UTCtime",
+    "PostProcessing": "KLIPpost",
+    "Completeness": "BrownCompleteness",
+    "TargetList": "WFIRSTtargets",
+    "SimulatedUniverse": "simUniverse1",
+    "SurveySimulation": "backbone1",
+    "SurveyEnsemble": "localIpythonEnsemble"
+  }
 }
 \end{verbatim}
 
@@ -610,63 +610,63 @@ For all values that may be either scalars or interpolants, in the case where sca
 \begin{itemize}
     \item 
     \begin{description}
-        \item[OpticalSys.lambda] \hfill \\
+        \item[OpticalSystem.lambda] \hfill \\
         Detection wavelength (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSys.deltaLambda] \hfill \\
+        \item[OpticalSystem.deltaLambda] \hfill \\
         Detection bandwidth $ \Delta\lambda $ (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSys.shapeFac] \hfill \\
+        \item[OpticalSystem.shapeFac] \hfill \\
         Shape factor so that $ shapeFac \times diameter^2 = Area $
-        \item[OpticalSys.pupilArea] \hfill \\
+        \item[OpticalSystem.pupilArea] \hfill \\
         Entrance pupil area (astropy Quantity object initially set in $ m^{2} $)
-        \item[OpticalSys.SNchar] \hfill \\
+        \item[OpticalSystem.SNchar] \hfill \\
         Signal to Noise Ratio for characterization
-        \item[OpticalSys.pixelArea] \hfill \\
+        \item[OpticalSystem.pixelArea] \hfill \\
         Pixel area (astropy Quantity object initially set in $ m^{2} $
-        \item[OpticalSys.focalLength] \hfill \\
+        \item[OpticalSystem.focalLength] \hfill \\
         Focal length (astropy Quantity object initially set in $ m $)
-        \item[OpticalSys.IWA] \hfill \\
+        \item[OpticalSystem.IWA] \hfill \\
         Inner Working Angle (astropy Quantity object initially set in $ arcseconds $)
-        \item[OpticalSys.OWA] \hfill \\
+        \item[OpticalSystem.OWA] \hfill \\
         Outer Working Angle (astropy Quantity object initially set in $ as $)
-        \item[OpticalSys.dMagLim] \hfill \\
+        \item[OpticalSystem.dMagLim] \hfill \\
         Limiting $ \Delta$mag (difference in magnitude between star and planet)
-        \item[OpticalSys.throughput] \hfill \\
+        \item[OpticalSystem.throughput] \hfill \\
         Optical system throughput. Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed throughput, the callable object may always return a single value.  
-        \item[OpticalSys.contrast] \hfill \\
+        \item[OpticalSystem.contrast] \hfill \\
         Optical system contrast.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed contrast, may always return a single value. 
-        \item[OpticalSys.dr] \hfill \\
+        \item[OpticalSystem.dr] \hfill \\
         Detector dark-current rate per pixel (astropy Quantity object initially set in $ \frac{1}{s} $)
-        \item[OpticalSys.sigma\_r] \hfill \\
+        \item[OpticalSystem.sigma\_r] \hfill \\
         Detector read noise in electrons/read
-        \item[OpticalSys.t\_exp] \hfill \\
+        \item[OpticalSystem.t\_exp] \hfill \\
         Exposure time per read (astropy Quantity object initially set in $ s $)
-        \item[OpticalSys.QE] \hfill \\
+        \item[OpticalSystem.QE] \hfill \\
         Detector quantum efficiency.  Callable object with argument of wavelength, valid between the lowest and highest wavelengths to be observed (as defined by lambda and deltaLambda), inclusive, and must assume an argument in nanometers.
-        \item[OpticalSys.attenuation] \hfill \\
+        \item[OpticalSystem.attenuation] \hfill \\
         Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
-        \item[OpticalSys.PSF] \hfill \\
+        \item[OpticalSystem.PSF] \hfill \\
         Instrument point spread function.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  Returns a 2D NumPy ndarray.  The core of the PSF is normalized to 1, so that all throughput terms are combined in the througput variable above. 
-        \item[OpticalSys.PSFSampling] \hfill \\
+        \item[OpticalSystem.PSFSampling] \hfill \\
         Sampling of PSF in arcsec/pixel (astropy Quantity object initially set in arcseconds)
-        \item[OpticalSys.telescopeKeepout] \hfill \\
+        \item[OpticalSystem.telescopeKeepout] \hfill \\
         Telescope keepout angle in degrees
-        \item[OpticalSys.specLambda] \hfill \\
+        \item[OpticalSystem.specLambda] \hfill \\
         Spectral wavelength of interest (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSys.Rspec] \hfill \\
+        \item[OpticalSystem.Rspec] \hfill \\
         Spectral resolving power
-        \item[OpticalSys.intCutoff] \hfill \\
+        \item[OpticalSystem.intCutoff] \hfill \\
         Maximum allowed integration time (astropy Quantity object initially set in $ days $)
-        \item[OpticalSys.detectionTimeMultiplier]\hfill \\
+        \item[OpticalSystem.detectionTimeMultiplier]\hfill \\
         Duty cycle of a detection observation. 
-        \item[OpticalSys.characterizationTimeMultiplier]\hfill \\
+        \item[OpticalSystem.characterizationTimeMultiplier]\hfill \\
         Characterization duty cycle.
-        \item[OpticalSys.occulterDiameter]\hfill \\
+        \item[OpticalSystem.occulterDiameter]\hfill \\
         Occulter diameter.   (astropy Quantity object initially set in $ m $)
-        \item[OpticalSys.occulterDistance]\hfill \\
+        \item[OpticalSystem.occulterDistance]\hfill \\
         Telescope-occulter separation. (astropy Quantity object initially set in $ km $)
-        \item[OpticalSys.occulterBlueEdge]\hfill \\
+        \item[OpticalSystem.occulterBlueEdge]\hfill \\
         Occulter blue end of wavelength band. (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSys.occulterRedEdge]\hfill \\
+        \item[OpticalSystem.occulterRedEdge]\hfill \\
         Occulter red end of wavelength band. (astropy Quantity object initially set in $ nm $)
     \end{description}
 \end{itemize}
@@ -786,7 +786,7 @@ The \verb+fzodi+ task returns exozodi levels for planetary systems.  This functi
 
 \subsection{Background Sources}\label{sec:backgroundsources}
 
-The Background Sources module will provide density of background sources for a given target based on its coordinates.  This will be used in the post-processing module to determine false alarms based on confusion.  The prototype has no inputs and only a single function: \verb+dNbackground+.
+The Background Sources module will provide density of background sources for a given target based on its coordinates and the integration depth.  This will be used in the post-processing module to determine false alarms based on confusion.  The prototype module has no inputs and only a single function: \verb+dNbackground+.
 
 \subsubsection{dNbackground}
 \subsubsection*{Inputs}
@@ -795,6 +795,8 @@ The Background Sources module will provide density of background sources for a g
     \begin{description}
         \item[coords] \hfill \\
         Astropy \href{http://astropy.readthedocs.org/en/latest/api/astropy.coordinates.SkyCoord.html}{SkyCoord object} containing list of star positions (e.g., right ascension and declination), typically passed from target list.
+        \item[intDepths] \hfill \\
+        Array-like (list or ndarray) of floating point values equal to absolute magnitude (in the detection band) of dark hole to be produced for each target. Dimension must match the length of the coords input.
     \end{description}
 \end{itemize}
 
@@ -803,7 +805,7 @@ The Background Sources module will provide density of background sources for a g
     \item 
     \begin{description}
         \item[dN] \hfill \\
-        Numpy ndarray matching size of input, containing number densities of background sources for given targets.
+        Numpy ndarray matching size of inputs, containing number densities of background sources for given targets in number per square arcminute.
     \end{description}
 \end{itemize}
 
@@ -945,7 +947,7 @@ The \verb+keepout+ task determines which stars in the target list are observable
         \item[targlist] \hfill \\
         Instantiated Target List object from Target List module. See \ref{sec:targetlist} for definition of available attributes
         \item[koangle] \hfill \\
-        Telescope keepout angle in degrees - \verb+OpticalSys.telescopeKeepout+
+        Telescope keepout angle in degrees - \verb+OpticalSystem.telescopeKeepout+
     \end{description}
 \end{itemize}
 
@@ -1184,13 +1186,11 @@ The Completeness module contains the following tasks: \verb+target_completeness+
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Completeness object attributes will be assigned the default values listed.
         \begin{description}
-            \item specs["popname"] \hfill \\
-            String containing name of desired Planet Population module. Default is Planet Population prototype module.
             \item specs["minComp"] \hfill \\
             Minimum completeness level for detection
         \end{description}
         \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module given by above specs["popname"] (see \ref{sec:planetpopulation})
+        Output of Planet Population module (see \ref{sec:planetpopulation})
     \end{description}
     
 \end{itemize}
@@ -1199,7 +1199,7 @@ The Completeness module contains the following tasks: \verb+target_completeness+
 \begin{itemize}
     \item 
     \begin{description}
-        \item[Completeness.pop] \hfill \\
+        \item[Completeness.PlanetPopulation] \hfill \\
         Output of Planet Population module (see ~\ref{sec:planetpopulation})
         \item[Completeness.minComp] \hfill \\
         Minimum completeness level for detection
@@ -1270,27 +1270,17 @@ The Target List module takes in information from the Optical System, Star Catalo
     \item 
     \begin{description}
         \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Target List object attributes will be assigned the default values listed.
-            \begin{description}
-                \item specs["catalogname"] \hfill \\
-                String containing name of desired Star Catalog module. Default is Star Catalog prototype module.
-                \item specs["optsysname"] \hfill \\
-                String containing name of desired Optical System module. Default is Optical System prototype module.
-                \item specs["zodiname"] \hfill \\
-                String containing name of desired Zodiacal Light module. Default is Zodiacal Light prototype module.
-                \item specs["compname"] \hfill \\
-                String containing name of desired Completeness module. Default is Completeness prototype module.
-            \end{description}
+        Information from simulation specification JSON file organized into a Python dictionary. If key: value pairs are missing from the dictionary, the Target List object attributes will be assigned the default values.
         \item[StarCatalog] \hfill \\
-        Output of Star Catalog module given by above specs["catalogname"] (see \ref{sec:starcatalog})
-        \item[OpticalSys] \hfill \\
-        Output of Optical System module given by above specs["optsysname"] (see \ref{sec:opticalsystem})
+        Output of Star Catalog module (see \ref{sec:starcatalog})
+        \item[OpticalSystem] \hfill \\
+        Output of Optical System module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module given by above specs["popname"] (see \ref{sec:planetpopulation})
+        Output of Planet Population module (see \ref{sec:planetpopulation})
         \item[ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module given by above specs["zodiname"] (see \ref{sec:zodiacallight})
+        Output of Zodiacal Light module (see \ref{sec:zodiacallight})
         \item[Completeness] \hfill \\
-        Output of Completeness module given by above specs["compname"] (see \ref{sec:completeness})
+        Output of Completeness module (see \ref{sec:completeness})
     \end{description}
 \end{itemize}
 
@@ -1300,16 +1290,16 @@ The Target List module takes in information from the Optical System, Star Catalo
     \begin{description}
         \item[TargetList.(StarCatalog values)] \hfill \\
         Mission specific filtered star catalog values from Star Catalog module (see \ref{sec:starcatalog})
-        \item[TargetList.opt] \hfill \\
+        \item[TargetList.OpticalSystem] \hfill \\
         Output of Optical System module (see \ref{sec:opticalsystem})
-        \item[TargetList.pop] \hfill \\
+        \item[TargetList.PlanetPopulation] \hfill \\
         Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[TargetList.zodi] \hfill \\
+        \item[TargetList.ZodiacalLight] \hfill \\
         Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[TargetList.comp] \hfill \\
+        \item[TargetList.Completeness] \hfill \\
         Output of Completeness module (see \ref{sec:completeness})
         \item[TargetList.maxintTime] \hfill \\
-        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSys.calc_maxintTime+ ~\ref{sec:calcmaxintTimetask} (astropy Quantity object with units of time)
+        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSystem.calc_maxintTime+ ~\ref{sec:calcmaxintTimetask} (astropy Quantity object with units of time)
         \item[TargetList.comp0] \hfill \\
         1D NumPy ndarray of completeness value for each target star found from \verb+Completeness.target_completeness+ ~\ref{sec:targetcompletenesstask}
         \item[TargetList.MsEst] \hfill \\
@@ -1344,13 +1334,7 @@ The Simulated Universe module contains the following tasks: \verb+planet_to_star
     \begin{description}
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Simulated Universe object attributes will be assigned the default values listed.
-            \begin{description}
-                \item specs["targlistname"] \hfill \\
-                String containing name of desired Target List module. Default is Target List prototype module.
-                \item specs["planphysname"] \hfill \\
-                String containing name of Planet Physical Model module. Default is Planet Physical Model prototype module.
-            \end{description}
-        \item[OpticalSys] \hfill \\
+        \item[OpticalSystem] \hfill \\
         Output of Optical System module inherited from Target List module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
         Output of Planet Population module inherited from Target List module (see \ref{sec:planetpopulation})
@@ -1360,8 +1344,8 @@ The Simulated Universe module contains the following tasks: \verb+planet_to_star
         Output of Completeness module inherited from Target List module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
         Output of Target List module given by above specs["targlistname"] (see \ref{sec:targetlist})
-        \item[PlanetPhysical] \hfill \\
-        Output of Planet Physical Model module given by above specs["planphysname"] (see \ref{sec:planetphysicalmodel})
+        \item[PlanetPhysicalModel] \hfill \\
+        Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
     \end{description}
 \end{itemize}
 
@@ -1369,17 +1353,17 @@ The Simulated Universe module contains the following tasks: \verb+planet_to_star
 \begin{itemize}
     \item
     \begin{description}
-        \item[SimulatedUniverse.opt] \hfill \\
+        \item[SimulatedUniverse.OpticalSystem] \hfill \\
         Output of Optical System module (see \ref{sec:opticalsystem})
         \item[SimulatedUniverse.pop] \hfill \\
         Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[SimulatedUniverse.zodi] \hfill \\
+        \item[SimulatedUniverse.ZodiacalLight] \hfill \\
         Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[SimulatedUniverse.comp] \hfill \\
+        \item[SimulatedUniverse.Completeness] \hfill \\
         Output of Completeness module (see \ref{sec:completeness})
-        \item[SimulatedUniverse.targlist] \hfill \\
+        \item[SimulatedUniverse.TargetList] \hfill \\
         Output of Target List module (see \ref{sec:targetlist})
-        \item[SimulatedUniverse.planphys] \hfill \\
+        \item[SimulatedUniverse.PlanetPhysicalModel] \hfill \\
         Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
         \item[SimulatedUniverse.planInds] \hfill \\
         1D NumPy ndarray containing indices (referenced to exoplanet list) mapping each planet to its star determined from \verb+planet_to_star()+ ~\ref{sec:planettostartask}
@@ -1629,17 +1613,7 @@ Survey Simulation SUBTASKS:
     \begin{description}
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Survey Simulation object attributes will be assigned the default values listed.
-            \begin{description}
-                \item specs["simuniname"] \hfill \\
-                String containing name of desired Simulated Universe module. Default is Simulated Universe prototype module.
-                \item specs["obsname"] \hfill \\
-                String containing name of Observatory module. Default is Observatory prototype module.
-                \item specs["timename"] \hfill \\
-                String containing name of Time Keeping module. Default is Time Keeping prototype module
-                \item specs["ppname"] \hfill \\
-                String containing name of Post-Processing module. Default is Post-Processing prototype module
-            \end{description}
-        \item[OpticalSys] \hfill \\
+        \item[OpticalSystem] \hfill \\
         Output of Optical System module inherited from Simulated Universe module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
         Output of Planet Population module inherited from Simulated Universe module (see \ref{sec:planetpopulation})
@@ -1649,7 +1623,7 @@ Survey Simulation SUBTASKS:
         Output of Completeness module inherited from Simulated Universe module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
         Output of Target List module inherited from Simulated Universe module (see \ref{sec:targetlist})
-        \item[PlanetPhysical] \hfill \\
+        \item[PlanetPhysicalModel] \hfill \\
         Output of Planet Physical Model module inherited from Simulated Universe module (see \ref{sec:planetphysicalmodel})
         \item[SimulatedUniverse] \hfill \\
         Output of Simulated Universe module (see \ref{sec:simulateduniverse})
@@ -1666,25 +1640,25 @@ Survey Simulation SUBTASKS:
 \begin{itemize}
     \item
     \begin{description}
-        \item[SurveySimulation.opt] \hfill \\
+        \item[SurveySimulation.OpticalSystem] \hfill \\
         Output of Optical System module (see \ref{sec:opticalsystem})
-        \item[SurveySimulation.pop] \hfill \\
+        \item[SurveySimulation.PlanetPopulation] \hfill \\
         Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[SurveySimulation.zodi] \hfill \\
+        \item[SurveySimulation.ZodiacalLight] \hfill \\
         Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[SurveySimulation.comp] \hfill \\
+        \item[SurveySimulation.Completeness] \hfill \\
         Output of Completeness module (see \ref{sec:completeness})
-        \item[SurveySimulation.targlist] \hfill \\
+        \item[SurveySimulation.TargetList] \hfill \\
         Output of Target List module (see \ref{sec:targetlist})
-        \item[SurveySimulation.planphys] \hfill \\
+        \item[SurveySimulation.PlanetPhysicalModel] \hfill \\
         Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
-        \item[SurveySimulation.simuni] \hfill \\
+        \item[SurveySimulation.SimulatedUniverse] \hfill \\
         Output of Simulated Universe module (see \ref{sec:simulateduniverse})
-        \item[SurveySimulation.obs] \hfill \\
+        \item[SurveySimulation.Observatory] \hfill \\
         Output of Observatory module (see \ref{sec:observatory})
-        \item[SurveySimulation.timekeeping] \hfill \\
+        \item[SurveySimulation.TimeKeeping] \hfill \\
         Output of Time Keeping module (see \ref{sec:time})
-        \item[SurveySimulation.post] \hfill \\
+        \item[SurveySimulation.PostProcessing] \hfill \\
         Output of Post-Processing module (see \ref{sec:postprocessing})
         \item[SurveySimulation.DRM] \hfill \\
         Contains the results of survey simulation

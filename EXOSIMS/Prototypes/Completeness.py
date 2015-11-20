@@ -22,15 +22,10 @@ class Completeness(object):
     
     def __init__(self, **specs):
         # get desired Planet Population module
-        # initialize name to Prototype
-        popname = 'PlanetPopulation'
-        name = 'popname'
-        if name in specs:
-            popname = specs[name]
         
         # import PlanetPopulation class
-        Pop = get_module(popname, 'PlanetPopulation')
-        self.pop = Pop(**specs) # planet population object class
+        Pop = get_module(specs['modules']['PlanetPopulation'], 'PlanetPopulation')
+        self.PlanetPopulation = Pop(**specs) # planet population object class
         
         # default values 
         # minimum completeness level for detection
@@ -68,11 +63,11 @@ class Completeness(object):
             targlist (TargetList): 
                 TargetList class object which, in addition to TargetList class
                 object attributes, has available:
-                    targlist.opt: 
-                        OpticalSys class object
-                    targlist.pop: 
+                    targlist.OpticalSystem: 
+                        OpticalSystem class object
+                    targlist.PlanetPopulation: 
                         PlanetPopulation class object
-                    targlist.zodi: 
+                    targlist.ZodiacalLight: 
                         ZodiacalLight class object
                     targlist.comp: 
                         Completeness class object

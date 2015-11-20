@@ -2,7 +2,7 @@
 from astropy import units as u
 import numpy as np
 
-class OpticalSys(object):
+class OpticalSystem(object):
     """Optical System class template
     
     This class contains all variables and methods necessary to perform
@@ -86,7 +86,7 @@ class OpticalSys(object):
             
     """
 
-    _modtype = 'OpticalSys'
+    _modtype = 'OpticalSystem'
     
     def __init__(self, **specs):
                 
@@ -199,19 +199,19 @@ class OpticalSys(object):
         object.
         
         This method defines the data type expected, maximum integration time is
-        determined by specific OpticalSys classes.
+        determined by specific OpticalSystem classes.
         
         Args:
             targlist (TargetList):
                 TargetList class object which, in addition to TargetList class
                 object attributes, has available:
-                    targlist.opt:
-                        OpticalSys class object
-                    targlist.pop:
+                    targlist.OpticalSystem:
+                        OpticalSystem class object
+                    targlist.PlanetPopulation:
                         PlanetPopulation class object
-                    targlist.zodi:
+                    targlist.ZodiacalLight:
                         ZodiacalLight class object
-                    targlist.comp:
+                    targlist.Completeness:
                         Completeness object
         
         Returns:
@@ -232,7 +232,7 @@ class OpticalSys(object):
         This method is called by a method in the SurveySimulation object class.
         
         This method defines the data type expected, integration time is 
-        determined by specific OpticalSys classes.
+        determined by specific OpticalSystem classes.
         
         Args:
             targlist (TargetList):

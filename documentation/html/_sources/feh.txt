@@ -1,8 +1,0 @@
-Welcome to EXOSIMS's documentation!
-===================================
-As-built documentation of EXOSIMS prototypes and class implementations. For formal input/output specifications, please refer to the ICD.
-
-.. warning::
-    Work very much in progress
-
-

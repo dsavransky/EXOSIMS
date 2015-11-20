@@ -6,15 +6,17 @@ Subpackages
 
 .. toctree::
 
+    EXOSIMS.BackgroundSources
     EXOSIMS.Completeness
     EXOSIMS.Observatory
-    EXOSIMS.OpticalSys
-    EXOSIMS.PlanetPhysical
+    EXOSIMS.OpticalSystem
+    EXOSIMS.PlanetPhysicalModel
     EXOSIMS.PlanetPopulation
     EXOSIMS.PostProcessing
     EXOSIMS.Prototypes
     EXOSIMS.SimulatedUniverse
     EXOSIMS.StarCatalog
+    EXOSIMS.SurveyEnsemble
     EXOSIMS.SurveySimulation
     EXOSIMS.TargetList
     EXOSIMS.TimeKeeping

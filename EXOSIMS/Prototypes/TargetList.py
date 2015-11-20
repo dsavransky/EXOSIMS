@@ -11,20 +11,20 @@ class TargetList(object):
     Target List Module calculations in exoplanet mission simulation.
     
     It inherits the following class objects which are defined in __init__:
-    StarCatalog, OpticalSys, PlanetPopulation, ZodiacalLight, Completeness
+    StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness
     
     Args:
         \*\*specs:
             user specified values
             
     Attributes:
-        opt (OpticalSys):
-            OpticalSys class object
-        pop (PlanetPopulation):
+        OpticalSystem (OpticalSystem):
+            OpticalSystem class object
+        PlanetPopulation (PlanetPopulation):
             PlanetPopulation class object
-        zodi (ZodiacalLight):
+        ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
-        comp (Completeness):
+        Completeness (Completeness):
             Completeness class object
         Name (ndarray):
             1D numpy ndarray of star names
@@ -104,45 +104,21 @@ class TargetList(object):
         Additional filters are given in specific TargetList classes."""
         
         # get desired module names (specific or prototype)
-        # initialize names to prototype module names
-        catalogname = 'StarCatalog' 
-        optsysname = 'OpticalSys' 
-        rulesname = 'Rules'
-        zodiname = 'ZodiacalLight'
-        compname = 'Completeness'
-                
-        names = ['catalogname', 'optsysname', 'rulesname', 'zodiname', 'compname']
-        # rewrite if named in specs
-        for name in names:
-            if name in specs:
-                if name == 'catalogname':
-                    catalogname = specs[name]
-                elif name == 'optsysname':
-                    optsysname = specs[name]
-                elif name == 'rulesname':
-                    rulesname = specs[name]
-                elif name == 'zodiname':
-                    zodiname = specs[name]
-                elif name == 'compname':
-                    compname = specs[name]
                     
         # import StarCatalog class
-        Cat = get_module(catalogname, 'StarCatalog')
-        # import OpticalSys class
-        Opt = get_module(optsysname, 'OpticalSys')
-        # import Rules class
-        Rules = get_module(rulesname, 'Rules')
+        Cat = get_module(specs['modules']['StarCatalog'], 'StarCatalog')
+        # import OpticalSystem class
+        Opt = get_module(specs['modules']['OpticalSystem'], 'OpticalSystem')
         # import ZodiacalLight class
-        Zodi = get_module(zodiname, 'ZodiacalLight')
+        Zodi = get_module(specs['modules']['ZodiacalLight'], 'ZodiacalLight')
         # import Completeness class
-        Comp = get_module(compname, 'Completeness')
+        Comp = get_module(specs['modules']['Completeness'], 'Completeness')
         
         self.cat = Cat(**specs) # star catalog data
-        self.opt = Opt(**specs) # optical system object class
-        self.rules = Rules(**specs) # rules object class
-        self.zodi = Zodi(**specs) # zodiacal light model object class
-        self.comp = Comp(**specs) # completeness model object class
-        self.pop = self.comp.pop # planet population object class
+        self.OpticalSystem = Opt(**specs) # optical system object class
+        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object class
+        self.Completeness = Comp(**specs) # completeness model object class
+        self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object class
         
         # list of possible Star Catalog attributes
         atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -158,11 +134,11 @@ class TargetList(object):
         # filter out nan attribute values from Star Catalog
         self.nan_filter(atts)
         # populate completion values
-        self.comp0 = self.comp.target_completeness(self)
+        self.comp0 = self.Completeness.target_completeness(self)
         # include completeness now that it is set
         atts.append('comp0')
         # populate maximum integration time
-        self.maxintTime = self.opt.calc_maxintTime(self)
+        self.maxintTime = self.OpticalSystem.calc_maxintTime(self)
         # include integration time now that it is set
         atts.append('maxintTime')
         # calculate 'true' and 'approximate' stellar masses
@@ -326,9 +302,9 @@ class TargetList(object):
         """Includes stars with planets with orbits outside of the IWA 
         
         This method uses the following inherited class objects:
-            self.opt:
-                OpticalSys class object
-            self.pop:
+            self.OpticalSystem:
+                OpticalSystem class object
+            self.PlanetPopulation:
                 PlanetPopulation class object
                 
         Args:
@@ -337,10 +313,10 @@ class TargetList(object):
         
         """
         
-        if self.pop.scaleOrbits:
-            i = np.where(np.max(self.pop.rrange) > (np.tan(self.opt.IWA)*self.dist/np.sqrt(self.L))*u.pc)
+        if self.PlanetPopulation.scaleOrbits:
+            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist/np.sqrt(self.L))*u.pc)
         else:
-            i = np.where(np.max(self.pop.rrange) > (np.tan(self.opt.IWA)*self.dist*u.pc))
+            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist*u.pc))
    
         self.revise_lists(atts, i[0])
         
@@ -357,7 +333,7 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.maxintTime <= self.rules.intCutoff)
+        i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)
 
         self.revise_lists(atts, i[0])
         
@@ -365,10 +341,10 @@ class TargetList(object):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
         This method uses the following inherited class objects:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
-            self.opt:
-                OpticalSys class object
+            self.OpticalSystem:
+                OpticalSystem class object
                 
         Args:
             atts (list):
@@ -378,33 +354,33 @@ class TargetList(object):
         
         betastar = 1.10472881476178 # radians
         
-        rhats = np.tan(self.opt.IWA)*self.dist*u.pc/np.sin(betastar)
+        rhats = np.tan(self.OpticalSystem.IWA)*self.dist*u.pc/np.sin(betastar)
         
-        if self.pop.scaleOrbits:
+        if self.PlanetPopulation.scaleOrbits:
             rhats = rhats/np.sqrt(self.L)
         
         # out of range rhats
-        below = np.where(rhats < np.min(self.pop.rrange))
-        above = np.where(rhats > np.max(self.pop.rrange))
+        below = np.where(rhats < np.min(self.PlanetPopulation.rrange))
+        above = np.where(rhats > np.max(self.PlanetPopulation.rrange))
 
         # s and beta arrays
-        ss = np.tan(self.opt.IWA)*self.dist*u.pc
-        if self.pop.scaleOrbits:
+        ss = np.tan(self.OpticalSystem.IWA)*self.dist*u.pc
+        if self.PlanetPopulation.scaleOrbits:
             ss = ss/np.sqrt(self.L)
         
         betas = np.zeros((len(ss))) + betastar
         
         # fix out of range values
-        ss[below] = np.min(self.pop.rrange)*np.sin(betastar)
-        if self.pop.scaleOrbits:
-            betas[above] = np.arcsin((np.tan(self.opt.IWA)*self.dist[above]*u.pc/np.sqrt(self.L[above])/np.max(self.pop.rrange)).decompose())
+        ss[below] = np.min(self.PlanetPopulation.rrange)*np.sin(betastar)
+        if self.PlanetPopulation.scaleOrbits:
+            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]*u.pc/np.sqrt(self.L[above])/np.max(self.PlanetPopulation.rrange)).decompose())
         else:
-            betas[above] = np.arcsin((np.tan(self.opt.IWA)*self.dist[above]*u.pc/np.max(self.pop.rrange)).decompose())                
+            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]*u.pc/np.max(self.PlanetPopulation.rrange)).decompose())                
         
         # calculate delta mag
         Phis = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
-        t1 = np.max(self.pop.Rrange).to(u.AU).value**2*np.max(self.pop.prange)      
-        cdMag = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.opt.dMagLim)
+        t1 = np.max(self.PlanetPopulation.Rrange).to(u.AU).value**2*np.max(self.PlanetPopulation.prange)      
+        cdMag = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.OpticalSystem.dMagLim)
         
         self.revise_lists(atts, cdMag)
         
@@ -412,7 +388,7 @@ class TargetList(object):
         """Includes stars if completeness is larger than the minimum value
         
         This method uses the following inherited class object:
-            self.comp:
+            self.Completeness:
                 Completeness class object
                 
         Args:
@@ -421,7 +397,7 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.comp0 > self.comp.minComp)
+        i = np.where(self.comp0 > self.Completeness.minComp)
 
         self.revise_lists(atts, i)        
         

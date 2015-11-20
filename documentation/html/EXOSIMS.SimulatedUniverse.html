@@ -33,26 +33,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="EXOSIMS.StarCatalog.html" title="EXOSIMS.StarCatalog package"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="EXOSIMS.Prototypes.html" title="EXOSIMS.Prototypes package"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -90,13 +71,12 @@ unit object in km)</p>
 <code class="descname">planet_masses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_masses" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet mass in kg</p>
 <p>This method has access to the following:
-self.targlist - target list object
-self.planphys - planet physical model object
-self.opt - optical system object
-self.pop - planet population object
-self.rules - rules object
-self.zodi - zodiacal light object
-self.comp - completeness object
+self.TargetList - target list object
+self.PlanetPhysicalModel - planet physical model object
+self.OpticalSystem - optical system object
+self.PlanetPopulation - planet population object
+self.ZodiacalLight - zodiacal light object
+self.Completeness - completeness object
 self.planInds - indices mapping planet to target star
 self.nPlans - number of planets
 self.sysInds - indices of target stars with planets</p>
@@ -111,13 +91,13 @@ objects will populate these values more realistically</p>
 <code class="descname">planet_radii</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_radii" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet a radius in km</p>
 <p>This method has access to the following:
-self.targlist - target list object
-self.planphys - planet physical model object
-self.opt - optical system object
-self.pop - planet population object
+self.TargetList - target list object
+self.PlanetPhysicalModel - planet physical model object
+self.OpticalSystem - optical system object
+self.PlanetPopulation - planet population object
 self.rules - rules object
-self.zodi - zodiacal light object
-self.comp - completeness object
+self.ZodiacalLight - zodiacal light object
+self.Completeness - completeness object
 self.planInds - indices mapping planet to target star
 self.nPlans - number of planets
 self.sysInds - indices of target stars with planets
@@ -162,13 +142,17 @@ objects will populate these indices more realistically</p>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="EXOSIMS.Prototypes.html"
-                        title="previous chapter">EXOSIMS.Prototypes package</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="EXOSIMS.StarCatalog.html"
-                        title="next chapter">EXOSIMS.StarCatalog package</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
+      <li>Previous: <a href="EXOSIMS.Prototypes.html" title="previous chapter">EXOSIMS.Prototypes package</a></li>
+      <li>Next: <a href="EXOSIMS.StarCatalog.html" title="next chapter">EXOSIMS.StarCatalog package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -198,11 +182,11 @@ objects will populate these indices more realistically</p>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/EXOSIMS.SimulatedUniverse.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

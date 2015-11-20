@@ -31,20 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -67,32 +54,32 @@
 <span class="sd">    Simulated Universe Module calculations in exoplanet mission simulation.</span>
 <span class="sd">    </span>
 <span class="sd">    It inherits the following class objects which are defined in __init__:</span>
-<span class="sd">    TargetList, PlanetPhysical</span>
+<span class="sd">    TargetList, PlanetPhysicalModel</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        targlist (TargetList):</span>
+<span class="sd">        TargetList (TargetList):</span>
 <span class="sd">            TargetList class object</span>
-<span class="sd">        planphys (PlanetPhysical):</span>
-<span class="sd">            PlanetPhysical class object</span>
-<span class="sd">        opt (OpticalSys):</span>
-<span class="sd">            OpticalSys class object</span>
-<span class="sd">        pop (PlanetPopulation):</span>
+<span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel):</span>
+<span class="sd">            PlanetPhysicalModel class object</span>
+<span class="sd">        OpticalSystem (OpticalSystem):</span>
+<span class="sd">            OpticalSystem class object</span>
+<span class="sd">        PlanetPopulation (PlanetPopulation):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        zodi (ZodiacalLight):</span>
+<span class="sd">        ZodiacalLight (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        comp (Completeness):</span>
+<span class="sd">        Completeness (Completeness):</span>
 <span class="sd">            Completeness class object</span>
 <span class="sd">        planInds (ndarray):</span>
 <span class="sd">            1D numpy ndarray of indices mapping planets to target stars in</span>
-<span class="sd">            targlist</span>
+<span class="sd">            TargetList</span>
 <span class="sd">        nPlans (int):</span>
 <span class="sd">            total number of planets</span>
 <span class="sd">        sysInds (ndarray):</span>
-<span class="sd">            indicies of target stars in targlist with planets</span>
+<span class="sd">            indicies of target stars in TargetList with planets</span>
 <span class="sd">        a (Quantity):</span>
 <span class="sd">            1D numpy ndarray containing semi-major axis for each planet </span>
 <span class="sd">            (default units of AU)</span>
@@ -131,36 +118,24 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c"># get desired module names (prototype or specific)</span>
-        <span class="c"># initialize names to prototype names</span>
-        <span class="n">targlistname</span> <span class="o">=</span> <span class="s">&#39;TargetList&#39;</span>
-        <span class="n">planphysname</span> <span class="o">=</span> <span class="s">&#39;PlanetPhysical&#39;</span>
-        
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;targlistname&#39;</span><span class="p">,</span> <span class="s">&#39;planphysname&#39;</span><span class="p">]</span>
-        <span class="c"># rewrite if named in specs</span>
-        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;targlistname&#39;</span><span class="p">:</span>
-                    <span class="n">targlistname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-                <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;planphysname&#39;</span><span class="p">:</span>
-                    <span class="n">planphysname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         
         <span class="c"># import TargetList class</span>
-        <span class="n">TL</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">targlistname</span><span class="p">,</span> <span class="s">&#39;TargetList&#39;</span><span class="p">)</span>
-        <span class="c"># import PlanetPhysical class</span>
-        <span class="n">PlanPhys</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">planphysname</span><span class="p">,</span> <span class="s">&#39;PlanetPhysical&#39;</span><span class="p">)</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;TargetList&#39;</span><span class="p">],</span> <span class="s">&#39;TargetList&#39;</span><span class="p">)</span>
+        <span class="c"># import PlanetPhysicalModel class</span>
+        <span class="n">PlanPhys</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PlanetPhysicalModel&#39;</span><span class="p">],</span> <span class="s">&#39;PlanetPhysicalModel&#39;</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span> <span class="o">=</span> <span class="n">TL</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">planphys</span> <span class="o">=</span> <span class="n">PlanPhys</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="n">TL</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">PlanPhys</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c"># bring inherited class objects to top level of Simulated Universe</span>
         <span class="c"># optical system class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">opt</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">OpticalSystem</span> 
         <span class="c"># planet population class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">pop</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">PlanetPopulation</span> 
         <span class="c"># zodiacal light class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">zodi</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">ZodiacalLight</span> 
         <span class="c"># completeness class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">comp</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Completeness</span> 
         
         <span class="c"># planets mapped to target stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">planInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_to_star</span><span class="p">()</span>
@@ -187,7 +162,7 @@
         <span class="c"># planet initial positions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_pos_vel</span><span class="p">()</span> 
         <span class="c"># exozodi levels for systems with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zodi</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SimulatedUniverse.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Simulated Universe object</span>
@@ -209,9 +184,9 @@
 <span class="sd">        classes will populate these indices.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class objects:</span>
-<span class="sd">            self.targlist:</span>
+<span class="sd">            self.TargetList:</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
@@ -224,7 +199,7 @@
         <span class="c"># assign between 0 and 8 planets to each star in the target list</span>
         <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
             
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
             <span class="n">nump</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
             <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">planSys</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">nump</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)))</span>
         
@@ -237,7 +212,7 @@
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class objects:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -248,7 +223,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets a semi-major axis </span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">a</span>
         </div>
@@ -259,7 +234,7 @@
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -269,7 +244,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets an eccentricity </span>
-        <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">e</span>
         </div>
@@ -280,7 +255,7 @@
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -291,7 +266,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets an argument of perigee </span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">arg_perigee</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arg_perigee</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
                 
         <span class="k">return</span> <span class="n">w</span>
         </div>
@@ -302,7 +277,7 @@
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -313,7 +288,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets right ascension of the ascending node </span>
-        <span class="n">O</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">RAAN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">O</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">RAAN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
                 
         <span class="k">return</span> <span class="n">O</span>
         </div>
@@ -324,7 +299,7 @@
 <span class="sd">        objects will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -335,7 +310,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets a radius </span>
-        <span class="n">R</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">R</span>
             </div>
@@ -346,7 +321,7 @@
 <span class="sd">        classes will populate these values.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -356,7 +331,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># assign planets a mass </span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="k">return</span> <span class="n">M</span>
         </div>
@@ -367,7 +342,7 @@
 <span class="sd">        classes will populate these values.</span>
 
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
@@ -378,7 +353,7 @@
         
         <span class="c"># assign planets an albedo uniformly distributed between min and max</span>
         <span class="c"># values from PlanetPopulation class object</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">albedo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">albedo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">p</span>
         </div>
@@ -386,7 +361,7 @@
         <span class="sd">&quot;&quot;&quot;Assigns each planet an inclination in degrees </span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.pop:</span>
+<span class="sd">            self.PlanetPopulation:</span>
 <span class="sd">                PlanetPopulation class object</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
@@ -396,7 +371,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">I</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">inclination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">inclination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         
         <span class="k">return</span> <span class="n">I</span>
         </div>
@@ -451,7 +426,7 @@
         
         <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">b1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">b2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b2</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">b3</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b3</span><span class="p">),</span><span class="mi">1</span><span class="p">)))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         
-        <span class="n">Mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Mp</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">targlist</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
+        <span class="n">Mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Mp</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
         
         <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
         <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">r1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">r1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">r1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r1</span><span class="p">),</span><span class="mi">1</span><span class="p">)))</span>
@@ -577,7 +552,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
@@ -600,7 +583,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

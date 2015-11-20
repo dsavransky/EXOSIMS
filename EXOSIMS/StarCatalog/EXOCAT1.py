@@ -41,12 +41,13 @@ class EXOCAT1(StarCatalog):
         if not os.path.exists(catalogpath):
                 raise IOError('Catalog File %s Not Found.'%catalogpath)
 
-        StarCatalog.__init__(self)
-
         #read votable
         votable = parse(catalogpath)
         table = votable.get_first_table()
         data = table.array
+
+        
+        StarCatalog.__init__(self,ntargs=len(data),**specs)
 
         keyword_table = {'Name':'hip_name',
                         'Spec':'st_spttype',
@@ -69,7 +70,7 @@ class EXOCAT1(StarCatalog):
         self.Binary_Cut = ~data['wds_sep'].mask
         self.MV = self.Vmag  - 5*(np.log10(self.dist) - 1)
         self.coords = SkyCoord(ra=data['ra'], dec=data['dec'], unit='deg')
-
+        
         self.stardata = data
         
 

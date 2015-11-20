@@ -21,7 +21,7 @@ class PlanetSim(SimulatedUniverse):
         
             # assign one planet to each star in the target list
             planSys = np.array([],dtype=int)
-            for i in range(len(self.targlist.Name)):
+            for i in range(len(self.TargetList.Name)):
                     nump = randint(0,8)
                     planSys = np.hstack((planSys, np.array([i]*nump,dtype=int)))
             return planSys
@@ -31,13 +31,12 @@ class PlanetSim(SimulatedUniverse):
             """Assigns each planet mass in kg
             
             This method has access to the following:
-            self.targlist - target list object
-            self.planphys - planet physical model object
-            self.opt - optical system object
-            self.pop - planet population object
-            self.rules - rules object
-            self.zodi - zodiacal light object
-            self.comp - completeness object
+            self.TargetList - target list object
+            self.PlanetPhysicalModel - planet physical model object
+            self.OpticalSystem - optical system object
+            self.PlanetPopulation - planet population object
+            self.ZodiacalLight - zodiacal light object
+            self.Completeness - completeness object
             self.planInds - indices mapping planet to target star
             self.nPlans - number of planets
             self.sysInds - indices of target stars with planets
@@ -48,7 +47,7 @@ class PlanetSim(SimulatedUniverse):
             This defines the data type expected, specific SimulatedUniverse class
             objects will populate these values more realistically"""
             
-            mass_pdf = statsFun.simpSample(self.pop.mass, self.nPlans, .1, 100)
+            mass_pdf = statsFun.simpSample(self.PlanetPopulation.mass, self.nPlans, .1, 100)
             
             # assign all planets the mass of earth in kg
             M = ([const.M_jup.value]*mass_pdf)*u.kg
@@ -64,7 +63,7 @@ class PlanetSim(SimulatedUniverse):
             
             
 
-            semi_axis_pdf = statsFun.simpSample(self.pop.semi_axis, self.nPlans, .1, 100)
+            semi_axis_pdf = statsFun.simpSample(self.PlanetPopulation.semi_axis, self.nPlans, .1, 100)
             a = np.array([const.R_earth.value]*semi_axis_pdf)*u.km
             return a
         
@@ -74,7 +73,7 @@ class PlanetSim(SimulatedUniverse):
             
             Output: e - numpy array containing eccentricity of each planet"""
             
-            eccentricity_pdf = statsFun.simpSample(self.pop.eccentricity, self.nPlans, 0, 1)
+            eccentricity_pdf = statsFun.simpSample(self.PlanetPopulation.eccentricity, self.nPlans, 0, 1)
             e = np.array(eccentricity_pdf)
             return e
         
@@ -83,13 +82,13 @@ class PlanetSim(SimulatedUniverse):
             """Assigns each planet a radius in km
             
             This method has access to the following:
-            self.targlist - target list object
-            self.planphys - planet physical model object
-            self.opt - optical system object
-            self.pop - planet population object
+            self.TargetList - target list object
+            self.PlanetPhysicalModel - planet physical model object
+            self.OpticalSystem - optical system object
+            self.PlanetPopulation - planet population object
             self.rules - rules object
-            self.zodi - zodiacal light object
-            self.comp - completeness object
+            self.ZodiacalLight - zodiacal light object
+            self.Completeness - completeness object
             self.planInds - indices mapping planet to target star
             self.nPlans - number of planets
             self.sysInds - indices of target stars with planets
@@ -101,7 +100,7 @@ class PlanetSim(SimulatedUniverse):
             This defines the data type expected, specific SimulatedUniverse class
             objects will populate these values more realistically"""
             
-            radii_pdf = statsFun.simpSample(self.pop.radius, self.nPlans, 1, 22.6)
+            radii_pdf = statsFun.simpSample(self.PlanetPopulation.radius, self.nPlans, 1, 22.6)
             # assign all planets the radius of earth in km
             R = np.array([const.R_earth.value]*radii_pdf)*u.km
             

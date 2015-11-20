@@ -31,20 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -76,15 +63,10 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="c"># get desired Planet Population module</span>
-        <span class="c"># initialize name to Prototype</span>
-        <span class="n">popname</span> <span class="o">=</span> <span class="s">&#39;PlanetPopulation&#39;</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;popname&#39;</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
-            <span class="n">popname</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         
         <span class="c"># import PlanetPopulation class</span>
-        <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">popname</span><span class="p">,</span> <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span> <span class="o">=</span> <span class="n">Pop</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># planet population object class</span>
+        <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PlanetPopulation&#39;</span><span class="p">],</span> <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">Pop</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># planet population object class</span>
         
         <span class="c"># default values </span>
         <span class="c"># minimum completeness level for detection</span>
@@ -122,11 +104,11 @@
 <span class="sd">            targlist (TargetList): </span>
 <span class="sd">                TargetList class object which, in addition to TargetList class</span>
 <span class="sd">                object attributes, has available:</span>
-<span class="sd">                    targlist.opt: </span>
-<span class="sd">                        OpticalSys class object</span>
-<span class="sd">                    targlist.pop: </span>
+<span class="sd">                    targlist.OpticalSystem: </span>
+<span class="sd">                        OpticalSystem class object</span>
+<span class="sd">                    targlist.PlanetPopulation: </span>
 <span class="sd">                        PlanetPopulation class object</span>
-<span class="sd">                    targlist.zodi: </span>
+<span class="sd">                    targlist.ZodiacalLight: </span>
 <span class="sd">                        ZodiacalLight class object</span>
 <span class="sd">                    targlist.comp: </span>
 <span class="sd">                        Completeness class object</span>
@@ -172,7 +154,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
@@ -195,7 +185,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

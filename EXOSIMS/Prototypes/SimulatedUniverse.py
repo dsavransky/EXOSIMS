@@ -13,32 +13,32 @@ class SimulatedUniverse(object):
     Simulated Universe Module calculations in exoplanet mission simulation.
     
     It inherits the following class objects which are defined in __init__:
-    TargetList, PlanetPhysical
+    TargetList, PlanetPhysicalModel
     
     Args:
         \*\*specs:
             user specified values
     
     Attributes:
-        targlist (TargetList):
+        TargetList (TargetList):
             TargetList class object
-        planphys (PlanetPhysical):
-            PlanetPhysical class object
-        opt (OpticalSys):
-            OpticalSys class object
-        pop (PlanetPopulation):
+        PlanetPhysicalModel (PlanetPhysicalModel):
+            PlanetPhysicalModel class object
+        OpticalSystem (OpticalSystem):
+            OpticalSystem class object
+        PlanetPopulation (PlanetPopulation):
             PlanetPopulation class object
-        zodi (ZodiacalLight):
+        ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
-        comp (Completeness):
+        Completeness (Completeness):
             Completeness class object
         planInds (ndarray):
             1D numpy ndarray of indices mapping planets to target stars in
-            targlist
+            TargetList
         nPlans (int):
             total number of planets
         sysInds (ndarray):
-            indicies of target stars in targlist with planets
+            indicies of target stars in TargetList with planets
         a (Quantity):
             1D numpy ndarray containing semi-major axis for each planet 
             (default units of AU)
@@ -77,36 +77,24 @@ class SimulatedUniverse(object):
     def __init__(self, **specs):
         
         # get desired module names (prototype or specific)
-        # initialize names to prototype names
-        targlistname = 'TargetList'
-        planphysname = 'PlanetPhysical'
-        
-        names = ['targlistname', 'planphysname']
-        # rewrite if named in specs
-        for name in names:
-            if name in specs:
-                if name == 'targlistname':
-                    targlistname = specs[name]
-                elif name == 'planphysname':
-                    planphysname = specs[name]
         
         # import TargetList class
-        TL = get_module(targlistname, 'TargetList')
-        # import PlanetPhysical class
-        PlanPhys = get_module(planphysname, 'PlanetPhysical')
+        TL = get_module(specs['modules']['TargetList'], 'TargetList')
+        # import PlanetPhysicalModel class
+        PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
         
-        self.targlist = TL(**specs)
-        self.planphys = PlanPhys(**specs)
+        self.TargetList = TL(**specs)
+        self.PlanetPhysicalModel = PlanPhys(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
         # optical system class object
-        self.opt = self.targlist.opt 
+        self.OpticalSystem = self.TargetList.OpticalSystem 
         # planet population class object
-        self.pop = self.targlist.pop 
+        self.PlanetPopulation = self.TargetList.PlanetPopulation 
         # zodiacal light class object
-        self.zodi = self.targlist.zodi 
+        self.ZodiacalLight = self.TargetList.ZodiacalLight 
         # completeness class object
-        self.comp = self.targlist.comp 
+        self.Completeness = self.TargetList.Completeness 
         
         # planets mapped to target stars
         self.planInds = self.planet_to_star()
@@ -133,7 +121,7 @@ class SimulatedUniverse(object):
         # planet initial positions
         self.r, self.v = self.planet_pos_vel() 
         # exozodi levels for systems with planets
-        self.fzodicurr = self.zodi.fzodi(self.planInds, self.I, self.targlist)
+        self.fzodicurr = self.ZodiacalLight.fzodi(self.planInds, self.I, self.TargetList)
 
     def __str__(self):
         """String representation of Simulated Universe object
@@ -155,9 +143,9 @@ class SimulatedUniverse(object):
         classes will populate these indices.
         
         This method uses the following inherited class objects:
-            self.targlist:
+            self.TargetList:
                 TargetList class object
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
                 
         Returns:
@@ -170,7 +158,7 @@ class SimulatedUniverse(object):
         # assign between 0 and 8 planets to each star in the target list
         planSys = np.array([],dtype=int)
             
-        for i in range(len(self.targlist.Name)):
+        for i in range(len(self.TargetList.Name)):
             nump = np.random.randint(0, high=8)
             planSys = np.hstack((planSys, np.array([i]*nump,dtype=int)))
         
@@ -183,7 +171,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
         
         This method uses the following inherited class objects:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -194,7 +182,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a semi-major axis 
-        a = statsFun.simpSample(self.pop.semi_axis, self.nPlans, self.pop.arange.min().value, self.pop.arange.max().value)*self.pop.arange.unit
+        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, self.nPlans, self.PlanetPopulation.arange.min().value, self.PlanetPopulation.arange.max().value)*self.PlanetPopulation.arange.unit
         
         return a
         
@@ -205,7 +193,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -215,7 +203,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets an eccentricity 
-        e = statsFun.simpSample(self.pop.eccentricity, self.nPlans, self.pop.erange.min(), self.pop.erange.max())
+        e = statsFun.simpSample(self.PlanetPopulation.eccentricity, self.nPlans, self.PlanetPopulation.erange.min(), self.PlanetPopulation.erange.max())
         
         return e
         
@@ -226,7 +214,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -237,7 +225,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets an argument of perigee 
-        w = statsFun.simpSample(self.pop.arg_perigee, self.nPlans, self.pop.wrange.min(), self.pop.wrange.max())
+        w = statsFun.simpSample(self.PlanetPopulation.arg_perigee, self.nPlans, self.PlanetPopulation.wrange.min(), self.PlanetPopulation.wrange.max())
                 
         return w
         
@@ -248,7 +236,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -259,7 +247,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets right ascension of the ascending node 
-        O = statsFun.simpSample(self.pop.RAAN, self.nPlans, self.pop.Orange.min(), self.pop.Orange.max())
+        O = statsFun.simpSample(self.PlanetPopulation.RAAN, self.nPlans, self.PlanetPopulation.Orange.min(), self.PlanetPopulation.Orange.max())
                 
         return O
         
@@ -270,7 +258,7 @@ class SimulatedUniverse(object):
         objects will populate these values.
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -281,7 +269,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a radius 
-        R = statsFun.simpSample(self.pop.radius, self.nPlans, self.pop.Rrange.min().value, self.pop.Rrange.max().value)*self.pop.Rrange.unit
+        R = statsFun.simpSample(self.PlanetPopulation.radius, self.nPlans, self.PlanetPopulation.Rrange.min().value, self.PlanetPopulation.Rrange.max().value)*self.PlanetPopulation.Rrange.unit
         
         return R
             
@@ -292,7 +280,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -302,7 +290,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a mass 
-        M = statsFun.simpSample(self.pop.mass, self.nPlans, self.pop.Mprange.min().value, self.pop.Mprange.max().value)*self.pop.Mprange.unit
+        M = statsFun.simpSample(self.PlanetPopulation.mass, self.nPlans, self.PlanetPopulation.Mprange.min().value, self.PlanetPopulation.Mprange.max().value)*self.PlanetPopulation.Mprange.unit
         
         return M
         
@@ -313,7 +301,7 @@ class SimulatedUniverse(object):
         classes will populate these values.
 
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
         
         Returns:
@@ -324,7 +312,7 @@ class SimulatedUniverse(object):
         
         # assign planets an albedo uniformly distributed between min and max
         # values from PlanetPopulation class object
-        p = statsFun.simpSample(self.pop.albedo, self.nPlans, self.pop.prange.min(), self.pop.prange.max())
+        p = statsFun.simpSample(self.PlanetPopulation.albedo, self.nPlans, self.PlanetPopulation.prange.min(), self.PlanetPopulation.prange.max())
         
         return p
         
@@ -332,7 +320,7 @@ class SimulatedUniverse(object):
         """Assigns each planet an inclination in degrees 
         
         This method uses the following inherited class object:
-            self.pop:
+            self.PlanetPopulation:
                 PlanetPopulation class object
                 
         Returns:
@@ -342,7 +330,7 @@ class SimulatedUniverse(object):
         
         """
         
-        I = statsFun.simpSample(self.pop.inclination, self.nPlans, self.pop.Irange.min(), self.pop.Irange.max())
+        I = statsFun.simpSample(self.PlanetPopulation.inclination, self.nPlans, self.PlanetPopulation.Irange.min(), self.PlanetPopulation.Irange.max())
         
         return I
         
@@ -397,7 +385,7 @@ class SimulatedUniverse(object):
         
         B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))*u.AU
         
-        Mu = const.G*(self.Mp+self.targlist.MsTrue[self.planInds]*const.M_sun)
+        Mu = const.G*(self.Mp+self.TargetList.MsTrue[self.planInds]*const.M_sun)
         
         r1 = np.cos(E) - e
         r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))

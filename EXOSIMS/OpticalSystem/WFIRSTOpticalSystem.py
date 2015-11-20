@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.Prototypes.OpticalSys import OpticalSys
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from astropy import units as u
 import numpy as np
 
-class WFIRSTOpticalSys(OpticalSys):
+class WFIRSTOpticalSystem(OpticalSystem):
     """WFIRST Optical System class
     
     This class contains all variables and methods specific to the WFIRST
@@ -32,7 +32,7 @@ class WFIRSTOpticalSys(OpticalSys):
     
     def __init__(self, **specs):
                 
-        OpticalSys.__init__(self, **specs)
+        OpticalSystem.__init__(self, **specs)
                     
         # set values derived from quantities above
         # pixel size in square arcseconds (as**2)
@@ -52,10 +52,8 @@ class WFIRSTOpticalSys(OpticalSys):
         Args:
             targlist:
                 TargetList class object which also has access to:
-                    targlist.zodi:
+                    targlist.ZodiacalLight:
                         ZodiacalLight class object
-                    targlist.rules:
-                        Rules class object
         
         Returns:
             maxintTime:
@@ -65,20 +63,20 @@ class WFIRSTOpticalSys(OpticalSys):
         """
         
                 
-        dmags = targlist.opt.dMagLim # limiting delta magnitude
-        throughput = targlist.opt.throughput # throughput at IWA
-        contrast = targlist.opt.contrast # contrast at IWA
+        dmags = targlist.OpticalSystem.dMagLim # limiting delta magnitude
+        throughput = targlist.OpticalSystem.throughput # throughput at IWA
+        contrast = targlist.OpticalSystem.contrast # contrast at IWA
         Vmag = targlist.Vmag # visual magnitude
-        opt = targlist.opt # OpticalSys module
-        zodi = targlist.zodi # ZodiacalLight module
-        rules = targlist.rules # Rules module
+        opt = targlist.OpticalSystem # OpticalSystem module
+        zodi = targlist.ZodiacalLight # ZodiacalLight module
+
         # exozodi level
         fzodi = zodi.fbeta(zodi.eclip_lats(targlist.coords).value) + 2.*zodi.exozodi*2.44*(2.5**(4.78-targlist.MV))
         # band-specific flux for zero-magnitude star        
         F = 9.57e7*(1/u.m)**2*(1/u.nm)*(1/u.s)
         
         Qmin = (10.**(dmags/2.5)*contrast +
-        10.**((Vmag + dmags - 23.54)/2.5)*fzodi*opt.dAlpha.value +
+        10.**((Vmag + dmags - 23.54)/2.5)*fZodiacalLight*opt.dAlpha.value +
         10.**((Vmag + dmags)/2.5)*
         (opt.dr + (opt.sigma_r**2/opt.t_exp))/
         (F*opt.QE*opt.eta2*opt.deltaLambda*opt.pupilArea*throughput))**(-1)
@@ -104,7 +102,7 @@ class WFIRSTOpticalSys(OpticalSys):
             targlist:
                 TargetList class object
             opt:
-                OpticalSys class object
+                OpticalSystem class object
             rules:
                 Rules class object
             universe:

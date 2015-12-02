@@ -93,6 +93,8 @@ class SimulatedUniverse(object):
         self.PlanetPopulation = self.TargetList.PlanetPopulation 
         # zodiacal light class object
         self.ZodiacalLight = self.TargetList.ZodiacalLight 
+        # background sources
+        self.BackgroundSources = self.TargetList.BackgroundSources
         # completeness class object
         self.Completeness = self.TargetList.Completeness 
         

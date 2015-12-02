@@ -113,12 +113,16 @@ class TargetList(object):
         Zodi = get_module(specs['modules']['ZodiacalLight'], 'ZodiacalLight')
         # import Completeness class
         Comp = get_module(specs['modules']['Completeness'], 'Completeness')
-        
+        # import BackgroundSources class
+        Back = get_module(specs['modules']['BackgroundSources'], 'BackgroundSources')
+
+
         self.cat = Cat(**specs) # star catalog data
-        self.OpticalSystem = Opt(**specs) # optical system object class
-        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object class
-        self.Completeness = Comp(**specs) # completeness model object class
-        self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object class
+        self.OpticalSystem = Opt(**specs) # optical system object 
+        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object 
+        self.BackgroundSources = Back(**specs) #background sources model object
+        self.Completeness = Comp(**specs) # completeness model object 
+        self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object 
         
         # list of possible Star Catalog attributes
         atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 

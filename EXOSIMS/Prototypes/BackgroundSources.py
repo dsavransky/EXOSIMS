@@ -20,6 +20,10 @@ class BackgroundSources(object):
     _modtype = "BackgroundSources"
 
 
+    def __init__(self, **specs):
+        #currently nothing to do here
+        return
+
     def __str__(self):
         """String representation of Background Sources module
         """

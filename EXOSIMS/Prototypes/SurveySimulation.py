@@ -56,9 +56,12 @@ class SurveySimulation(object):
                 dictionary has been passed through specs 
             specs: 
                 Dictionary containing user specification values and 
-                desired module names
+                a dictionary of modules.  The module dictionary can contain
+                string values, in which case the objects will be instantiated,
+                or object references.
         """
 
+        # if a script file is provided read it in
         if scriptfile is not None:
             import json
             import os.path
@@ -74,34 +77,59 @@ class SurveySimulation(object):
                 print "Unexpected error:", sys.exc_info()[0]
                 raise
 
-        if 'modules' not in specs.keys():
-            raise ValueError("No modules field found in script.")
+            # modules array must be present
+            if 'modules' not in specs.keys():
+                raise ValueError("No modules field found in script.")
 
-        # get desired module names (prototype or specific)
-        
-        # import simulated universe class
-        SimUni = get_module(specs['modules']['SimulatedUniverse'], 'SimulatedUniverse')
-        # import observatory class
-        Obs = get_module(specs['modules']['Observatory'], 'Observatory')
-        # import timekeeping class
-        TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
-        # import postprocessing class
-        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
-        
-        self.SimulatedUniverse = SimUni(**specs)
-        self.Observatory = Obs(**specs)
-        self.TimeKeeping = TK(**specs)
-        self.PostProcessing = PP(**specs)
-        
-        # bring inherited class objects to top level of Survey Simulation
-        self.OpticalSystem = self.SimulatedUniverse.OpticalSystem # optical system class object
-        self.PlanetPopulation = self.SimulatedUniverse.PlanetPopulation # planet population class object
-        self.ZodiacalLight = self.SimulatedUniverse.ZodiacalLight # zodiacal light class object
-        self.Completeness = self.SimulatedUniverse.Completeness # completeness class object
-        self.PlanetPhysicalModel = self.SimulatedUniverse.PlanetPhysicalModel # planet physical model class object
-        self.TargetList = self.SimulatedUniverse.TargetList # target list class object
-        
-        # initialize values updated by functions
+        #if any of the modules is a string, assume that they are all strings and we need to initalize
+        if isinstance(specs['modules'].itervalues().next(),basestring):
+
+            # get desired module names (prototype or specific)
+            # import simulated universe class
+            SimUni = get_module(specs['modules']['SimulatedUniverse'], 'SimulatedUniverse')
+            # import observatory class
+            Obs = get_module(specs['modules']['Observatory'], 'Observatory')
+            # import timekeeping class
+            TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
+            # import postprocessing class
+            PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
+            
+            self.SimulatedUniverse = SimUni(**specs)
+            self.Observatory = Obs(**specs)
+            self.TimeKeeping = TK(**specs)
+            self.PostProcessing = PP(**specs)
+            
+            # bring inherited class objects to top level of Survey Simulation
+            self.OpticalSystem = self.SimulatedUniverse.OpticalSystem # optical system class object
+            self.PlanetPopulation = self.SimulatedUniverse.PlanetPopulation # planet population class object
+            self.ZodiacalLight = self.SimulatedUniverse.ZodiacalLight # zodiacal light class object
+            self.Completeness = self.SimulatedUniverse.Completeness # completeness class object
+            self.PlanetPhysicalModel = self.SimulatedUniverse.PlanetPhysicalModel # planet physical model class object
+            self.TargetList = self.SimulatedUniverse.TargetList # target list class object
+        else:
+            #these are the modules that must be present if you are passed already instantiated objects
+            neededObjMods = ['SimulatedUniverse',
+                          'Observatory',
+                          'TimeKeeping',
+                          'PostProcessing',
+                          'OpticalSystem',
+                          'PlanetPopulation',
+                          'ZodiacalLight',
+                          'Completeness',
+                          'PlanetPhysicalModel',
+                          'TargetList']
+
+            #ensure that you have the minimal set
+            for modName in neededObjMods:
+                if modName not in specs['modules'].keys():
+                    raise ValueError("%s module not provided."%modName)
+
+            for modName in specs['modules'].keys():
+                assert (specs['modules'][modName]._modtype == modName), \
+                "Provided instance of %s has incorrect modtype."%modName
+
+                setattr(self, modName, specs['modules'][modName])
+                
         # list of simulation results, each item is a dictionary
         self.DRM = []        
     

@@ -23,6 +23,18 @@ Subpackages
     EXOSIMS.ZodiacalLight
     EXOSIMS.util
 
+Submodules
+----------
+
+EXOSIMS.MissionSim module
+-------------------------
+
+.. automodule:: EXOSIMS.MissionSim
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 

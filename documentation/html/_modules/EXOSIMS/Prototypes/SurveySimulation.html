@@ -97,9 +97,12 @@
 <span class="sd">                dictionary has been passed through specs </span>
 <span class="sd">            specs: </span>
 <span class="sd">                Dictionary containing user specification values and </span>
-<span class="sd">                desired module names</span>
+<span class="sd">                a dictionary of modules.  The module dictionary can contain</span>
+<span class="sd">                string values, in which case the objects will be instantiated,</span>
+<span class="sd">                or object references.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="c"># if a script file is provided read it in</span>
         <span class="k">if</span> <span class="n">scriptfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">json</span>
             <span class="kn">import</span> <span class="nn">os.path</span>
@@ -115,34 +118,59 @@
                 <span class="k">print</span> <span class="s">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">raise</span>
 
-        <span class="k">if</span> <span class="s">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
+            <span class="c"># modules array must be present</span>
+            <span class="k">if</span> <span class="s">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
 
-        <span class="c"># get desired module names (prototype or specific)</span>
-        
-        <span class="c"># import simulated universe class</span>
-        <span class="n">SimUni</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">],</span> <span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">)</span>
-        <span class="c"># import observatory class</span>
-        <span class="n">Obs</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;Observatory&#39;</span><span class="p">],</span> <span class="s">&#39;Observatory&#39;</span><span class="p">)</span>
-        <span class="c"># import timekeeping class</span>
-        <span class="n">TK</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;TimeKeeping&#39;</span><span class="p">],</span> <span class="s">&#39;TimeKeeping&#39;</span><span class="p">)</span>
-        <span class="c"># import postprocessing class</span>
-        <span class="n">PP</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PostProcessing&#39;</span><span class="p">],</span> <span class="s">&#39;PostProcessing&#39;</span><span class="p">)</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span> <span class="o">=</span> <span class="n">SimUni</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span> <span class="o">=</span> <span class="n">Obs</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span> <span class="o">=</span> <span class="n">TK</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">PP</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        
-        <span class="c"># bring inherited class objects to top level of Survey Simulation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c"># optical system class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c"># planet population class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c"># zodiacal light class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Completeness</span> <span class="c"># completeness class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c"># planet physical model class object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">TargetList</span> <span class="c"># target list class object</span>
-        
-        <span class="c"># initialize values updated by functions</span>
+        <span class="c">#if any of the modules is a string, assume that they are all strings and we need to initalize</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">basestring</span><span class="p">):</span>
+
+            <span class="c"># get desired module names (prototype or specific)</span>
+            <span class="c"># import simulated universe class</span>
+            <span class="n">SimUni</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">],</span> <span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">)</span>
+            <span class="c"># import observatory class</span>
+            <span class="n">Obs</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;Observatory&#39;</span><span class="p">],</span> <span class="s">&#39;Observatory&#39;</span><span class="p">)</span>
+            <span class="c"># import timekeeping class</span>
+            <span class="n">TK</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;TimeKeeping&#39;</span><span class="p">],</span> <span class="s">&#39;TimeKeeping&#39;</span><span class="p">)</span>
+            <span class="c"># import postprocessing class</span>
+            <span class="n">PP</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PostProcessing&#39;</span><span class="p">],</span> <span class="s">&#39;PostProcessing&#39;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span> <span class="o">=</span> <span class="n">SimUni</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span> <span class="o">=</span> <span class="n">Obs</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span> <span class="o">=</span> <span class="n">TK</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">PP</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+            
+            <span class="c"># bring inherited class objects to top level of Survey Simulation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c"># optical system class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c"># planet population class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c"># zodiacal light class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Completeness</span> <span class="c"># completeness class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c"># planet physical model class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">TargetList</span> <span class="c"># target list class object</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#these are the modules that must be present if you are passed already instantiated objects</span>
+            <span class="n">neededObjMods</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;Observatory&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;TimeKeeping&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;PostProcessing&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;OpticalSystem&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;ZodiacalLight&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;Completeness&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;PlanetPhysicalModel&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;TargetList&#39;</span><span class="p">]</span>
+
+            <span class="c">#ensure that you have the minimal set</span>
+            <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">neededObjMods</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">modName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> module not provided.&quot;</span><span class="o">%</span><span class="n">modName</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">assert</span> <span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">]</span><span class="o">.</span><span class="n">_modtype</span> <span class="o">==</span> <span class="n">modName</span><span class="p">),</span> \
+                <span class="s">&quot;Provided instance of </span><span class="si">%s</span><span class="s"> has incorrect modtype.&quot;</span><span class="o">%</span><span class="n">modName</span>
+
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modName</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">])</span>
+                
         <span class="c"># list of simulation results, each item is a dictionary</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>        
     

@@ -192,7 +192,7 @@ throughput = lambda wavelength,angle: 0.5
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Backbone}
-All simulation execution will be performed by the backbone.  This set of functions will have very limited built-in functionality, and will primarily be tasked with parsing the input specification described below, and then calling the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.  The backbone functionality will primarily be implemented in the Survey Simulation prototype \S\ref{sec:surveysim}, with any mission-specific execution variations introduced by method overloading in the inherited survey simulation implementation. \reffig{fig:instantiation_tree} provides a graphical description of the instantiation order of all module objects.
+By default, the simulation execution will be performed via the backbone.  This will consist of a limited set of functions that will primarily be tasked with parsing the input specification described below, and then creating the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.  The backbone functionality will primarily be implemented in the MissionSimulation class, whose constructor will take the input script file (\S\ref{sec:inputspec}) and generate instances of all module objects, including the SurveySimulation (S\ref{sec:surveysim}) and SurveyEnsemble modules, which will contain the functions to run the survey simulations. Any mission-specific execution variations will be introduced by method overloading in the inherited survey simulation implementation. \reffig{fig:instantiation_tree} provides a graphical description of the instantiation order of all module objects.
 
 \begin{figure}[ht]
     \begin{center}
@@ -200,21 +200,19 @@ All simulation execution will be performed by the backbone.  This set of functio
              \includegraphics[width=1\textwidth]{instantiation_tree}
         \end{tabular}
     \end{center}
-    \caption{Schematic depiction of the instantiation path of all simulation and input modules.  The entry point to the backbone is the construction of a SurveySimulation object, which causes the instantiation of all other module objects (except for the SurveyEnsemble).  All objects are instantiated in the order shown here, with arrows indicating calls to the object constructor, and pointers to all are available directly to the SurveySimulation object.}
+    \caption{Schematic depiction of the instantiation path of all simulation and input modules.  The entry point to the backbone is the construction of a MissionSimulation object, which causes the instantiation of all other module objects.  All objects are instantiated in the order shown here, with SurveySimulation and SurveyEnsemble constructed last.  The arrows indicate calls to the object constructor, and object references to each module are always passed up directly to the top calling module, so that at the end of construction, the MissionSimulation object has direct access to all other modules as its attributes.}
     \label{fig:instantiation_tree}
 \end{figure}
 
-A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values.   
+A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set via defaults in the constructors of each of the modules.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values.   
 
-The backbone will contain a specification parser that will check specification files for internal consistency.  For example, if modules carry mutual dependencies, the specification parser will return an error if these are not met for a given specification.  Similarly, if modules are selected with optional top level inputs, warnings will be generated if these are not set in the same specification files.
+The backbone will also contain a specification parser that will check specification files for internal consistency.  For example, if modules carry mutual dependencies, the specification parser will return an error if these are not met for a given specification.  Similarly, if modules are selected with optional top level inputs, warnings will be generated if these are not set in the same specification files.
 
 In addition to the specification parser, the backbone will contain a method for comparing two specification files and returning the difference between them.  Assuming that the files specify all user-settable values, this will be equivalent to simply performing a \verb+diff+ operation on any POSIX system.  The backbone diff function will add in the capability to automatically fill in unset values with their defaults.  For every simulation (or ensemble), an output specification will be written to disk along with the simulation results with all defaults used filled in.
 
 The backbone will also contain an interactive function to help users generate specification files via a series of questions.
 
-
-
-\subsection{Specification Format}
+\subsection{Specification Format}\label{sec:inputspec}
 The JSON specification file will contain a series of objects with members enumerating various user-settable parameters, top-level members for universal settings (such as the mission lifetime) and arrays of objects for multiple related specifications, such as starlight suppression systems and science instruments.  The final array will contain module names (or paths on disk) for all modules.
 
 \begin{verbatim}

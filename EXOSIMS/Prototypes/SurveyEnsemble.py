@@ -13,4 +13,6 @@ class SurveyEnsemble(object):
     _modtype = 'SurveyEnsemble'
 
 
-
+    def __init__(self, **specs):
+        #currently nothing to do here
+        return

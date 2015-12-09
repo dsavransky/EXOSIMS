@@ -78,13 +78,13 @@ class WFIRSTOpticalSystem(OpticalSystem):
         Qmin = (10.**(dmags/2.5)*contrast +
         10.**((Vmag + dmags - 23.54)/2.5)*fZodiacalLight*opt.dAlpha.value +
         10.**((Vmag + dmags)/2.5)*
-        (opt.dr + (opt.sigma_r**2/opt.t_exp))/
-        (F*opt.QE*opt.eta2*opt.deltaLambda*opt.pupilArea*throughput))**(-1)
+        (opt.darkRate + (opt.readNoise**2/opt.texp))/
+        (F*opt.QE*opt.attenuation*opt.deltaLambda*opt.pupilArea*throughput))**(-1)
 
         Qbar = Qmin*opt.P1
         # average irradiance in detection band (photons/m**2/nm/s)
         Ip = F*10.**(-(Vmag + dmags)/2.5)
-        beta = opt.QE*opt.eta2*opt.deltaLambda*opt.pupilArea*Ip # photons/s
+        beta = opt.QE*opt.attenuation*opt.deltaLambda*opt.pupilArea*Ip # photons/s
         # maximum time in seconds
         t_max = ((rules.K - rules.gamma*np.sqrt(1.+Qbar*opt.Xi/opt.Psi))**2/(Qbar*opt.Ta*opt.Psi))/beta
         # apply observational duty cycle        

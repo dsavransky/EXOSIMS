@@ -80,7 +80,7 @@
             <span class="n">catalogpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">catalogpath</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&#39;Catalog File </span><span class="si">%s</span><span class="s"> Not Found.&#39;</span><span class="o">%</span><span class="n">catalogpath</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s">&#39;Catalog File </span><span class="si">%s</span><span class="s"> Not Found.&#39;</span><span class="o">%</span><span class="n">catalogpath</span><span class="p">)</span>
 
         <span class="c">#read votable</span>
         <span class="n">votable</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">catalogpath</span><span class="p">)</span>

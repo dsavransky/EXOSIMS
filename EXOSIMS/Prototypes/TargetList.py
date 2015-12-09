@@ -87,7 +87,7 @@ class TargetList(object):
 
     _modtype = 'TargetList'
     
-    def __init__(self, **specs):
+    def __init__(self, keepStarCatalog=False, **specs):
         """Initializes target list
                 
         nan data from star catalog quantities are removed
@@ -117,7 +117,7 @@ class TargetList(object):
         Back = get_module(specs['modules']['BackgroundSources'], 'BackgroundSources')
 
 
-        self.cat = Cat(**specs) # star catalog data
+        self.StarCatalog = Cat(**specs) # star catalog data
         self.OpticalSystem = Opt(**specs) # optical system object 
         self.ZodiacalLight = Zodi(**specs) # zodiacal light model object 
         self.BackgroundSources = Back(**specs) #background sources model object
@@ -130,10 +130,10 @@ class TargetList(object):
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
         # bring Star Catalog values to top level of Target List
         for att in atts:
-            if type(getattr(self.cat, att)) == np.ma.core.MaskedArray:
-                setattr(self, att, getattr(self.cat, att).filled(fill_value=float('nan')))
+            if type(getattr(self.StarCatalog, att)) == np.ma.core.MaskedArray:
+                setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
             else:
-                setattr(self, att, getattr(self.cat, att))
+                setattr(self, att, getattr(self.StarCatalog, att))
             
         # filter out nan attribute values from Star Catalog
         self.nan_filter(atts)
@@ -163,7 +163,8 @@ class TargetList(object):
         self.completeness_filter(atts)
         
         # have target list, no need for catalog now
-        del self.cat
+        if not keepStarCatalog:
+            del self.StarCatalog
         
     def __str__(self):
         """String representation of the Target List object

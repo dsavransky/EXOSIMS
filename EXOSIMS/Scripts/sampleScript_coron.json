@@ -1,0 +1,57 @@
+{
+  "missionLifetime": 5,
+  "missionPortion": 1,
+  "lamb": 550,
+  "deltaLam": 100,
+  "universalParam2": 2,
+  "keepStarCatalog": false,
+  "pupilDiam": 2.4,
+  "IWA": 0.2,
+  "OWA": 0.5,
+  "dMagLim": 26, 
+  "starlightSuppressionSystems": [
+    {
+      "starlightSuppressionSystemNumber": 1,
+      "type": "internal",
+      "detectionTimeMultiplier": 0,
+      "characterizationTimeMultiplier": 0,
+      "IWA": 0,
+      "OWA": 0,
+      "PSF": 0,
+      "opticaloh": 1,
+      "throughput": 0.5,
+      "contrast": 1e-10
+    }
+  ],
+  "scienceInstruments": [
+    {
+      "scienceInstrumentNumber": 1,
+      "type": "IFS-CCD",
+      "readNoise": 3,
+      "darkRate": 0.001,
+      "QE": 0.5,
+      "pixelArea": 1e-10,
+      "focalLength": 240,
+      "texp": 1000,
+      "Rspec": 70.0,
+      "Npix": 14.3,
+      "Ndark": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "PlanetFunc",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "hybridOpticalSystem1",
+    "ZodiacalLight": "10xSolZodi",
+    "BackgroundSources": "besanconModel",
+    "PlanetPhysicalModel": "fortneyPlanets",
+    "Observatory": "WFIRSTObservatory",
+    "TimeKeeping": "UTCtime",
+    "PostProcessing": "KLIPpost",
+    "Completeness": "BrownCompleteness",
+    "TargetList": "WFIRSTtargets",
+    "SimulatedUniverse": "simUniverse1",
+    "SurveySimulation": "backbone1",
+    "SurveyEnsemble": "localIpythonEnsemble"
+  }
+}

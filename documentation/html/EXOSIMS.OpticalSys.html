@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.OpticalSys package &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
+    <link rel="prev" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.PlanetPopulation.html" title="EXOSIMS.PlanetPopulation package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="EXOSIMS.Observatory.html" title="EXOSIMS.Observatory package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">EXOSIMS 0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="EXOSIMS.html" accesskey="U">EXOSIMS package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exosims-opticalsys-package">
+<h1>EXOSIMS.OpticalSys package<a class="headerlink" href="#exosims-opticalsys-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.OpticalSys.WFIRSTOpticalSys">
+<span id="exosims-opticalsys-wfirstopticalsys-module"></span><h2>EXOSIMS.OpticalSys.WFIRSTOpticalSys module<a class="headerlink" href="#module-EXOSIMS.OpticalSys.WFIRSTOpticalSys" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys">
+<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSys.WFIRSTOpticalSys.</code><code class="descname">WFIRSTOpticalSys</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSys.OpticalSys" title="EXOSIMS.Prototypes.OpticalSys.OpticalSys"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.OpticalSys.OpticalSys</span></code></a></p>
+<p>WFIRST Optical System class</p>
+<p>This class contains all variables and methods specific to the WFIRST
+optical system needed to perform Optical System Module calculations
+in exoplanet mission simulation.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>**specs:</dt>
+<dd>user specified values</dd>
+</dl>
+</dd>
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>dAlpha:</dt>
+<dd>pixel size in square arcseconds (astropy Quantity in arcsec**2)</dd>
+<dt>Psi:</dt>
+<dd>instrument specific value &#8216;sharpness&#8217; derived from PSF</dd>
+<dt>Xi:</dt>
+<dd>instrument specific value derived from PSF</dd>
+<dt>P1:</dt>
+<dd>instrument specific value derived from PSF</dd>
+<dt>alphaBar:</dt>
+<dd>instrument specific value</dd>
+<dt>Ta:</dt>
+<dd>Airy throughput</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds integration time for a specific target system</p>
+<p>This method is called from a method in the SurveySimulation class
+object.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist:</dt>
+<dd>TargetList class object</dd>
+<dt>opt:</dt>
+<dd>OpticalSys class object</dd>
+<dt>rules:</dt>
+<dd>Rules class object</dd>
+<dt>universe:</dt>
+<dd>SimulatedUniverse class object</dd>
+<dt>s_ind:</dt>
+<dd>target star index</dd>
+<dt>planInds:</dt>
+<dd>planet indices linking back to target star</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>intTime:</dt>
+<dd>1D numpy array of integration times (astropy Quantity with 
+units of day)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_maxintTime">
+<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSys/WFIRSTOpticalSys.html#WFIRSTOpticalSys.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSys.WFIRSTOpticalSys.WFIRSTOpticalSys.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds maximum integration time for target systems</p>
+<p>This method is called in the __init__ for the TargetList class object.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist:</dt>
+<dd><dl class="first last docutils">
+<dt>TargetList class object which also has access to:</dt>
+<dd><dl class="first last docutils">
+<dt>targlist.zodi:</dt>
+<dd>ZodiacalLight class object</dd>
+<dt>targlist.rules:</dt>
+<dd>Rules class object</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>maxintTime:</dt>
+<dd>1D numpy array containing maximum integration time for target
+list stars (astropy Quantity with units of day)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.OpticalSys">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.OpticalSys" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXOSIMS.OpticalSys package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.OpticalSys.WFIRSTOpticalSys">EXOSIMS.OpticalSys.WFIRSTOpticalSys module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.OpticalSys">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="EXOSIMS.Observatory.html"
+                        title="previous chapter">EXOSIMS.Observatory package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="EXOSIMS.PlanetPopulation.html"
+                        title="next chapter">EXOSIMS.PlanetPopulation package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/EXOSIMS.OpticalSys.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/EXOSIMS.OpticalSys.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

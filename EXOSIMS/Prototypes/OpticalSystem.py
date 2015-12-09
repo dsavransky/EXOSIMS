@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 from astropy import units as u
 import numpy as np
+import os.path
+import astropy.io.fits as fits
+import numbers
+from operator import itemgetter
 
 class OpticalSystem(object):
     """Optical System class template
@@ -11,7 +15,7 @@ class OpticalSystem(object):
     
     Args:
         \*\*specs:
-            user specified values
+            User specified values.
             
     Attributes:
         lam (Quantity):
@@ -21,34 +25,36 @@ class OpticalSystem(object):
             :math:`shapeFac * diameter^2 = Area`
         pupilArea (Quantity):
             entrance pupil area (default units of m\ :sup:`2`)
+        pupilDiam (Quantity):
+            entrance pupil diameter (default units of m)
         SNchar (float):
             Signal to Noise Ratio for characterization
         haveOcculter (bool):
             boolean signifying if the system has an occulter
-        pixelArea (Quantity):
-            pixel area (default units of m\ :sup:`2`)
-        focalLength (Quantity):
-            focal length (default units of m)
         IWA (Quantity):
-            Inner Working Angle (default units of arcsecond)
+            Fundamental Inner Working Angle (default units of arcsecond)
         OWA (Quantity):
-            Outer Working Angle (default units of arcsecond)
+            Fundamental Outer Working Angle (default units of arcsecond)
         dMagLim (float):
-            limiting delta magnitude. **Note: wavelength dependent?**
-        throughput (callable(lam, alpha)):
-            optical system throughput (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity) and angular separation (astropy Quantity).
-        contrast (callable(lam, alpha)):
-            optical system contrast curve (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity) and angular separation (astropy Quantity).
-        dr (Quantity):
-            detector dark-current rate per pixel (default units of 1/s)
-        sigma_r (float):
-            detector read noise
-        t_exp (Quantity):
-            exposure time per read (default units of s)
+            Fundamental limiting delta magnitude. 
+        attenuation (float):
+            non-coronagraph attenuation (throughput)
+        deltaLam (Quantity):
+            bandpass (default units of nm)
+        telescopeKeepout (float):
+            telescope keepout angle in degrees
+        specLam (Quantity):
+            spectral wavelength of interest (default units of nm)
+            Note:  probably belongs in postprocessing or rules.
+        intCutoff (Quantity):
+            integration cutoff (default units of day)
+        scienceInstruments (list of dicts):
+            All science instrument attributes (variable)
+        starlightSuppressionSystems (list of dicts):
+            All starlight suppression system attributes (variable)
+
+    Common Starlight Suppression System Attributes:
+
         PSF (callable(lam, alpha)):
             point spread function - 2D ndarray of values, normalized to 1 at the core
             (must be callable - can be lambda, function,
@@ -58,126 +64,212 @@ class OpticalSystem(object):
             attribute.
         PSFSampling (Quantity):
             Sampling of PSF in arcsec/pixel (default units of arcsec)
+        throughput (callable(lam, alpha)):
+            optical system throughput (must be callable - can be lambda, function,
+            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+            Quantity) and angular separation (astropy Quantity).
+        contrast (callable(lam, alpha)):
+            optical system contrast curve (must be callable - can be lambda, function,
+            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+            Quantity) and angular separation (astropy Quantity).
+
+    Common Science Instrument Attributes:
         QE (callable(lam)):
             detector quantum efficiency (must be callable - can be lambda, function,
             scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity).  This represents the primary (detection) detector. 
-        eta2 (float):
-            post coronagraph attenuation
-        deltaLambda (Quantity):
-            bandpass (default units of nm)
-        telescopeKeepout (float):
-            telescope keepout angle in degrees
-        specLambda (Quantity):
-            spectral wavelength of interest (default units of nm)
-            Note:  probably belongs in postprocessing or rules.
-        Rspec (float):
-            spectral resolving power :math:`\lambda/\Delta\lambda`
-        Npix (float):
-            number of noise pixels
-        Ndark (float):
-            number of dark frames used
-        optical_oh (Quantity):
-            optical system overhead (default units of day)
-        darkHole (Quantity):
-            dark hole size (default units of rad)
-        intCutoff (Quantity):
-            integration cutoff (default units of day)
-            
+            Quantity).  
+     
     """
 
     _modtype = 'OpticalSystem'
     
-    def __init__(self, **specs):
-                
-        # default Optical System values
-        # detection wavelength (nm)        
-        self.lam = 500.*u.nm 
-        # shapeFac*diameter**2 = Area
-        self.shapeFac = np.pi/4. 
-        # entrance pupil area
-        self.pupilArea = 4.*np.pi*(u.m)**2 
-        # Signal to Noise Ratio for characterization
-        self.SNchar = 11. 
-        # boolean signifying if system has occulter
-        self.haveOcculter = False 
-        # pixel area (m**2)
-        self.pixelArea = 1e-10*(u.m)**2 
-        # focal length (m)
-        self.focalLength = 240.*u.m 
-        # Inner Working Angle (arcseconds)
-        self.IWA = 0.075*u.arcsec 
-        # Outer Working Angle (arcseconds)
-        self.OWA = np.inf*u.arcsec 
-        # limiting delta magnitude
-        self.dMagLim = 26. 
-        # optical system throughput
-        self.throughput = lambda lam, alpha: 0.5 
-        # optical system designed suppression level
-        self.contrast = lambda lam, alpha: 1.e-10 
-        # detector dark-current rate per pixel
-        self.dr = 0.001*(1/u.s) 
-        # detector read noise (e/s)
-        self.sigma_r = 3. 
-        # exposure time per read (s)
-        self.t_exp = 1000.*u.s 
-        # detection quantum efficiency
-        self.QE = lambda lam: 0.5 
-        # post coronagraph attenuation
-        self.eta2 = 0.57 
-        # bandpass (nm)
-        self.deltaLambda = 100.*u.nm 
-        # point spread function
-        self.PSF = lambda lam, alpha: np.ones((3,3))
-        # sampling of PSF in arcsec/pixel
-        self.PSFSampling = 10.*u.arcsec
-        # keepout angle in degrees
-        self.telescopeKeepout = 45.
-        # spectral wavelength of interest
-        self.specLambda = 760.*u.nm
-        # spectral resolving power
-        self.Rspec = 70.
-        # number of noise pixels
-        self.Npix = 14.3
-        # number of dark frames used
-        self.Ndark = 10.
-        # optical system overhead time
-        self.optical_oh = 1.*u.day
-        # dark hole size
-        self.darkHole = np.pi*u.rad
-        # integration cutoff
-        self.intCutoff = 50.*u.day 
+    def __init__(self, lam=500.,deltaLam=100.,shapeFac=np.pi/4.,\
+            pupilDiam=4.,SNchar=11., telescopeKeepout=45.,\
+            IWA=None,OWA=None,dMagLim=None, attenuation=0.57,\
+            specLam=760.,intCutoff=50.,\
+            starlightSuppressionSystems=None, scienceInstruments=None, **specs):
         
-        # replace default values with any user specified values
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                if att == 'lam' or att == 'deltaLambda' or att == 'specLambda':
-                    # set lam with proper units
-                    setattr(self, att, specs[att]*u.nm)
-                elif att == 'pupilArea' or att == 'pixelArea':
-                    # set pupilArea or pixelArea with proper units
-                    setattr(self, att, specs[att]*(u.m)**2)
-                elif att == 'focalLength':
-                    # set focalLength with proper units
-                    setattr(self, att, specs[att]*u.m)
-                elif att == 'IWA' or att == 'OWA':
-                    # set IWA or OWA with proper units
-                    setattr(self, att, specs[att]*u.arcsec)
-                elif att == 'dr':
-                    # set dr with proper units
-                    setattr(self, att, specs[att]*(1/u.s))
-                elif att == 't_exp':
-                    # set t_exp with proper units
-                    setattr(self, att, specs[att]*u.s)
-                elif att == 'intCutoff':
-                    setattr(self, att, specs[att]*u.day)
+        #must have a starlight suppression system and science instrument defined
+        if not starlightSuppressionSystems:
+            raise ValueError("No starlight suppression systems defined.")
+
+        #load all values with defaults
+        self.lam = float(lam)*u.nm              # detection wavelength (nm) 
+        self.deltaLam = float(deltaLam)*u.nm              # detection wavelength (nm) 
+        self.shapeFac = float(shapeFac)         # shapeFac*diameter**2 = Area
+        self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
+        self.pupilArea = self.shapeFac * (self.pupilDiam)**2. # entrance pupil area
+        self.SNchar = float(SNchar)             # Signal to Noise Ratio for characterization
+        self.telescopeKeepout = float(telescopeKeepout)*u.deg # keepout angle in degrees
+        self.attenuation = float(attenuation)   #non-coronagraph attenuation factor
+        self.specLam = float(specLam)*u.nm  # spectral wavelength of interest
+        self.intCutoff = float(intCutoff)*u.day #integration time cutoff 
+                        
+
+        # now loop through starlight suppression systems and verify what's there.
+        # the only things that are really required is the system number, the type (external/internal) 
+        # and that the whole thing is a dict
+        sysIWAs = []
+        sysOWAs = []
+        sysdMagLims = []
+        self.haveOcculter = False 
+        for sys in starlightSuppressionSystems:
+            assert isinstance(sys,dict), "Starlight suppression systems must be defined as dicts."
+            assert sys.has_key('starlightSuppressionSystemNumber'),\
+                    "All starlight suppression systems must have key starlightSuppressionSystemNumber."
+            assert sys.has_key('type') and isinstance(sys['type'],basestring),\
+                    "All starlight suppression systems must have key type."
+            if (sys['type'].lower() == 'external') or  (sys['type'].lower() == 'hybrid'):
+                self.haveOcculter = True
+
+            #check for throughput
+            if sys.has_key('throughput'):
+                if isinstance(sys['throughput'],basestring):
+                    assert os.path.isfile(sys['throughput']),\
+                            "%s is not a valid file."%sys['throughput']
+                    tmp = fits.open(sys['throughput'])
+                    #basic validation here for size and IWA/OWA
+                    #sys['throughput'] = lambda or interp
+                elif isinstance(sys['throughput'],numbers.Number):
+                    sys['throughput'] = lambda lam, alpha: float(sys['throughput'])
+
+            #check for contrast
+            if sys.has_key('contrast'):
+                if isinstance(sys['contrast'],basestring):
+                    assert os.path.isfile(sys['contrast']),\
+                            "%s is not a valid file."%sys['contrast']
+                    tmp = fits.open(sys['contrast'])
+                    #basic validation here for size and IWA/OWA
+                    #sys['contrast'] = lambda or interp
+                elif isinstance(sys['contrast'],numbers.Number):
+                    sys['contrast'] = lambda lam, alpha: float(sys['contrast'])
+
+            #check for PSF
+            if sys.has_key('PSF'):
+                if isinstance(sys['PSF'],basestring):
+                    assert os.path.isfile(sys['PSF']),\
+                            "%s is not a valid file."%sys['PSF']
+                    tmp = fits.open(sys['PSF'])
+                    #basic validation here for size and IWA/OWA
+                    #sys['PSF'] = lambda or interp
                 else:
-                    setattr(self, att, specs[att])
-                    
+                    #placeholder PSF
+                    sys['PSF'] = lambda lam, alpha: np.ones((3,3))
+
+            # sampling of PSF in arcsec/pixel (otherwise should grab from PSF file header)
+            if sys.has_key('PSFSampling'):
+                sys['PSFSampling'] = float(sys['PSFSampling'])*u.arcsec
+
+            # optical system overhead time
+            if sys.has_key('opticaloh'):
+                sys['opticaloh'] = float(sys['opticaloh'])*u.day
+            else:
+                sys['opticaloh'] = 1.*u.day
+
+            #time multipliers
+            if not sys.has_key('detectionTimeMultipler'):
+                sys['detectionTimeMultiplier'] = 1.
+            if not sys.has_key('characterizationTimeMultiplier'):
+                sys['characterizationTimeMultiplier'] = 1.
+    
+            #check for system's IWA and OWA
+            if sys.has_key('IWA'):
+                sysIWAs.append(sys['IWA'])
+            if sys.has_key('OWA'):
+                if sys['OWA'] == 0: 
+                    sys['OWA'] = np.Inf
+                sysOWAs.append(sys['OWA'])
+              
+        self.starlightSuppressionSystems = sorted(starlightSuppressionSystems, key=itemgetter('starlightSuppressionSystemNumber')) 
+
+        #populate IWA, OWA, and dMagLim as required
+        if IWA is not None:
+            self.IWA = float(IWA)*u.arcsec
+        else:
+            if len(sysIWAs) > 0:
+                self.IWA = float(min(sysIWAs))*u.arcsec
+            else:
+                raise ValueError("Could not determine fundamental IWA.")
+
+        if OWA is not None:
+            if OWA == 0:
+                self.OWA = np.inf*u.arcsec
+            else:
+                self.OWA = float(OWA)*u.arcsec
+        else:
+            if len(sysOWAs) > 0:
+                self.OWA = float(max(sysOWAs))*u.arcsec
+            else:
+                raise ValueError("Could not determine fundamental OWA.")
+
+        if dMagLim is not None:
+            self.dMagLim = float(dMagLim)
+        else:
+            if len(sysdMagLims) > 0:
+                self.dMagLim = float(max(sysdMagLims))
+            else:
+                raise ValueError("Could not determine fundamental dMagLim.")
+
+        assert self.IWA < self.OWA, "Fundamnetal IWA must be smaller that the OWA."
+
+
+        #now go through all science Instruments
+        for sys in scienceInstruments:
+            assert isinstance(sys,dict), "Science instruments must be defined as dicts."
+            assert sys.has_key('scienceInstrumentNumber'),\
+                    "All science instruments must have key scienceInstrumentNumber."
+            assert sys.has_key('type') and isinstance(sys['type'],basestring),\
+                    "All science instruments must have key type."
+
+
+            if sys.has_key('pixelArea'): 
+                sys['pixelArea'] = float(sys['pixelArea'])*(u.m)**2 #pixel are in m^2
+            if sys.has_key('focalLength'):
+                sys['focalLength'] = float(sys['focalLength'])*u.m #focal length in m
+            if sys.has_key('darkRate'):
+                sys['darkRate'] = float(sys['darkRate'])*(1/u.s) # detector dark-current rate per pixel
+            if sys.has_key('texp'):
+                sys['texp'] = float(sys['texp'])*u.s  # exposure time per read (s)
+            if sys.has_key('readNoise'):
+                sys['readNoise'] = float(sys['readNoise'])  # detector read noise (e/s)
+            if sys.has_key('Rspec'):
+                sys['Rspec'] = float(sys['Rspec']) 
+            if sys.has_key('Npix'):
+                sys['Npix'] = float(sys['Npix']) 
+            if sys.has_key('Ndark'):
+                sys['Ndark'] = int(sys['Ndark']) 
+            if sys.has_key('ENF'):
+                sys['ENF'] = float(sys['ENF'])
+            if sys.has_key('CIC'):
+                sys['CIC'] = float(sys['CIC'])
+
+            if sys.has_key('QE'):
+                if isinstance(sys['QE'],basestring):
+                    assert os.path.isfile(sys['QE']),\
+                            "%s is not a valid file."%sys['QE']
+                    tmp = fits.open(sys['QE'])
+                    #basic validation here for size and wavelength
+                    #sys['QE'] = lambda or interp
+                elif isinstance(sys['QE'],numbers.Number):
+                    sys['QE'] = lambda lam, alpha: float(sys['QE'])
+        
+        self.scienceInstruments = sorted(scienceInstruments, key=itemgetter('scienceInstrumentNumber')) 
+
+
+        #finally:  if we only have one science instrument/suppression system, bring their attributes to top
+        if len(self.starlightSuppressionSystems) == 1:
+            for key in self.starlightSuppressionSystems[0].keys():
+                if key not in self.__dict__.keys():
+                    setattr(self, key, self.starlightSuppressionSystems[0][key])
+        if len(self.scienceInstruments) == 1:
+            for key in self.scienceInstruments[0].keys():
+                if key not in self.__dict__.keys():
+                    setattr(self, key, self.scienceInstruments[0][key])
+       
+
         # set values derived from quantities above
-        if np.isinf(self.OWA.value):
-            self.OWA = np.pi/2
+        #if np.isinf(self.OWA.value):
+        #    self.OWA = np.pi/2
                 
     def __str__(self):
         """String representation of the Optical System object

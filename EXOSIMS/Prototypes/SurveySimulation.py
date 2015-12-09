@@ -525,8 +525,8 @@ class SurveySimulation(object):
             if np.any(spectra[pInds[observationPossible],0] == 0):
                 # perform first characterization
                 # find throughput and contrast
-                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLambda, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
-                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLambda, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
+                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
+                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
                 # find characterization time                    
                 t_char = self.find_t_char(throughput, contrast, Ip, FA, s_ind, pInds)
                 # account for 5 bands and one coronagraph
@@ -923,29 +923,29 @@ class SurveySimulation(object):
         
         """
         
-        QE = self.OpticalSystem.QE(self.OpticalSystem.specLambda)
+        QE = self.OpticalSystem.QE(self.OpticalSystem.specLam)
         FluxB = 9.5e7/(u.m**2)/u.nm/u.s
         
         # planet count
-        cp = QE*self.OpticalSystem.eta2*(self.OpticalSystem.specLambda/self.OpticalSystem.Rspec)*(Ip/(9.5e7/
+        cp = QE*self.OpticalSystem.attenuation*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(Ip/(9.5e7/
         (u.m**2)/u.nm/u.s))*FluxB*throughput*self.OpticalSystem.pupilArea
         # star count
-        cs = QE*self.OpticalSystem.eta2*(self.OpticalSystem.specLambda/self.OpticalSystem.Rspec)*(
+        cs = QE*self.OpticalSystem.attenuation*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(
         self.OpticalSystem.pupilArea)*FluxB*10.**(-self.TargetList.Vmag[s_ind]/2.5)*contrast/2
         
         # zodi count
         if FA:
             temp = self.ZodiacalLight.fzodi(s_ind, 0., self.TargetList)
-            Z = FluxB*10.**(-23.54/2.5)*(1/u.arcsec**2)*temp*(self.OpticalSystem.specLambda/
+            Z = FluxB*10.**(-23.54/2.5)*(1/u.arcsec**2)*temp*(self.OpticalSystem.specLam/
             self.OpticalSystem.Rspec)*self.OpticalSystem.pupilArea*(self.OpticalSystem.pixelArea/
             (self.OpticalSystem.focalLength**2))*u.sr
         else:
             Z = FluxB*10.**(-23.54/2.5)*(1/u.arcsec**2)*(
-            self.SimulatedUniverse.fzodicurr[pInds])*(self.OpticalSystem.specLambda/self.OpticalSystem.Rspec)*(
+            self.SimulatedUniverse.fzodicurr[pInds])*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(
             self.OpticalSystem.pupilArea)*(self.OpticalSystem.pixelArea/(self.OpticalSystem.focalLength**2))*u.sr
         
-        t_char = (self.OpticalSystem.SNchar/cp*((self.OpticalSystem.Npix*(self.OpticalSystem.sigma_r**2/
-        self.OpticalSystem.t_exp + self.OpticalSystem.dr)*(1.+1./self.OpticalSystem.Ndark) + Z) + cp + cs))**2
+        t_char = (self.OpticalSystem.SNchar/cp*((self.OpticalSystem.Npix*(self.OpticalSystem.readNoise**2/
+        self.OpticalSystem.texp + self.OpticalSystem.darkRate)*(1.+1./self.OpticalSystem.Ndark) + Z) + cp + cs))**2
         t_char = t_char*u.s
 
         return t_char

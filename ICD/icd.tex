@@ -220,8 +220,7 @@ The JSON specification file will contain a series of objects with members enumer
   "universalParam1": value,
   "universalParam2": value,
   ...
-  "NstarlightSuppressionSystems":2,
-  "starlightSupressionSystems": [
+  "starlightSuppressionSystems": [
     {
       "starlightSuppressionSystemNumber": 1,
       "type": "external",
@@ -316,11 +315,21 @@ If the module implementations are in the appropriate subfolder in the EXOSIMS tr
 These parameters apply to all simulations, and are described in detail in their specific module definitions:
 
 \begin{itemize}[leftmargin=1in,font={\ttfamily}]
-\item[missionLifetime]  The total mission lifetime in years.  When the mission time is equal or greater to this value, the mission simulation stops.
-\item[missionPortion]  The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1.  When the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion the mission simulation stops.
-\item[lambda]  Central or detection wavelength.
-\item[deltaLambda]  Detection bandwidth.
-\item[shapeFac]  Telescope aperture shape factor.
+\item[missionLifetime] (float) The total mission lifetime in years.  When the mission time is equal or greater to this value, the mission simulation stops.
+\item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1.  When the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion the mission simulation stops.
+\item[lam]  (float) Central or detection wavelength in nm.
+\item[deltaLam]  (float) Detection bandwidth in nm.
+\item[shapeFac] (float)  Telescope aperture shape factor.
+\item[keepStarCatalog] (bool) Boolean representing whether to delete the star catalog after assembling the target list.  If true, object reference will be available from TargetList object.
+\item[pupilDiam] (float) Entrance pupil diameter in m.
+\item[SNchar] (float) Signal to Noise Ratio for characterization.
+\item[telescopeKeepout] (float) Telescope keepout angle in degrees
+\item[IWA] (float) Fundamental Inner Working Angle in $ arcseconds $. No planets can ever be observed at smaller separations.
+\item[OWA] (float) Fundamental Outer Working Angle in $ arcseconds $. Set to Inf for no OWA. JSON values of 0 will be interpreted as Inf.
+\item[dMagLim] (float) Fundamental limiting $\Delta$mag (difference in magnitude between star and planet). 
+\item[attenuation] (float) Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
+\item[specLam] (float) Spectral wavelength of interest in nm.
+\item[intCutoff] (float)  Maximum allowed integration time in $ days $. No integrations will be started that would take longer than this value.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -544,142 +553,137 @@ The specific set of inputs to this module will vary based on the simulation appr
 
 
 \subsubsection*{Inputs}
-\begin{itemize}
-    \item
+Information from simulation specification JSON file organized into a Python dictionary.  For multiple systems, there will be an array of dictionaries. If the below key: value pairs are missing from the input specification, the Optical System object attributes will be assigned the default values listed. The following are all entries in the passed specs dictionary.
+
+\begin{description}
+    \item[lam] \hfill \\
+    Central detection wavelength in $ nm $. Default value is 500.
+    \item[deltaLam] \hfill \\
+    Detection bandwidth $ \Delta\lambda $ in $ nm $. Default value is 100.
+    \item[shapeFac] \hfill \\
+    Shape factor (also known as fill factor) so that $ shapeFac \times diameter^2 = Area $. Default value is $ \frac{\pi}{4} $.
+    \item[pupilDiam] \hfill \\
+    Entrance pupil diameter in  $ m $. Default value is $ 4$.
+    \item[telescopeKeepout] \hfill \\
+        Telescope keepout angle in degrees
+    \item[SNchar] \hfill \\
+    Signal to Noise Ratio for characterization. Default value is 11.
+    \item[IWA] \hfill \\
+    Fundamental Inner Working Angle in $ arcseconds $. No planets can ever be observed at smaller separations. If not set, defaults to smallest IWA of all starlightSuppressionSystems.
+    \item[OWA] \hfill \\
+    Fundamental Outer Working Angle in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as Inf.
+    \item[dMagLim] \hfill \\
+    Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is minimum of contrast.
+    \item[attenuation] \hfill \\
+    Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements. Default value is 0.57.
+    \item[specLam] \hfill \\
+    Spectral wavelength of interest in nm. Default value is equal to lam.
+    \item[intCutoff] \hfill \\
+    Maximum allowed integration time in $ days $. Default value is 50. No integrations will be started that would take longer than this value.
+ 
+    \item[starLightSuppressionSystems] \hfill\\ Array of dictionaries containing these (or other) starlight suppression system values.
     \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary.  For multiple systems, there will be an array of dictionaries. If the below key: value pairs are missing from the input specification, the Optical System object attributes will be assigned the default values listed. 
-        \begin{description}
-            \item specs["lambda"] \hfill \\
-            Central detection wavelength in $ nm $. Default value is 500.
-            \item specs["deltaLambda"] \hfill \\
-            Detection bandwidth $ \Delta\lambda $ in $ nm $. Default value is 100.
-            \item specs["shapeFac"] \hfill \\
-            Shape factor (also known as fill factor) so that $ shapeFac \times diameter^2 = Area $. Default value is $ \frac{\pi}{4} $.
-            \item specs["pupilArea"] \hfill \\
-            Entrance pupil area in $ m^2 $. Default value is $ 4\pi $.
-            \item specs["SNchar"] \hfill \\
-            Signal to Noise Ratio for characterization. Default value is 11.
-            \item specs["pixelArea"] \hfill \\
-            Pixel area in $ m^2 $. Default value is 1e-10.
-            \item specs["focalLength"] \hfill \\
-            Focal length in $ m $. Default value is 240.
-            \item specs["IWA"] \hfill \\
-            Inner Working Angle in $ arcseconds $. Default value is 0.075.
-            \item specs["OWA"] \hfill \\
-            Outer Working Angle in $ arcseconds $. Set to Inf for no OWA. Default value is Inf.
-            \item specs["throughput"] \hfill \\
-            Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lambda and deltaLambda inputs.  May be data or FITS filename. Default is scalar 0.5.
-            \item specs["dMagLim"] \hfill \\
-            Limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is minimum of contrast.
-            \item specs["contrast"] \hfill \\
-            Optical system contrast: either a scalar for constant contrast, a two-column array for angular separation-dependent contrast, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent contrast, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lambda and deltaLambda inputs. May be data or FITS filename. Default is scalar 1e-10.
-            \item specs["dr"] \hfill \\
-            Detector dark current rate per pixel in units of electrons/second. Default value is 0.001.
-            \item specs["sigma\_r"] \hfill \\
-            Detector read noise in electrons/read. Default value is 3.
-            \item specs["t\_exp"] \hfill \\
-            Exposure time per read in $ s $. Default value is 1000.
-            \item specs["QE"] \hfill \\
-            Detector quantum efficiency: either a scalar for constant QE, or a two-column array for wavelength-dependent QE, where the first column contains the wavelengths in nm. The ranges on all parameters must be consistent with the values for lambda and deltaLambda inputs. May be data or FITS filename. Default is scalar 0.5.
-            \item specs["attenuation"] \hfill \\
-            Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements. Default value is 0.57.
-            \item specs["PSF"] \hfill \\
-            Instrument point spread function. Either a 2D array of a single-PSF, or a 3D array of wavelength-dependent PSFs. May be data or FITS filename. Default is numpy.ones((3,3)).
-            \item specs["PSFsampling"] \hfill \\
-            Sampling of the PSF in arcsec/pixel. Default value is 10.
-            \item specs["specLambda"] \hfill \\
-            Spectral wavelength of interest in nm. Default value is equal to lambda.
-            \item specs["Rspec"] \hfill \\
-            (Specific to spectrometers) Spectral resolving power defined as $\lambda/\Delta\lambda$. Default value is 70.
-            \item specs["optical\_oh"] \hfill \\
-            Optical system overhead time in $days$.  Default value is 1 day.  This is the (assumed constant) amount of time required to set up the optical system (i.e., dig the dark hole or do fine alignment with the occulter).  It is added to every observation, and is separate from the observatory overhead defined in the observatory module, which represents the observatory's settling time.  Both overheads are added to the integration time to determine the full duration of each detection observation.
-            \item specs["intCutoff"] \hfill \\
-            Maximum allowed integration time in $ days $. Default value is 50. No integrations will be started that would take longer than this value.
-            \item specs["detectionTimeMultiplier"]\hfill \\
-            Duty cycle of a detection observation.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full field of view (i.e., if a shaped pupil with a dark hole that covers 1/3 of the field of view is used for detection, this value would equal 3).
-            \item specs["characterizationTimeMultiplier"]\hfill \\
-            Characterization duty cycle.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full wavelength band and all required polarization states.  For example, if the band is split into three sub-bands, and there are two polarization states that must be measured, and each of these must be done sequentially, then this value would equal 6.  However, if the three sub-bands could be observerd at the same time (e.g., by separate detectors) then the value would by two (for the two polarization states).
-            \item specs["occulterDiameter"]\hfill \\
-            Occulter diameter in $ m $.  Measured petal tip-to-tip.
-            \item specs["NocculterDistances"]\hfill \\
-            Number of telescope separations the occulter operates over (number of occulter bands). If greater than 1, then the occulter description is an array of dicts.
-            \item specs["occulterDistance"]\hfill \\
-            Telescope-occulter separation in $km$.
-            \item specs["occulterBlueEdge"]\hfill \\
-            Occulter blue end of wavelength band in $nm$.
-            \item specs["occulterRedEdge"]\hfill \\
-            Occulter red end of wavelength band in $nm$.
-        \end{description}
+    \item[starlightSuppressionSystemNumber] \hfill\\ (Required) Integer counter of the system.
+    \item[type] \hfill\\ (Required) String indicating type of sytems.  Standard values are `internal',`external', and `hybrid'.
+    \item[IWA] \hfill \\
+     Inner Working Angle of this system in $ arcseconds $.  If not set, defaults to smallest WA of contrast/throughput definition starlightSuppressionSystems.
+    \item[OWA] \hfill \\
+    Specific Outer Working Angle of this system in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest WA of contrast/throughput definition.  JSON values of 0 will be interpreted as Inf.
+    \item[throughput] \hfill \\
+    Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs.  May be data or FITS filename. Default is scalar 0.5.
+    \item[contrast] \hfill \\
+    Optical system contrast: either a scalar for constant contrast, a two-column array for angular separation-dependent contrast, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent contrast, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs. May be data or FITS filename. Default is scalar 1e-10.
+    \item[PSF] \hfill \\
+    Instrument point spread function. Either a 2D array of a single-PSF, or a 3D array of wavelength-dependent PSFs. May be data or FITS filename. Default is numpy.ones((3,3)).
+    \item[PSFsampling] \hfill \\
+    Sampling of the PSF in arcsec/pixel. Default value is 10.
+    \item[detectionTimeMultiplier]\hfill \\
+    Duty cycle of a detection observation.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full field of view (i.e., if a shaped pupil with a dark hole that covers 1/3 of the field of view is used for detection, this value would equal 3).  Defaults to 1.
+    \item[characterizationTimeMultiplier]\hfill \\
+    Characterization duty cycle.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full wavelength band and all required polarization states.  For example, if the band is split into three sub-bands, and there are two polarization states that must be measured, and each of these must be done sequentially, then this value would equal 6.  However, if the three sub-bands could be observed at the same time (e.g., by separate detectors) then the value would by two (for the two polarization states). Defaults to 1.
+    \item[opticaloh] \hfill \\
+    Optical system overhead time in $days$.  Default value is 1 day.  This is the (assumed constant) amount of time required to set up the optical system (i.e., dig the dark hole or do fine alignment with the occulter).  It is added to every observation, and is separate from the observatory overhead defined in the observatory module, which represents the observatory's settling time.  Both overheads are added to the integration time to determine the full duration of each detection observation.
+    \item[occulterDiameter]\hfill \\
+    Occulter diameter in $ m $.  Measured petal tip-to-tip.
+    \item [NocculterDistances]\hfill \\
+    Number of telescope separations the occulter operates over (number of occulter bands). If greater than 1, then the occulter description is an array of dicts.
+    \item[occulterDistance]\hfill \\
+    Telescope-occulter separation in $km$.
+    \item[occulterBlueEdge]\hfill \\
+    Occulter blue end of wavelength band in $nm$.
+    \item[occulterRedEdge]\hfill \\
+    Occulter red end of wavelength band in $nm$.
     \end{description}
-\end{itemize}
+    
+    \item[scienceInstruments] \hfill\\ Array of dictionaries containing these (or other) detector system values.  Defaults are filled in only when listed.
+    \begin{description}
+    \item[scienceInstrumentNumber] \hfill\\ (Required) Integer counter of the system.
+    \item[type] \hfill\\ (Required) String indicating type of system.  Standard values are `internal',`external', and `hybrid'.
+    \item[darkRate] \hfill \\
+    Detector dark current rate per pixel in units of electrons/second/pix (float). 
+    \item[readNoise] \hfill \\
+    Detector read noise in electrons/read (float). 
+    \item[texp] \hfill \\
+    Exposure time per read in $ s $. 
+    \item[QE] \hfill \\
+    Detector quantum efficiency: either a scalar for constant QE, or a two-column array for wavelength-dependent QE, where the first column contains the wavelengths in nm. The ranges on all parameters must be consistent with the values for lam and deltaLam inputs. May be data or FITS filename. 
+    \item[pixelArea] \hfill \\
+    Pixel area in $ m^2 $ (float). 
+    \item[focalLength] \hfill \\
+    Focal length in $ m $ (float). 
+    \item[Rspec] \hfill \\
+    (Specific to spectrometers) Spectral resolving power defined as $\lambda/\Delta\lambda$ (float). 
+    \item[ENF] \hfill \\
+    (Specific to EM-CCDs) Excess noise factor (float).
+    \item[CIC] \hfill \\
+    (Specific to EM-CCDs) Clock-induced-charge in units of electrons/pix/frame
+    \end{description}
+\end{description}
+
 
 For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames with tabulated data, or NumPy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).
 
-\subsubsection*{Outputs}
+In cases where there is only one starlight suppression system and/or one science instrument, all values from those dictionaries are copied directly to the OpticalSystem object and can be accessed as direct attributes (i.e., \verb+OpticalSystem.Rspec+, etc.).
+
+\subsubsection*{Attributes}
+These will always be present in an OpticalSystem object and directly accessible as \verb+OpticalSystem.Attribute+.
 \begin{itemize}
-    \item 
-    \begin{description}
-        \item[OpticalSystem.lambda] \hfill \\
-        Detection wavelength (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSystem.deltaLambda] \hfill \\
-        Detection bandwidth $ \Delta\lambda $ (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSystem.shapeFac] \hfill \\
-        Shape factor so that $ shapeFac \times diameter^2 = Area $
-        \item[OpticalSystem.pupilArea] \hfill \\
-        Entrance pupil area (astropy Quantity object initially set in $ m^{2} $)
-        \item[OpticalSystem.SNchar] \hfill \\
-        Signal to Noise Ratio for characterization
-        \item[OpticalSystem.pixelArea] \hfill \\
-        Pixel area (astropy Quantity object initially set in $ m^{2} $
-        \item[OpticalSystem.focalLength] \hfill \\
-        Focal length (astropy Quantity object initially set in $ m $)
-        \item[OpticalSystem.IWA] \hfill \\
-        Inner Working Angle (astropy Quantity object initially set in $ arcseconds $)
-        \item[OpticalSystem.OWA] \hfill \\
-        Outer Working Angle (astropy Quantity object initially set in $ as $)
-        \item[OpticalSystem.dMagLim] \hfill \\
-        Limiting $ \Delta$mag (difference in magnitude between star and planet)
-        \item[OpticalSystem.throughput] \hfill \\
-        Optical system throughput. Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed throughput, the callable object may always return a single value.  
-        \item[OpticalSystem.contrast] \hfill \\
-        Optical system contrast.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  For a fixed contrast, may always return a single value. 
-        \item[OpticalSystem.dr] \hfill \\
-        Detector dark-current rate per pixel (astropy Quantity object initially set in $ \frac{1}{s} $)
-        \item[OpticalSystem.sigma\_r] \hfill \\
-        Detector read noise in electrons/read
-        \item[OpticalSystem.t\_exp] \hfill \\
-        Exposure time per read (astropy Quantity object initially set in $ s $)
-        \item[OpticalSystem.QE] \hfill \\
-        Detector quantum efficiency.  Callable object with argument of wavelength, valid between the lowest and highest wavelengths to be observed (as defined by lambda and deltaLambda), inclusive, and must assume an argument in nanometers.
-        \item[OpticalSystem.attenuation] \hfill \\
-        Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
-        \item[OpticalSystem.PSF] \hfill \\
-        Instrument point spread function.  Callable object with arguments of wavelength, valid between the lowest and highest wavelengths to be observed, and angular separation, valid between the IWA and OWA.  Returns a 2D NumPy ndarray.  The core of the PSF is normalized to 1, so that all throughput terms are combined in the througput variable above. 
-        \item[OpticalSystem.PSFSampling] \hfill \\
-        Sampling of PSF in arcsec/pixel (astropy Quantity object initially set in arcseconds)
-        \item[OpticalSystem.telescopeKeepout] \hfill \\
-        Telescope keepout angle in degrees
-        \item[OpticalSystem.specLambda] \hfill \\
-        Spectral wavelength of interest (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSystem.Rspec] \hfill \\
-        Spectral resolving power
-        \item[OpticalSystem.intCutoff] \hfill \\
-        Maximum allowed integration time (astropy Quantity object initially set in $ days $)
-        \item[OpticalSystem.detectionTimeMultiplier]\hfill \\
-        Duty cycle of a detection observation. 
-        \item[OpticalSystem.characterizationTimeMultiplier]\hfill \\
-        Characterization duty cycle.
-        \item[OpticalSystem.occulterDiameter]\hfill \\
-        Occulter diameter.   (astropy Quantity object initially set in $ m $)
-        \item[OpticalSystem.occulterDistance]\hfill \\
-        Telescope-occulter separation. (astropy Quantity object initially set in $ km $)
-        \item[OpticalSystem.occulterBlueEdge]\hfill \\
-        Occulter blue end of wavelength band. (astropy Quantity object initially set in $ nm $)
-        \item[OpticalSystem.occulterRedEdge]\hfill \\
-        Occulter red end of wavelength band. (astropy Quantity object initially set in $ nm $)
-    \end{description}
+\item 
+\begin{description}
+    \item[lam] \hfill \\
+    Detection wavelength (astropy Quantity initially set in $ nm $)
+    \item[deltaLam] \hfill \\
+    Detection bandwidth $ \Delta\lambda $ (astropy Quantity initially set in $ nm $)
+    \item[shapeFac] \hfill \\
+    Shape factor so that $ shapeFac \times diameter^2 = Area $
+    \item[pupilArea] \hfill \\
+    Entrance pupil area (astropy Quantity initially set in $ m^{2} $)
+    \item[SNchar] \hfill \\
+    Signal to Noise Ratio for characterization
+    Focal length (astropy Quantity initially set in $ m $)
+    \item[IWA] \hfill \\
+    Fundamental Inner Working Angle (astropy Quantity initially set in $ arcseconds $)
+    \item[OWA] \hfill \\
+    Fundamental Outer Working Angle (astropy Quantity initially set in $ as $)
+    \item[dMagLim] \hfill \\
+    Fundamental Limiting $ \Delta$mag (difference in magnitude between star and planet)
+    \item[OpticalSystem.telescopeKeepout] \hfill \\
+    Telescope keepout angle in degrees
+    \item[OpticalSystem.specLam] \hfill \\
+    Spectral wavelength of interest (astropy Quantity initially set in $ nm $)
+    \item[telescopeKeepout] \hfill \\
+    Telescope keepout angle (astropy Quantity initially set in degrees)
+    \item[specLam] \hfill \\
+    Spectral wavelength of interest (astropy Quantity initially set in $ nm $)
+    \item[attenuation] \hfill \\
+    Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements (float).
+    \item[intCutoff] \hfill \\
+    Maximum allowed integration time (astropy Quantity object initially set in $ days $)
+    \item[starlightSuppressionSystems] \hfill \\  Array of dicts containing all supplied starlight suppression system attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonlly used attributes.
+    \item[scienceInstruments] \hfill \\  Array of dicts containing all supplied science instrument attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonly used attributes.
+\end{description}
 \end{itemize}
+In cases where either of the two attribute dictionary lists (starlight suppression systems and science instruments) only contain one dictionary (i.e., there's only one coronagraph and/or detector), then all attributes will be linked as direct attributes of the object as well as stored in the dictionary.
 
 \subsubsection{calc\_maxintTime Task Input/Output Description} \label{sec:calcmaxintTimetask}
 The \verb+calc_maxintTime+ task calculates the maximum integration time for each star in the target list.  This task is called from the Target List module.
@@ -1072,7 +1076,7 @@ The \verb+update_times+ task updates the relevant mission times.
 \end{itemize}
 
 \subsubsection{duty\_cycle Task Input/Output Description} \label{sec:dutycycletask}
-The \verb+duty_cycle+ task updates the available time and duration for planet-finding operations.
+The \verb+duty_cycle+ task calculates the next time that the observatory will be available for exoplanet science and returns this time and the maximum amount of time afterwards during which an exolanet observation can run (if capped).
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -1283,6 +1287,8 @@ The Target List module takes in information from the Optical System, Star Catalo
         Information from simulation specification JSON file organized into a Python dictionary. If key: value pairs are missing from the dictionary, the Target List object attributes will be assigned the default values.
         \item[StarCatalog] \hfill \\
         Output of Star Catalog module (see \ref{sec:starcatalog})
+        \item[keepStarCatalog] (bool) \hfill \\
+        Boolean representing whether to delete the star catalog object after the target list is assembled (defaults to False).  If True, object reference will be available from TargetList object.
         \item[OpticalSystem] \hfill \\
         Output of Optical System module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\

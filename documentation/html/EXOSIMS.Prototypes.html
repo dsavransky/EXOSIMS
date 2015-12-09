@@ -422,7 +422,7 @@ will print the attribute values contained in the object</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>time</strong> (<a class="reference internal" href="EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.TimeKeeping" title="EXOSIMS.MissionSim.MissionSim.TimeKeeping"><em>TimeKeeping</em></a>) &#8211; TimeKeeping class object</li>
+<li><strong>time</strong> (<a class="reference internal" href="#module-EXOSIMS.Prototypes.TimeKeeping" title="EXOSIMS.Prototypes.TimeKeeping"><em>TimeKeeping</em></a>) &#8211; TimeKeeping class object</li>
 <li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>s_ind</strong> (<em>int</em>) &#8211; index of target star</li>
 </ul>
@@ -695,7 +695,7 @@ star position vector in heliocentric equatorial</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>lam=500.0</em>, <em>deltaLam=100.0</em>, <em>shapeFac=0.7853981633974483</em>, <em>pupilDiam=4.0</em>, <em>SNchar=11.0</em>, <em>telescopeKeepout=45.0</em>, <em>IWA=None</em>, <em>OWA=None</em>, <em>dMagLim=None</em>, <em>attenuation=0.57</em>, <em>specLam=760.0</em>, <em>intCutoff=50.0</em>, <em>starlightSuppressionSystems=None</em>, <em>scienceInstruments=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -705,7 +705,7 @@ simulation.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; User specified values.</td>
 </tr>
 </tbody>
 </table>
@@ -732,6 +732,13 @@ simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilDiam">
+<code class="descname">pupilDiam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilDiam" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em></p>
+<p>entrance pupil diameter (default units of m)</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SNchar">
 <code class="descname">SNchar</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SNchar" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
@@ -746,117 +753,36 @@ simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pixelArea">
-<code class="descname">pixelArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pixelArea" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>pixel area (default units of m<sup>2</sup>)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.focalLength">
-<code class="descname">focalLength</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.focalLength" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>focal length (default units of m)</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA">
 <code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
-<p>Inner Working Angle (default units of arcsecond)</p>
+<p>Fundamental Inner Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA">
 <code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
-<p>Outer Working Angle (default units of arcsecond)</p>
+<p>Fundamental Outer Working Angle (default units of arcsecond)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
 <code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
-<p>limiting delta magnitude. <strong>Note: wavelength dependent?</strong></p>
+<p>Fundamental limiting delta magnitude.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.throughput">
-<code class="descname">throughput</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.throughput" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable(lam, alpha)</em></p>
-<p>optical system throughput (must be callable - can be lambda, function,
-scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-Quantity) and angular separation (astropy Quantity).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.contrast">
-<code class="descname">contrast</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.contrast" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable(lam, alpha)</em></p>
-<p>optical system contrast curve (must be callable - can be lambda, function,
-scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-Quantity) and angular separation (astropy Quantity).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dr">
-<code class="descname">dr</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dr" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>detector dark-current rate per pixel (default units of 1/s)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.sigma_r">
-<code class="descname">sigma_r</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.sigma_r" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation">
+<code class="descname">attenuation</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
-<p>detector read noise</p>
+<p>non-coronagraph attenuation (throughput)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.t_exp">
-<code class="descname">t_exp</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.t_exp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>exposure time per read (default units of s)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSF">
-<code class="descname">PSF</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSF" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable(lam, alpha)</em></p>
-<p>point spread function - 2D ndarray of values, normalized to 1 at the core
-(must be callable - can be lambda, function,
-scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-Quantity) and angular separation (astropy Quantity). Note normalization
-means that all throughput effects must be contained in the throughput
-attribute.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSFSampling">
-<code class="descname">PSFSampling</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.PSFSampling" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>Sampling of PSF in arcsec/pixel (default units of arcsec)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.QE">
-<code class="descname">QE</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.QE" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable(lam)</em></p>
-<p>detector quantum efficiency (must be callable - can be lambda, function,
-scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-Quantity).  This represents the primary (detection) detector.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.eta2">
-<code class="descname">eta2</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.eta2" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>post coronagraph attenuation</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLambda">
-<code class="descname">deltaLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLam">
+<code class="descname">deltaLam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLam" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>bandpass (default units of nm)</p>
 </dd></dl>
@@ -869,46 +795,11 @@ Quantity).  This represents the primary (detection) detector.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLambda">
-<code class="descname">specLambda</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLambda" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLam">
+<code class="descname">specLam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.specLam" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>spectral wavelength of interest (default units of nm)
 Note:  probably belongs in postprocessing or rules.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Rspec">
-<code class="descname">Rspec</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Rspec" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>spectral resolving power <span class="math">\(\lambda/\Delta\lambda\)</span></p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix">
-<code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>number of noise pixels</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark">
-<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>number of dark frames used</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.optical_oh">
-<code class="descname">optical_oh</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.optical_oh" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>optical system overhead (default units of day)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.darkHole">
-<code class="descname">darkHole</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.darkHole" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>dark hole size (default units of rad)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -918,6 +809,52 @@ Note:  probably belongs in postprocessing or rules.</p>
 <p>integration cutoff (default units of day)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.scienceInstruments">
+<code class="descname">scienceInstruments</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.scienceInstruments" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list of dicts</em></p>
+<p>All science instrument attributes (variable)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starlightSuppressionSystems">
+<code class="descname">starlightSuppressionSystems</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starlightSuppressionSystems" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list of dicts</em></p>
+<p>All starlight suppression system attributes (variable)</p>
+</dd></dl>
+
+<p>Common Starlight Suppression System Attributes:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>PSF (callable(lam, alpha)):</dt>
+<dd>point spread function - 2D ndarray of values, normalized to 1 at the core
+(must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity). Note normalization
+means that all throughput effects must be contained in the throughput
+attribute.</dd>
+<dt>PSFSampling (Quantity):</dt>
+<dd>Sampling of PSF in arcsec/pixel (default units of arcsec)</dd>
+<dt>throughput (callable(lam, alpha)):</dt>
+<dd>optical system throughput (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
+<dt>contrast (callable(lam, alpha)):</dt>
+<dd>optical system contrast curve (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity) and angular separation (astropy Quantity).</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Common Science Instrument Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>QE (callable(lam)):</dt>
+<dd>detector quantum efficiency (must be callable - can be lambda, function,
+scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
+Quantity).</dd>
+</dl>
+</dd>
+</dl>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.__str__">
 <code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.__str__" title="Permalink to this definition">¶</a></dt>
@@ -2672,7 +2609,7 @@ visible, or 1 if planet is visible</p>
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>keepStarCatalog=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform

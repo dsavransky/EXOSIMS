@@ -128,7 +128,7 @@
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;TargetList&#39;</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keepStarCatalog</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes target list</span>
 <span class="sd">                </span>
 <span class="sd">        nan data from star catalog quantities are removed</span>
@@ -158,7 +158,7 @@
         <span class="n">Back</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;BackgroundSources&#39;</span><span class="p">],</span> <span class="s">&#39;BackgroundSources&#39;</span><span class="p">)</span>
 
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">cat</span> <span class="o">=</span> <span class="n">Cat</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># star catalog data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">Cat</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># star catalog data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">Opt</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># optical system object </span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">Zodi</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># zodiacal light model object </span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">Back</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c">#background sources model object</span>
@@ -171,10 +171,10 @@
                 <span class="s">&#39;coords&#39;</span><span class="p">,</span> <span class="s">&#39;pmra&#39;</span><span class="p">,</span> <span class="s">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s">&#39;rv&#39;</span><span class="p">,</span> <span class="s">&#39;Binary_Cut&#39;</span><span class="p">]</span>
         <span class="c"># bring Star Catalog values to top level of Target List</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">MaskedArray</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">MaskedArray</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
             
         <span class="c"># filter out nan attribute values from Star Catalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
@@ -204,7 +204,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         
         <span class="c"># have target list, no need for catalog now</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">keepStarCatalog</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span>
         
 <div class="viewcode-block" id="TargetList.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Target List object</span>

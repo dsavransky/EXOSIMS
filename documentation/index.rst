@@ -16,12 +16,14 @@ Contents
 .. toctree::
    :maxdepth: 4
    
+   quickstart
+   docs
    EXOSIMS
 
 Credits
 --------
 
-EXOSIMS was created by Dmitry Savransky and written by Daniel Garrett, Dmitry Savransky, et al.
+EXOSIMS was created by Dmitry Savransky and written by Daniel Garrett, Dmitry Savransky, Christian Delacroix et al.
 
 
 Indices and tables

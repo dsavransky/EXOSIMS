@@ -586,9 +586,9 @@ Information from simulation specification JSON file organized into a Python dict
     \item[starlightSuppressionSystemNumber] \hfill\\ (Required) Integer counter of the system.
     \item[type] \hfill\\ (Required) String indicating type of sytems.  Standard values are `internal',`external', and `hybrid'.
     \item[IWA] \hfill \\
-     Inner Working Angle of this system in $ arcseconds $.  If not set, defaults to smallest WA of contrast/throughput definition starlightSuppressionSystems.
+     Inner Working Angle of this system in $ arcseconds $.  If not set, defaults to smallest WA of contrast/throughput definitions.
     \item[OWA] \hfill \\
-    Specific Outer Working Angle of this system in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest WA of contrast/throughput definition.  JSON values of 0 will be interpreted as Inf.
+    Specific Outer Working Angle of this system in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest WA of contrast/throughput definitions.  JSON values of 0 will be interpreted as Inf.
     \item[throughput] \hfill \\
     Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs.  May be data or FITS filename. Default is scalar 0.5.
     \item[contrast] \hfill \\
@@ -640,8 +640,9 @@ Information from simulation specification JSON file organized into a Python dict
     \end{description}
 \end{description}
 
+For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames (full absolute paths) with tabulated data, or NumPy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).  When the input is derived from a JSON file, these must either be scalars or filenames.
 
-For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames with tabulated data, or NumPy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).
+The starlight suppression system and science instrument dictionaries can contain any other attributes required by a particular optical system implementation.  The only significance of the ones enumerated above is that they are explicitly checked for by the prototype constructor, and cast to their expected values.
 
 In cases where there is only one starlight suppression system and/or one science instrument, all values from those dictionaries are copied directly to the OpticalSystem object and can be accessed as direct attributes (i.e., \verb+OpticalSystem.Rspec+, etc.).
 

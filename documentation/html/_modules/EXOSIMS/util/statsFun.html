@@ -44,16 +44,19 @@
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Collection of useful statistics routines</span>
-
-<span class="sd">12/22/11 Dmitry Savransky savransky1@llnl.gov</span>
 <span class="sd">&#39;&#39;&#39;</span>
 
 <div class="viewcode-block" id="simpSample"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.statsFun.simpSample">[docs]</a><span class="k">def</span> <span class="nf">simpSample</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">numTest</span><span class="p">,</span> <span class="n">xMin</span><span class="p">,</span> <span class="n">xMax</span><span class="p">,</span> <span class="n">verb</span> <span class="o">=</span> <span class="bp">False</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Use the rejection sampling method to generate a </span>
 <span class="sd">    probability distribution according to the given function f, </span>
-<span class="sd">    between some range xMin and xMax</span>
+<span class="sd">    between some range xMin and xMax.</span>
+<span class="sd">    If xMin==xMax, return an array where all values are equal to </span>
+<span class="sd">    this value.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">xMin</span><span class="o">==</span><span class="n">xMax</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numTest</span><span class="p">)</span><span class="o">+</span><span class="n">xMin</span>
 
     <span class="c">#find max value</span>
     <span class="c">#first do a coarse grid to get ic</span>
@@ -86,8 +89,8 @@
     <span class="k">if</span> <span class="n">verb</span><span class="p">:</span>
         <span class="k">print</span> <span class="s">&#39;Finished in &#39;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">numIter</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; iterations.&#39;</span>
 
-    <span class="k">return</span> <span class="n">X</span>
-</div>
+    <span class="k">return</span> <span class="n">X</span></div>
+
 <div class="viewcode-block" id="eqLogSample"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.statsFun.eqLogSample">[docs]</a><span class="k">def</span> <span class="nf">eqLogSample</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">numTest</span><span class="p">,</span> <span class="n">xMin</span><span class="p">,</span> <span class="n">xMax</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
     <span class="n">bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xMin</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xMax</span><span class="p">),</span><span class="n">bins</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
@@ -131,7 +134,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

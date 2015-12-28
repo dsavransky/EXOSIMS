@@ -12,7 +12,8 @@ class PlanetPhysicalModel(object):
     """
 
     _modtype = 'PlanetPhysicalModel'
-    
+    _outspec = {}
+
     def __init__(self, **specs):
         
         # default values

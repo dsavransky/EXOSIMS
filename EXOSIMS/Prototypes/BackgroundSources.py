@@ -18,6 +18,7 @@ class BackgroundSources(object):
     """
 
     _modtype = "BackgroundSources"
+    _outspec = {}
 
 
     def __init__(self, **specs):

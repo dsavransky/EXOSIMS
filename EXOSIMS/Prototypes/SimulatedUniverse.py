@@ -73,6 +73,7 @@ class SimulatedUniverse(object):
     """
 
     _modtype = 'SimulatedUniverse'
+    _outspec = {}
     
     def __init__(self, **specs):
         
@@ -80,10 +81,10 @@ class SimulatedUniverse(object):
         
         # import TargetList class
         TL = get_module(specs['modules']['TargetList'], 'TargetList')
+        self.TargetList = TL(**specs)
+        
         # import PlanetPhysicalModel class
         PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
-        
-        self.TargetList = TL(**specs)
         self.PlanetPhysicalModel = PlanPhys(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
@@ -184,7 +185,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a semi-major axis 
-        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, self.nPlans, self.PlanetPopulation.arange.min().value, self.PlanetPopulation.arange.max().value)*self.PlanetPopulation.arange.unit
+        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, self.nPlans, self.PlanetPopulation.arange[0].value, self.PlanetPopulation.arange[1].value)*self.PlanetPopulation.arange.unit
         
         return a
         
@@ -205,7 +206,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets an eccentricity 
-        e = statsFun.simpSample(self.PlanetPopulation.eccentricity, self.nPlans, self.PlanetPopulation.erange.min(), self.PlanetPopulation.erange.max())
+        e = statsFun.simpSample(self.PlanetPopulation.eccentricity, self.nPlans, self.PlanetPopulation.erange[0], self.PlanetPopulation.erange[1])
         
         return e
         
@@ -227,7 +228,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets an argument of perigee 
-        w = statsFun.simpSample(self.PlanetPopulation.arg_perigee, self.nPlans, self.PlanetPopulation.wrange.min(), self.PlanetPopulation.wrange.max())
+        w = statsFun.simpSample(self.PlanetPopulation.arg_perigee, self.nPlans, self.PlanetPopulation.wrange[0].value, self.PlanetPopulation.wrange[1].value)
                 
         return w
         
@@ -249,7 +250,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets right ascension of the ascending node 
-        O = statsFun.simpSample(self.PlanetPopulation.RAAN, self.nPlans, self.PlanetPopulation.Orange.min(), self.PlanetPopulation.Orange.max())
+        O = statsFun.simpSample(self.PlanetPopulation.RAAN, self.nPlans, self.PlanetPopulation.Orange[0].value, self.PlanetPopulation.Orange[1].value)
                 
         return O
         
@@ -271,7 +272,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a radius 
-        R = statsFun.simpSample(self.PlanetPopulation.radius, self.nPlans, self.PlanetPopulation.Rrange.min().value, self.PlanetPopulation.Rrange.max().value)*self.PlanetPopulation.Rrange.unit
+        R = statsFun.simpSample(self.PlanetPopulation.radius, self.nPlans, self.PlanetPopulation.Rrange[0].value, self.PlanetPopulation.Rrange[1].value)*self.PlanetPopulation.Rrange.unit
         
         return R
             
@@ -292,7 +293,7 @@ class SimulatedUniverse(object):
         """
         
         # assign planets a mass 
-        M = statsFun.simpSample(self.PlanetPopulation.mass, self.nPlans, self.PlanetPopulation.Mprange.min().value, self.PlanetPopulation.Mprange.max().value)*self.PlanetPopulation.Mprange.unit
+        M = statsFun.simpSample(self.PlanetPopulation.mass, self.nPlans, self.PlanetPopulation.Mprange[0].value, self.PlanetPopulation.Mprange[1].value)*self.PlanetPopulation.Mprange.unit
         
         return M
         
@@ -314,7 +315,7 @@ class SimulatedUniverse(object):
         
         # assign planets an albedo uniformly distributed between min and max
         # values from PlanetPopulation class object
-        p = statsFun.simpSample(self.PlanetPopulation.albedo, self.nPlans, self.PlanetPopulation.prange.min(), self.PlanetPopulation.prange.max())
+        p = statsFun.simpSample(self.PlanetPopulation.albedo, self.nPlans, self.PlanetPopulation.prange[0], self.PlanetPopulation.prange[1])
         
         return p
         
@@ -332,7 +333,7 @@ class SimulatedUniverse(object):
         
         """
         
-        I = statsFun.simpSample(self.PlanetPopulation.inclination, self.nPlans, self.PlanetPopulation.Irange.min(), self.PlanetPopulation.Irange.max())
+        I = statsFun.simpSample(self.PlanetPopulation.inclination, self.nPlans, self.PlanetPopulation.Irange[0].value, self.PlanetPopulation.Irange[1].value)
         
         return I
         

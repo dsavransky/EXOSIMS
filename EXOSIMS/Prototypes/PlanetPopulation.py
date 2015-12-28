@@ -47,101 +47,48 @@ class PlanetPopulation(object):
     """
 
     _modtype = 'PlanetPopulation'
+    _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
+                 wrange=[0.,360.], Orange=[0.,360.], Irange=[0.,180.],\
+                 prange=[0.1,0.6], Rrange=[1.,30.], Mprange = [1.,4131.],\
+                 scalefac=False, **specs):
         
-        # default values
-        # minimum semi-major axis (AU)
-        a_min = 0.01 
-        # maximum semi-major axis (AU)
-        a_max = 10. 
-        # semi-major axis range
-        self.arange = np.array([a_min, a_max])*u.AU 
-        # minimum eccentricity
-        e_min = 10.*np.finfo(np.float).eps 
-        # maximum eccentricity
-        e_max = 0.8 
-        # eccentricity range
-        self.erange = np.array([e_min, e_max]) 
-        # minimum argument of perigee in degrees
-        w_min = 0.
-        # maximum argument of perigee in degrees
-        w_max = 360.
-        # argument of perigee range
-        self.wrange = np.array([w_min, w_max])
-        # minimum right ascension of the ascending node in degrees
-        O_min = 0.
-        # maximum right ascension of the ascending node in degrees
-        O_max = 360.
-        # right ascension of the ascending node range
-        self.Orange = np.array([O_min, O_max])
-        # minimum albedo
-        p_min = 0.0004 
-        # maximum albedo
-        p_max = 0.6 
-        # albedo range
-        self.prange = np.array([p_min, p_max]) 
-        # minimum inclination
-        I_min = 0.
-        # maximum inclination
-        I_max = 180.
-        # inclination range
-        self.Irange = np.array([I_min, I_max])
-        # minimum planetary radius
-        R_min = 0.027*const.R_jup.to(u.km) 
-        # maximum planetary radius
-        R_max = 2.04*const.R_jup.to(u.km) 
-        # planetary radius range
-        self.Rrange = np.array([R_min.to(u.km).value, R_max.to(u.km).value])*u.km 
-        # minimum planetary mass
-        Mp_min = 6.3e-5*const.M_jup
-        # maximum planetary mass
-        Mp_max = 28.5*const.M_jup
-        # planetary mass range
-        self.Mprange = np.array([Mp_min.to(u.kg).value, Mp_max.to(u.kg).value])*u.kg
+        #do all input checks
+        self.arange = self.checkranges(arange,'arange')*u.AU
+        self.erange = self.checkranges(erange,'erange')
+        self.wrange = self.checkranges(wrange,'wrange')*u.deg
+        self.Orange = self.checkranges(Orange,'Orange')*u.deg
+        self.Irange = self.checkranges(Irange,'Irange')*u.deg
+        self.prange = self.checkranges(prange,'prange')
+        self.Rrange = self.checkranges(Rrange,'Rrange')*const.R_earth
+        self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
+
+        assert isinstance(scalefac,bool), "scalefac must be boolean"
         # scale planetary orbits by sqrt(L)
-        self.scaleOrbits = False 
+        self.scaleOrbits = scalefac
         
-        # replace default values with any user specified values
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                if att == 'a_min':
-                    self.arange[0] = specs[att]*u.AU
-                elif att == 'a_max':
-                    self.arange[1] = specs[att]*u.AU
-                elif att == 'e_min':
-                    self.erange[0] = specs[att]                    
-                elif att == 'e_max':
-                    self.erange[1] = specs[att]
-                elif att == 'w_min':
-                    self.wrange[0] = specs[att]
-                elif att == 'w_max':
-                    self.wrange[1] = specs[att]
-                elif att == 'O_min':
-                    self.Orange[0] = specs[att]
-                elif att == 'O_max':
-                    self.Orange[1] = specs[att]
-                elif att == 'p_min':
-                    self.prange[0] = specs[att]
-                elif att == 'p_max':
-                    self.prange[1] = specs[att]
-                elif att == 'R_min':
-                    self.Rrange[0] = specs[att]*u.km
-                elif att == 'R_max':
-                    self.Rrange[1] = specs[att]*u.km
-                elif att == 'Mp_min':
-                    self.Mprange[0] = specs[att]*u.kg
-                elif att == 'Mp_max':
-                    self.Mprange[1] = specs[att]*u.kg
-                else:
-                    setattr(self, att, specs[att])
-                    
-        # initialize any values updated by functions
-        # set values derived from quantities above
         # orbital radius range
-        self.rrange = np.array([(np.min(self.arange)*(1.-np.max(self.erange))).to(u.km).value, (np.max(self.arange)*(1.+np.max(self.erange))).to(u.km).value])*u.km
-                
+        self.rrange = [self.arange[0].value*(1.-self.erange[1]),\
+                self.arange[1].value*(1.+self.erange[1])]*u.AU
+
+        #populate all atributes to outspec
+        for key in self.__dict__.keys():
+            if isinstance(self.__dict__[key],u.Quantity):
+                self._outspec[key] = self.__dict__[key].value
+            else:
+                self._outspec[key] = self.__dict__[key]
+    
+    def checkranges(self,var,name):
+        """Helper function provides asserts on all 2 element lists of ranges
+        """
+        assert len(var) == 2, "%s must have two elements,"%name
+        assert var[0] <= var[1],\
+            "The second element of %s must be greater or equal to the first."%name
+
+        return [float(v) for v in var]
+
+
     def __str__(self):
         """String representation of the Planet Population object
         
@@ -171,7 +118,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.arange.max().value - self.arange.min().value)
+        pdf = 1./(self.arange[1].value - self.arange[0].value)
         
         return pdf
         
@@ -191,7 +138,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.erange.max() - self.erange.min())
+        pdf = 1./(self.erange[1] - self.erange[0])
         
         return pdf
         
@@ -211,7 +158,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.wrange.max() - self.wrange.min())
+        pdf = 1./(self.wrange[1].value - self.wrange[0].value)
         
         return pdf
         
@@ -231,7 +178,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.Orange.max() - self.Orange.min())
+        pdf = 1./(self.Orange[1].value - self.Orange[0].value)
         
         return pdf
         
@@ -251,7 +198,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.Rrange.max().to(u.km).value - self.Rrange.min().to(u.km).value)
+        pdf = 1./(self.Rrange[1].to(u.km).value - self.Rrange[0].to(u.km).value)
         
         return pdf
         
@@ -271,7 +218,7 @@ class PlanetPopulation(object):
             
         """
         
-        pdf = 1./(self.Mprange.max().to(u.kg).value - self.Mprange.min().to(u.kg).value)
+        pdf = 1./(self.Mprange[1].to(u.kg).value - self.Mprange[0].to(u.kg).value)
         
         return pdf
         
@@ -291,7 +238,7 @@ class PlanetPopulation(object):
         
         """
         
-        pdf = 1./(self.prange.max() - self.prange.min())
+        pdf = 1./(self.prange[1] - self.prange[0])
         
         return pdf
         

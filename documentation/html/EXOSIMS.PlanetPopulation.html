@@ -45,6 +45,17 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1">
+<span id="exosims-planetpopulation-earthtwinhabzone1-module"></span><h2>EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1">
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.EarthTwinHabZone1.</code><code class="descname">EarthTwinHabZone1</code><span class="sig-paren">(</span><em>arange=[0.7, 1.5], erange=[0, 0], Rrange=[1, 1], Mprange=[1, 1], prange=[0.367, 0.367], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation</span></code></a></p>
+<p>Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
+On circular Habitable zone orbits (0.7 to 1.5 AU)</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.PlanetPopulation.PlanetFunc">
 <span id="exosims-planetpopulation-planetfunc-module"></span><h2>EXOSIMS.PlanetPopulation.PlanetFunc module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.PlanetFunc" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -78,9 +89,8 @@ Kipping et. al (2013)</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>inds</strong> &#8211;</p>
-<p>1D numpy ndarray of indices meeting the conditions</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>inds</strong> &#8211;
+1D numpy ndarray of indices meeting the conditions</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -96,12 +106,6 @@ Kipping et. al (2013)</p>
 <dd><p>Provides PDF of exoplanet masses</p>
 <p>Function is an exponential
 Marcey et. al (2005)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/PlanetFunc.html#PlanetFunc.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.PlanetFunc.PlanetFunc.plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used to plot PDFs as histograms in order to view their accuracy</p>
 </dd></dl>
 
 <dl class="method">
@@ -138,6 +142,7 @@ Cumming et. al (2008)</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.PlanetPopulation package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1">EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.PlanetFunc">EXOSIMS.PlanetPopulation.PlanetFunc module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation">Module contents</a></li>
 </ul>
@@ -182,7 +187,7 @@ Cumming et. al (2008)</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

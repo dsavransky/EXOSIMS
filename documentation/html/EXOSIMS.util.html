@@ -56,14 +56,15 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>name</strong> (<em>str</em>) &#8211; string containing desired class name
-OR full path to desired module</li>
-<li><strong>folder</strong> (<em>str</em>) &#8211; string containing folder housing desired class</li>
+OR full path to desired module.
+The class name must be the same as the file name.</li>
+<li><strong>folder</strong> (<em>str</em>) &#8211; string containing folder housing desired class
+Equivalently the module type (i.e., Observatory)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>desiredmodule</strong> &#8211;</p>
-<p>desired module</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desiredmodule</strong> &#8211;
+desired module</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">object</p>
@@ -151,7 +152,9 @@ and continued fraction to solve the Kepler equation.</p>
 <code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">simpSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>verb=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#simpSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.simpSample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the rejection sampling method to generate a
 probability distribution according to the given function f,
-between some range xMin and xMax</p>
+between some range xMin and xMax.
+If xMin==xMax, return an array where all values are equal to
+this value.</p>
 </dd></dl>
 
 </div>
@@ -215,7 +218,7 @@ between some range xMin and xMax</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

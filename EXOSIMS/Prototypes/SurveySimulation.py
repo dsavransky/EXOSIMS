@@ -46,6 +46,7 @@ class SurveySimulation(object):
     """
 
     _modtype = 'SurveySimulation'
+    _outspec = {}
     
     def __init__(self,scriptfile=None,**specs):
         """Initializes Survey Simulation with default values
@@ -103,6 +104,7 @@ class SurveySimulation(object):
             self.OpticalSystem = self.SimulatedUniverse.OpticalSystem # optical system class object
             self.PlanetPopulation = self.SimulatedUniverse.PlanetPopulation # planet population class object
             self.ZodiacalLight = self.SimulatedUniverse.ZodiacalLight # zodiacal light class object
+            self.BackgroundSources = self.SimulatedUniverse.BackgroundSources #Background sources object
             self.Completeness = self.SimulatedUniverse.Completeness # completeness class object
             self.PlanetPhysicalModel = self.SimulatedUniverse.PlanetPhysicalModel # planet physical model class object
             self.TargetList = self.SimulatedUniverse.TargetList # target list class object
@@ -219,7 +221,7 @@ class SurveySimulation(object):
             
             # store spacecraft mass
             if self.OpticalSystem.haveOcculter:
-                DRM['sc_mass'] = self.Observatory.sc_mass.to(u.kg).value
+                DRM['scMass'] = self.Observatory.scMass.to(u.kg).value
                         
             # get target list star index of detections for extended_list
             if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife and extended_list.shape[0] == 0:
@@ -236,7 +238,7 @@ class SurveySimulation(object):
 
             # find out if observations are possible and get relevant data
             observationPossible, t_int, DRM, s, dMag, Ip = self.observation_detection(pInds, s_ind, DRM, planPosTime)        
-            t_int += self.Observatory.settling_time
+            t_int += self.Observatory.settlingTime
             # store detection integration time
             DRM['det_int_time'] = t_int.to(u.day).value
             
@@ -316,7 +318,7 @@ class SurveySimulation(object):
             
             # with occulter if spacecraft fuel is depleted, exit loop
             if self.OpticalSystem.haveOcculter:
-                if self.Observatory.sc_mass < self.Observatory.dryMass:
+                if self.Observatory.scMass < self.Observatory.dryMass:
                     print 'Total fuel mass excedeed at %r' % self.TimeKeeping.currenttimeNorm                    
                     break
 #            break
@@ -483,7 +485,7 @@ class SurveySimulation(object):
             # store these values
             DRM['det_dV'] = deltaV.to(u.m/u.s).value
             DRM['det_mass_used'] = mass_used.to(u.kg).value
-            self.Observatory.sc_mass -= mass_used
+            self.Observatory.scMass -= mass_used
             
         return observationPossible, t_int, DRM, s, dMag, Ip
         
@@ -525,8 +527,8 @@ class SurveySimulation(object):
             if np.any(spectra[pInds[observationPossible],0] == 0):
                 # perform first characterization
                 # find throughput and contrast
-                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
-                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)))
+                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.arcsec))
+                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.arcsec))
                 # find characterization time                    
                 t_char = self.find_t_char(throughput, contrast, Ip, FA, s_ind, pInds)
                 # account for 5 bands and one coronagraph
@@ -551,8 +553,8 @@ class SurveySimulation(object):
                         # decrement mass for station-keeping
                         intMdot, mass_used, deltaV = self.Observatory.mass_dec(dF_lateral, t_int)
                         mass_used_char = t_char*intMdot
-                        deltaV_char = dF_lateral/self.Observatory.sc_mass*t_char
-                        self.Observatory.sc_mass -= mass_used_char
+                        deltaV_char = dF_lateral/self.Observatory.scMass*t_char
+                        self.Observatory.scMass -= mass_used_char
                         # encode information in DRM
                         DRM['char_1_time'] = t_char.to(u.day).value
                         DRM['char_1_dV'] = deltaV_char.to(u.m/u.s).value
@@ -722,7 +724,7 @@ class SurveySimulation(object):
                 if t_char_calc:
                     dt = t_int[i]
                 else:
-                    dt = t_trueint[i] + self.Observatory.settling_time
+                    dt = t_trueint[i] + self.Observatory.settlingTime
 
                 obsRes = self.sys_end_res(dt, s_ind, r, v, Mp, MsTrue, Rp, p)
 
@@ -1012,7 +1014,7 @@ class SurveySimulation(object):
         
         if self.OpticalSystem.haveOcculter:
             # add transit time and reduce starshade mass
-            ao = self.Observatory.thrust/self.Observatory.sc_mass
+            ao = self.Observatory.thrust/self.Observatory.scMass
             targetSep = self.Observatory.occulterSep
             # find position vector of previous target star
             r_old = self.Observatory.starprop(self.TimeKeeping.currenttimeAbs, self.TargetList, s_ind)

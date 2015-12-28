@@ -1,3 +1,4 @@
+%!TEX TS-program = pdflatexmk
 \documentclass[cleanfoot]{asme2ej}
 
 \usepackage[]{graphicx}
@@ -78,12 +79,8 @@ This ICD defines the input/output of each module and the interfaces between modu
 %\subsection{Glossary}
 %This section will contain definition of terms used throughout the document if needed.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% OVERVIEW 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \section{Overview}
-The terminology used to describe the software implementation is loosely based on the object-oriented Python framework upon which EXOSIMS is built.  The term module can refer to the object class prototype representing the abstracted functionality of one piece of the software, an implementation of this object class which inherits the attributes of the prototype, or an instance of this object class.  Input/output definitions of modules refer to the class prototype.  Implemented modules refer to the inherited class definition.  Passing modules (or their outputs) means the instantiation of the inherited object class being used in a given simulation.  Relying on strict inheritance for all implemented module classes provides an automated error and consistency-checking mechanism.  The outputs of a given object instance may be compared to the outputs of the prototype.  It is trivial to pre-check whether a given module implementation will work with the larger framework, and thus allows flexibility and adaptability.
+The terminology used to describe the software implementation is loosely based upon object-oriented programing (OOP) terminology, as implemented by the Python language, in which EXOSIMS is built.  The term module can refer to the object class prototype representing the abstracted functionality of one piece of the software, an implementation of this object class which inherits the attributes and methods of the prototype, or an instance of this class.  Input/output definitions of modules refer to the class prototype.  Implemented modules refer to the inherited class definition.  Passing modules (or their outputs) means the instantiation of the inherited object class being used in a given simulation.  Relying on strict inheritance for all implemented module classes provides an automated error and consistency-checking mechanism.  The outputs of a given object instance may be compared to the outputs of the prototype.  It is trivial to pre-check whether a given module implementation will work within the larger framework, and this approach allows for flexibility and adaptability.
 
 \begin{figure}[ht]
     \begin{center}
@@ -95,7 +92,7 @@ The terminology used to describe the software implementation is loosely based on
     \label{figure_framework}
 \end{figure}
 
-The overall framework of EXOSIMS is depicted in Fig.~\ref{figure_framework} where the component stand-alone software modules are classified as input modules and simulation modules.  The input modules include the Optical System, Star Catalog, Planet Population, Observatory, Planet Physical Model, Time Keeping, and Post-Processing modules.  These modules contain specific mission design parameters.  The simulation modules include Target List, Simulated Universe, Survey Simulation, and Survey Ensemble modules.  The simulation modules take information contained in the input modules and perform mission simulation tasks.  Any module may perform any number or kind of calculations using any or all of the input parameters provided.  They are only constrained by their input and output specification contained in this document.
+The overall framework of EXOSIMS is depicted in \reffig{figure_framework} where the software components are classified as input modules and simulation modules.  The input modules include the Optical System, Star Catalog, Planet Population, Observatory, Planet Physical Model, Time Keeping, Zodiacal Light, Background Sources, and Post-Processing modules.  Objects of input module classes can be instantiated independently, without creating instances of any other module.  These modules contain specific mission design parameters and physical descriptions of the universe, and will change according to mission and planet population of interest.  The simulation modules include Target List, Simulated Universe, Survey Simulation, and Survey Ensemble modules.  The simulation modules take information contained in the input modules and perform mission simulation tasks. The instantiation of an object of any of these modules requires the instantiation of one or more input module objects (see \reffig{fig:instantiation_tree}).  Any module may perform any number or kind of calculations using any or all of the input parameters provided.  The specific implementations are only constrained by their input and output specification contained in this document.
 
 \begin{figure}[ht]
     \begin{center}
@@ -117,13 +114,10 @@ The overall framework of EXOSIMS is depicted in Fig.~\ref{figure_framework} wher
     \label{fig:observatory_flowdown}
 \end{figure}
 
-Figures \ref{fig:starcatalog_flowdown} and \ref{fig:observatory_flowdown} show schematic representations of the three different apsects of a module, for the Star Catalog and Observatory modules, respectively.  Every module has a specific prototype that sets the input/output structure of the module and encodes any common functionality for all module class implementations.  The various implementations inherit the prototype and perform whatever processing is necessary, limited only by the preset input/output scheme.  Finally, in the course of running a simulation, an object is generated for each module class selected for that simulation.  The generated objects can be used in exactly the same way in the downstream code, regardless of what implementation they are instances of, due to the strict interface defined in the class prototypes.
+Figures \ref{fig:starcatalog_flowdown} and \ref{fig:observatory_flowdown} show schematic representations of the three different aspects of a module, using the Star Catalog and Observatory modules as examples, respectively.  Every module has a specific prototype that sets the input/output structure of the module and encodes any common functionality for all module class implementations.  The various implementations inherit the prototype and add/overload any attributes and methods required for their particular tasks, limited only by the preset input/output scheme.  Finally, in the course of running a simulation, an object is generated for each module class selected for that simulation.  The generated objects can be used in exactly the same way in the downstream code, regardless of what implementation they are instances of, due to the strict interface defined in the class prototypes.
 
 For the input modules, the input specification is much more loosely defined than the output specification, as different implementations may draw data from a wide variety of sources.  For example, the star catalog may be implemented as reading values from a static file on disk, or may represent an active connection to a local or remote database.  The output specification for these modules, however, as well as both the input and output for the simulation modules, is entirely fixed so as to allow for generic use of all module objects in the simulation.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% GLOBAL SPECIFICATIONS (INCLUDE BETTER EXPLANATIONS)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Global Specifications}
 Common references (units, frames of reference, etc.) are required to ensure interoperability between the modules of EXOSIM.  All of the references listed below must be followed.
@@ -165,8 +159,25 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
 \end{itemize}
 }
 
+Additionally, while not required for running the survey simulation, \verb+matplotlib+ is used for visualization of the results.
+
 \subsection{Coding Conventions}
-In order to allow for flexibility in using alternate or user-generated module implementations, the only requirement on any module is that it inherits (either directly or by inheriting another module implementation that inherits the prototype) the appropriate prototype.  
+In order to allow for flexibility in using alternate or user-generated module implementations, the only requirement on any module is that it inherits (either directly or by inheriting another module implementation that inherits the prototype) the appropriate prototype.  It is similarly expected (although not required) that the prototype constructor will be called from the constructor of the newly implemented class.  An example of an Optical System module implementation follows:
+
+\begin{verbatim}
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
+
+class ExampleOpticalSystem(OpticalSystem):
+    
+    def __init__(self, **specs):
+                
+        OpticalSystem.__init__(self, **specs)
+        
+        ...
+
+\end{verbatim}
+
+\emph{Note that the filename must match the class name for all modules.}
 
 \subsubsection{Module Type}
 It is always possible to check whether a module is an instance of a given prototype, for example:
@@ -192,7 +203,7 @@ throughput = lambda wavelength,angle: 0.5
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Backbone}
-By default, the simulation execution will be performed via the backbone.  This will consist of a limited set of functions that will primarily be tasked with parsing the input specification described below, and then creating the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.  The backbone functionality will primarily be implemented in the MissionSimulation class, whose constructor will take the input script file (\S\ref{sec:inputspec}) and generate instances of all module objects, including the SurveySimulation (S\ref{sec:surveysim}) and SurveyEnsemble modules, which will contain the functions to run the survey simulations. Any mission-specific execution variations will be introduced by method overloading in the inherited survey simulation implementation. \reffig{fig:instantiation_tree} provides a graphical description of the instantiation order of all module objects.
+By default, the simulation execution will be performed via the backbone.  This will consist of a limited set of functions that will primarily be tasked with parsing the input specification described below, and then creating the specified instances of each of the framework modules, detailed in \S\ref{sec:modules}.  The backbone functionality will primarily be implemented in the MissionSimulation class, whose constructor will take the input script file (\S\ref{sec:inputspec}) and generate instances of all module objects, including the SurveySimulation (\S\ref{sec:surveysim}) and SurveyEnsemble modules, which will contain the functions to run the survey simulations. Any mission-specific execution variations will be introduced by method overloading in the inherited survey simulation implementation. \reffig{fig:instantiation_tree} provides a graphical description of the instantiation order of all module objects.
 
 \begin{figure}[ht]
     \begin{center}
@@ -204,7 +215,7 @@ By default, the simulation execution will be performed via the backbone.  This w
     \label{fig:instantiation_tree}
 \end{figure}
 
-A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set via defaults in the constructors of each of the modules.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values.   
+A simulation specification is a single JSON-formatted (\url{http://json.org/}) file that encodes user-settable parameters and module names.  The backbone will contain a reference specification with \emph{all} parameters and modules set via defaults in the constructors of each of the modules.  In the initial parsing of the user-supplied specification, it will be merged with the reference specification such that any fields not set by the user will be assigned to their reference (default) values.   Each instantiated module object will contain a dictionary called \verb+_outspec+, which, taken together, will form the full specification for the current run (as defined by the loaded modules).  This specification will be written out to a json file associated with the output of every run.  \emph{Any specification added by a user implementation of any module must also be added to the \_outspec dictionary}.  The assembly of the full output specification is provided by MissionSimulation method \verb+genOutSpec+.
 
 The backbone will also contain a specification parser that will check specification files for internal consistency.  For example, if modules carry mutual dependencies, the specification parser will return an error if these are not met for a given specification.  Similarly, if modules are selected with optional top level inputs, warnings will be generated if these are not set in the same specification files.
 
@@ -213,7 +224,7 @@ In addition to the specification parser, the backbone will contain a method for 
 The backbone will also contain an interactive function to help users generate specification files via a series of questions.
 
 \subsection{Specification Format}\label{sec:inputspec}
-The JSON specification file will contain a series of objects with members enumerating various user-settable parameters, top-level members for universal settings (such as the mission lifetime) and arrays of objects for multiple related specifications, such as starlight suppression systems and science instruments.  The final array will contain module names (or paths on disk) for all modules.
+The JSON specification file will contain a series of objects with members enumerating various user-settable parameters, top-level members for universal settings (such as the mission lifetime) and arrays of objects for multiple related specifications, such as starlight suppression systems and science instruments.  The specification file must contain a \verb+modules+ dictionary listing the module names (or paths on disk to user-implemented classes) for all modules.
 
 \begin{verbatim}
 {
@@ -267,7 +278,6 @@ The JSON specification file will contain a series of objects with members enumer
       "contrastFile":  "/data1/coron1_contrast.fits"
     }
   ],
-  "NscienceInstruments": 2
   "scienceInstruments": [
     {
       "scienceInstrumentNumber": 1,
@@ -330,6 +340,32 @@ These parameters apply to all simulations, and are described in detail in their 
 \item[attenuation] (float) Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
 \item[specLam] (float) Spectral wavelength of interest in nm.
 \item[intCutoff] (float)  Maximum allowed integration time in $ days $. No integrations will be started that would take longer than this value.
+\item[minComp] (float) Minimum completeness value for inclusion in target list. 
+\item[exozodi] (float) Mean Exo-zodi level in zodi.
+\item[exozodiVar] (float) Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero. 
+\item[FAP] (float) Detection false alarm probability
+\item[MDP] (float) Missed detection probability
+\item[arange]   2 element list of minimum and maximum semi-major axes in $ AU $. 
+\item[erange]   2 element list of minimum and maximum eccentricity.  
+\item[wrange]   2 element list of minimum and maximum argument of perigee in degrees. 
+\item[Orange]   2 element list of minimum and maximum ascension of the ascending node in degrees.  
+\item[Irange]   2 element list of minimum and maximum inclination in degrees.  
+\item[prange]   2 element list of minimum and maximum planetary geometric albedo.  
+ \item[Rrange]   2 element list of minimum and maximum planetary Radius in Earth radii.  
+\item[Mprange]   2 element list of minimum and maximum planetary mass in Earth masses.  
+\item [scaleOrbits]   (Boolean) True means planetary orbits are scaled by the square root of stellar luminosity. 
+\item[missionStart]  (float) Mission start time in $ MJD $. 
+\item[missionLife]  (float) Total length of mission in $ years $. 
+\item[extendedLife]  (float) Extended mission time in $ years $.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed.
+\item[missionPortion] (float)  Portion of mission time devoted to planet-finding. ($\le 1$)
+\item[settlingTime] (float) Amount of time needed for observatory to settle after a repointing in $ days $.             
+\item[thrust] (float) Occulter slew thrust in $ mN $.
+\item[slewIsp] (float) Occulter slew specific impulse in $ s $. 
+\item[scMass] (float) Occulter (maneuvering spacecraft) initial wet mass in $ kg $. 
+\item[dryMass] (float) Occulter (maneuvering spacecraft) dry mass in $ kg $. 
+\item[coMass] (float) Telescope (or non-maneuvering spacecraft) mass in $ kg $. 
+\item[skIsp] (float) Specific impulse for station keeping in $ s $. 
+\item[defburnPortion] (float) Default burn portion for slewing. 
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -342,7 +378,7 @@ The input modules include Planet Population, Star Catalog, Optical System, Zodia
 % PLANET POPULATION
 
 \subsection{Planet Population}
-The Planet Population module encodes the density functions of all required planetary parameters, both physical and orbital. These include semi-major axis, eccentricity, orbital orientation, radius, mass, and geometric albedo (see ~\ref{sec:pdfs}). Certain parameter models may be empirically derived while others may come from analyses of observational surveys.  This module also encodes the limits on all parameters to be used for sampling the distributions and determining derived cutoff values such as the maximum target distance for a given instrument's IWA.
+The Planet Population module encodes the density functions of all required planetary parameters, both physical and orbital. These include semi-major axis, eccentricity, orbital orientation, radius, mass, and geometric albedo (see \S\ref{sec:pdfs}). Certain parameter models may be empirically derived while others may come from analyses of observational surveys.  This module also encodes the limits on all parameters to be used for sampling the distributions and determining derived cutoff values such as the maximum target distance for a given instrument's IWA.
 
 \begin{figure}[ht]
     \begin{center}
@@ -360,75 +396,55 @@ The Planet Population module does not model the physics of planetary orbits or t
 \label{sec:planetpopulation}
 \subsubsection{Planet Population Object Attribute Initialization Input/Output Description} 
 \subsubsection*{Inputs}
+The following are all entries in the passed specs dictionary (derived from the JSON script file or another dictionary).  Values not specified will be replaced with defaults, as listed.
 \begin{itemize}
-    \item
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Planet Population object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["a\_min"] \hfill \\
-            Minimum semi-major axis in $ AU $. Default value is 0.01.
-            \item specs["a\_max"] \hfill \\
-            Maximum semi-major axis in $ AU $. Default value is 10.0.
-            \item specs["e\_min"] \hfill \\
-            Minimum eccentricity. Default value is 0.001.
-            \item specs["e\_max"] \hfill \\
-            Maximum eccentricity. Default value is 0.8.
-            \item specs["w\_min"] \hfill \\
-            Minimum argument of perigee in degrees. Default value is 0.
-            \item specs["w\_max"] \hfill \\
-            Maximum argument of perigee in degrees. Default value is 360.
-            \item specs["O\_min"] \hfill \\
-            Minimum right ascension of the ascending node. Default value is 0.
-            \item specs["O\_max"] \hfill \\
-            Maximum right ascension of the ascending node. Default value is 360.
-            \item specs["p\_min"] \hfill \\
-            Minimum planetary geometric albedo. Default value is 0.0004.
-            \item specs["p\_max"] \hfill \\
-            Maximum planetary geometric albedo. Default value is 0.6.
-            \item specs["I\_min"] \hfill \\
-            Minimum inclination in degrees. Default value is 0.
-            \item specs["I\_max"] \hfill \\
-            Maximum inclination in degrees. Default value is 180.
-            \item specs["R\_min"] \hfill \\
-            Minimum planetary radius in $ km $. Default value is 1930.
-            \item specs["R\_max"] \hfill \\
-            Maximum planetary radius in $ km $. Default value is 145844.
-            \item specs["Mp\_min"] \hfill \\
-            Minimum planetary mass in $ kg $. Default value is 1.196e+23.
-            \item specs["Mp\_max"] \hfill \\
-            Maximum planetary mass in $ kg $. Default value is 5.411e+28.
-            \item specs["scaleOrbits"] \hfill \\
-            Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
-        \end{description}
-    \end{description}
+\item
+\begin{description}
+    \item[arange] \hfill \\
+    2 element list of minimum and maximum semi-major axes in $ AU $. Default value is [0.01, 100]
+    \item[erange] \hfill \\
+    2 element list of minimum and maximum eccentricity.  Default value is [0.01,0.99]
+    \item[wrange] \hfill \\
+    2 element list of minimum and maximum argument of perigee in degrees.  Default value is [0,360]
+    \item[Orange] \hfill \\
+    2 element list of minimum and maximum ascension of the ascending node in degrees.  Default value is [0,360]
+    \item[Irange] \hfill \\
+    2 element list of minimum and maximum inclination in degrees.  Default value is [0,180]
+    \item[prange] \hfill \\
+    2 element list of minimum and maximum planetary geometric albedo.  Default value is [0.1,0.6]
+     \item[Rrange] \hfill \\
+    2 element list of minimum and maximum planetary Radius in Earth radii.  Default value is [1, 30]
+    \item[Mprange] \hfill \\
+    2 element list of minimum and maximum planetary mass in Earth masses.  Default value is [1, 4131]
+    \item [scaleOrbits] \hfill \\
+    Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
+\end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item
     \begin{description}
-        \item[PlanetPopulation.arange] \hfill \\
-        Semi-major axis range defined as numpy.array([a\_min, a\_max]) (astropy Quantity object initially set in $ AU $)
-        \item[PlanetPopulation.erange] \hfill \\
-        Eccentricity range defined as numpy.array([e\_min, e\_max])
-        \item[PlanetPopulation.wrange] \hfill \\
-        Argument of perigee range defined as numpy.array([w\_min, w\_max])
-        \item[PlanetPopulation.Orange] \hfill \\
-        Right ascension of the ascending node range defined as numpy.array([O\_min, O\_max])
-        \item[PlanetPopulation.prange] \hfill \\
-        Planetary geometric albedo range defined as numpy.array([p\_min, p\_max])
-        \item[PlanetPopulation.Irange] \hfill \\
-        Planetary orbital inclination range defined as numpy.array([I\_min, I\_max])
-        \item[PlanetPopulation.Rrange] \hfill \\
-        Planetary radius range defined as numpy.array([R\_min, R\_max]) (astropy Quantity object or astropy constant objects, e.g., astropy.constant.R\_earth initially set in $ km $)
-        \item[PlanetPopulation.Mprange] \hfill \\
-        Planetary mass range defined as numpy.array([Mp\_min, Mp\_max]) (astropy Quantity object initially set in $ kg $)
-        \item[PlanetPopulation.scaleOrbits] \hfill \\
+        \item[arange] \hfill \\
+        Semi-major axis range defined as [a\_min, a\_max] (astropy Quantity initially set in $ AU $)
+        \item[erange] \hfill \\
+        Eccentricity range defined as [e\_min, e\_max]
+        \item[wrange] \hfill \\
+        Argument of perigee range defined as [w\_min, w\_max] (astropy Quantity initially set in degrees)
+        \item[Orange] \hfill \\
+        Right ascension of the ascending node range defined as [O\_min, O\_max]  (astropy Quantity initially set in degrees)
+        \item[prange] \hfill \\
+        Planetary geometric albedo range defined as [p\_min, p\_max]
+        \item[Irange] \hfill \\
+        Planetary orbital inclination range defined as [I\_min, I\_max]  (astropy Quantity initially set in degrees)
+        \item[Rrange] \hfill \\
+        Planetary radius range defined as [R\_min, R\_max] (astropy Quantity initially set in $ m $)
+        \item[Mprange] \hfill \\
+        Planetary mass range defined as [Mp\_min, Mp\_max] (astropy Quantity initially set in $ kg $)
+        \item[scaleOrbits] \hfill \\
         Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
-        \item[PlanetPopulation.rrange] \hfill \\
-        Planetary orbital radius range defined as numpy.array([r\_min, r\_max]) derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity object initially set in $ km $)
-        
+        \item[rrange] \hfill \\
+        Planetary orbital radius range defined as [r\_min, r\_max] derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity initially set in $ AU $)
     \end{description}
 \end{itemize}
 
@@ -457,6 +473,8 @@ Each of the probability density functions contained in the Planet Population mod
     \end{description}
 \end{itemize}
 
+\emph{In instances where there are dependencies between parameters given by physical models (i.e., density models relating planetary masses to radii), these will be provided by the Planet Physical Model module.}
+
 % STAR CATALOG
 
 \subsection{Star Catalog} \label{sec:starcatalog}
@@ -465,18 +483,18 @@ The Star Catalog module includes detailed information about potential target sta
 This module does not provide any functionality for picking the specific targets to be observed in any one simulation, nor even for culling targets from the input lists where no observations of a planet could take place.  This is done in the Target List module as it requires interactions with the Planet Population (to determine the population of interest), Optical System (to define the capabilities of the instrument), and Observatory (to determine if the view of the target is unobstructed) modules.
 
 \subsubsection{Star Catalog Object Attribute Initialization Input/Output Description} 
-The Star Catalog prototype creates empty 1D NumPy ndarrays for each of the output quantities listed below.  Specific Star Catalog modules populate the values as appropriate.
+The Star Catalog prototype creates empty 1D NumPy ndarrays for each of the output quantities listed below.  Specific Star Catalog modules must populate the values as appropriate.  Note that values that are left unpopulated by the implementation will still get all zero array, which may lead to unexpected behavior.
 
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[star catalog information] \hfill \\
-        Information from an external star catalog 
+        Information from an external star catalog (left deliberately vague as these can be anything).
     \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item 
     \begin{description}
@@ -527,14 +545,12 @@ The Star Catalog prototype creates empty 1D NumPy ndarrays for each of the outpu
     \end{description}
 \end{itemize}
 
-% OPTICAL SYSTEM NEEDS UPDATING
-
 \subsection{Optical System}
 The Optical System module contains all of the necessary information to describe the effects of the telescope and starlight suppression system on the target star and planet wavefronts.  This requires encoding the design of both the telescope optics and the specific starlight suppression system, whether it be an internal coronagraph or an external occulter.  The encoding can be achieved by specifying Point Spread Functions (PSF) for on- and off-axis sources, along with angular separation and wavelength dependent contrast and throughput definitions.  At the opposite level of complexity, the encoded portions of this module may be a description of all of the optical elements between the telescope aperture and the imaging detector, along with a method of propagating an input wavefront to the final image plane.  Intermediate implementations can include partial propagations, or collections of static PSFs representing the contributions of various system elements.  The encoding of the optical train will allow for the extraction of specific bulk parameters including the instrument inner working angle (IWA), outer working angle (OWA), and mean and max contrast and throughput.
 
 Finally, the Optical System must also include a description of the science instrument.  The baseline instrument is assumed to be an imaging spectrometer.  The encoding must provide the spatial and wavelength coverage of the instrument as well as sampling for each, along with detector details such as read noise, dark current, and readout cycle.
 
-The Optical System module has two tasks used in simulation.  \verb+calc_maxintTime+ is called from the Target List module to calculate the maximum integration time for each star in the target list (see ~\ref{sec:calcmaxintTimetask}).  \verb+calc_intTime+ is called from the Survey Simulation module to calculate integration times for a target system (see ~\ref{sec:calcintTimetask}).  The inputs and outputs for the Optical System tasks are depicted in Fig. \ref{fig:opticalsysmodule}.
+The Optical System module has two methods used in simulation.  \verb+calc_maxintTime+ is called from the Target List module to calculate the maximum integration time for each star in the target list (see \S\ref{sec:calcmaxintTimetask}).  \verb+calc_intTime+ is called from the Survey Simulation module to calculate integration times for a target system (see \S\ref{sec:calcintTimetask}).  The inputs and outputs for the Optical System methods are depicted in \reffig{fig:opticalsysmodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -542,7 +558,7 @@ The Optical System module has two tasks used in simulation.  \verb+calc_maxintTi
              \includegraphics[width=\textwidth]{OpticalSysTasks}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:opticalsysmodule} Depiction of Optical System module tasks including inputs and outputs (see ~\ref{sec:calcmaxintTimetask} and ~\ref{sec:calcintTimetask}).}
+    \caption{\label{fig:opticalsysmodule} Depiction of Optical System module methods including inputs and outputs (see \S\ref{sec:calcmaxintTimetask} and \S\ref{sec:calcintTimetask}).}
 \end{figure}
 
 
@@ -555,6 +571,8 @@ The specific set of inputs to this module will vary based on the simulation appr
 \subsubsection*{Inputs}
 Information from simulation specification JSON file organized into a Python dictionary.  For multiple systems, there will be an array of dictionaries. If the below key: value pairs are missing from the input specification, the Optical System object attributes will be assigned the default values listed. The following are all entries in the passed specs dictionary.
 
+\begin{itemize}
+    \item 
 \begin{description}
     \item[lam] \hfill \\
     Central detection wavelength in $ nm $. Default value is 500.
@@ -589,6 +607,8 @@ Information from simulation specification JSON file organized into a Python dict
      Inner Working Angle of this system in $ arcseconds $.  If not set, defaults to smallest WA of contrast/throughput definitions.
     \item[OWA] \hfill \\
     Specific Outer Working Angle of this system in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest WA of contrast/throughput definitions.  JSON values of 0 will be interpreted as Inf.
+    \item[dMagLim] \hfill \\
+    Limiting $ \Delta$mag for this system. Default value is minimum of the system contrast.
     \item[throughput] \hfill \\
     Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs.  May be data or FITS filename. Default is scalar 0.5.
     \item[contrast] \hfill \\
@@ -639,7 +659,7 @@ Information from simulation specification JSON file organized into a Python dict
     (Specific to EM-CCDs) Clock-induced-charge in units of electrons/pix/frame
     \end{description}
 \end{description}
-
+\end{itemize}
 For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames (full absolute paths) with tabulated data, or NumPy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).  When the input is derived from a JSON file, these must either be scalars or filenames.
 
 The starlight suppression system and science instrument dictionaries can contain any other attributes required by a particular optical system implementation.  The only significance of the ones enumerated above is that they are explicitly checked for by the prototype constructor, and cast to their expected values.
@@ -679,21 +699,21 @@ These will always be present in an OpticalSystem object and directly accessible 
     \item[attenuation] \hfill \\
     Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements (float).
     \item[intCutoff] \hfill \\
-    Maximum allowed integration time (astropy Quantity object initially set in $ days $)
+    Maximum allowed integration time (astropy Quantity initially set in $ days $)
     \item[starlightSuppressionSystems] \hfill \\  Array of dicts containing all supplied starlight suppression system attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonlly used attributes.
     \item[scienceInstruments] \hfill \\  Array of dicts containing all supplied science instrument attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonly used attributes.
 \end{description}
 \end{itemize}
 In cases where either of the two attribute dictionary lists (starlight suppression systems and science instruments) only contain one dictionary (i.e., there's only one coronagraph and/or detector), then all attributes will be linked as direct attributes of the object as well as stored in the dictionary.
 
-\subsubsection{calc\_maxintTime Task Input/Output Description} \label{sec:calcmaxintTimetask}
-The \verb+calc_maxintTime+ task calculates the maximum integration time for each star in the target list.  This task is called from the Target List module.
+\subsubsection{calc\_maxintTime Method Input/Output Description} \label{sec:calcmaxintTimetask}
+The \verb+calc_maxintTime+ method calculates the maximum integration time for each star in the target list.  This method is called from the Target List module.
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of available attributes
+        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of available attributes
     \end{description}
 \end{itemize}
 
@@ -706,16 +726,16 @@ The \verb+calc_maxintTime+ task calculates the maximum integration time for each
     \end{description}
 \end{itemize}
 
-\subsubsection{calc\_intTime Task Input/Output Description} \label{sec:calcintTimetask}
-The \verb+calc_intTime+ task calculates the integration time required for a specific target system.  This task is called from the Survey Simulation module.
+\subsubsection{calc\_intTime Method Input/Output Description} \label{sec:calcintTimetask}
+The \verb+calc_intTime+ method calculates the integration time required for a specific target system.  This method is called from the Survey Simulation module.
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of available attributes
+        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of available attributes
         \item[universe] \hfill \\
-        Instantiated Simulated Universe object from Simulated Universe module see ~\ref{sec:simulateduniverse} for definition of available attributes
+        Instantiated Simulated Universe object from Simulated Universe module see \S\ref{sec:simulateduniverse} for definition of available attributes
         \item[s\_ind] \hfill \\
         Index of target star from Target List module
         \item[planInds] \hfill \\
@@ -736,7 +756,7 @@ The \verb+calc_intTime+ task calculates the integration time required for a spec
 
 \subsection{Zodiacal Light}\label{sec:zodiacallight}
 
-The Zodiacal Light module contains the \verb+fzodi+ task.  This task calculates the contribution of both local and exozodiacal light levels for each planet.  The inputs and outputs for the Zodiacal Light task are depicted in Fig. ~\ref{fig:zodiacallightmodule}.
+The Zodiacal Light module contains the \verb+fzodi+ method.  This method calculates the contribution of both local and exozodiacal light levels for each planet.  The inputs and outputs for the Zodiacal Light method are depicted in \reffig{fig:zodiacallightmodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -744,38 +764,35 @@ The Zodiacal Light module contains the \verb+fzodi+ task.  This task calculates 
              \includegraphics[width=0.8\textwidth]{ZodiTasks}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:zodiacallightmodule} Depiction of Zodiacal Light module task including inputs and outputs (see ~\ref{sec:fzoditask}).}
+    \caption{\label{fig:zodiacallightmodule} Depiction of Zodiacal Light module method including inputs and outputs (see \S\ref{sec:fzoditask}).}
 \end{figure}
 
 \subsubsection{Zodiacal Light Object Attribute Initialization Input/Output Description}
 \subsubsection*{Input}
 \begin{itemize}
+\item
+\begin{description}
     \item
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Zodiacal Light object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["exozodi"] \hfill \\
-            Exo-zodi level in zodi
-            \item specs["exozodiVar"] \hfill \\
-            Exo-zodi variation (variance of log-normal distribution)
-        \end{description}
-    \end{description}
+            \item[exozodi] \hfill \\
+            Exo-zodi level in zodi. Defaults to 1.5.
+            \item[exozodiVar] \hfill \\
+            Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero.  Default to 0.
+\end{description}
 \end{itemize}
 
-\subsubsection*{Output}
+\subsubsection*{Attributes}
 \begin{itemize}
-    \item 
-    \begin{description}
-        \item[ZodiacalLight.exozodi] \hfill \\
+\item
+\begin{description}
+        \item[exozodi] \hfill \\
         Exo-zodi level in zodi
-        \item[ZodiacalLight.exozodiVar] \hfill \\
-        Exo-zodi variation (variance of log-normal distribution)
-    \end{description}
+        \item[exozodiVar] \hfill \\
+        Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero.
+\end{description}
 \end{itemize}
 
-\subsubsection{fzodi Task Input/Output Description} \label{sec:fzoditask}
-The \verb+fzodi+ task returns exozodi levels for planetary systems.  This functionality is used by the Simulated Universe module.
+\subsubsection{fzodi Method Input/Output Description} \label{sec:fzoditask}
+The \verb+fzodi+ method returns exozodi levels for planetary systems.  This functionality is used by the Simulated Universe module.
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -786,7 +803,7 @@ The \verb+fzodi+ task returns exozodi levels for planetary systems.  This functi
         \item[I] \hfill \\
         1D NumPy ndarray of planet inclination in degrees
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for description of functionality and attributes
+        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for description of functionality and attributes
     \end{description}
 \end{itemize}
 
@@ -825,25 +842,24 @@ The Background Sources module will provide density of background sources for a g
 \end{itemize}
 
 
-% PLANET PHYSICAL MODEL NEEDS UPDATING
+% PLANET PHYSICAL MODEL 
 
-\subsection{Planet Physical Model NEEDS UPDATING} \label{sec:planetphysicalmodel}
-The Planet Physical Model module contains models of the light emitted or reflected by planets in the wavelength bands under investigation by the current mission simulation.  It takes as inputs the physical quantities sampled from the distributions in the Planet Population module and generates synthetic spectra (or band photometry, as appropriate).  The specific implementation of this module can vary greatly, and can be based on any of the many available planetary geometric albedo, spectra and phase curve models.
+\subsection{Planet Physical Model} \label{sec:planetphysicalmodel}
+The Planet Physical Model module contains models of the light emitted or reflected by planets in the wavelength bands under investigation by the current mission simulation.  It takes as inputs the physical quantities sampled from the distributions in the Planet Population module and generates synthetic spectra (or band photometry, as appropriate).  The specific implementation of this module can vary greatly, and can be based on any of the many available planetary geometric albedo, spectra and phase curve models.  As required, this module also provides physical models relating dependent parameters that cannot be sampled independently (for example density models relating plant mass and radius).
 
-Planet Physical Model TASKS:
 
 % OBSERVATORY
 
 \subsection{Observatory}
-The Observatory module contains all of the information specific to the space-based observatory not included in the Optical System module. The module has two main tasks: \verb+orbit+ and \verb+keepout+, which are implemented as functions within the module. 
+The Observatory module contains all of the information specific to the space-based observatory not included in the Optical System module. The module has two main methods: \verb+orbit+ and \verb+keepout+, which are implemented as functions within the module. 
 
-The observatory orbit plays a key role in determining which of the target stars may be observed for planet finding at a specific time during the mission lifetime. The Observatory module's \verb+orbit+ task takes the current mission time as input and outputs the observatory's position vector. The position vector is standardized throughout the modules to be referenced to a heliocentric equatorial frame at the J2000 epoch. The observatory's position vector is used in the \verb+keepout+ task and Target List module to determine which of the stars are observable at the current mission time.
+The observatory orbit plays a key role in determining which of the target stars may be observed for planet finding at a specific time during the mission lifetime. The Observatory module's \verb+orbit+ method takes the current mission time as input and outputs the observatory's position vector. The position vector is standardized throughout the modules to be referenced to a heliocentric equatorial frame at the J2000 epoch. The observatory's position vector is used in the \verb+keepout+ method and Target List module to determine which of the stars are observable at the current mission time.
 
-The \verb+keepout+ task determines which target stars are observable at a specific time during the mission simulation and which are unobservable due to bright objects within the field of view such as the sun, moon, and solar system planets.  The keepout volume is determined by the specific design of the observatory and, in certain cases, by the starlight suppression system.  The \verb+keepout+ task takes the current mission time and Star Catalog or Target List module output as inputs and outputs a list of the target stars which are observable at the current time. It constructs position vectors of the target stars and bright objects which may interfere with observations with respect to the observatory. These position vectors are used to determine if bright objects are in the field of view for each of the potential stars under exoplanet finding observation.  If there are no bright objects obstructing the view of the target star, it becomes a candidate for observation in the Survey Simulation module.  The solar keepout is typically encoded as allowable angle ranges for the spacecraft-star unit vector as measured from the spacecraft-sun vector.
+The \verb+keepout+ method determines which target stars are observable at a specific time during the mission simulation and which are unobservable due to bright objects within the field of view such as the sun, moon, and solar system planets.  The keepout volume is determined by the specific design of the observatory and, in certain cases, by the starlight suppression system.  The \verb+keepout+ method takes the current mission time and Star Catalog or Target List module output as inputs and outputs a list of the target stars which are observable at the current time. It constructs position vectors of the target stars and bright objects which may interfere with observations with respect to the observatory. These position vectors are used to determine if bright objects are in the field of view for each of the potential stars under exoplanet finding observation.  If there are no bright objects obstructing the view of the target star, it becomes a candidate for observation in the Survey Simulation module.  The solar keepout is typically encoded as allowable angle ranges for the spacecraft-star unit vector as measured from the spacecraft-sun vector.
 
-In addition to these tasks, the observatory definition can also encode finite resources used by the observatory throughout the mission.  The most important of these is the fuel used for stationkeeping and repointing, especially in the case of occulters which must move significant distances between observations.  Other considerations could include the use of other volatiles such as cryogens for cooled instruments, which tend to deplete solely as a function of mission time.  This module also allows for detailed investigations of the effects of orbital design on the science yield, e.g., comparing the baseline geosynchronous 28.5\textdegree{} inclined orbit for WFIRST-AFTA with an L2 halo orbit proposed for other exoplanet imaging mission concepts. 
+In addition to these methods, the observatory definition can also encode finite resources used by the observatory throughout the mission.  The most important of these is the fuel used for stationkeeping and repointing, especially in the case of occulters which must move significant distances between observations.  Other considerations could include the use of other volatiles such as cryogens for cooled instruments, which tend to deplete solely as a function of mission time.  This module also allows for detailed investigations of the effects of orbital design on the science yield, e.g., comparing the baseline geosynchronous 28.5\textdegree{} inclined orbit for WFIRST-AFTA with an L2 halo orbit proposed for other exoplanet imaging mission concepts. 
 
-The inputs, outputs, and updated attributes of the required Observatory module tasks are depicted in Fig. ~\ref{fig:observatorymodule}.
+The inputs, outputs, and updated attributes of the required Observatory module methods are depicted in  \reffig{fig:observatorymodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -851,7 +867,7 @@ The inputs, outputs, and updated attributes of the required Observatory module t
              \includegraphics[width=0.9\textwidth]{observatory3}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:observatorymodule} Depiction of Observatory module tasks including inputs, outputs, and updated attributes (see ~\ref{sec:orbittask} and ~\ref{sec:keepouttask}).}
+    \caption{\label{fig:observatorymodule} Depiction of Observatory module methods including inputs, outputs, and updated attributes (see \S\ref{sec:orbittask} and \S\ref{sec:keepouttask}).}
 \end{figure}
 
 \label{sec:observatory}
@@ -864,64 +880,60 @@ The inputs, outputs, and updated attributes of the required Observatory module t
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Observatory object attributes will be assigned the default values listed.
         \begin{description}
-            \item specs["settling\_time"] \hfill \\
+            \item[settlingTime] \hfill \\
             Amount of time needed for observatory to settle after a repointing in $ days $. Default value is 1.
-            \item specs["thrust"] \hfill \\
+            \item[thrust] \hfill \\
             Occulter slew thrust in $ mN $. Default value is 450.
-            \item specs["slewIsp"] \hfill \\
+            \item[slewIsp] \hfill \\
             Occulter slew specific impulse in $ s $. Default value is 4160.
-            \item specs["sc\_mass"] \hfill \\
+            \item[scMass] \hfill \\
             Occulter (maneuvering spacecraft) initial wet mass in $ kg $. Default value is 6000.
-            \item specs["dryMass"] \hfill \\
+            \item[dryMass] \hfill \\
             Occulter (maneuvering spacecraft) dry mass in $ kg $. Default value is 3400.
-            \item specs["coMass"] \hfill \\
+            \item[coMass] \hfill \\
             Telescope (or non-maneuvering spacecraft) mass in $ kg $. Default value is 5800.
-            \item specs["occulterSep"] \hfill \\
-            Occulter-telescope distance in $ km $. Default value is 55000.
-            \item specs["skIsp"] \hfill \\
+            \item[skIsp] \hfill \\
             Specific impulse for station keeping in $ s $. Default value is 220.
-            \item specs["defburnPortion"] \hfill \\
+            \item[defburnPortion] \hfill \\
             Default burn portion for slewing. Default value is 0.05
         \end{description}
     \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item
     \begin{description}
-        \item[Observatory.settling\_time] \hfill \\
-        Amount of time needed for observatory to settle after a repointing (astropy Quantity object initially set in days)
-        \item[Observatory.thrust] \hfill \\
-        Occulter slew thrust (astropy Quantity object initially set in $ mN $)
-        \item[Observatory.slewIsp] \hfill \\
-        Occulter slew specific impulse (astropy Quantity object initially set in $ s $)
-        \item[Observatory.sc\_mass] \hfill \\
-        Occulter (maneuvering spacecraft) initial wet mass (astropy Quantity object initially set in $ kg $)
-        \item[Observatory.dryMass] \hfill \\
-        Occulter (maneuvering spacecraft) dry mass (astropy Quantity object initially set in $ kg $)
-        \item[Observatory.coMass] \hfill \\
-        Telescope (or non-maneuvering spacecraft) mass (astropy Quantity object initially set in $ kg $)
-        \item[Observatory.kogood] \hfill \\
-        1D NumPy ndarray of Boolean values where True is a target unobstructed and observable in the keepout zone. Initialized to an empty array. This attribute is updated to the current mission time through the keepout task (see \ref{sec:keepouttask}).
-        \item[Observatory.r\_sc] \hfill \\
-        Observatory orbit position in HE reference frame. Initialized to NumPy ndarray as numpy.array([0., 0., 0.]) and associated with astropy Quantity object in $ km $. This attribute is updated to the orbital position of the observatory at the current mission time through the orbit task (see \ref{sec:orbittask}).
-        \item[Observatory.occulterSep] \hfill \\
-        Occulter-telescope distance (astropy Quantity object initially set in $ km $)
-        \item[Observatory.skIsp] \hfill \\
-        Specific impulse for station keeping (astropy Quantity object initially set in $ s $)
-        \item[Observatory.defburnPortion] \hfill \\
+        \item[settlingTime] \hfill \\
+        Amount of time needed for observatory to settle after a repointing (astropy Quantity initially set in days)
+        \item[thrust] \hfill \\
+        Occulter slew thrust (astropy Quantity initially set in $ mN $)
+        \item[slewIsp] \hfill \\
+        Occulter slew specific impulse (astropy Quantity initially set in $ s $)
+        \item[scMass] \hfill \\
+        Occulter (maneuvering spacecraft) initial wet mass (astropy Quantity initially set in $ kg $)
+        \item[dryMass] \hfill \\
+        Occulter (maneuvering spacecraft) dry mass (astropy Quantity initially set in $ kg $)
+        \item[coMass] \hfill \\
+        Telescope (or non-maneuvering spacecraft) mass (astropy Quantity initially set in $ kg $)
+        \item[kogood] \hfill \\
+        1D NumPy ndarray of Boolean values where True is a target unobstructed and observable in the keepout zone. Initialized to an empty array. This attribute is updated to the current mission time through the keepout method (see \ref{sec:keepouttask}).
+        \item[r\_sc] \hfill \\
+        Observatory orbit position in HE reference frame. Initialized to NumPy ndarray as numpy.array([0., 0., 0.]) and associated with astropy Quantity in $ km $. This attribute is updated to the orbital position of the observatory at the current mission time through the orbit method (see \ref{sec:orbittask}).
+        \item[skIsp] \hfill \\
+        Specific impulse for station keeping (astropy Quantity initially set in $ s $)
+        \item[defburnPortion] \hfill \\
         Default burn portion for slewing
-        \item[Observatory.currentSep] \hfill \\
-        Current occulter separation (astropy Quantity object initially set in $ km $
-        \item[Observatory.flowRate] \hfill \\
-        Slew flow rate derived from Observatory.thrust and Observatory.slewIsp (astropy Quantity object initially set in $ kg/day $)
+        \item[currentSep] \hfill \\
+        Current occulter separation (astropy Quantity initially set in $ km $
+        \item[flowRate] \hfill \\
+        Slew flow rate derived from thrust and slewIsp (astropy Quantity initially set in $ kg/day $)
         
     \end{description}
 \end{itemize}
 
-\subsubsection{orbit Task Input/Output Description} \label{sec:orbittask}
-The \verb+orbit+ task finds the heliocentric equatorial position vector of the observatory spacecraft.
+\subsubsection{orbit Method Input/Output Description} \label{sec:orbittask}
+The \verb+orbit+ method finds the heliocentric equatorial position vector of the observatory spacecraft.
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -946,12 +958,12 @@ The \verb+orbit+ task finds the heliocentric equatorial position vector of the o
     \item
     \begin{description}
         \item[Observatory.r\_sc] \hfill \\
-        Observatory orbit position in HE reference frame at current mission time (astropy Quantity object defined in $ km $)
+        Observatory orbit position in HE reference frame at current mission time (astropy Quantity defined in $ km $)
     \end{description}
 \end{itemize}
 
-\subsubsection{keepout Task Input/Output Description} \label{sec:keepouttask} 
-The \verb+keepout+ task determines which stars in the target list are observable at the given input time.
+\subsubsection{keepout Method Input/Output Description} \label{sec:keepouttask} 
+The \verb+keepout+ method determines which stars in the target list are observable at the given input time.
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -989,7 +1001,7 @@ The \verb+keepout+ task determines which stars in the target list are observable
 \subsection{Time Keeping} \label{sec:time}
 The Time Keeping module is responsible for keeping track of the current mission time.  It encodes only the mission start time, the mission duration, and the current time within a simulation.  All functions in all modules requiring knowledge of the current time call functions or access parameters implemented within the Time module.  Internal encoding of time is implemented as the time from mission start (measured in days).  The Time Keeping module also provides functionality for converting between this time measure and standard measures such as Julian Day Number and UTC time.
   
-The Time Keeping module contains the \verb+update_times+ and \verb+duty_cycle+ tasks.  These task updates the mission time during a survey simulation.  The duty cycle determines when during the mission timeline the observatory is allowed to perform planet-finding operations.  The duty cycle function takes the current mission time as input and outputs the next available time when exoplanet observations may begin or resume, along with the duration of the observational period. The outputs of this task are used in the Survey Simulation module to determine when and how long exoplanet finding and characterization observations occur.  The inputs and updated attributes for the Time Keeping tasks are depicted in Fig. ~\ref{fig:timekeepingmodule}.
+The Time Keeping module contains the \verb+update_times+ and \verb+duty_cycle+ methods.  These  methods updates the mission time during a survey simulation.  The duty cycle determines when during the mission timeline the observatory is allowed to perform planet-finding operations.  The duty cycle function takes the current mission time as input and outputs the next available time when exoplanet observations may begin or resume, along with the duration of the observational period. The outputs of this method are used in the Survey Simulation module to determine when and how long exoplanet finding and characterization observations occur.  The inputs and updated attributes for the Time Keeping methods are depicted in \reffig{fig:timekeepingmodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -997,7 +1009,7 @@ The Time Keeping module contains the \verb+update_times+ and \verb+duty_cycle+ t
              \includegraphics[width=\textwidth]{TimeKeepingTasks}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:timekeepingmodule} Depiction of Time Keeping module task including input and updated attributes (see ~\ref{sec:updatetimestask} and ~\ref{sec:dutycycletask}).}
+    \caption{\label{fig:timekeepingmodule} Depiction of Time Keeping module method including input and updated attributes (see \S\ref{sec:updatetimestask} and \S\ref{sec:dutycycletask}).}
 \end{figure}
 
 \subsubsection{Time Keeping Object Attribute Initialization Input/Output Description}
@@ -1005,63 +1017,54 @@ The Time Keeping module contains the \verb+update_times+ and \verb+duty_cycle+ t
 \subsubsection*{Inputs}
 \begin{itemize}
     \item
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Time object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["missionStart"] \hfill \\
+     \begin{description}
+            \item[missionStart] \hfill \\
             Mission start time in $ MJD $. Default value is 60634.
-            \item specs["missionLife"] \hfill \\
+            \item[missionLife] \hfill \\
             Total length of mission in $ years $. Default value is 6.
-            \item specs["extendedLife"] \hfill \\
-            Extended mission time in $ years $. Default value is 0.
-            \item specs["missionPortion"] \hfill \\
+            \item[extendedLife] \hfill \\
+            Extended mission time in $ years $. Default value is 0.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed.
+            \item[missionPortion] \hfill \\
             Portion of mission time devoted to planet-finding. Default value is 1/6.
-            \item specs["duration"] \hfill \\
-            Duration of planet-finding operations in $ days $. Default value is 14.
-            \item specs["nexttimeAvail"] \hfill \\
-            Next time available for planet-finding in $ days $. Default value is 0.
         \end{description}
-    \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item
     \begin{description}
-        \item[TimeKeeping.missionStart] \hfill \\
+        \item[missionStart] \hfill \\
         Mission start time (astropy Time object initially defined in $ MJD $)
-        \item[TimeKeeping.missionLife] \hfill \\
-        Mission lifetime (astropy Quantity object initially set in $ years $)
-        \item[TimeKeeping.extendedLife] \hfill \\
-        Extended mission time (astropy Quantity object initially set in $ years $)
-        \item[TimeKeeping.missionPortion] \hfill \\
+        \item[missionLife] \hfill \\
+        Mission lifetime (astropy Quantity initially set in $ years $)
+        \item[extendedLife] \hfill \\
+        Extended mission time (astropy Quantity initially set in $ years $)
+        \item[missionPortion] \hfill \\
         Portion of mission time devoted to planet-finding
-        \item[TimeKeeping.duration] \hfill \\
-        Duration of planet-finding operations (astropy Quantity object initially set in $ days $)
-        \item[TimeKeeping.nexttimeAvail] \hfill \\
-        Next time available for planet-finding (astropy Quantity object initially set in $ days $)
-        \item[TimeKeeping.currenttimeNorm] \hfill \\
-        Current mission time normalized so that start date is 0 (astropy Quantity object initially set in $ days $)
-        \item[TimeKeeping.currenttimeAbs] \label{sec:currenttime}\hfill \\
+        \item[duration] \hfill \\
+        Duration of planet-finding operations (astropy Quantity initially set in $ days $)
+        \item[nexttimeAvail] \hfill \\
+        Next time available for planet-finding (astropy Quantity initially set in $ days $)
+        \item[currenttimeNorm] \hfill \\
+        Current mission time normalized so that start date is 0 (astropy Quantity initially set in $ days $)
+        \item[currenttimeAbs] \label{sec:currenttime}\hfill \\
         Current absolute mission time (astropy Time object initially defined in $ MJD $)
-        \item[TimeKeeping.missionFinishNorm] \hfill \\
-        Mission finish time (astropy Quantity object initially set in $ days $)
-        \item[TimeKeeping.missionFinishAbs] \hfill \\
+        \item[missionFinishNorm] \hfill \\
+        Mission finish time (astropy Quantity initially set in $ days $)
+        \item[missionFinishAbs] \hfill \\
         Mission completion date (astropy Time object initially defined in $ MJD $)
-
     \end{description}
 \end{itemize}
 
-\subsubsection{update\_times Task Input/Output Description} \label{sec:updatetimestask}
-The \verb+update_times+ task updates the relevant mission times.
+\subsubsection{update\_times Method Input/Output Description} \label{sec:updatetimestask}
+The \verb+update_times+ method updates the relevant mission times.
 
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[dt] \hfill \\
-        Time increment (astropy Quantity object with units of time)
+        Time increment (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1070,21 +1073,21 @@ The \verb+update_times+ task updates the relevant mission times.
     \item 
     \begin{description}
         \item[TimeKeeping.currenttimeNorm] \hfill \\
-        Current mission time normalized so that start date is 0 (astropy Quantity object with units of time)
+        Current mission time normalized so that start date is 0 (astropy Quantity with units of time)
         \item[TimeKeeping.currenttimeAbs] \hfill \\
         Current absolute mission time (astropy Time object)
     \end{description}
 \end{itemize}
 
-\subsubsection{duty\_cycle Task Input/Output Description} \label{sec:dutycycletask}
-The \verb+duty_cycle+ task calculates the next time that the observatory will be available for exoplanet science and returns this time and the maximum amount of time afterwards during which an exolanet observation can run (if capped).
+\subsubsection{duty\_cycle Method Input/Output Description} \label{sec:dutycycletask}
+The \verb+duty_cycle+ method calculates the next time that the observatory will be available for exoplanet science and returns this time and the maximum amount of time afterwards during which an exolanet observation can run (if capped).
 
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[currenttime] \hfill \\
-        Current time in mission simulation (astropy Quantity object with units of time often \verb+TimeKeeping.currenttimeNorm+)
+        Current time in mission simulation (astropy Quantity with units of time often \verb+TimeKeeping.currenttimeNorm+)
     \end{description}
 \end{itemize}
 
@@ -1093,7 +1096,7 @@ The \verb+duty_cycle+ task calculates the next time that the observatory will be
     \item 
     \begin{description}
         \item[nexttime] \hfill \\
-        Next available time for planet-finding (astropy Quantity object with units of time)
+        Next available time for planet-finding (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1102,9 +1105,9 @@ The \verb+duty_cycle+ task calculates the next time that the observatory will be
     \item 
     \begin{description}
         \item[TimeKeeping.nexttimeAvail] \hfill \\
-        Next time available for planet-finding (astropy Quantity object with units of time)
+        Next time available for planet-finding (astropy Quantity with units of time)
         \item[TimeKeeping.duration] \hfill \\
-        Duration of planet-finding operations (astropy Quantity object with units of time)
+        Duration of planet-finding operations (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1113,7 +1116,7 @@ The \verb+duty_cycle+ task calculates the next time that the observatory will be
 \subsection{Post-Processing}\label{sec:postprocessing}
 The Post-Processing module encodes the effects of post-processing on the data gathered in a simulated observation, and the effects on the final contrast of the simulation.  The Post-Processing module is also responsible for determining whether a planet detection has occurred for a given observation, returning one of four possible states---true positive (real detection), false positive (false alarm), true negative (no detection when no planet is present) and false negative (missed detection).  These can be generated based solely on statistical modeling or by processing simulated images.
 
-The Post-Processing module contains the \verb+det_occur+ task.  This task determines if a planet detection occurs for a given observation.  The inputs and outputs for this task are depicted in Fig. ~\ref{fig:postprocessingmodule}.
+The Post-Processing module contains the \verb+det_occur+ task.  This task determines if a planet detection occurs for a given observation.  The inputs and outputs for this task are depicted in \reffig{fig:postprocessingmodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -1121,7 +1124,7 @@ The Post-Processing module contains the \verb+det_occur+ task.  This task determ
              \includegraphics[width=0.8\textwidth]{PostTasks}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:postprocessingmodule} Depiction of Post-Processing module task including inputs and outputs (see ~\ref{sec:detoccurtask}).}
+    \caption{\label{fig:postprocessingmodule} Depiction of Post-Processing module task including inputs and outputs (see \S\ref{sec:detoccurtask}).}
 \end{figure}
 
 \subsubsection{Post-Processing Object Attribute Initialization Input/Output Description}
@@ -1129,30 +1132,26 @@ The Post-Processing module contains the \verb+det_occur+ task.  This task determ
 \begin{itemize}
     \item 
     \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Time object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["FAP"] \hfill \\
-            Detection false alarm probability. Default value is 0.01/1000.
-            \item specs["MDP"] \hfill \\
-            Missed detection probability. Default value is 0.001.
+          \item[FAP] \hfill \\
+            Detection false alarm probability. Default value is $10^{-5}$.
+            \item[MDP] \hfill \\
+            Missed detection probability. Default value is $10^{-3}$.
         \end{description}
-    \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item 
     \begin{description}
-        \item[PostProcessing.FAP] \hfill \\
+        \item[FAP] \hfill \\
         Detection false alarm probability
-        \item[PostProcessing.MDP] \hfill \\
+        \item[MDP] \hfill \\
         Missed detection probability
     \end{description}
 \end{itemize}
 
-\subsubsection{det\_occur Task Input/Output Description} \label{sec:detoccurtask}
-The \verb+det_occur+ task determines if a planet detection has occurred.
+\subsubsection{det\_occur Method Input/Output Description} \label{sec:detoccurtask}
+The \verb+det_occur+ method determines if a planet detection has occurred.
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -1183,14 +1182,14 @@ The \verb+det_occur+ task determines if a planet detection has occurred.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Simulation Modules}
-The simulation modules include Completeness, Target List, Simulated Universe, Survey Simulation and Survey Ensemble. These modules perform tasks which require inputs from one or more input modules as well as calling function implementations in other simulation modules.
+The simulation modules include Completeness, Target List, Simulated Universe, Survey Simulation and Survey Ensemble. These modules perform methods which require inputs from one or more input modules as well as calling function implementations in other simulation modules.
 
 % COMPLETENESS
 
 \subsection{Completeness}\label{sec:completeness}
 The Completeness module takes in information from the Planet Population module to determine initial completeness and update completeness values for target list stars when called upon.
 
-The Completeness module contains the following tasks: \verb+target_completeness+ and \verb+completeness_update+. \verb+target_completeness+ generates initial completeness values for each star in the target list (see ~\ref{sec:targetcompletenesstask}). \verb+completeness_update+ updates the completeness values following an observation (see ~\ref{sec:completenessupdatetask}).
+The Completeness module contains the following methods: \verb+target_completeness+ and \verb+completeness_update+. \verb+target_completeness+ generates initial completeness values for each star in the target list (see \S\ref{sec:targetcompletenesstask}). \verb+completeness_update+ updates the completeness values following an observation (see \S\ref{sec:completenessupdatetask}).
 
 \subsubsection{Completeness Object Attribute Initialization Input/Output Description}
 
@@ -1198,39 +1197,32 @@ The Completeness module contains the following tasks: \verb+target_completeness+
 \begin{itemize}
     \item 
     \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Completeness object attributes will be assigned the default values listed.
-        \begin{description}
-            \item specs["minComp"] \hfill \\
-            Minimum completeness level for detection
-        \end{description}
-        \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module (see \ref{sec:planetpopulation})
+        \item[minComp] \hfill \\
+            Minimum completeness value for inclusion in target list.  Defaults to 0.1.
     \end{description}
-    
 \end{itemize}
 
-\subsubsection*{Output}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item 
     \begin{description}
-        \item[Completeness.PlanetPopulation] \hfill \\
-        Output of Planet Population module (see ~\ref{sec:planetpopulation})
-        \item[Completeness.minComp] \hfill \\
-        Minimum completeness level for detection
+        \item[PlanetPopulation] \hfill \\
+        Planet Population module object (see \ref{sec:planetpopulation})
+        \item[minComp] \hfill \\
+        Minimum completeness value for inclusion in target list. 
     \end{description}
 \end{itemize}
 
-\subsubsection{target\_completeness Task Input/Output Description}
+\subsubsection{target\_completeness Method Input/Output Description}
 \label{sec:targetcompletenesstask}
-The \verb+target_completeness+ task generates completeness values for each star in the target list.
+The \verb+target_completeness+ method generates completeness values for each star in the target list.
 
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of functionality and attributes
+        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of functionality and attributes
     \end{description}
 \end{itemize}
 
@@ -1243,9 +1235,9 @@ The \verb+target_completeness+ task generates completeness values for each star 
     \end{description}
 \end{itemize}
 
-\subsubsection{completeness\_update Task Input/Output Description}
+\subsubsection{completeness\_update Method Input/Output Description}
 \label{sec:completenessupdatetask}
-The \verb+completeness_update+ task updates the completeness values for each star in the target list following an observation.
+The \verb+completeness_update+ method updates the completeness values for each star in the target list following an observation.
 
 \subsubsection*{Inputs}
 \begin{itemize}
@@ -1254,13 +1246,13 @@ The \verb+completeness_update+ task updates the completeness values for each sta
         \item[s\_ind] \hfill \\
         index of star in target list just observed
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see ~\ref{sec:targetlist} for definition of functionality and attributes
+        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of functionality and attributes
         \item[obsbegin] \hfill \\
-        Mission time when the observation of \verb+s_ind+ began (astropy Quantity object with units of time)
+        Mission time when the observation of \verb+s_ind+ began (astropy Quantity with units of time)
         \item[obsend] \hfill \\
-        Mission time when the observation of \verb+s_ind+ ended (astropy Quantity object with units of time)
+        Mission time when the observation of \verb+s_ind+ ended (astropy Quantity with units of time)
         \item[nexttime] \hfill \\
-        Mission time of next observational period (astropy Quantity object with units of time)
+        Mission time of next observational period (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1287,41 +1279,41 @@ The Target List module takes in information from the Optical System, Star Catalo
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If key: value pairs are missing from the dictionary, the Target List object attributes will be assigned the default values.
         \item[StarCatalog] \hfill \\
-        Output of Star Catalog module (see \ref{sec:starcatalog})
+        Instance of Star Catalog module (see \ref{sec:starcatalog})
         \item[keepStarCatalog] (bool) \hfill \\
         Boolean representing whether to delete the star catalog object after the target list is assembled (defaults to False).  If True, object reference will be available from TargetList object.
         \item[OpticalSystem] \hfill \\
-        Output of Optical System module (see \ref{sec:opticalsystem})
+        Instance of Optical System module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module (see \ref{sec:planetpopulation})
+        Instance of Planet Population module (see \ref{sec:planetpopulation})
         \item[ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module (see \ref{sec:zodiacallight})
+        Instance of Zodiacal Light module (see \ref{sec:zodiacallight})
         \item[Completeness] \hfill \\
-        Output of Completeness module (see \ref{sec:completeness})
+        Instance of Completeness module (see \ref{sec:completeness})
     \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item 
     \begin{description}
-        \item[TargetList.(StarCatalog values)] \hfill \\
+        \item[(StarCatalog values)] \hfill \\
         Mission specific filtered star catalog values from Star Catalog module (see \ref{sec:starcatalog})
-        \item[TargetList.OpticalSystem] \hfill \\
-        Output of Optical System module (see \ref{sec:opticalsystem})
-        \item[TargetList.PlanetPopulation] \hfill \\
-        Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[TargetList.ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[TargetList.Completeness] \hfill \\
-        Output of Completeness module (see \ref{sec:completeness})
-        \item[TargetList.maxintTime] \hfill \\
-        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSystem.calc_maxintTime+ ~\ref{sec:calcmaxintTimetask} (astropy Quantity object with units of time)
-        \item[TargetList.comp0] \hfill \\
-        1D NumPy ndarray of completeness value for each target star found from \verb+Completeness.target_completeness+ ~\ref{sec:targetcompletenesstask}
-        \item[TargetList.MsEst] \hfill \\
+        \item[OpticalSystem] \hfill \\
+        Instance of Optical System module (see \ref{sec:opticalsystem})
+        \item[PlanetPopulation] \hfill \\
+        Instance of Planet Population module (see \ref{sec:planetpopulation})
+        \item[ZodiacalLight] \hfill \\
+        Instance of Zodiacal Light module (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Instance of Completeness module (see \ref{sec:completeness})
+        \item[maxintTime] \hfill \\
+        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSystem.calc_maxintTime+ \S\ref{sec:calcmaxintTimetask} (astropy Quantity with units of time)
+        \item[comp0] \hfill \\
+        1D NumPy ndarray of completeness value for each target star found from \verb+Completeness.target_completeness+ \S\ref{sec:targetcompletenesstask}
+        \item[MsEst] \hfill \\
         Approximate stellar mass in $ M_{sun} $
-        \item[TargetList.MsTrue] \hfill \\
+        \item[MsTrue] \hfill \\
         Stellar mass with an error component included in $ M_{sun} $
     \end{description}
 \end{itemize}
@@ -1333,7 +1325,21 @@ The Simulated Universe module takes as input the outputs of the Target List simu
 
 The Simulated Universe module also takes as input the Planet Physical Model module instance, so that it can return the specific spectra due to every simulated planet at an arbitrary observation time throughout the mission simulation.
 
-The Simulated Universe module contains the following tasks: \verb+planet_to_star+, \verb+planet_a+, \verb+planet_e+, \verb+planet_w+, \verb+planet_O+, \verb+planet_radii+, \verb+planet_masses+, \verb+planet_albedos+, \verb+planet_inclinations+, \verb+planet_pos_vel+, and \verb+prop_system+.  \verb+planet_pos_vel+ finds initial position and velocity vectors for each planet (see ~\ref{sec:planetposveltask}).  \verb+prop_system+ propagates planet position and velocity vectors in time (see ~\ref{sec:propsystemtask}).  The rest of the tasks assign orbital or physical quantities to each planet (see \ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetalbedostask}, and \ref{sec:planetinclinationstask}. The inputs and outputs for these tasks are depicted in Fig. ~\ref{fig:simulateduniversemodule}.
+The Simulated Universe module contains the following methods: 
+\begin{itemize}
+\item[] \verb+planet_to_star+
+\item[]  \verb+planet_a+
+\item[]  \verb+planet_e+
+\item[]  \verb+planet_w+
+\item[]  \verb+planet_O+
+\item[]  \verb+planet_radii+
+\item[]  \verb+planet_masses+
+\item[]  \verb+planet_albedos+
+\item[]  \verb+planet_inclinations+
+\item[]  \verb+planet_pos_vel+
+\item[]  \verb+prop_system+.
+\end{itemize}
+ \verb+planet_pos_vel+ finds initial position and velocity vectors for each planet (see \S\ref{sec:planetposveltask}).  \verb+prop_system+ propagates planet position and velocity vectors in time (see \S\ref{sec:propsystemtask}).  The rest of the methods assign orbital or physical quantities to each planet (see \S\ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetalbedostask}, and \ref{sec:planetinclinationstask}. The inputs and outputs for these methods are depicted in \reffig{fig:simulateduniversemodule}.
 
 \begin{figure}[ht]
     \begin{center}
@@ -1341,7 +1347,7 @@ The Simulated Universe module contains the following tasks: \verb+planet_to_star
              \includegraphics[width=\textwidth]{SimulatedUniverseTasks}
         \end{tabular}
     \end{center}
-    \caption{\label{fig:simulateduniversemodule} Depiction of Simulated Universe module tasks including inputs and outputs (see \ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetposveltask}, \ref{sec:planetalbedostask}, \ref{sec:planetinclinationstask}, and \ref{sec:propsystemtask}).}
+    \caption{\label{fig:simulateduniversemodule} Depiction of Simulated Universe module methods including inputs and outputs (see \ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetposveltask}, \ref{sec:planetalbedostask}, \ref{sec:planetinclinationstask}, and \ref{sec:propsystemtask}).}
 \end{figure}
 
 \subsubsection{Simulated Universe Object Attribute Initialization Input/Output Description}
@@ -1352,72 +1358,72 @@ The Simulated Universe module contains the following tasks: \verb+planet_to_star
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Simulated Universe object attributes will be assigned the default values listed.
         \item[OpticalSystem] \hfill \\
-        Output of Optical System module inherited from Target List module (see \ref{sec:opticalsystem})
+        Instance of Optical System module inherited from Target List module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module inherited from Target List module (see \ref{sec:planetpopulation})
+        Instance of Planet Population module inherited from Target List module (see \ref{sec:planetpopulation})
         \item[ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module inherited from Target List module (see \ref{sec:zodiacallight})
+        Instance of Zodiacal Light module inherited from Target List module (see \ref{sec:zodiacallight})
         \item[Completeness] \hfill \\
-        Output of Completeness module inherited from Target List module (see \ref{sec:completeness})
+        Instance of Completeness module inherited from Target List module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
-        Output of Target List module given by above specs["targlistname"] (see \ref{sec:targetlist})
+        Instance of Target List module given by above specs["targlistname"] (see \ref{sec:targetlist})
         \item[PlanetPhysicalModel] \hfill \\
-        Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
+        Instance of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
     \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item
     \begin{description}
-        \item[SimulatedUniverse.OpticalSystem] \hfill \\
-        Output of Optical System module (see \ref{sec:opticalsystem})
-        \item[SimulatedUniverse.pop] \hfill \\
-        Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[SimulatedUniverse.ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[SimulatedUniverse.Completeness] \hfill \\
-        Output of Completeness module (see \ref{sec:completeness})
-        \item[SimulatedUniverse.TargetList] \hfill \\
-        Output of Target List module (see \ref{sec:targetlist})
-        \item[SimulatedUniverse.PlanetPhysicalModel] \hfill \\
-        Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
-        \item[SimulatedUniverse.planInds] \hfill \\
-        1D NumPy ndarray containing indices (referenced to exoplanet list) mapping each planet to its star determined from \verb+planet_to_star()+ ~\ref{sec:planettostartask}
-        \item[SimulatedUniverse.nPlans] \hfill \\
+        \item[OpticalSystem] \hfill \\
+        Instance of Optical System module (see \ref{sec:opticalsystem})
+        \item[PlanetPopulation] \hfill \\
+        Instance of Planet Population module (see \ref{sec:planetpopulation})
+        \item[ZodiacalLight] \hfill \\
+        Instance of Zodiacal Light module (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Instance of Completeness module (see \ref{sec:completeness})
+        \item[TargetList] \hfill \\
+        Instance of Target List module (see \ref{sec:targetlist})
+        \item[PlanetPhysicalModel] \hfill \\
+        Instance of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
+        \item[planInds] \hfill \\
+        1D NumPy ndarray containing indices (referenced to exoplanet list) mapping each planet to its star determined from \verb+planet_to_star()+ \S\ref{sec:planettostartask}
+        \item[nPlans] \hfill \\
         Number of planets (determined from \verb+len(SimulatedUniverse.planInds)+)
-        \item[SimulatedUniverse.sysInds] \hfill \\
+        \item[sysInds] \hfill \\
         1D NumPy ndarray containing indices (referenced to target star list) of target stars with planets
-        \item[SimulatedUniverse.a] \hfill \\
-        1D NumPy ndarray containing semi-major axis for each planet determined from \verb+planet_a()+ ~\ref{sec:planetatask}
-        \item[SimulatedUniverse.e] \hfill \\
-        1D NumPy ndarray containing eccentricity values for each planet determined from \verb+planet_e()+ ~\ref{sec:planetetask}
-        \item[SimulatedUniverse.w] \hfill \\
-        1D NumPy ndarray containing argument of perigee in degrees for each planet determined from \verb+planet_w()+ ~\ref{sec:planetwtask}
-        \item[SimulatedUniverse.O] \hfill \\
-        1D NumPy ndarray containing right ascension of the ascending node in degrees for each planet determined from \verb+planet_O()+ ~\ref{sec:planetOtask}
-        \item[SimulatedUniverse.Mp] \hfill \\
-        1D NumPy ndarray containing masses of each planet determined from \verb+planet_masses()+ ~\ref{sec:planetmassestask}
-        \item[SimulatedUniverse.Rp] \hfill \\
-        1D NumPy ndarray containing radii of each planet determined from \verb+planet_radii()+ ~\ref{sec:planetradiitask}
-        \item[SimulatedUniverse.r] \hfill \\
-        1D NumPy ndarray containing planet position vectors relative to host stars determined from \verb+planet_pos_vel()+ ~\ref{sec:planetposveltask}
-        \item[SimulatedUniverse.v] \hfill \\
-        1D NumPy ndarray containing planet velocity vectors relative to host stars determined from \verb+planet_pos_vel()+ ~\ref{sec:planetposveltask}
-        \item[SimulatedUniverse.p] \hfill \\
-        1D NumPy ndarray containing planet geometric albedos determined from \verb+planet_albedos()+ ~\ref{sec:planetalbedostask}
-        \item[SimulatedUniverse.I] \hfill \\
-        1D NumPy ndarray containing list of inclination of planetary systems in degrees determined from \verb+planet_inclinations()+ ~\ref{sec:planetinclinationstask}
-        \item[SimulatedUniverse.fzodicurr] \hfill \\
-        1D NumPy ndarray containing list of exozodi levels for systems with planets determined from \verb+ZodiacalLight.fzodi+ ~\ref{sec:fzoditask}
+        \item[a] \hfill \\
+        1D NumPy ndarray containing semi-major axis for each planet determined from \verb+planet_a()+ \S\ref{sec:planetatask}
+        \item[e] \hfill \\
+        1D NumPy ndarray containing eccentricity values for each planet determined from \verb+planet_e()+ \S\ref{sec:planetetask}
+        \item[w] \hfill \\
+        1D NumPy ndarray containing argument of perigee in degrees for each planet determined from \verb+planet_w()+ \S\ref{sec:planetwtask}
+        \item[O] \hfill \\
+        1D NumPy ndarray containing right ascension of the ascending node in degrees for each planet determined from \verb+planet_O()+ \S\ref{sec:planetOtask}
+        \item[Mp] \hfill \\
+        1D NumPy ndarray containing masses of each planet determined from \verb+planet_masses()+ \S\ref{sec:planetmassestask}
+        \item[Rp] \hfill \\
+        1D NumPy ndarray containing radii of each planet determined from \verb+planet_radii()+ \S\ref{sec:planetradiitask}
+        \item[r] \hfill \\
+        1D NumPy ndarray containing planet position vectors relative to host stars determined from \verb+planet_pos_vel()+ \S\ref{sec:planetposveltask}
+        \item[v] \hfill \\
+        1D NumPy ndarray containing planet velocity vectors relative to host stars determined from \verb+planet_pos_vel()+ \S\ref{sec:planetposveltask}
+        \item[p] \hfill \\
+        1D NumPy ndarray containing planet geometric albedos determined from \verb+planet_albedos()+ \S\ref{sec:planetalbedostask}
+        \item[I] \hfill \\
+        1D NumPy ndarray containing list of inclination of planetary systems in degrees determined from \verb+planet_inclinations()+ \S\ref{sec:planetinclinationstask}
+        \item[fzodicurr] \hfill \\
+        1D NumPy ndarray containing list of exozodi levels for systems with planets determined from \verb+ZodiacalLight.fzodi+ \S\ref{sec:fzoditask}
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_to\_star Task Input/Output Description} \label{sec:planettostartask}
-The \verb+planet_to_star+ task determines how many planets belong to each star in the target list.  It returns a 1D NumPy ndarray containing the indices of the target star to which each planet belongs.  The length of the ndarray is the total number of planets in the simulated universe.
+\subsubsection{planet\_to\_star Method Input/Output Description} \label{sec:planettostartask}
+The \verb+planet_to_star+ method determines how many planets belong to each star in the target list.  It returns a 1D NumPy ndarray containing the indices of the target star to which each planet belongs.  The length of the ndarray is the total number of planets in the simulated universe.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Target List and Planet Population objects.
+This method does not take any explicit inputs.  It uses the inherited Target List and Planet Population objects.
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1428,26 +1434,26 @@ This task does not take any explicit inputs.  It uses the inherited Target List 
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_a Task Input/Output Description} \label{sec:planetatask}
-The \verb+planet_a+ task assigns each planet a semi-major axis with astropy Quantity units of distance (AU).  The prototype samples the probablity density function \verb+PlanetPopulation.semi_axis(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_a Method Input/Output Description} \label{sec:planetatask}
+The \verb+planet_a+ method assigns each planet a semi-major axis with astropy Quantity units of distance (AU).  The prototype samples the probablity density function \verb+PlanetPopulation.semi_axis(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[a] \hfill \\
-        1D NumPy ndarray containing semi-major axis for each planet (astropy Quantity object with units of $ AU $)
+        1D NumPy ndarray containing semi-major axis for each planet (astropy Quantity with units of $ AU $)
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_e Task Input/Output Description} \label{sec:planetetask}
-The \verb+planet_e+ task assigns each planet an eccentricity value. The prototype samples the probablity density function \verb+PlanetPopulation.eccentricity(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_e Method Input/Output Description} \label{sec:planetetask}
+The \verb+planet_e+ method assigns each planet an eccentricity value. The prototype samples the probablity density function \verb+PlanetPopulation.eccentricity(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1458,11 +1464,11 @@ This task does not take any explicit inputs.  It uses the inherited Planet Popul
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_w Task Input/Output Description} \label{sec:planetwtask}
-The \verb+planet_w+ task assigns each planet argument of perigee in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.arg_perigee(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_w Method Input/Output Description} \label{sec:planetwtask}
+The \verb+planet_w+ method assigns each planet argument of perigee in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.arg_perigee(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1473,11 +1479,11 @@ This task does not take any explicit inputs.  It uses the inherited Planet Popul
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_O Task Input/Output Description} \label{sec:planetOtask}
-The \verb+planet_O+ task assigns each planet right ascension of the ascending node in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.RAAN(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_O Method Input/Output Description} \label{sec:planetOtask}
+The \verb+planet_O+ method assigns each planet right ascension of the ascending node in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.RAAN(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1488,41 +1494,41 @@ This task does not take any explicit inputs.  It uses the inherited Planet Popul
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_masses Task Input/Output Description} \label{sec:planetmassestask}
-The \verb+planet_masses+ task assigns each planet mass with astropy Quantity units of mass (default is $ kg $). The prototype samples the probablity density function \verb+PlanetPopulation.mass(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_masses Method Input/Output Description} \label{sec:planetmassestask}
+The \verb+planet_masses+ method assigns each planet mass with astropy Quantity units of mass (default is $ kg $). The prototype samples the probablity density function \verb+PlanetPopulation.mass(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[M] \hfill \\
-        1D NumPy ndarray containing mass for each planet (astropy Quantity object with default units of $ kg $)
+        1D NumPy ndarray containing mass for each planet (astropy Quantity with default units of $ kg $)
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_radii Task Input/Output Description} \label{sec:planetradiitask}
-The \verb+planet_radii+ task assigns each planet a radius with astropy Quantity units of distance (default is $ km $). The prototype samples the probablity density function \verb+PlanetPopulation.radius(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_radii Method Input/Output Description} \label{sec:planetradiitask}
+The \verb+planet_radii+ method assigns each planet a radius with astropy Quantity units of distance (default is $ km $). The prototype samples the probablity density function \verb+PlanetPopulation.radius(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[Rp] \hfill \\
-        1D NumPy ndarray containing radius for each planet (astropy Quantity object with default units of $ km $)
+        1D NumPy ndarray containing radius for each planet (astropy Quantity with default units of $ km $)
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_pos\_vel Task Input/Output Description} \label{sec:planetposveltask}
-The \verb+planet_pos_vel+ task assigns each planet an initial position and velocity vector with appropriate astropy Quantity units attached.
+\subsubsection{planet\_pos\_vel Method Input/Output Description} \label{sec:planetposveltask}
+The \verb+planet_pos_vel+ method assigns each planet an initial position and velocity vector with appropriate astropy Quantity units attached.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the following attributes assigned before calling this task:
+This method does not take any explicit inputs.  It uses the following attributes assigned before calling this method:
 \begin{itemize}
     \item \verb+SimulatedUniverse.a+
     \item \verb+SimulatedUniverse.e+
@@ -1537,17 +1543,17 @@ This task does not take any explicit inputs.  It uses the following attributes a
     \item 
     \begin{description}
         \item[r] \hfill \\
-        NumPy ndarray containing initial position vector for each planet (astropy Quantity object with default units of $ km $)
+        NumPy ndarray containing initial position vector for each planet (astropy Quantity with default units of $ km $)
         \item[v] \hfill \\
-        NumPy ndarray containing initial velocity vector for each planet (astropy Quantity object with default units of $ km/s $)
+        NumPy ndarray containing initial velocity vector for each planet (astropy Quantity with default units of $ km/s $)
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_albedos Task Input/Output Description} \label{sec:planetalbedostask}
-The \verb+planet_albedos+ task assigns each planet a geometric albedo value. The prototype samples the probablity density function \verb+PlanetPopulation.albedo(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_albedos Method Input/Output Description} \label{sec:planetalbedostask}
+The \verb+planet_albedos+ method assigns each planet a geometric albedo value. The prototype samples the probablity density function \verb+PlanetPopulation.albedo(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1558,11 +1564,11 @@ This task does not take any explicit inputs.  It uses the inherited Planet Popul
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_inclinations Task Input/Output Description} \label{sec:planetinclinationstask}
-The \verb+planet_inclinations+ task assigns each planet an inclination in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.inclination(x)+ ~\ref{sec:pdfs} and returns appropriate output.
+\subsubsection{planet\_inclinations Method Input/Output Description} \label{sec:planetinclinationstask}
+The \verb+planet_inclinations+ method assigns each planet an inclination in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.inclination(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
+This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
 
 \subsubsection*{Outputs}
 \begin{itemize}
@@ -1573,23 +1579,23 @@ This task does not take any explicit inputs.  It uses the inherited Planet Popul
     \end{description}
 \end{itemize}
 
-\subsubsection{prop\_system Task Input/Output Description} \label{sec:propsystemtask}
-The \verb+prop_system+ task propagates planet state vectors (position and velocity) in time.
+\subsubsection{prop\_system Method Input/Output Description} \label{sec:propsystemtask}
+The \verb+prop_system+ method propagates planet state vectors (position and velocity) in time.
 
 \subsubsection*{Inputs}
 \begin{itemize}
     \item 
     \begin{description}
         \item[r] \hfill \\
-        NumPy ndarray containing current planet position vectors relative to host star (astropy Quantity object with units of distance)
+        NumPy ndarray containing current planet position vectors relative to host star (astropy Quantity with units of distance)
         \item[v] \hfill \\
-        NumPy ndarray containing current planet velocity vectors relative to host star (astropy Quantity object with units of distance/time)
+        NumPy ndarray containing current planet velocity vectors relative to host star (astropy Quantity with units of distance/time)
         \item[Mp] \hfill \\
-        1D NumPy ndarray containing planet masses (astropy Quantity object with units of mass)
+        1D NumPy ndarray containing planet masses (astropy Quantity with units of mass)
         \item[Ms] \hfill \\
         1D NumPy ndarray containing target star mass in $ M_{sun} $
         \item[dt] \hfill \\
-        Time increment to propagate system (astropy Quantity object with units of time)
+        Time increment to propagate system (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1598,30 +1604,31 @@ The \verb+prop_system+ task propagates planet state vectors (position and veloci
     \item 
     \begin{description}
         \item[rnew] \hfill \\
-        NumPy ndarray of propagated position vectors relative to host star (astropy Quantity object with units of distance)
+        NumPy ndarray of propagated position vectors relative to host star (astropy Quantity with units of distance)
         \item[vnew] \hfill \\
-        NumPy ndarray of propagated velocity vectors relative to host star (astropy Quantity object with units of distance/time)
+        NumPy ndarray of propagated velocity vectors relative to host star (astropy Quantity with units of distance/time)
     \end{description}
 \end{itemize}
 
 % SURVEY SIMULATION
 
 \subsection{Survey Simulation} \label{sec:surveysim}
-The Survey Simulation module takes as input the output of the Simulated Universe simulation module and the Time Keeping, and Post-Processing input modules. This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
+The Survey Simulation module takes as input instances of the Simulated Universe simulation module and the Time Keeping, and Post-Processing input modules. This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
 
 Survey Simulation TASKS: 
-\verb+run_sim()+ - perform survey simulation ~\ref{sec:runsimtask}
+\verb+run_sim()+ - perform survey simulation \S\ref{sec:runsimtask}
 
 Survey Simulation SUBTASKS:
-\verb+initial_target()+ - find initial target star ~\ref{sec:initialtargettask}
+\verb+initial_target()+ - find initial target star \S\ref{sec:initialtargettask}
 
-\verb+observation_detection(pInds, s_ind, DRM, planPosTime)+ - finds if planet detections are possible and returns relevant information ~\ref{sec:observationdetectiontask}
-
-\verb+det_data(s, dMag, Ip, DRM, FA, DET, MD, s_ind, pInds, observationPossible, observed)+ - determines detection status ~\ref{sec:detdatatask}
-
-\verb+observation_characterization(observationPossible, pInds, s_ind, spectra, s, Ip, DRM, FA, t_int)+ - finds if characterizations are possible and returns relevant information ~\ref{sec:observationcharacterizationtask}
-
-\verb+next_target(s_ind, revisit_list, extended_list, DRM)+ - find next target (scheduler) ~\ref{sec:nexttargettask}
+\verb+observation_detection(pInds, s_ind, DRM, planPosTime)+ - finds if planet detections are possible and returns relevant information \S\ref{sec:observationdetectiontask}\\
+\verb+det_data(s, dMag, Ip, DRM, FA, DET, MD, s_ind, pInds, observationPossible, observed)+ - determines detection status \S\ref{sec:detdatatask}
+\begin{verbatim}
+observation_characterization(observationPossible, pInds, s_ind, spectra,\
+	 					s, Ip, DRM, FA, t_int)
+\end{verbatim} 
+finds if characterizations are possible and returns relevant information \S\ref{sec:observationcharacterizationtask}\\
+\verb+next_target(s_ind, revisit_list, extended_list, DRM)+ - find next target (scheduler) \S\ref{sec:nexttargettask}
 
 \subsubsection{Survey Simulation Object Attribute Initialization Input/Output Description}
 \subsubsection*{Inputs}
@@ -1631,62 +1638,62 @@ Survey Simulation SUBTASKS:
         \item[User specification] \hfill \\
         Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Survey Simulation object attributes will be assigned the default values listed.
         \item[OpticalSystem] \hfill \\
-        Output of Optical System module inherited from Simulated Universe module (see \ref{sec:opticalsystem})
+        Instance of Optical System module inherited from Simulated Universe module (see \ref{sec:opticalsystem})
         \item[PlanetPopulation] \hfill \\
-        Output of Planet Population module inherited from Simulated Universe module (see \ref{sec:planetpopulation})
+        Instance of Planet Population module inherited from Simulated Universe module (see \ref{sec:planetpopulation})
         \item[ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module inherited from Simulated Universe module (see \ref{sec:zodiacallight})
+        Instance of Zodiacal Light module inherited from Simulated Universe module (see \ref{sec:zodiacallight})
         \item[Completeness] \hfill \\
-        Output of Completeness module inherited from Simulated Universe module (see \ref{sec:completeness})
+        Instance of Completeness module inherited from Simulated Universe module (see \ref{sec:completeness})
         \item[TargetList] \hfill \\
-        Output of Target List module inherited from Simulated Universe module (see \ref{sec:targetlist})
+        Instance of Target List module inherited from Simulated Universe module (see \ref{sec:targetlist})
         \item[PlanetPhysicalModel] \hfill \\
-        Output of Planet Physical Model module inherited from Simulated Universe module (see \ref{sec:planetphysicalmodel})
+        Instance of Planet Physical Model module inherited from Simulated Universe module (see \ref{sec:planetphysicalmodel})
         \item[SimulatedUniverse] \hfill \\
-        Output of Simulated Universe module (see \ref{sec:simulateduniverse})
+        Instance of Simulated Universe module (see \ref{sec:simulateduniverse})
         \item[Observatory] \hfill \\
-        Output of Observatory module (see \ref{sec:observatory})
+        Instance of Observatory module (see \ref{sec:observatory})
         \item[TimeKeeping] \hfill \\
-        Output of Time Keeping module (see \ref{sec:time})
+        Instance of Time Keeping module (see \ref{sec:time})
         \item[PostProcessing] \hfill \\
-        Output of Post-Processing module (see \ref{sec:postprocessing})
+        Instance of Post-Processing module (see \ref{sec:postprocessing})
     \end{description}
 \end{itemize}
 
-\subsubsection*{Outputs}
+\subsubsection*{Attributes}
 \begin{itemize}
     \item
     \begin{description}
-        \item[SurveySimulation.OpticalSystem] \hfill \\
-        Output of Optical System module (see \ref{sec:opticalsystem})
-        \item[SurveySimulation.PlanetPopulation] \hfill \\
-        Output of Planet Population module (see \ref{sec:planetpopulation})
-        \item[SurveySimulation.ZodiacalLight] \hfill \\
-        Output of Zodiacal Light module (see \ref{sec:zodiacallight})
-        \item[SurveySimulation.Completeness] \hfill \\
-        Output of Completeness module (see \ref{sec:completeness})
-        \item[SurveySimulation.TargetList] \hfill \\
-        Output of Target List module (see \ref{sec:targetlist})
-        \item[SurveySimulation.PlanetPhysicalModel] \hfill \\
-        Output of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
-        \item[SurveySimulation.SimulatedUniverse] \hfill \\
-        Output of Simulated Universe module (see \ref{sec:simulateduniverse})
-        \item[SurveySimulation.Observatory] \hfill \\
-        Output of Observatory module (see \ref{sec:observatory})
-        \item[SurveySimulation.TimeKeeping] \hfill \\
-        Output of Time Keeping module (see \ref{sec:time})
-        \item[SurveySimulation.PostProcessing] \hfill \\
-        Output of Post-Processing module (see \ref{sec:postprocessing})
-        \item[SurveySimulation.DRM] \hfill \\
+        \item[OpticalSystem] \hfill \\
+        Instance of Optical System module (see \ref{sec:opticalsystem})
+        \item[PlanetPopulation] \hfill \\
+        Instance of Planet Population module (see \ref{sec:planetpopulation})
+        \item[ZodiacalLight] \hfill \\
+        Instance of Zodiacal Light module (see \ref{sec:zodiacallight})
+        \item[Completeness] \hfill \\
+        Instance of Completeness module (see \ref{sec:completeness})
+        \item[TargetList] \hfill \\
+        Instance of Target List module (see \ref{sec:targetlist})
+        \item[PlanetPhysicalModel] \hfill \\
+        Instance of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
+        \item[SimulatedUniverse] \hfill \\
+        Instance of Simulated Universe module (see \ref{sec:simulateduniverse})
+        \item[Observatory] \hfill \\
+        Instance of Observatory module (see \ref{sec:observatory})
+        \item[TimeKeeping] \hfill \\
+        Instance of Time Keeping module (see \ref{sec:time})
+        \item[PostProcessing] \hfill \\
+        Instance of Post-Processing module (see \ref{sec:postprocessing})
+        \item[DRM] \hfill \\
         Contains the results of survey simulation
     \end{description}
 \end{itemize}
 
-\subsubsection{run\_sim Task Input/Output Description} \label{sec:runsimtask}
-The \verb+run_sim+ task performs the survey simulation and populates the results in \verb+SurveySimulation.DRM+.
+\subsubsection{run\_sim Method Input/Output Description} \label{sec:runsimtask}
+The \verb+run_sim+ method performs the survey simulation and populates the results in \verb+SurveySimulation.DRM+.
 
 \subsubsection*{Inputs}
-This task does not take any explicit inputs.  It uses the inherited modules to generate a survey simulation.
+This method does not take any explicit inputs.  It uses the inherited modules to generate a survey simulation.
 
 \subsubsection*{Updated Object Attributes}
 \begin{itemize}
@@ -1695,23 +1702,23 @@ This task does not take any explicit inputs.  It uses the inherited modules to g
         \item[SurveySimulation.DRM] \hfill \\
         Python list where each entry contains a dictionary of survey simulation results for each observation.  The dictionary may include the following key:value pairs (from the prototype):
         \begin{description}
-            \item['target\_ind'] \hfill \\
+            \item[target\_ind] \hfill \\
             Index of star in target list observed
-            \item['arrival\_time'] \hfill \\
+            \item[arrival\_time] \hfill \\
             Days since mission start when observation begins
-            \item['sc\_mass'] \hfill \\
+            \item[sc\_mass] \hfill \\
             Maneuvering spacecraft mass (if simulating an occulter system)
-            \item['dF\_lateral'] \hfill \\
+            \item[dF\_lateral] \hfill \\
             Lateral disturbance force on occulter in $ N $ if simulating an occulter system
-            \item['dF\_axial'] \hfill \\
+            \item[dF\_axial] \hfill \\
             Axial disturbance force on occulter in $ N $ if simulating an occulter system
-            \item['det\_dV'] \hfill \\
+            \item[det\_dV] \hfill \\
             Detection station-keeping $\Delta$V in $ m/s $ if simulating an occulter system
-            \item['det\_mass\_used'] \hfill \\
+            \item[det\_mass\_used] \hfill \\
             Detection station-keeping fuel mass used in $ kg $ if simulating an occulter system
-            \item['det\_int\_time'] \hfill \\
+            \item[det\_int\_time] \hfill \\
             Detection integration time in $ days $
-            \item['det\_status'] \hfill \\
+            \item[det\_status] \hfill \\
             Integer or list where
             \begin{itemize}
                 \item 1 = detection
@@ -1719,36 +1726,36 @@ This task does not take any explicit inputs.  It uses the inherited modules to g
                 \item -1 = missed detection
                 \item -2 = false alarm
             \end{itemize}
-            \item['det\_WA'] \hfill \\
+            \item[det\_WA] \hfill \\
             Detection WA in $ milliarcseconds $
-            \item['det\_dMag'] \hfill \\
+            \item[det\_dMag] \hfill \\
             Detection $ \Delta $mag
-            \item['char\_1\_time'] \hfill \\
+            \item[char\_1\_time] \hfill \\
             Characterization integration time in $ days $
-            \item['char\_1\_dV'] \hfill \\
+            \item[char\_1\_dV] \hfill \\
             Characterization station-keeping $\Delta$V in $ m/s $ if simulating an occulter system
-            \item['char\_1\_mass\_used'] \hfill \\
+            \item[char\_1\_mass\_used] \hfill \\
             Characterization station-keeping fuel mass used in $ kg $ if simulating an occulter system
-            \item['char\_1\_success'] \hfill \\
+            \item[char\_1\_success] \hfill \\
             Characterization success where value which may be:
             \begin{itemize}
                 \item 1 - successfull characterization
                 \item effective wavelength found during characterization in $ nm $
             \end{itemize}
-            \item['slew\_time'] \hfill \\
+            \item[slew\_time] \hfill \\
             Slew time to next target in $ days $ if simulating an occulter system
-            \item['slew\_dV'] \hfill \\
+            \item[slew\_dV] \hfill \\
             Slew $\Delta$V in $ m/s $ if simulating an occulter system
-            \item['slew\_mass\_used'] \hfill \\
+            \item[slew\_mass\_used] \hfill \\
             Slew fuel mass used in $ kg $ if simulating an occulter system
-            \item['slew\_angle'] \hfill \\
+            \item[slew\_angle] \hfill \\
             Slew angle to next target in $ rad $
         \end{description}
     \end{description}
 \end{itemize}
 
 \subsubsection{initial\_target Sub-task Input/Output Description} \label{sec:initialtargettask}
-The \verb+initial_target+ sub-task is called from the \verb+run_sim+ task to determine the index of the initial target star in the target list.
+The \verb+initial_target+ sub-task is called from the \verb+run_sim+ method to determine the index of the initial target star in the target list.
 
 \subsubsection*{Inputs}
 This sub-task does not take any explicit inputs.  It may use any of the inherited modules to generate the initial target star index.
@@ -1776,7 +1783,7 @@ The \verb+observation_detection+ sub-task is called from the \verb+run_sim+ task
         \item[DRM] \hfill \\
         Python dictionary containing survey simulation results of current observation as key:value pairs
         \item[planPosTime] \hfill \\
-        1D NumPy ndarray containing the times at which the planet positions and velocities contained in \verb+SimulatedUniverse.r+ and \verb+SimulatedUniverse.v+ are current (astropy Quantity object with units of time)
+        1D NumPy ndarray containing the times at which the planet positions and velocities contained in \verb+SimulatedUniverse.r+ and \verb+SimulatedUniverse.v+ are current (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1787,15 +1794,15 @@ The \verb+observation_detection+ sub-task is called from the \verb+run_sim+ task
         \item[observationPossible] \hfill \\
         1D NumPy ndarray (length is number of planets in the system under observation) containing boolean values where True is an observable planet
         \item[t\_int] \hfill \\
-        Integration time (astropy Quantity object with units of time)
+        Integration time (astropy Quantity with units of time)
         \item[DRM] \hfill \\
         Python dictionary containing survey simulation results of current observation as key:value pairs
         \item[s] \hfill \\
-        1D NumPy ndarray (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity object with units of distance)
+        1D NumPy ndarray (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity with units of distance)
         \item[dMag] \hfill \\
         1D NumPy ndarray (length is number of planets in the system under observation) containing $ \Delta $mag for each planet
         \item[Ip] \hfill \\
-        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity object with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
+        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
     \end{description}
 \end{itemize}
 
@@ -1807,11 +1814,11 @@ The \verb+det_data+ sub-task is called from the \verb+run_sim+ task to assign a 
     \item 
     \begin{description}
         \item[s] \hfill \\
-        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity object with units of distance)
+        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity with units of distance)
         \item[dMag] \hfill \\
         1D NumPy ndarray (length is number of planets in the system under observation) containing $ \Delta $mag for each planet
         \item[Ip] \hfill
-        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity object with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
+        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
         \item[DRM] \hfill \\
         Python dictionary containing survey simulation results of current observation as key:value pairs
         \item[FA] \hfill \\
@@ -1836,11 +1843,11 @@ The \verb+det_data+ sub-task is called from the \verb+run_sim+ task to assign a 
     \item 
     \begin{description}
         \item[s] \hfill \\
-        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity object with units of distance)
+        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity with units of distance)
         \item[dMag] \hfill \\
         1D NumPy ndarray (length is number of planets in the system under observation) containing $ \Delta $mag for each planet
         \item[Ip] \hfill \\
-        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity object with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
+        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
         \item[DRM] \hfill \\
         Python dictionary containing survey simulation results of current observation as key:value pairs
         \item[observed] \hfill \\
@@ -1864,15 +1871,15 @@ The \verb+observation_characterization+ sub-task is called by the \verb+run_sim+
         \item[spectra] \hfill \\
         NumPy ndarray where 1 denotes spectra for a planet that has been captured, 0 denotes spectra for a planet that has not been captured
         \item[s] \hfill \\
-        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity object with units of distance)
+        1D NumPy array (length is number of planets in the system under observation) containing apparent separation of planets (astropy Quantity with units of distance)
         \item[Ip] \hfill \\
-        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity object with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
+        1D NumPy ndarray (length is number of planets in the system under observation) containing irradiance (astropy Quantity with units of $ \frac{1}{m^2 \cdot nm \cdot s} $)
         \item[DRM] \hfill \\
         Python dictionary containing survey simulation results of current observation as key:value pairs
         \item[FA] \hfill \\
         Boolean where True is False Alarm
         \item[t\_int] \hfill \\
-        Integration time (astropy Quantity object with units of time)
+        Integration time (astropy Quantity with units of time)
     \end{description}
 \end{itemize}
 
@@ -1922,7 +1929,7 @@ The \verb+next_target+ sub-task is called from the \verb+run_sim+ task to determ
 
 % SURVEY ENSEMBLE NEEDS UPDATING
 
-\subsection{Survey Ensemble NEEDS UPDATING}
+\subsection{Survey Ensemble}
 The Survey Ensemble module's only task is to run multiple simulations.  While the implementation of this module is not at all dependent on a particular mission design, it can vary to take advantage of available parallel-processing resources.  As the generation of a survey ensemble is an embarrassingly parallel task---every survey simulation is fully independent and can be run as a completely separate process---significant gains in execution time can be achieved with parallelization.  The baseline implementation of this module contains a simple looping function that executes the desired number of simulations sequentially, as well as a locally parallelized version based on IPython Parallel.
 
 Depending on the local setup, the Survey Ensemble implementation could also potentially save time by cloning survey module objects and reinitializing only those sub-modules that have stochastic elements (i.e., the simulated universe).

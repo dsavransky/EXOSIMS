@@ -38,36 +38,33 @@ class TimeKeeping(object):
     """
 
     _modtype = 'TimeKeeping'
+    _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, missionStart=60634., missionLife=6.,\
+                 extendedLife=0., missionPortion = 1./6., **specs):
                 
         # default values
         # mission start time (astropy Time object) in mjd
-        self.missionStart = Time(60634., format='mjd')
+        self.missionStart = Time(float(missionStart), format='mjd')
+        self._outspec['missionStart'] = float(missionStart)
+
         # mission lifetime astropy unit object in years
-        self.missionLife = 6.*u.year
+        self.missionLife = float(missionLife)*u.year
+        self._outspec['missionLife'] = float(missionLife)
+
         # extended mission time astropy unit object in years
-        self.extendedLife = 0.*u.year
+        self.extendedLife = float(extendedLife)*u.year
+        self._outspec['extendedLife'] = float(extendedLife)
+
         # portion of mission devoted to planet-finding
-        self.missionPortion = 1./6.
+        self.missionPortion = float(missionPortion)
+        self._outspec['missionPortion'] = float(missionPortion)
+        
         # duration of planet-finding operations
         self.duration = 14.*u.day
         # next time available for planet-finding
         self.nexttimeAvail = 0.*u.day
-        
-        # replace default values with user specified values
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                if att == 'missionStart':
-                    self.missionStart = Time(specs[att], format='mjd')
-                elif att == 'missionLife' or att == 'extendedLife':
-                    self.missionLife = getattr(self, att, specs[att]*u.year)
-                elif att == 'duration' or att == 'nexttimeAvail':
-                    setattr(self, att, specs[att]*u.day)
-                else:
-                    setattr(self, att, specs[att])
-                    
+                            
         # initialize values updated by functions
         # current mission time astropy unit object in days
         self.currenttimeNorm = 0.*u.day

@@ -2,7 +2,7 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import EXOSIMS.util.statsFun as statsFun
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import astropy.units as u
 import astropy.constants as const
 
@@ -109,15 +109,15 @@ class PlanetFunc(PlanetPopulation):
         return inds
     
     
-    def plot(self, f):
-        """
-        Used to plot PDFs as histograms in order to view their accuracy
-        """
-        planets = 1000
-        minimum = self.Rrange.min().value
-        maximum = self.Rrange.max().value
-        distr = statsFun.simpSample(f, planets, minimum, maximum)
-        plt.hist(distr)
-        plt.show()    
+#    def plot(self, f):
+#        """
+#        Used to plot PDFs as histograms in order to view their accuracy
+#        """
+#        planets = 1000
+#        minimum = self.Rrange.min().value
+#        maximum = self.Rrange.max().value
+#        distr = statsFun.simpSample(f, planets, minimum, maximum)
+#        plt.hist(distr)
+#        plt.show()    
     
    

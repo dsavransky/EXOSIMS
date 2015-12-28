@@ -11,7 +11,7 @@ class SurveyEnsemble(object):
     """
 
     _modtype = 'SurveyEnsemble'
-
+    _outspec = {}
 
     def __init__(self, **specs):
         #currently nothing to do here

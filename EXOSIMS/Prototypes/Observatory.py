@@ -15,13 +15,13 @@ class Observatory(object):
             user specified values
     
     Attributes:
-        settling_time (Quantity): 
+        settlingTime (Quantity): 
             instrument settling time after repoint (default with units of day)
         thrust (Quantity): 
             occulter slew thrust (default with units of mN)
         slewIsp (Quantity): 
             occulter slew specific impulse (default with units of s)
-        sc_mass (Quantity): 
+        scMass (Quantity): 
             occulter (maneuvering sc) wet mass (default with units of kg)
         dryMass (Quantity): 
             occulter (maneuvering sc) dry mass (default with units of kg)
@@ -45,49 +45,39 @@ class Observatory(object):
     """
 
     _modtype = 'Observatory'
+    _outspec = {}
      
-    def __init__(self, **specs):
+    def __init__(self, settlingTime=1., thrust=450., slewIsp=4160.,\
+                 scMass=6000., dryMass=3400., coMass=5800., skIsp=220.,\
+                 defburnPortion=0.05, **specs):
         
         # default Observatory values
         # instrument settling time after repoint (days)
-        self.settling_time = 1.*u.day 
+        self.settlingTime = float(settlingTime)*u.day 
         # occulter slew thrust (mN)
-        self.thrust = 450.*u.mN 
+        self.thrust = float(thrust)*u.mN 
         # occulter slew specific impulse (s)
-        self.slewIsp = 4160.*u.s 
+        self.slewIsp = float(slewIsp)*u.s 
         # occulter (maneuvering sc) initial (wet) mass (kg)
-        self.sc_mass = 6000.*u.kg 
+        self.scMass = float(scMass)*u.kg 
         # occulter (maneuvering sc) dry mass (kg)
-        self.dryMass = 3400.*u.kg 
+        self.dryMass = float(dryMass)*u.kg 
         # telescope (or non-maneuvering sc) mass (kg)
-        self.coMass = 5800.*u.kg 
-        # occulter-telescope distance (km)
-        self.occulterSep = 55000.*u.km 
+        self.coMass = float(coMass)*u.kg 
         # station-keeping Isp (s)
-        self.skIsp = 220.*u.s 
+        self.skIsp = float(skIsp)*u.s 
         # default burn portion
-        self.defburnPortion = 0.05
-        
-        # replace default values with any user specified values
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                if att == 'settling_time':
-                    # set settling time with proper unit
-                    setattr(self, att, specs[att]*u.day)
-                elif att == 'thrust':
-                    # set thrust with proper unit
-                    setattr(self, att, specs[att]*u.mN)
-                elif att == 'slewIsp' or att == 'skIsp':
-                    # set slewIsp with proper unit
-                    setattr(self, att, specs[att]*u.s)
-                elif att == 'sc_mass' or att == 'dryMass' or att == 'coMass':
-                    # set masses with proper unit
-                    setattr(self, att, specs[att]*u.kg)
-                elif att == 'occulterSep':
-                    # set occulterSep with proper unit
-                    setattr(self, att, specs[att]*u.km)
-        
+        self.defburnPortion = float(defburnPortion)
+
+        # occulter-telescope distance (km)
+        self.occulterSep = 55000.*u.km                
+
+        for key in self.__dict__.keys():
+            if isinstance(self.__dict__[key],u.Quantity):
+                self._outspec[key] = self.__dict__[key].value
+            else:
+                self._outspec[key] = self.__dict__[key]
+
         # initialize values updated by functions
         # observatory keepout booleans
         self.kogood = np.array([]) 
@@ -577,9 +567,9 @@ class Observatory(object):
         r_OE = r_Os - r_Es
 
         # force on occulter
-        F_sO = (-const.G*const.M_sun*self.sc_mass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to(u.N)
+        F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to(u.N)
         mEMB = const.M_sun/328900.56
-        F_EO = (-const.G*mEMB*self.sc_mass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to(u.N)
+        F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to(u.N)
 
         F_O = F_sO + F_EO
 
@@ -589,7 +579,7 @@ class Observatory(object):
         F_T = F_sT + F_ET
 
         # differential force
-        dF = ((F_O/self.sc_mass - F_T/self.coMass)*self.sc_mass).to(u.N)
+        dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to(u.N)
         
         dF_axial = np.dot(dF.to(u.N), u_tT)*u.N
         dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_tT)**2))
@@ -620,7 +610,7 @@ class Observatory(object):
         
         intMdot = (1./np.cos(np.radians(45.))*np.cos(np.radians(5.))*dF_lateral/const.g0/self.skIsp).to(u.kg/u.s)
         mass_used = (intMdot*t_int).to(u.kg)
-        deltaV = (dF_lateral/self.sc_mass*t_int).to(u.km/u.s)
+        deltaV = (dF_lateral/self.scMass*t_int).to(u.km/u.s)
         
         return intMdot, mass_used, deltaV
    

@@ -1,5 +1,8 @@
-import sys
+import sys, json, inspect
 from EXOSIMS.util.get_module import get_module
+import numpy as np
+import os.path
+
 
 class MissionSim(object):
     """Mission Simulation (backbone) class
@@ -54,9 +57,6 @@ class MissionSim(object):
         """
 
         if scriptfile is not None:
-            import json
-            import os.path
-        
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
 
             try:
@@ -71,33 +71,36 @@ class MissionSim(object):
         if 'modules' not in specs.keys():
             raise ValueError("No modules field found in script.")
 
-        # get desired module names (prototype or specific)
-        
-        # import simulated universe class
-        SimUni = get_module(specs['modules']['SimulatedUniverse'], 'SimulatedUniverse')
-        # import observatory class
-        Obs = get_module(specs['modules']['Observatory'], 'Observatory')
-        # import timekeeping class
-        TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
-        # import postprocessing class
-        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
-        
+        #preserve star catalog name
+        self.StarCatalog = specs['modules']['StarCatalog']
+
         #initialize top level
         self.modules = {}
+        # import simulated universe class
+        SimUni = get_module(specs['modules']['SimulatedUniverse'], 'SimulatedUniverse')
         self.modules['SimulatedUniverse'] = SimUni(**specs)
+
+        # import observatory class
+        Obs = get_module(specs['modules']['Observatory'], 'Observatory')
         self.modules['Observatory'] = Obs(**specs)
+
+        # import timekeeping class
+        TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
         self.modules['TimeKeeping'] = TK(**specs)
+
+        # import postprocessing class
+        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
         self.modules['PostProcessing'] = PP(**specs)
         
         #collect sub-initializations
-        self.modules['OpticalSystem'] = self.modules['SimulatedUniverse'].OpticalSystem # optical system class object
-        self.modules['PlanetPopulation'] = self.modules['SimulatedUniverse'].PlanetPopulation # planet population class object
-        self.modules['ZodiacalLight'] = self.modules['SimulatedUniverse'].ZodiacalLight # zodiacal light class object
-        self.modules['Completeness'] = self.modules['SimulatedUniverse'].Completeness # completeness class object
-        self.modules['PlanetPhysicalModel'] = self.modules['SimulatedUniverse'].PlanetPhysicalModel # planet physical model class object
-        self.modules['TargetList'] = self.modules['SimulatedUniverse'].TargetList # target list class object
+        self.modules['OpticalSystem'] = self.modules['SimulatedUniverse'].OpticalSystem # optical system object
+        self.modules['PlanetPopulation'] = self.modules['SimulatedUniverse'].PlanetPopulation # planet population object
+        self.modules['ZodiacalLight'] = self.modules['SimulatedUniverse'].ZodiacalLight # zodiacal light object
+        self.modules['BackgroundSources'] = self.modules['SimulatedUniverse'].BackgroundSources #Background sources object
+        self.modules['Completeness'] = self.modules['SimulatedUniverse'].Completeness # completeness object
+        self.modules['PlanetPhysicalModel'] = self.modules['SimulatedUniverse'].PlanetPhysicalModel # planet physical model object
+        self.modules['TargetList'] = self.modules['SimulatedUniverse'].TargetList # target list object
         
-
         #grab sim and ensemble classes  
         SurveySim = get_module(specs['modules']['SurveySimulation'], 'SurveySimulation')
         SurveyEns = get_module(specs['modules']['SurveyEnsemble'], 'SurveyEnsemble')
@@ -114,4 +117,38 @@ class MissionSim(object):
         for modName in specs['modules'].keys():
             setattr(self, modName, specs['modules'][modName])
 
-        
+
+    def genOutSpec(self, tofile=None):
+        """
+        Join all _outspec dicts from all modules into one output dict
+        and optionally write out to JSON file on disk.
+        """
+
+        out = {}
+        out['modules'] = {}
+        for modName in self.modules.keys():
+            for key in self.modules[modName]._outspec.keys():
+                if isinstance(self.modules[modName]._outspec[key],np.ndarray):
+                    out[key] = list(self.modules[modName]._outspec[key])
+                else:
+                    out[key] = self.modules[modName]._outspec[key]
+
+            #and grab the module file (just name if its in EXOSIMS)
+            mod = self.modules[modName].__module__
+            if mod.split('.')[0] == 'EXOSIMS':
+                mod = mod.split('.')[-1]
+            else:
+                mod = os.path.splitext(inspect.getfile(self.modules[modName].__class__))[0]+'.py'
+
+            out['modules'][modName] = mod
+
+        #preserve star catalog name
+        out['modules']['StarCatalog'] = self.StarCatalog
+
+        if tofile is not None:
+            with open(tofile, 'w') as outfile:
+                json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False, separators=(',', ': '))
+
+        return out
+
+

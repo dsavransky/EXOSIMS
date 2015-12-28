@@ -46,17 +46,18 @@ class BrownCompleteness(Completeness):
         
         # bring in inherited Completeness prototype __init__ values
         Completeness.__init__(self, **specs)
+
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
         # bins for interpolant
         bins = 1000
         # xedges is array of separation values for interpolant
-        xedges = np.linspace(0., self.PlanetPopulation.arange.max().value*(1.+self.PlanetPopulation.erange.max()), bins)*self.PlanetPopulation.arange.unit
+        xedges = np.linspace(0., self.PlanetPopulation.arange[1].value*(1.+self.PlanetPopulation.erange[1]), bins)*self.PlanetPopulation.arange.unit
         xedges = xedges.to(u.AU).value
 
         # yedges is array of delta magnitude values for interpolant
-        ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange.max()*(self.PlanetPopulation.Rrange.max()/(self.PlanetPopulation.arange.min()*(1.-self.PlanetPopulation.erange.max()))).decompose().value**2)))
-        ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange.min()*(self.PlanetPopulation.Rrange.min()/(self.PlanetPopulation.arange.max()*(1.+self.PlanetPopulation.erange.max()))).decompose().value**2*1e-11)))
+        ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*(self.PlanetPopulation.Rrange[1]/(self.PlanetPopulation.arange[0]*(1.-self.PlanetPopulation.erange[1]))).decompose().value**2)))
+        ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange[0]*(self.PlanetPopulation.Rrange[0]/(self.PlanetPopulation.arange[1]*(1.+self.PlanetPopulation.erange[1]))).decompose().value**2*1e-11)))
         yedges = np.linspace(ymin, ymax, bins)
         # generate completeness values for interpolant
         # total number of planets for completeness calcs
@@ -180,12 +181,12 @@ class BrownCompleteness(Completeness):
             self.accumulated = np.hstack((self.accumulated, comp0[s_ind]))
             # store time comparison value
             s = np.tan(targlist.OpticalSystem.IWA)*targlist.dist[s_ind]*u.pc
-            mu = const.G*(targlist.MsTrue[s_ind]*const.M_sun + targlist.PlanetPopulation.Mprange.max())
-            t = (2.*np.abs(np.arcsin(s/targlist.PlanetPopulation.arange.max()).decompose().value)*np.sqrt(targlist.PlanetPopulation.arange.max()**3/mu)).to(u.day)
+            mu = const.G*(targlist.MsTrue[s_ind]*const.M_sun + targlist.PlanetPopulation.Mprange[1])
+            t = (2.*np.abs(np.arcsin(s/targlist.PlanetPopulation.arange[1]).decompose().value)*np.sqrt(targlist.PlanetPopulation.arange[1]**3/mu)).to(u.day)
             self.tcomp = np.hstack((self.tcomp.to(u.day).value, t.to(u.day).value))*u.day
             # store non-observable completeness (rmax < s)
-            a = statsFun.simpSample(targlist.PlanetPopulation.semi_axis, 20000, targlist.PlanetPopulation.arange.min().value, targlist.PlanetPopulation.arange.max().value)*targlist.PlanetPopulation.arange.unit
-            e = statsFun.simpSample(targlist.PlanetPopulation.eccentricity, 20000, targlist.PlanetPopulation.erange.min(), targlist.PlanetPopulation.erange.max())
+            a = statsFun.simpSample(targlist.PlanetPopulation.semi_axis, 20000, targlist.PlanetPopulation.arange[0].value, targlist.PlanetPopulation.arange[1].value)*targlist.PlanetPopulation.arange.unit
+            e = statsFun.simpSample(targlist.PlanetPopulation.eccentricity, 20000, targlist.PlanetPopulation.erange[0], targlist.PlanetPopulation.erange[1])
             rmax = a*(1. + e)
             inds = np.where(rmax < s)[0]
             no = len(inds)/20000.
@@ -238,9 +239,10 @@ class BrownCompleteness(Completeness):
         
         # if the 2D completeness array exists as a .comp file load it
         if os.path.exists(Cpath):
+            print 'Loading completeness file from %s'%Cpath
             C = pickle.load(open(Cpath, 'rb'))
-            print 'Loaded completeness .comp file'
-            h, xedges, yedges = self.hist(nplan, xedges, yedges)
+            print 'Completeness Loaded'
+            #h, xedges, yedges = self.hist(nplan, xedges, yedges)
         else:
             # run Monte Carlo simulation and pickle the resulting array
             print 'Beginning Monte Carlo completeness calculations'
@@ -306,13 +308,14 @@ class BrownCompleteness(Completeness):
                 planet separations (in AU), difference in brightness
         
         """
-        
+        nplan = int(nplan)
+
         # sample uniform distribution of mean anomaly
         M = 2.*np.pi*np.random.rand(nplan)
         # sample semi-major axis        
-        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, nplan, self.PlanetPopulation.arange.min().value, self.PlanetPopulation.arange.max().value)*self.PlanetPopulation.arange.unit
+        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, nplan, self.PlanetPopulation.arange[0].value, self.PlanetPopulation.arange[1].value)*self.PlanetPopulation.arange.unit
         # sample other necessary orbital parameters
-        if self.PlanetPopulation.erange.sum() == 0:
+        if np.sum(self.PlanetPopulation.erange) == 0:
             # all circular orbits
             nu = M
             r = a
@@ -320,7 +323,7 @@ class BrownCompleteness(Completeness):
             E = M
         else:
             # sample eccentricity            
-            e = statsFun.simpSample(self.PlanetPopulation.eccentricity, nplan, self.PlanetPopulation.erange.min(), self.PlanetPopulation.erange.max())
+            e = statsFun.simpSample(self.PlanetPopulation.eccentricity, nplan, self.PlanetPopulation.erange[0], self.PlanetPopulation.erange[1])
             # Newton-Raphson to find E
             counter = 0
             err = 1
@@ -338,9 +341,9 @@ class BrownCompleteness(Completeness):
                 
             
         # RAAN, arument of perigee, inclination sampling
-        Omega = np.radians(statsFun.simpSample(self.PlanetPopulation.RAAN, nplan, self.PlanetPopulation.Orange.min(), self.PlanetPopulation.Orange.max()))
-        omega = np.radians(statsFun.simpSample(self.PlanetPopulation.arg_perigee, nplan, self.PlanetPopulation.wrange.min(), self.PlanetPopulation.wrange.max()))
-        I = np.radians(statsFun.simpSample(self.PlanetPopulation.inclination, nplan, self.PlanetPopulation.Irange.min(), self.PlanetPopulation.Irange.max()))
+        Omega = np.radians(statsFun.simpSample(self.PlanetPopulation.RAAN, nplan, self.PlanetPopulation.Orange[0].value, self.PlanetPopulation.Orange[1].value))
+        omega = np.radians(statsFun.simpSample(self.PlanetPopulation.arg_perigee, nplan, self.PlanetPopulation.wrange[0].value, self.PlanetPopulation.wrange[1].value))
+        I = np.radians(statsFun.simpSample(self.PlanetPopulation.inclination, nplan, self.PlanetPopulation.Irange[0].value, self.PlanetPopulation.Irange[1].value))
         
         r1 = (r*(np.cos(E) - e)).to(u.AU).value
         r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
@@ -368,8 +371,8 @@ class BrownCompleteness(Completeness):
         Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         # sample albedo and planetary radius
-        p = statsFun.simpSample(self.PlanetPopulation.albedo, nplan, self.PlanetPopulation.prange.min(), self.PlanetPopulation.prange.max())
-        R = statsFun.simpSample(self.PlanetPopulation.radius, nplan, self.PlanetPopulation.Rrange.min().value, self.PlanetPopulation.Rrange.max().value)*self.PlanetPopulation.Rrange.unit
+        p = statsFun.simpSample(self.PlanetPopulation.albedo, nplan, self.PlanetPopulation.prange[0], self.PlanetPopulation.prange[1])
+        R = statsFun.simpSample(self.PlanetPopulation.radius, nplan, self.PlanetPopulation.Rrange[0].value, self.PlanetPopulation.Rrange[1].value)*self.PlanetPopulation.Rrange.unit
         
         # calculate dMag
         dMag = -2.5*np.log10((p*(R/r)**2*Phi).decompose().value)

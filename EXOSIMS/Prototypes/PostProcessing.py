@@ -20,21 +20,18 @@ class PostProcessing(object):
     """
     
     _modtype = 'PostProcessing'
+    _outspec = {}
 
-    def __init__(self, **specs):
-        # default values
+    def __init__(self, FAP=1e-5, MDP = 1e-3, **specs):
+       
         # false alarm probability
-        self.FAP = 0.01/1000. 
+        self.FAP = float(FAP)
         # missed detection probability
-        self.MDP = 0.001 
-        # replace default values with user specification values if any
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                setattr(self, att, specs[att])
-        # initialize values updated by functions
-        # set values derived from quantities above
-        
+        self.MDP = float(MDP)
+    
+        for key in self.__dict__.keys():
+            self._outspec[key] = self.__dict__[key]  
+
     def __str__(self):
         """String representation of Post Processing object
         

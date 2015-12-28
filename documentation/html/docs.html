@@ -65,6 +65,11 @@ you can easily install the required tools from <a class="reference external" hre
 </div>
 <p>The documentation will be built to HTML and you can view it locally by opening <code class="docutils literal"><span class="pre">documentation/_build/html/index.html</span></code></p>
 <p>You can also similarly build the documentation to PDF, LaTeX, Windows Help, or several other formats as desired. Use <code class="docutils literal"><span class="pre">make</span> <span class="pre">help</span></code> to see the available output formats.</p>
+<p>If there are structural changes made to the EXOSIMS directory (i.e., file/folder additions or deletions) you will need to run <code class="docutils literal"><span class="pre">sphinx-apidoc</span></code>.  From the <cite>documentation</cite> directory run:</p>
+<div class="highlight-python"><div class="highlight"><pre>sphinx-apidoc -f -o . ../EXOSIMS/
+</pre></div>
+</div>
+<p>This will rebuild all of the <code class="docutils literal"><span class="pre">EXOSIMS.*</span></code> rst files, after which you can run <code class="docutils literal"><span class="pre">make</span> <span class="pre">html</span></code> to rebuild the html documentation. Note that this command also generates a <code class="docutils literal"><span class="pre">modules.rst</span></code> file that we do not use, and which can be safely deleted (but should not be added to the repository).</p>
 </div>
 </div>
 

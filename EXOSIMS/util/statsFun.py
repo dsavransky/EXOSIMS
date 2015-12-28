@@ -3,16 +3,19 @@ from scipy.optimize import fmin_l_bfgs_b
 
 '''
 Collection of useful statistics routines
-
-12/22/11 Dmitry Savransky savransky1@llnl.gov
 '''
 
 def simpSample(f, numTest, xMin, xMax, verb = False):
     '''
     Use the rejection sampling method to generate a 
     probability distribution according to the given function f, 
-    between some range xMin and xMax
+    between some range xMin and xMax.
+    If xMin==xMax, return an array where all values are equal to 
+    this value.
     '''
+
+    if xMin==xMax:
+        return np.zeros(numTest)+xMin
 
     #find max value
     #first do a coarse grid to get ic

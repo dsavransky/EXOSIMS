@@ -61,6 +61,7 @@ class StarCatalog(object):
     """ 
 
     _modtype = 'StarCatalog'
+    _outspec = {}
     
     def __init__(self,ntargs=0,**specs):
         

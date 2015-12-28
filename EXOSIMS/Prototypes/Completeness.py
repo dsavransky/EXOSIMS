@@ -14,29 +14,22 @@ class Completeness(object):
     
     Attributes:
         minComp (float): 
-            minimum completeness level for detection
+            minimum completeness level for inclusion in target list
         
     """
 
     _modtype = 'Completeness'
+    _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, minComp=0.1, **specs):
         # get desired Planet Population module
         
         # import PlanetPopulation class
         Pop = get_module(specs['modules']['PlanetPopulation'], 'PlanetPopulation')
         self.PlanetPopulation = Pop(**specs) # planet population object class
-        
-        # default values 
-        # minimum completeness level for detection
-        self.minComp = 0.1 
-        # replace default values with user specification values if any
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                setattr(self, att, specs[att])
-        # initialize values updated by functions
-        # set values derived from quantities above
+       
+        self.minComp = float(minComp)
+        self._outspec['minComp'] = self.minComp
 
     
     def __str__(self):

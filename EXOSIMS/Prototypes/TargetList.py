@@ -86,6 +86,7 @@ class TargetList(object):
     """
 
     _modtype = 'TargetList'
+    _outspec = {}
     
     def __init__(self, keepStarCatalog=False, **specs):
         """Initializes target list
@@ -107,20 +108,22 @@ class TargetList(object):
                     
         # import StarCatalog class
         Cat = get_module(specs['modules']['StarCatalog'], 'StarCatalog')
+        self.StarCatalog = Cat(**specs) # star catalog data
+
         # import OpticalSystem class
         Opt = get_module(specs['modules']['OpticalSystem'], 'OpticalSystem')
+        self.OpticalSystem = Opt(**specs) # optical system object 
+
         # import ZodiacalLight class
         Zodi = get_module(specs['modules']['ZodiacalLight'], 'ZodiacalLight')
-        # import Completeness class
-        Comp = get_module(specs['modules']['Completeness'], 'Completeness')
+        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object 
+
         # import BackgroundSources class
         Back = get_module(specs['modules']['BackgroundSources'], 'BackgroundSources')
-
-
-        self.StarCatalog = Cat(**specs) # star catalog data
-        self.OpticalSystem = Opt(**specs) # optical system object 
-        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object 
         self.BackgroundSources = Back(**specs) #background sources model object
+
+        # import Completeness class
+        Comp = get_module(specs['modules']['Completeness'], 'Completeness')        
         self.Completeness = Comp(**specs) # completeness model object 
         self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object 
         
@@ -165,6 +168,8 @@ class TargetList(object):
         # have target list, no need for catalog now
         if not keepStarCatalog:
             del self.StarCatalog
+
+        self._outspec['keepStarCatalog'] = keepStarCatalog
         
     def __str__(self):
         """String representation of the Target List object

@@ -80,16 +80,15 @@ sources for a given target position and dark hole depth.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>coords</strong> (<em>array-like of SkyCoord</em>) &#8211; numpy ndarray or list of astropy SkyCoord objects representing
 the coordinates of one or more targets</li>
-<li><strong>(array-like of Floats)</strong> (<em>intDepths</em>) &#8211; numpy ndarray or list of floating point values representing
+<li><strong>intDepths</strong> (<em>array-like of Floats</em>) &#8211; numpy ndarray or list of floating point values representing
 absolute magnitudes of the dark hole for each target.
 Must be of same length as coords.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>dN</strong> &#8211;</p>
-<p>Number density of background sources in number per square
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dN</strong> &#8211;
+Number density of background sources in number per square
 arcminute.  Same length as inputs.</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -106,7 +105,7 @@ arcminute.  Same length as inputs.</p>
 <span id="exosims-prototypes-completeness-module"></span><h2>EXOSIMS.Prototypes.Completeness module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>minComp=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Completeness class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -123,7 +122,7 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness.minComp">
 <code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.minComp" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
-<p>minimum completeness level for detection</p>
+<p>minimum completeness level for inclusion in target list</p>
 </dd></dl>
 
 <dl class="method">
@@ -151,10 +150,9 @@ method will return the values contained in the object</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>comp0</strong> &#8211;</p>
-<p>1D numpy ndarray of completeness values for each star in the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>comp0</strong> &#8211;
+1D numpy ndarray of completeness values for each star in the
 target list</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -189,8 +187,8 @@ object attributes, has available:</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;<p>1D numpy array of completeness values for each target star</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;
+1D numpy array of completeness values for each target star</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -205,7 +203,7 @@ object attributes, has available:</p>
 <span id="exosims-prototypes-observatory-module"></span><h2>EXOSIMS.Prototypes.Observatory module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Observatory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>settlingTime=1.0</em>, <em>thrust=450.0</em>, <em>slewIsp=4160.0</em>, <em>scMass=6000.0</em>, <em>dryMass=3400.0</em>, <em>coMass=5800.0</em>, <em>skIsp=220.0</em>, <em>defburnPortion=0.05</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Observatory class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -219,8 +217,8 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.settling_time">
-<code class="descname">settling_time</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.settling_time" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.settlingTime">
+<code class="descname">settlingTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.settlingTime" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>instrument settling time after repoint (default with units of day)</p>
 </dd></dl>
@@ -240,8 +238,8 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.sc_mass">
-<code class="descname">sc_mass</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.sc_mass" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.scMass">
+<code class="descname">scMass</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.scMass" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
 <p>occulter (maneuvering sc) wet mass (default with units of kg)</p>
 </dd></dl>
@@ -404,8 +402,8 @@ will print the attribute values contained in the object</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Time</em>) &#8211; absolute time</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>TDB</strong> &#8211;<p>time in Julian centuries since the J2000 epoch</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>TDB</strong> &#8211;
+time in Julian centuries since the J2000 epoch</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -428,9 +426,8 @@ will print the attribute values contained in the object</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>dF_lateral, dF_axial</strong> &#8211;</p>
-<p>lateral and axial disturbance forces (units of N)</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dF_lateral, dF_axial</strong> &#8211;
+lateral and axial disturbance forces (units of N)</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, Quantity</p>
@@ -456,9 +453,8 @@ from mean anomaly and eccentricity.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>E</strong> &#8211;</p>
-<p>eccentric anomaly</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;
+eccentric anomaly</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
@@ -485,9 +481,8 @@ True is an observable star and stores the 1D numpy array in self.kogood.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>success</strong> &#8211;</p>
-<p>True if successful, False if not</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>success</strong> &#8211;
+True if successful, False if not</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
@@ -514,10 +509,9 @@ solar system objects.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>r_planet</strong> &#8211;</p>
-<p>heliocentric equatorial position vector in 1D numpy ndarray
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>r_planet</strong> &#8211;
+heliocentric equatorial position vector in 1D numpy ndarray
 (units of km)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
@@ -543,12 +537,11 @@ mass for station-keeping.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>intMdot, mass_used, deltaV</strong> &#8211;</p>
-<p>mass flow rate (units like kg/day),
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intMdot, mass_used, deltaV</strong> &#8211;
+mass flow rate (units like kg/day),
 mass used in station-keeping (units of mass),
 change in velocity required for station-keeping (velocity units
 like km/s)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, Quantity, Quantity</p>
@@ -570,9 +563,9 @@ equatorial position vector for Earth&#8217;s moon.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>Time</em>) &#8211; absolute time</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>r_moon</strong> &#8211;<p>geocentric equatorial position vector in 1D numpy array (units
-of km)</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>r_moon</strong> &#8211;
+geocentric equatorial position vector in 1D numpy array (units
+of km)</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -595,8 +588,8 @@ instances of Observatory classes.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>Time</em>) &#8211; absolute time</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>success</strong> &#8211;<p>True if successful, False if not</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>success</strong> &#8211;
+True if successful, False if not</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
@@ -620,9 +613,8 @@ time.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>y</strong> &#8211;</p>
-<p>ephemeride value at current time</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>y</strong> &#8211;
+ephemeride value at current time</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
@@ -646,9 +638,8 @@ time.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>matrix</strong> &#8211;</p>
-<p>rotation matrix defined as numpy ndarray</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>matrix</strong> &#8211;
+rotation matrix defined as numpy ndarray</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -882,9 +873,8 @@ determined by specific OpticalSystem classes.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>intTime</strong> &#8211;</p>
-<p>1D numpy ndarray of integration times (default units of day)</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intTime</strong> &#8211;
+1D numpy ndarray of integration times (default units of day)</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
@@ -922,9 +912,9 @@ object attributes, has available:</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>maxintTime</strong> &#8211;<p>1D numpy ndarray of maximum integration times (default units of
-day)</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>maxintTime</strong> &#8211;
+1D numpy ndarray of maximum integration times (default units of
+day)</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -967,7 +957,7 @@ this method will return the values contained in the object</p>
 <span id="exosims-prototypes-planetpopulation-module"></span><h2>EXOSIMS.Prototypes.PlanetPopulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], wrange=[0.0, 360.0], Orange=[0.0, 360.0], Irange=[0.0, 180.0], prange=[0.1, 0.6], Rrange=[1.0, 30.0], Mprange=[1.0, 4131.0], scalefac=False, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Population Description class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1071,8 +1061,8 @@ maximum values in degrees.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; right ascension of the ascending node in degrees</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1100,8 +1090,8 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet albedo</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1121,13 +1111,19 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; argument of perigee in degrees</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges">
+<code class="descname">checkranges</code><span class="sig-paren">(</span><em>var</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.checkranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function provides asserts on all 2 element lists of ranges</p>
 </dd></dl>
 
 <dl class="method">
@@ -1142,8 +1138,8 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; eccentricity value</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1163,8 +1159,8 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet orbital inclination in degrees</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1184,8 +1180,8 @@ maximum values in kg.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet mass in kg</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1205,8 +1201,8 @@ maximum values in km.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet radius in km</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1226,8 +1222,8 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; semi-major axis value in AU</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;<p>probability density function value</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
+probability density function value</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -1242,7 +1238,7 @@ maximum values.</p>
 <span id="exosims-prototypes-postprocessing-module"></span><h2>EXOSIMS.Prototypes.PostProcessing module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PostProcessing" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>FAP=1e-05</em>, <em>MDP=0.001</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Post Processing class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1290,9 +1286,9 @@ and MD (Missed Detection) where True gives the case.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>observationPossible</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of booleans signifying if each planet is
 observable</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>FA, DET, MD, NULL</strong> &#8211;<p>False Alarm boolean, Detection boolean, Missed Detection boolean,
-Null detection boolean</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>FA, DET, MD, NULL</strong> &#8211;
+False Alarm boolean, Detection boolean, Missed Detection boolean,
+Null detection boolean</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool, bool, bool, bool</td>
 </tr>
@@ -1500,9 +1496,8 @@ from mean anomaly and eccentricity.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>E</strong> &#8211;</p>
-<p>eccentric anomaly</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;
+eccentric anomaly</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
@@ -1530,9 +1525,9 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>O</strong> &#8211;<p>1D numpy ndarray containing right ascension of the ascending node
-for each planet in degrees</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>O</strong> &#8211;
+1D numpy ndarray containing right ascension of the ascending node
+for each planet in degrees</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1558,9 +1553,9 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>a</strong> &#8211;<p>1D numpy ndarray containing semi-major axis for each planet
-(default units of AU)</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>a</strong> &#8211;
+1D numpy ndarray containing semi-major axis for each planet
+(default units of AU)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -1586,8 +1581,8 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;<p>1D numpy ndarray containing albedo for each planet</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;
+1D numpy ndarray containing albedo for each planet</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1613,8 +1608,8 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>e</strong> &#8211;<p>1D numpy ndarray containing eccentricity for each planet</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>e</strong> &#8211;
+1D numpy ndarray containing eccentricity for each planet</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1638,9 +1633,9 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>I</strong> &#8211;<p>1D numpy ndarray containing inclination of each planet in
-degrees</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>I</strong> &#8211;
+1D numpy ndarray containing inclination of each planet in
+degrees</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1666,8 +1661,8 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>M</strong> &#8211;<p>1D numpy ndarray containing mass for each planet (units of kg)</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>M</strong> &#8211;
+1D numpy ndarray containing mass for each planet (units of kg)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -1703,10 +1698,10 @@ objects will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>r, v</strong> &#8211;<p>numpy ndarray containing initial position vector of each planet
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>r, v</strong> &#8211;
+numpy ndarray containing initial position vector of each planet
 (units of km), numpy ndarray containing initial velocity vector
-of each planet (units of km/s)</p>
-</td>
+of each planet (units of km/s)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity, Quantity</td>
 </tr>
@@ -1732,9 +1727,9 @@ objects will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>R</strong> &#8211;<p>1D numpy ndarray containing radius of each planet (units of
-distance)</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>R</strong> &#8211;
+1D numpy ndarray containing radius of each planet (units of
+distance)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -1762,9 +1757,9 @@ classes will populate these indices.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>planSys</strong> &#8211;<p>1D numpy array containing indices of the target star to which
-each planet (each element of the array) belongs</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>planSys</strong> &#8211;
+1D numpy array containing indices of the target star to which
+each planet (each element of the array) belongs</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1790,9 +1785,9 @@ classes will populate these values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>w</strong> &#8211;<p>1D numpy ndarray containing argument of perigee for each planet
-in degrees</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>w</strong> &#8211;
+1D numpy ndarray containing argument of perigee for each planet
+in degrees</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1822,10 +1817,9 @@ host stars (units of velocity)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>rnew, vnew</strong> &#8211;</p>
-<p>numpy ndarray of propagated position vectors (units of km),
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>rnew, vnew</strong> &#8211;
+numpy ndarray of propagated position vectors (units of km),
 numpy ndarray of propagated velocity vectors (units of km/day)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, Quantity</p>
@@ -2159,11 +2153,10 @@ each planet is possible</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>observationPossible, s</strong> &#8211;</p>
-<p>updated 1D numpy ndarray of booleans indicating if an
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>observationPossible, s</strong> &#8211;
+updated 1D numpy ndarray of booleans indicating if an
 observation of each planet is possible, apparent separation
 (units of km)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray, Quantity</p>
@@ -2191,11 +2184,10 @@ each planet is possible</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>observationPossible, dMag</strong> &#8211;</p>
-<p>updated 1D numpy array of booleans indicating if an observation
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>observationPossible, dMag</strong> &#8211;
+updated 1D numpy array of booleans indicating if an observation
 of each planet is possible, delta magnitude (difference between
 star and planet magnitude)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray, ndarray</p>
@@ -2241,14 +2233,13 @@ each planet is possible</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>t_int, observationPossible, chargo</strong> &#8211;</p>
-<p>true integration time for planetary system (units of day)
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>t_int, observationPossible, chargo</strong> &#8211;
+true integration time for planetary system (units of day)
 (t_char_calc = False) or maximum characterization time for
 planetary system (t_char_calc = True), updated 1D numpy ndarray
 of booleans indicating if an observation or characterization of
 each planet is possible, boolean where True is to encode
 characterization data (t_char_calc = True only)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, ndarray, bool</p>
@@ -2298,12 +2289,11 @@ planet</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>s, dMag, Ip, DRM, observed</strong> &#8211;</p>
-<p>apparent separation (units of distance), delta magnitude,
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>s, dMag, Ip, DRM, observed</strong> &#8211;
+apparent separation (units of distance), delta magnitude,
 irradiance (units of flux per time), dictionary containing
 simulation results, 1D numpy ndarray indicating number of
 observations for each planet</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, ndarray, Quantity, dict, ndarray</p>
@@ -2343,9 +2333,8 @@ observations for each planet</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>t_char</strong> &#8211;</p>
-<p>characterization time (units of s)</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>t_char</strong> &#8211;
+characterization time (units of s)</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
@@ -2389,8 +2378,8 @@ observations for each planet</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>s_ind</strong> &#8211;<p>index of initial target star</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>s_ind</strong> &#8211;
+index of initial target star</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
 </tr>
@@ -2428,9 +2417,8 @@ to revisit</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>new_s_ind, DRM</strong> &#8211;</p>
-<p>index of next target star, dictionary of simulation results</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>new_s_ind, DRM</strong> &#8211;
+index of next target star, dictionary of simulation results</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int, dict</p>
@@ -2463,11 +2451,10 @@ captured</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>DRM, FA, spectra</strong> &#8211;</p>
-<p>dictionary containing survey simulation results, False Alarm
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>DRM, FA, spectra</strong> &#8211;
+dictionary containing survey simulation results, False Alarm
 boolean, numpy ndarray of values indicating if planet spectra
 has been captured</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict, bool, ndarray</p>
@@ -2495,14 +2482,13 @@ time)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>observationPossible, t_int, DRM, s, dMag, Ip</strong> &#8211;</p>
-<p>1D numpy ndarray of booleans indicating if an observation of
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>observationPossible, t_int, DRM, s, dMag, Ip</strong> &#8211;
+1D numpy ndarray of booleans indicating if an observation of
 each planet is possible, integration time (units of time),
 dictionary containing survey simulation results, apparent
 separation (units of distance), 1D numpy ndarray of delta
 magnitude, difference in magnitude between planet and star,
 irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray, Quantity, dict, Quantity, ndarray, Quantity</p>
@@ -2546,8 +2532,8 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>string</strong> &#8211;<p>String &#8216;Simulation results in .DRM&#8217;</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>string</strong> &#8211;
+String &#8216;Simulation results in .DRM&#8217;</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
@@ -2589,10 +2575,9 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>obsRes</strong> &#8211;</p>
-<p>-1 if star is inside the keepout zone, 0 if planet is not
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>obsRes</strong> &#8211;
+-1 if star is inside the keepout zone, 0 if planet is not
 visible, or 1 if planet is visible</p>
-</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
@@ -3059,7 +3044,7 @@ magnitude and stellar mass.  The values are in terms of M_sun.</p>
 <span id="exosims-prototypes-timekeeping-module"></span><h2>EXOSIMS.Prototypes.TimeKeeping module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TimeKeeping" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>missionStart=60634.0</em>, <em>missionLife=6.0</em>, <em>extendedLife=0.0</em>, <em>missionPortion=0.16666666666666666</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Time class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -3164,8 +3149,8 @@ activities as well. This method defines the input/output expected</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currenttime</strong> (<em>Quantity</em>) &#8211; current time in mission simulation (units of time)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;<p>next available time for planet-finding (units of time)</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nexttime</strong> &#8211;
+next available time for planet-finding (units of time)</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
@@ -3194,7 +3179,7 @@ activities as well. This method defines the input/output expected</p>
 <span id="exosims-prototypes-zodiacallight-module"></span><h2>EXOSIMS.Prototypes.ZodiacalLight module<a class="headerlink" href="#module-EXOSIMS.Prototypes.ZodiacalLight" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.ZodiacalLight.</code><code class="descname">ZodiacalLight</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.ZodiacalLight.</code><code class="descname">ZodiacalLight</code><span class="sig-paren">(</span><em>exozodi=1.5</em>, <em>exozodiVar=0.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Zodiacal Light class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -3243,8 +3228,8 @@ not yet support this conversion).</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>coords</strong> (<em>SkyCoord</em>) &#8211; numpy ndarray of astropy SkyCoord objects with right ascension
 and declination in degrees</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>el</strong> &#8211;<p>ecliptic latitudes in degrees</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>el</strong> &#8211;
+ecliptic latitudes in degrees</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -3268,9 +3253,8 @@ and declination in degrees</td>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>fzodicurr</strong> &#8211;</p>
-<p>1D numpy ndarray of exozodiacal light levels</p>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fzodicurr</strong> &#8211;
+1D numpy ndarray of exozodiacal light levels</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -3355,7 +3339,7 @@ and declination in degrees</td>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

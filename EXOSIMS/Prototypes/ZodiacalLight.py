@@ -21,22 +21,17 @@ class ZodiacalLight(object):
     """
 
     _modtype = 'ZodiacalLight'
+    _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, exozodi = 1.5, exozodiVar = 0., **specs):
                 
         # default values
-        self.exozodi = 1.5 # exo-zodi level in zodi
-        self.exozodiVar = 0. # exo-zodi variation (variance of log-normal distribution)
+        self.exozodi = float(exozodi) # exo-zodi level in zodi
+        self.exozodiVar = float(exozodiVar) # exo-zodi variation (variance of log-normal distribution)
         
-        # replace default values with user specified values
-        atts = self.__dict__.keys()
-        for att in atts:
-            if att in specs:
-                setattr(self, att, specs[att])
-                
-        # initialize values updated by functions
-        # set values derived from quantities above
-                
+        for key in self.__dict__.keys():
+            self._outspec[key] = self.__dict__[key]          
+
     def __str__(self):
         """String representation of the Zodiacal Light object
         

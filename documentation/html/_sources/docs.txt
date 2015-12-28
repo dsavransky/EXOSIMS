@@ -32,5 +32,10 @@ The documentation will be built to HTML and you can view it locally by opening `
 
 You can also similarly build the documentation to PDF, LaTeX, Windows Help, or several other formats as desired. Use ``make help`` to see the available output formats. 
 
+If there are structural changes made to the EXOSIMS directory (i.e., file/folder additions or deletions) you will need to run ``sphinx-apidoc``.  From the `documentation` directory run::
+
+    sphinx-apidoc -f -o . ../EXOSIMS/
+
+This will rebuild all of the ``EXOSIMS.*`` rst files, after which you can run ``make html`` to rebuild the html documentation. Note that this command also generates a ``modules.rst`` file that we do not use, and which can be safely deleted (but should not be added to the repository).
 
 

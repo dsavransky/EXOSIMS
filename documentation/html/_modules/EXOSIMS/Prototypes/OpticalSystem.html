@@ -46,6 +46,8 @@
 <span class="kn">import</span> <span class="nn">astropy.io.fits</span> <span class="kn">as</span> <span class="nn">fits</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
 <span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">itemgetter</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span>
 
 <div class="viewcode-block" id="OpticalSystem"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">[docs]</a><span class="k">class</span> <span class="nc">OpticalSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Optical System class template</span>
@@ -123,7 +125,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;OpticalSystem&#39;</span>
-    
+    <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lam</span><span class="o">=</span><span class="mf">500.</span><span class="p">,</span><span class="n">deltaLam</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span><span class="n">shapeFac</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.</span><span class="p">,</span>\
             <span class="n">pupilDiam</span><span class="o">=</span><span class="mf">4.</span><span class="p">,</span><span class="n">SNchar</span><span class="o">=</span><span class="mf">11.</span><span class="p">,</span> <span class="n">telescopeKeepout</span><span class="o">=</span><span class="mf">45.</span><span class="p">,</span>\
             <span class="n">IWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">OWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">dMagLim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.57</span><span class="p">,</span>\
@@ -145,7 +148,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attenuation</span><span class="p">)</span>   <span class="c">#non-coronagraph attenuation factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">specLam</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">specLam</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span>  <span class="c"># spectral wavelength of interest</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intCutoff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">intCutoff</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="c">#integration time cutoff </span>
-                        
+        
+        <span class="c">#populate all scalar atributes to outspec</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="c"># now loop through starlight suppression systems and verify what&#39;s there.</span>
         <span class="c"># the only things that are really required is the system number, the type (external/internal) </span>
@@ -154,6 +163,7 @@
         <span class="n">sysOWAs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">sysdMagLims</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">=</span> <span class="bp">False</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystems&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">sys</span> <span class="ow">in</span> <span class="n">starlightSuppressionSystems</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span><span class="nb">dict</span><span class="p">),</span> <span class="s">&quot;Starlight suppression systems must be defined as dicts.&quot;</span>
             <span class="k">assert</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">),</span>\
@@ -163,34 +173,110 @@
             <span class="k">if</span> <span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;external&#39;</span><span class="p">)</span> <span class="ow">or</span>  <span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;hybrid&#39;</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">=</span> <span class="bp">True</span>
 
+            <span class="c">#handle inf OWA</span>
+            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;OWA&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystems&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
             <span class="c">#check for throughput</span>
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;throughput&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">],</span><span class="nb">basestring</span><span class="p">):</span>
-                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]),</span>\
-                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]</span>
-                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">])</span>
+                    <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]))</span>
+
+                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span>\
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">2</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+                        <span class="n">WA</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">T</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;IWA&#39;</span><span class="p">):</span>
+                            <span class="n">sys</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="n">sys</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span>\
+                                <span class="s">&quot;IWA mismatch for throughput for starlight suppression system #</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;OWA&#39;</span><span class="p">):</span>
+                            <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span>\
+                                <span class="s">&quot;OWA mismatch for throughput for starlight suppression system #</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+
+                        <span class="n">Tinterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s">&#39;cubic&#39;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>\
+                                <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                        <span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span><span class="n">alpha</span><span class="p">:</span> <span class="n">Tinterp</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
                     <span class="c">#basic validation here for size and IWA/OWA</span>
                     <span class="c">#sys[&#39;throughput&#39;] = lambda or interp</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">],</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
-                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">])</span>
+                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;throughput&#39;</span><span class="p">]):</span> <span class="n">T</span>
 
             <span class="c">#check for contrast</span>
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;contrast&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">],</span><span class="nb">basestring</span><span class="p">):</span>
-                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]),</span>\
-                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]</span>
-                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">])</span>
-                    <span class="c">#basic validation here for size and IWA/OWA</span>
-                    <span class="c">#sys[&#39;contrast&#39;] = lambda or interp</span>
+                    <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]))</span>
+
+                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span>\
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">2</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+                        <span class="n">WA</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">C</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;IWA&#39;</span><span class="p">):</span>
+                            <span class="n">sys</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="n">sys</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span>\
+                                <span class="s">&quot;IWA mismatch for throughput for starlight suppression system #</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;OWA&#39;</span><span class="p">):</span>
+                            <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">assert</span> <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span>\
+                                <span class="s">&quot;OWA mismatch for throughput for starlight suppression system #</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+
+                        <span class="n">Cinterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s">&#39;cubic&#39;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>\
+                                <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+                        <span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span><span class="n">alpha</span><span class="p">:</span> <span class="n">Cinterp</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;dMagLim&#39;</span><span class="p">):</span>
+                            <span class="n">Cmin</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">Cinterp</span><span class="p">,</span> <span class="n">WA</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">C</span><span class="p">)],</span>\
+                                    <span class="n">bounds</span><span class="o">=</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)),)</span> <span class="p">)</span>
+                            <span class="k">if</span> <span class="n">Cmin</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                                <span class="n">Cmin</span> <span class="o">=</span> <span class="n">Cmin</span><span class="o">.</span><span class="n">fun</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="k">print</span> <span class="s">&quot;Warning: failed to find minimum of contrast interpolant for starlight suppression system #</span><span class="si">%d</span><span class="s">&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+                                <span class="n">Cmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+                            
+                            <span class="n">sys</span><span class="p">[</span><span class="s">&#39;dMagLim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Cmin</span><span class="p">)</span>
+
+                            
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">],</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
-                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">])</span>
+                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]):</span> <span class="n">C</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;dMagLim&#39;</span><span class="p">):</span>
+                        <span class="n">sys</span><span class="p">[</span><span class="s">&#39;dMagLim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;contrast&#39;</span><span class="p">]))</span>
 
             <span class="c">#check for PSF</span>
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;PSF&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">],</span><span class="nb">basestring</span><span class="p">):</span>
-                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">]),</span>\
-                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">]</span>
-                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">])</span>
+                    <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">]))</span>
+                    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span>\
+                            <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
+                    <span class="n">tmp</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">P</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">:</span> <span class="n">P</span>
+                    <span class="k">if</span> <span class="s">&#39;SAMPLING&#39;</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">sys</span><span class="p">[</span><span class="s">&#39;PSFSampling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s">&#39;SAMPLING&#39;</span><span class="p">]</span>
+
                     <span class="c">#basic validation here for size and IWA/OWA</span>
                     <span class="c">#sys[&#39;PSF&#39;] = lambda or interp</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -213,14 +299,15 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;characterizationTimeMultiplier&#39;</span><span class="p">):</span>
                 <span class="n">sys</span><span class="p">[</span><span class="s">&#39;characterizationTimeMultiplier&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
     
-            <span class="c">#check for system&#39;s IWA and OWA</span>
+            <span class="c">#check for system&#39;s IWA, OWA and dMagLim</span>
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;IWA&#39;</span><span class="p">):</span>
                 <span class="n">sysIWAs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;OWA&#39;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
-                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
                 <span class="n">sysOWAs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">])</span>
-              
+            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;dMagLim&#39;</span><span class="p">):</span>
+                <span class="n">sysdMagLims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;dMagLim&#39;</span><span class="p">])</span>
+                
+        <span class="c">#sort suppression systems by number</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">starlightSuppressionSystems</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">starlightSuppressionSystems</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="s">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">))</span> 
 
         <span class="c">#populate IWA, OWA, and dMagLim as required</span>
@@ -251,10 +338,16 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Could not determine fundamental dMagLim.&quot;</span><span class="p">)</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="p">,</span> <span class="s">&quot;Fundamnetal IWA must be smaller that the OWA.&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="p">,</span> <span class="s">&quot;Fundamental IWA must be smaller that the OWA.&quot;</span>
+
+        <span class="c">#finish populating outspec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;dMagLim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span>
 
 
         <span class="c">#now go through all science Instruments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;scienceInstruments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">sys</span> <span class="ow">in</span> <span class="n">scienceInstruments</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span><span class="nb">dict</span><span class="p">),</span> <span class="s">&quot;Science instruments must be defined as dicts.&quot;</span>
             <span class="k">assert</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;scienceInstrumentNumber&#39;</span><span class="p">),</span>\
@@ -262,6 +355,7 @@
             <span class="k">assert</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span><span class="nb">basestring</span><span class="p">),</span>\
                     <span class="s">&quot;All science instruments must have key type.&quot;</span>
 
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;scienceInstruments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
 
             <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s">&#39;pixelArea&#39;</span><span class="p">):</span> 
                 <span class="n">sys</span><span class="p">[</span><span class="s">&#39;pixelArea&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;pixelArea&#39;</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="c">#pixel are in m^2</span>
@@ -292,7 +386,7 @@
                     <span class="c">#basic validation here for size and wavelength</span>
                     <span class="c">#sys[&#39;QE&#39;] = lambda or interp</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;QE&#39;</span><span class="p">],</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
-                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;QE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;QE&#39;</span><span class="p">])</span>
+                    <span class="n">sys</span><span class="p">[</span><span class="s">&#39;QE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span> <span class="n">QE</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">sys</span><span class="p">[</span><span class="s">&#39;QE&#39;</span><span class="p">]):</span> <span class="n">QE</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">scienceInstruments</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">scienceInstruments</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">itemgetter</span><span class="p">(</span><span class="s">&#39;scienceInstrumentNumber&#39;</span><span class="p">))</span> 
 
@@ -307,7 +401,6 @@
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scienceInstruments</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
        
-
         <span class="c"># set values derived from quantities above</span>
         <span class="c">#if np.isinf(self.OWA.value):</span>
         <span class="c">#    self.OWA = np.pi/2</span>
@@ -323,8 +416,8 @@
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Optical System class object attributes&#39;</span>
-        </div>
+        <span class="k">return</span> <span class="s">&#39;Optical System class object attributes&#39;</span></div>
+        
 <div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
 <span class="sd">        </span>
@@ -357,8 +450,8 @@
         <span class="c"># maximum integration time is given as 1 day for each system in target list</span>
         <span class="n">maxintTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
-        <span class="k">return</span> <span class="n">maxintTime</span>
-        </div>
+        <span class="k">return</span> <span class="n">maxintTime</span></div>
+        
 <div class="viewcode-block" id="OpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
@@ -381,7 +474,7 @@
 <span class="sd">            intTime (Quantity):</span>
 <span class="sd">                1D numpy ndarray of integration times (default units of day)</span>
 <span class="sd">      </span>
-<span class="sd">      &quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c"># integration time given as 1 day</span>
         <span class="n">intTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">planInds</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
@@ -423,7 +516,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -26,6 +26,10 @@ class TargetList(object):
             ZodiacalLight class object
         Completeness (Completeness):
             Completeness class object
+        BackgroundSources (BackgroundSources):
+            BackgroundSources class object
+        PostProcessing (PostProcessing):
+            PostProcessing class object
         Name (ndarray):
             1D numpy ndarray of star names
         Type (ndarray):
@@ -82,6 +86,8 @@ class TargetList(object):
             1D numpy ndarray containing 'approximate' stellar mass in M_sun
         MsTrue (ndarray):
             1D numpy ndarray containing 'true' stellar mass in M_sun
+        nStars (int):
+            number of target stars
     
     """
 
@@ -120,13 +126,17 @@ class TargetList(object):
 
         # import BackgroundSources class
         Back = get_module(specs['modules']['BackgroundSources'], 'BackgroundSources')
-        self.BackgroundSources = Back(**specs) #background sources model object
+        self.BackgroundSources = Back(**specs) # background sources model object
 
         # import Completeness class
         Comp = get_module(specs['modules']['Completeness'], 'Completeness')        
         self.Completeness = Comp(**specs) # completeness model object 
         self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object 
         
+        # import PostProcessing class
+        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
+        self.PostProcessing = PP(**specs)
+
         # list of possible Star Catalog attributes
         atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
@@ -137,7 +147,10 @@ class TargetList(object):
                 setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
             else:
                 setattr(self, att, getattr(self.StarCatalog, att))
-            
+        
+        # number of target stars
+        self.nStars = len(self.Name);
+        
         # filter out nan attribute values from Star Catalog
         self.nan_filter(atts)
         # populate completion values
@@ -328,7 +341,7 @@ class TargetList(object):
         else:
             i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist*u.pc))
    
-        self.revise_lists(atts, i[0])
+        self.revise_lists(atts, i)
         
     def int_cutoff_filter(self, atts):
         """Includes stars if calculated integration time is less than cutoff
@@ -345,7 +358,7 @@ class TargetList(object):
         
         i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)
 
-        self.revise_lists(atts, i[0])
+        self.revise_lists(atts, i)
         
     def max_dmag_filter(self, atts):
         """Includes stars if maximum delta mag is in the allowed orbital range
@@ -390,9 +403,9 @@ class TargetList(object):
         # calculate delta mag
         Phis = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
         t1 = np.max(self.PlanetPopulation.Rrange).to(u.AU).value**2*np.max(self.PlanetPopulation.prange)      
-        cdMag = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.OpticalSystem.dMagLim)
+        i = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.OpticalSystem.dMagLim)
         
-        self.revise_lists(atts, cdMag)
+        self.revise_lists(atts, i)
         
     def completeness_filter(self, atts):
         """Includes stars if completeness is larger than the minimum value
@@ -412,7 +425,8 @@ class TargetList(object):
         self.revise_lists(atts, i)        
         
     def revise_lists(self, atts, ind):
-        """Replaces Target List catalog attributes with filtered values
+        """Replaces Target List catalog attributes with filtered values, 
+        and updates the number of target stars.
         
         Args:
             atts (list):
@@ -428,7 +442,9 @@ class TargetList(object):
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[ind])
-    
+        
+        self.nStars = len(ind[0])
+        
     def stellar_mass(self):
         """Populates target list with 'true' and 'approximate' stellar masses
         

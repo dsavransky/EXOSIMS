@@ -39,7 +39,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TargetList</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
@@ -67,6 +67,10 @@
 <span class="sd">            ZodiacalLight class object</span>
 <span class="sd">        Completeness (Completeness):</span>
 <span class="sd">            Completeness class object</span>
+<span class="sd">        BackgroundSources (BackgroundSources):</span>
+<span class="sd">            BackgroundSources class object</span>
+<span class="sd">        PostProcessing (PostProcessing):</span>
+<span class="sd">            PostProcessing class object</span>
 <span class="sd">        Name (ndarray):</span>
 <span class="sd">            1D numpy ndarray of star names</span>
 <span class="sd">        Type (ndarray):</span>
@@ -123,10 +127,12 @@
 <span class="sd">            1D numpy ndarray containing &#39;approximate&#39; stellar mass in M_sun</span>
 <span class="sd">        MsTrue (ndarray):</span>
 <span class="sd">            1D numpy ndarray containing &#39;true&#39; stellar mass in M_sun</span>
+<span class="sd">        nStars (int):</span>
+<span class="sd">            number of target stars</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;TargetList&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TargetList&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keepStarCatalog</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
@@ -145,72 +151,79 @@
 <span class="sd">            </span>
 <span class="sd">        Additional filters are given in specific TargetList classes.&quot;&quot;&quot;</span>
         
-        <span class="c"># get desired module names (specific or prototype)</span>
+        <span class="c1"># get desired module names (specific or prototype)</span>
                     
-        <span class="c"># import StarCatalog class</span>
-        <span class="n">Cat</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;StarCatalog&#39;</span><span class="p">],</span> <span class="s">&#39;StarCatalog&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">Cat</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># star catalog data</span>
+        <span class="c1"># import StarCatalog class</span>
+        <span class="n">Cat</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">],</span> <span class="s1">&#39;StarCatalog&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">Cat</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># star catalog data</span>
 
-        <span class="c"># import OpticalSystem class</span>
-        <span class="n">Opt</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;OpticalSystem&#39;</span><span class="p">],</span> <span class="s">&#39;OpticalSystem&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">Opt</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># optical system object </span>
+        <span class="c1"># import OpticalSystem class</span>
+        <span class="n">Opt</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">],</span> <span class="s1">&#39;OpticalSystem&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">Opt</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># optical system object </span>
 
-        <span class="c"># import ZodiacalLight class</span>
-        <span class="n">Zodi</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;ZodiacalLight&#39;</span><span class="p">],</span> <span class="s">&#39;ZodiacalLight&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">Zodi</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># zodiacal light model object </span>
+        <span class="c1"># import ZodiacalLight class</span>
+        <span class="n">Zodi</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">],</span> <span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">Zodi</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># zodiacal light model object </span>
 
-        <span class="c"># import BackgroundSources class</span>
-        <span class="n">Back</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;BackgroundSources&#39;</span><span class="p">],</span> <span class="s">&#39;BackgroundSources&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">Back</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c">#background sources model object</span>
+        <span class="c1"># import BackgroundSources class</span>
+        <span class="n">Back</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">],</span> <span class="s1">&#39;BackgroundSources&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">Back</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># background sources model object</span>
 
-        <span class="c"># import Completeness class</span>
-        <span class="n">Comp</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;Completeness&#39;</span><span class="p">],</span> <span class="s">&#39;Completeness&#39;</span><span class="p">)</span>        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">Comp</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c"># completeness model object </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c"># planet population object </span>
+        <span class="c1"># import Completeness class</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;Completeness&#39;</span><span class="p">],</span> <span class="s1">&#39;Completeness&#39;</span><span class="p">)</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">Comp</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># completeness model object </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c1"># planet population object </span>
         
-        <span class="c"># list of possible Star Catalog attributes</span>
-        <span class="n">atts</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">,</span> <span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;Spec&#39;</span><span class="p">,</span> <span class="s">&#39;parx&#39;</span><span class="p">,</span> <span class="s">&#39;Umag&#39;</span><span class="p">,</span> <span class="s">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s">&#39;Rmag&#39;</span><span class="p">,</span> 
-                <span class="s">&#39;Imag&#39;</span><span class="p">,</span> <span class="s">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s">&#39;Kmag&#39;</span><span class="p">,</span> <span class="s">&#39;dist&#39;</span><span class="p">,</span> <span class="s">&#39;BV&#39;</span><span class="p">,</span> <span class="s">&#39;MV&#39;</span><span class="p">,</span> <span class="s">&#39;BC&#39;</span><span class="p">,</span> <span class="s">&#39;L&#39;</span><span class="p">,</span> 
-                <span class="s">&#39;coords&#39;</span><span class="p">,</span> <span class="s">&#39;pmra&#39;</span><span class="p">,</span> <span class="s">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s">&#39;rv&#39;</span><span class="p">,</span> <span class="s">&#39;Binary_Cut&#39;</span><span class="p">]</span>
-        <span class="c"># bring Star Catalog values to top level of Target List</span>
+        <span class="c1"># import PostProcessing class</span>
+        <span class="n">PP</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">],</span> <span class="s1">&#39;PostProcessing&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">PP</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+
+        <span class="c1"># list of possible Star Catalog attributes</span>
+        <span class="n">atts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Type&#39;</span><span class="p">,</span> <span class="s1">&#39;Spec&#39;</span><span class="p">,</span> <span class="s1">&#39;parx&#39;</span><span class="p">,</span> <span class="s1">&#39;Umag&#39;</span><span class="p">,</span> <span class="s1">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Rmag&#39;</span><span class="p">,</span> 
+                <span class="s1">&#39;Imag&#39;</span><span class="p">,</span> <span class="s1">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Kmag&#39;</span><span class="p">,</span> <span class="s1">&#39;dist&#39;</span><span class="p">,</span> <span class="s1">&#39;BV&#39;</span><span class="p">,</span> <span class="s1">&#39;MV&#39;</span><span class="p">,</span> <span class="s1">&#39;BC&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> 
+                <span class="s1">&#39;coords&#39;</span><span class="p">,</span> <span class="s1">&#39;pmra&#39;</span><span class="p">,</span> <span class="s1">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s1">&#39;rv&#39;</span><span class="p">,</span> <span class="s1">&#39;Binary_Cut&#39;</span><span class="p">]</span>
+        <span class="c1"># bring Star Catalog values to top level of Target List</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">MaskedArray</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)))</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
-            
-        <span class="c"># filter out nan attribute values from Star Catalog</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># populate completion values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c"># include completeness now that it is set</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;comp0&#39;</span><span class="p">)</span>
-        <span class="c"># populate maximum integration time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c"># include integration time now that it is set</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;maxintTime&#39;</span><span class="p">)</span>
-        <span class="c"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
-        <span class="c"># if additional filters are desired, need atts fully populated</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsEst&#39;</span><span class="p">)</span>
-        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;MsTrue&#39;</span><span class="p">)</span>
         
-        <span class="c"># filter out binary stars</span>
+        <span class="c1"># number of target stars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nStars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">);</span>
+        
+        <span class="c1"># filter out nan attribute values from Star Catalog</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
+        <span class="c1"># populate completion values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># include completeness now that it is set</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;comp0&#39;</span><span class="p">)</span>
+        <span class="c1"># populate maximum integration time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># include integration time now that it is set</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;maxintTime&#39;</span><span class="p">)</span>
+        <span class="c1"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
+        <span class="c1"># if additional filters are desired, need atts fully populated</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;MsEst&#39;</span><span class="p">)</span>
+        <span class="n">atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;MsTrue&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># filter out binary stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># filter out systems with planets within the IWA</span>
+        <span class="c1"># filter out systems with planets within the IWA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outside_IWA_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># filter out systems where maximum delta mag is not in allowable orbital range</span>
+        <span class="c1"># filter out systems where maximum delta mag is not in allowable orbital range</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_dmag_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># filter out systems where integration time is longer than maximum time</span>
+        <span class="c1"># filter out systems where integration time is longer than maximum time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">int_cutoff_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
-        <span class="c"># filter out systems which do not reach the completeness threshold</span>
+        <span class="c1"># filter out systems which do not reach the completeness threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">(</span><span class="n">atts</span><span class="p">)</span>
         
-        <span class="c"># have target list, no need for catalog now</span>
+        <span class="c1"># have target list, no need for catalog now</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">keepStarCatalog</span><span class="p">:</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s">&#39;keepStarCatalog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">keepStarCatalog</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;keepStarCatalog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">keepStarCatalog</span>
         
 <div class="viewcode-block" id="TargetList.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Target List object</span>
@@ -221,9 +234,9 @@
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Target List class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s1">&#39;Target List class object attributes&#39;</span></div>
                 
 <div class="viewcode-block" id="TargetList.nan_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.nan_filter">[docs]</a>    <span class="k">def</span> <span class="nf">nan_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates Target List and filters out values which are nan</span>
@@ -234,15 +247,15 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># filter out nan values in numerical attributes</span>
+        <span class="c1"># filter out nan values in numerical attributes</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
-                <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">))</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">unicode_</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;coords&#39;</span><span class="p">:</span>
                     <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
                     <span class="n">i2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
                     <span class="k">if</span> <span class="p">(</span><span class="n">i1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="n">i2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
@@ -265,7 +278,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># indices from Target List to keep</span>
+        <span class="c1"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">==</span> <span class="bp">False</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
@@ -279,7 +292,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># indices from Target List to keep</span>
+        <span class="c1"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&gt;</span> <span class="mf">0.3</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
@@ -293,7 +306,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># indices from Target List to keep</span>
+        <span class="c1"># indices from Target List to keep</span>
         <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&lt;</span> <span class="mf">0.74</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">+</span> <span class="mf">1.8</span><span class="p">)))</span>
         <span class="n">i2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&gt;=</span> <span class="mf">0.74</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&lt;</span> <span class="mf">1.37</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mf">4.3</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span><span class="o">+</span><span class="mf">3.05</span><span class="p">))))</span>
         <span class="n">i3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">&gt;=</span> <span class="mf">1.37</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">18</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">-</span> <span class="mf">15.7</span><span class="p">)))</span>
@@ -322,10 +335,10 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># indices from target list to keep</span>
-        <span class="n">iF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s">&#39;F&#39;</span><span class="p">))</span>
-        <span class="n">iG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">))</span>
-        <span class="n">iK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s">&#39;K&#39;</span><span class="p">))</span>
+        <span class="c1"># indices from target list to keep</span>
+        <span class="n">iF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">))</span>
+        <span class="n">iG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">))</span>
+        <span class="n">iK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">))</span>
         
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iF</span><span class="p">,</span> <span class="n">iG</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">iK</span><span class="p">)</span>
@@ -344,7 +357,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># indices from Target List to keep</span>
+        <span class="c1"># indices from Target List to keep</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">&lt;</span> <span class="n">Vmagcrit</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
@@ -369,7 +382,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span>
    
-        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="TargetList.int_cutoff_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">[docs]</a>    <span class="k">def</span> <span class="nf">int_cutoff_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Includes stars if calculated integration time is less than cutoff</span>
@@ -386,7 +399,7 @@
         
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="TargetList.max_dmag_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">[docs]</a>    <span class="k">def</span> <span class="nf">max_dmag_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Includes stars if maximum delta mag is in the allowed orbital range</span>
@@ -403,37 +416,37 @@
 <span class="sd">                </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">betastar</span> <span class="o">=</span> <span class="mf">1.10472881476178</span> <span class="c"># radians</span>
+        <span class="n">betastar</span> <span class="o">=</span> <span class="mf">1.10472881476178</span> <span class="c1"># radians</span>
         
         <span class="n">rhats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">betastar</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">rhats</span> <span class="o">=</span> <span class="n">rhats</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
         
-        <span class="c"># out of range rhats</span>
+        <span class="c1"># out of range rhats</span>
         <span class="n">below</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rhats</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">))</span>
         <span class="n">above</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rhats</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">))</span>
 
-        <span class="c"># s and beta arrays</span>
+        <span class="c1"># s and beta arrays</span>
         <span class="n">ss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">ss</span> <span class="o">=</span> <span class="n">ss</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
         
         <span class="n">betas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">ss</span><span class="p">)))</span> <span class="o">+</span> <span class="n">betastar</span>
         
-        <span class="c"># fix out of range values</span>
+        <span class="c1"># fix out of range values</span>
         <span class="n">ss</span><span class="p">[</span><span class="n">below</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">betastar</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">betas</span><span class="p">[</span><span class="n">above</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">above</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">[</span><span class="n">above</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">betas</span><span class="p">[</span><span class="n">above</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">above</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">())</span>                
         
-        <span class="c"># calculate delta mag</span>
+        <span class="c1"># calculate delta mag</span>
         <span class="n">Phis</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">betas</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">betas</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">)</span>      
-        <span class="n">cdMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">t1</span><span class="o">*</span><span class="n">Phis</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">ss</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">t1</span><span class="o">*</span><span class="n">Phis</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">ss</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">cdMag</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span></div>
         
 <div class="viewcode-block" id="TargetList.completeness_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.completeness_filter">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Includes stars if completeness is larger than the minimum value</span>
@@ -453,7 +466,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>        </div>
         
 <div class="viewcode-block" id="TargetList.revise_lists"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">[docs]</a>    <span class="k">def</span> <span class="nf">revise_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atts</span><span class="p">,</span> <span class="n">ind</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Replaces Target List catalog attributes with filtered values</span>
+        <span class="sd">&quot;&quot;&quot;Replaces Target List catalog attributes with filtered values, </span>
+<span class="sd">        and updates the number of target stars.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            atts (list):</span>
@@ -464,12 +478,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s">&#39;coords&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;coords&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="n">ind</span><span class="p">])</span></div>
-    
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)[</span><span class="n">ind</span><span class="p">])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">nStars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+        
 <div class="viewcode-block" id="TargetList.stellar_mass"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">[docs]</a>    <span class="k">def</span> <span class="nf">stellar_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates target list with &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
 <span class="sd">        </span>
@@ -478,9 +494,9 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># &#39;approximate&#39; stellar mass</span>
+        <span class="c1"># &#39;approximate&#39; stellar mass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MsEst</span> <span class="o">=</span> <span class="p">(</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="mf">0.002456</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MV</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">0.09711</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">+</span> <span class="mf">0.4365</span><span class="p">))</span>
-        <span class="c"># normally distributed &#39;error&#39;</span>
+        <span class="c1"># normally distributed &#39;error&#39;</span>
         <span class="n">err</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MV</span><span class="p">))</span><span class="o">*</span><span class="mf">2.</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span><span class="o">*</span><span class="mf">0.07</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MsTrue</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">err</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">MsEst</span></div></div>
         
@@ -520,7 +536,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -3,6 +3,7 @@ import numpy as np
 from astropy import units as u
 from astropy import constants as const
 from astropy.time import Time
+import os,inspect
 
 class Observatory(object):
     """Observatory class template
@@ -49,7 +50,8 @@ class Observatory(object):
      
     def __init__(self, settlingTime=1., thrust=450., slewIsp=4160.,\
                  scMass=6000., dryMass=3400., coMass=5800., skIsp=220.,\
-                 defburnPortion=0.05, **specs):
+                 defburnPortion=0.05, spkpath=None, forceStaticEphem=False,\
+                 **specs):
         
         # default Observatory values
         # instrument settling time after repoint (days)
@@ -72,12 +74,26 @@ class Observatory(object):
         # occulter-telescope distance (km)
         self.occulterSep = 55000.*u.km                
 
+        #if jplephem is available, we'll use that for propagating solar system bodies
+        #otherwise, use static ephemeris
+        if not forceStaticEphem:
+            try:
+                from jplephem.spk import SPK
+                self.havejplephem = True
+            except ImportError:
+                print "WARNING: Module jplephem not found, using static solar system ephemeris."
+                self.havejplephem = False
+        else:
+            self.havejplephem = False
+            print "Using static solar system ephemeris."
+
+        #record all values populated so far to outspec
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],u.Quantity):
                 self._outspec[key] = self.__dict__[key].value
             else:
                 self._outspec[key] = self.__dict__[key]
-
+                   
         # initialize values updated by functions
         # observatory keepout booleans
         self.kogood = np.array([]) 
@@ -89,98 +105,110 @@ class Observatory(object):
         # set values derived from quantities above
         # slew flow rate (kg/day)
         self.flowRate = (self.thrust/const.g0/self.slewIsp).to(u.kg/u.day)
-        
-        # All ephemeride data from Vallado Appendix D.4
-        # Store Mercury ephemerides data (ecliptic)
-        Mercurya = 0.387098310
-        Mercurye = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
-        Mercuryi = [7.004986, -0.0059516, 0.00000081, 0.000000041]
-        MercuryO = [48.330893, -0.1254229, -0.00008833, -0.000000196]
-        Mercuryw = [77.456119, 0.1588643, -0.00001343, 0.000000039]
-        MercurylM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
-        
-        self.Mercury = self.SolarEph(Mercurya, Mercurye, Mercuryi, MercuryO, Mercuryw, MercurylM)
-        
-        # Store Venus epemerides data (ecliptic)
-        Venusa = 0.723329820
-        Venuse = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
-        Venusi = [3.394662, -0.0008568, -0.00003244, 0.000000010]
-        VenusO = [76.679920, -0.2780080, -0.00014256, -0.000000198]
-        Venusw = [131.563707, 0.0048646, -0.00138232, -0.000005332]
-        VenuslM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
-        
-        self.Venus = self.SolarEph(Venusa, Venuse, Venusi, VenusO, Venusw, VenuslM)
-        
-        # Store Earth ephemerides data (ecliptic)
-        Eartha = 1.000001018
-        Earthe = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
-        Earthi = [0., 0.0130546, -0.00000931, -0.000000034]
-        EarthO = [174.873174, -0.2410908, 0.00004067, -0.000001327]
-        Earthw = [102.937348, 0.3225557, 0.00015026, 0.000000478]
-        EarthlM = [100.466449, 35999.3728519, -0.00000568, 0.]
-        
-        self.Earth = self.SolarEph(Eartha, Earthe, Earthi, EarthO, Earthw, EarthlM)
-        
-        # Store Mars ephemerides data (ecliptic)
-        Marsa = 1.523679342
-        Marse = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
-        Marsi = [1.849726, -0.0081479, -0.00002255, -0.000000027]
-        MarsO = [49.558093, -0.2949846, -0.00063993, -0.000002143]
-        Marsw = [336.060234, 0.4438898, -0.00017321, 0.000000300]
-        MarslM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
-        
-        self.Mars = self.SolarEph(Marsa, Marse, Marsi, MarsO, Marsw, MarslM)
-        
-        # Store Jupiter ephemerides data (ecliptic)
-        Jupitera = [5.202603191, 0.0000001913]
-        Jupitere = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
-        Jupiteri = [1.303270, -0.0019872, 0.00003318, 0.000000092]
-        JupiterO = [100.464441, 0.1766828, 0.00090387, -0.000007032]
-        Jupiterw = [14.331309, 0.2155525, 0.00072252, -0.000004590]
-        JupiterlM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
+            
+        # if you have jplephem, load spice file. otherwise, load static ephem.
+        if self.havejplephem:
+            if (spkpath is None) or not(os.path.exists(spkpath)):
+                # if the path does not exist, load the default de432s.bsp
+                    classpath = os.path.split(inspect.getfile(self.__class__))[0]
+                    classpath = os.path.normpath(os.path.join(classpath,'..','Observatory'))
+                    filename = 'de432s.bsp'
+                    spkpath = os.path.join(classpath, filename)
+            self.kernel = SPK.open(spkpath)
+        else:
+            # All ephemeride data from Vallado Appendix D.4
+            # Store Mercury ephemerides data (ecliptic)
+            Mercurya = 0.387098310
+            Mercurye = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
+            Mercuryi = [7.004986, -0.0059516, 0.00000081, 0.000000041]
+            MercuryO = [48.330893, -0.1254229, -0.00008833, -0.000000196]
+            Mercuryw = [77.456119, 0.1588643, -0.00001343, 0.000000039]
+            MercurylM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
+            Mercury = self.SolarEph(Mercurya, Mercurye, Mercuryi, MercuryO, Mercuryw, MercurylM)
+            
+            # Store Venus epemerides data (ecliptic)
+            Venusa = 0.723329820
+            Venuse = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
+            Venusi = [3.394662, -0.0008568, -0.00003244, 0.000000010]
+            VenusO = [76.679920, -0.2780080, -0.00014256, -0.000000198]
+            Venusw = [131.563707, 0.0048646, -0.00138232, -0.000005332]
+            VenuslM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
+            Venus = self.SolarEph(Venusa, Venuse, Venusi, VenusO, Venusw, VenuslM)
+            
+            # Store Earth ephemerides data (ecliptic)
+            Eartha = 1.000001018
+            Earthe = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
+            Earthi = [0., 0.0130546, -0.00000931, -0.000000034]
+            EarthO = [174.873174, -0.2410908, 0.00004067, -0.000001327]
+            Earthw = [102.937348, 0.3225557, 0.00015026, 0.000000478]
+            EarthlM = [100.466449, 35999.3728519, -0.00000568, 0.]
+            Earth = self.SolarEph(Eartha, Earthe, Earthi, EarthO, Earthw, EarthlM)
+            
+            # Store Mars ephemerides data (ecliptic)
+            Marsa = 1.523679342
+            Marse = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
+            Marsi = [1.849726, -0.0081479, -0.00002255, -0.000000027]
+            MarsO = [49.558093, -0.2949846, -0.00063993, -0.000002143]
+            Marsw = [336.060234, 0.4438898, -0.00017321, 0.000000300]
+            MarslM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
+            Mars = self.SolarEph(Marsa, Marse, Marsi, MarsO, Marsw, MarslM)
+            
+            # Store Jupiter ephemerides data (ecliptic)
+            Jupitera = [5.202603191, 0.0000001913]
+            Jupitere = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
+            Jupiteri = [1.303270, -0.0019872, 0.00003318, 0.000000092]
+            JupiterO = [100.464441, 0.1766828, 0.00090387, -0.000007032]
+            Jupiterw = [14.331309, 0.2155525, 0.00072252, -0.000004590]
+            JupiterlM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
+            Jupiter = self.SolarEph(Jupitera, Jupitere, Jupiteri, JupiterO, Jupiterw, JupiterlM)
+            
+            # Store Saturn ephemerides data (ecliptic)
+            Saturna = [9.554909596, -0.0000021389]
+            Saturne = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
+            Saturni = [2.488878, 0.0025515, -0.00004903, 0.000000018]
+            SaturnO = [113.665524, -0.2566649, -0.00018345, 0.000000357]
+            Saturnw = [93.056787, 0.5665496, 0.00052809, 0.000004882]
+            SaturnlM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
+            Saturn = self.SolarEph(Saturna, Saturne, Saturni, SaturnO, Saturnw, SaturnlM)
+            
+            # Store Uranus ephemerides data (ecliptic)
+            Uranusa = [19.218446062, -0.0000000372, 0.00000000098]
+            Uranuse = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
+            Uranusi = [0.773196, -0.0016869, 0.00000349, 0.000000016]
+            UranusO = [74.005947, 0.0741461, 0.00040540, 0.000000104]
+            Uranusw = [173.005159, 0.0893206, -0.00009470, 0.000000413]
+            UranuslM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
+            Uranus = self.SolarEph(Uranusa, Uranuse, Uranusi, UranusO, Uranusw, UranuslM)
+            
+            # Store Neptune ephemerides data (ecliptic)
+            Neptunea = [30.110386869, -0.0000001663, 0.00000000069]
+            Neptunee = [0.00898809, 0.000006408, -0.0000000008]
+            Neptunei = [1.769952, 0.0002257, 0.00000023, -0.000000000]
+            NeptuneO = [131.784057, -0.0061651, -0.00000219, -0.000000078]
+            Neptunew = [48.123691, 0.0291587, 0.00007051, 0.]
+            NeptunelM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
+            Neptune = self.SolarEph(Neptunea, Neptunee, Neptunei, NeptuneO, Neptunew, NeptunelM)
+            
+            # Store Pluto ephemerides data (ecliptic)
+            Plutoa = [39.48168677, -0.00076912]
+            Plutoe = [0.24880766, 0.00006465]
+            Plutoi = [17.14175, 0.003075]
+            PlutoO = [110.30347, -0.01036944]
+            Plutow = [224.06676, -0.03673611]
+            PlutolM = [238.92881, 145.2078]
+            Pluto = self.SolarEph(Plutoa, Plutoe, Plutoi, PlutoO, Plutow, PlutolM)
 
-        self.Jupiter = self.SolarEph(Jupitera, Jupitere, Jupiteri, JupiterO, Jupiterw, JupiterlM)
-        
-        # Store Saturn ephemerides data (ecliptic)
-        Saturna = [9.554909596, -0.0000021389]
-        Saturne = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
-        Saturni = [2.488878, 0.0025515, -0.00004903, 0.000000018]
-        SaturnO = [113.665524, -0.2566649, -0.00018345, 0.000000357]
-        Saturnw = [93.056787, 0.5665496, 0.00052809, 0.000004882]
-        SaturnlM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
-        
-        self.Saturn = self.SolarEph(Saturna, Saturne, Saturni, SaturnO, Saturnw, SaturnlM)
-        
-        # Store Uranus ephemerides data (ecliptic)
-        Uranusa = [19.218446062, -0.0000000372, 0.00000000098]
-        Uranuse = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
-        Uranusi = [0.773196, -0.0016869, 0.00000349, 0.000000016]
-        UranusO = [74.005947, 0.0741461, 0.00040540, 0.000000104]
-        Uranusw = [173.005159, 0.0893206, -0.00009470, 0.000000413]
-        UranuslM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
-        
-        self.Uranus = self.SolarEph(Uranusa, Uranuse, Uranusi, UranusO, Uranusw, UranuslM)
-        
-        # Store Neptune ephemerides data (ecliptic)
-        Neptunea = [30.110386869, -0.0000001663, 0.00000000069]
-        Neptunee = [0.000898809, 0.000006408, -0.0000000008]
-        Neptunei = [1.769952, 0.0002257, 0.00000023, -0.000000000]
-        NeptuneO = [131.784057, -0.0061651, -0.00000219, -0.000000078]
-        Neptunew = [48.123691, 0.0291587, 0.00007051, 0.]
-        NeptunelM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
-        
-        self.Neptune = self.SolarEph(Neptunea, Neptunee, Neptunei, NeptuneO, Neptunew, NeptunelM)
-        
-        # Store Pluto ephemerides data (ecliptic)
-        Plutoa = [39.48168677, -0.00076912]
-        Plutoe = [0.24880766, 0.00006465]
-        Plutoi = [17.14175, 0.003075]
-        PlutoO = [110.30347, -0.01036944]
-        Plutow = [224.06676, -0.03673611]
-        PlutolM = [238.92881, 145.2078]
-        
-        self.Pluto = self.SolarEph(Plutoa, Plutoe, Plutoi, PlutoO, Plutow, PlutolM)
-        
+            #store all as dictionary:
+            self.planets = {'Mercury': Mercury,
+                            'Venus': Venus,
+                            'Earth': Earth,
+                            'Mars': Mars,
+                            'Jupiter': Jupiter,
+                            'Saturn': Saturn,
+                            'Uranus': Uranus,
+                            'Neptune': Neptune,
+                            'Pluto': Pluto}
+
     def __str__(self):
         """String representation of the Observatory object
         
@@ -254,7 +282,91 @@ class Observatory(object):
         
         return success
 
-    def keplerplanet(self, time, planet):
+    def solarSystem_body_position(self, time, bodyname):
+        """Finds position vector for solar system objects
+        
+        This passes all arguments to one of spk_body or keplerplanet, depending
+        on the value of self.havejplephem.
+
+        Args:
+            time (Time):
+                absolute time
+            bodyname (str):
+                solar system object name
+        
+        Returns:
+            r_body (Quantity):
+                heliocentric equatorial position vector in 1D numpy ndarray
+                (units of km)
+        
+        """
+
+        if self.havejplephem:
+            return self.spk_body(time,bodyname)
+        else:
+            return self.keplerplanet(time,bodyname)
+
+
+        
+    def spk_body(self, time, bodyname):
+        """Finds position vector for solar system objects
+        
+        This method uses spice kernel from NAIF to find heliocentric
+        equatorial position vectors (astropy Quantity in km) for solar system
+        objects.
+        
+        Args:
+            time (Time):
+                absolute time
+            bodyname (str):
+                solar system object name
+        
+        Returns:
+            r_body (Quantity):
+                heliocentric equatorial position vector in 1D numpy ndarray
+                (units of km)
+        
+        """
+        
+        # dictionary of solar system bodies available in spice kernel
+        bodies = {'Mercury':199,
+                  'Venus':299,
+                  'Earth':399,
+                  'Mars':4,
+                  'Jupiter':5,
+                  'Saturn':6,
+                  'Uranus':7,
+                  'Neptune':8,
+                  'Pluto':9,
+                  'Sun':10,
+                  'Moon':301}
+        
+        assert bodies.has_key(bodyname),\
+                 "%s is not a recognized body name."%(bodyname)
+
+        if bodies[bodyname] == 199:
+            r_body = (self.kernel[0,1].compute(time.jd) + \
+                    self.kernel[1,199].compute(time.jd) - \
+                    self.kernel[0,10].compute(time.jd))*u.km
+        elif bodies[bodyname] == 299:
+            r_body = (self.kernel[0,2].compute(time.jd) + \
+                    self.kernel[2,299].compute(time.jd) - \
+                    self.kernel[0,10].compute(time.jd))*u.km
+        elif bodies[bodyname] == 399:
+            r_body = (self.kernel[0,3].compute(time.jd) + \
+                    self.kernel[3,399].compute(time.jd) - \
+                    self.kernel[0,10].compute(time.jd))*u.km
+        elif bodies[bodyname] == 301:
+            r_body = (self.kernel[0,3].compute(time.jd) + \
+                    self.kernel[3,301].compute(time.jd) - \
+                    self.kernel[0,10].compute(time.jd))*u.km
+        else:
+            r_body = (self.kernel[0,bodies[bodyname]].compute(time.jd) - \
+                    self.kernel[0,10].compute(time.jd))*u.km
+        
+        return r_body
+
+    def keplerplanet(self, time, bodyname):
         """Finds position vector for solar system objects
         
         This method uses algorithms 2 and 10 from Vallado 2013 to find 
@@ -264,16 +376,24 @@ class Observatory(object):
         Args:
             time (Time):
                 absolute time
-            planet (SolarEph):
-                SolarEph class object
+            bodyname (str):
+                solar system object name
                 
         Returns:
-            r_planet (Quantity):
+            r_body (Quantity):
                 heliocentric equatorial position vector in 1D numpy ndarray 
                 (units of km)
         
         """
         
+        if bodyname == 'Moon':
+            r_Earth = self.keplerplanet(time, 'Earth')
+            return r_Earth + self.moon_earth(time)
+
+        assert self.planets.has_key(bodyname),\
+                "%s is not a recognized body name."%(bodyname)
+
+        planet = self.planets[bodyname] 
         # find Julian centuries from J2000
         TDB = self.cent(time)
         # update ephemeride data

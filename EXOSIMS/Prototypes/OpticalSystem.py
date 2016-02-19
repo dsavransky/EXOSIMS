@@ -22,91 +22,106 @@ class OpticalSystem(object):
     Attributes:
         lam (Quantity):
             detection wavelength (default units of nm)
+        deltaLam (Quantity):
+            bandpass (default units of nm)
+		obscurFac (float):
+			Obscuration factor due to secondary mirror and spiders        
         shapeFac (float):
             shape factor (also known as fill factor) where 
-            :math:`shapeFac * diameter^2 = Area`
-        pupilArea (Quantity):
-            entrance pupil area (default units of m\ :sup:`2`)
+            :math:`shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea`
         pupilDiam (Quantity):
             entrance pupil diameter (default units of m)
+        pupilArea (Quantity):
+            entrance pupil area (default units of m\ :sup:`2`)
         SNchar (float):
             Signal to Noise Ratio for characterization
-        haveOcculter (bool):
-            boolean signifying if the system has an occulter
         IWA (Quantity):
             Fundamental Inner Working Angle (default units of arcsecond)
         OWA (Quantity):
             Fundamental Outer Working Angle (default units of arcsecond)
         dMagLim (float):
             Fundamental limiting delta magnitude. 
-        attenuation (float):
-            non-coronagraph attenuation (throughput)
-        deltaLam (Quantity):
-            bandpass (default units of nm)
         telescopeKeepout (float):
             telescope keepout angle in degrees
+        attenuation (float):
+            non-coronagraph attenuation (throughput)
         specLam (Quantity):
             spectral wavelength of interest (default units of nm)
             Note:  probably belongs in postprocessing or rules.
         intCutoff (Quantity):
             integration cutoff (default units of day)
-        scienceInstruments (list of dicts):
-            All science instrument attributes (variable)
+        Npix (float):
+            number of noise pixels
+        Ndark (float):
+            number of dark frames used
         starlightSuppressionSystems (list of dicts):
             All starlight suppression system attributes (variable)
+        scienceInstruments (list of dicts):
+            All science instrument attributes (variable)
 
     Common Starlight Suppression System Attributes:
 
+        haveOcculter (bool):
+            boolean signifying if the system has an occulter
         PSF (callable(lam, alpha)):
-            point spread function - 2D ndarray of values, normalized to 1 at the core
-            (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity) and angular separation (astropy Quantity). Note normalization 
-            means that all throughput effects must be contained in the throughput 
-            attribute.
+            point spread function - 2D ndarray of values, normalized to 1 at
+            the core (must be callable - can be lambda, function,
+            scipy.interpolate.interp2d object, etc.) with inputs wavelength
+            (astropy Quantity) and angular separation (astropy Quantity). Note
+            normalization means that all throughput effects must be contained
+            in the throughput attribute.
         PSFSampling (Quantity):
             Sampling of PSF in arcsec/pixel (default units of arcsec)
         throughput (callable(lam, alpha)):
-            optical system throughput (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity) and angular separation (astropy Quantity).
+            optical system throughput (must be callable - can be lambda,
+            function, scipy.interpolate.interp2d object, etc.) with inputs
+            wavelength (astropy Quantity) and angular separation (astropy 
+            Quantity).
         contrast (callable(lam, alpha)):
-            optical system contrast curve (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity) and angular separation (astropy Quantity).
+            optical system contrast curve (must be callable - can be lambda,
+            function, scipy.interpolate.interp2d object, etc.) with inputs
+            wavelength (astropy Quantity) and angular separation (astropy 
+            Quantity).
 
     Common Science Instrument Attributes:
         QE (callable(lam)):
-            detector quantum efficiency (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength (astropy
-            Quantity).  
+            detector quantum efficiency (must be callable - can be lambda,
+            function, scipy.interpolate.interp2d object, etc.) with inputs 
+            wavelength (astropy Quantity).  
      
     """
 
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self, lam=500.,deltaLam=100.,shapeFac=np.pi/4.,\
-            pupilDiam=4.,SNchar=11., telescopeKeepout=45.,\
-            IWA=None,OWA=None,dMagLim=None, attenuation=0.57,\
-            specLam=760.,intCutoff=50.,\
-            starlightSuppressionSystems=None, scienceInstruments=None, **specs):
-        
+    def __init__(self, lam=500., deltaLam=100., obscurFac=0.2, shapeFac=np.pi/4.,\
+            pupilDiam=4., SNchar=11., telescopeKeepout=45., attenuation=0.57,\
+            specLam=760.,intCutoff=50., Npix=14.3, Ndark=10., IWA=None,\
+            OWA=None,dMagLim=None, starlightSuppressionSystems=None,\
+            scienceInstruments=None, **specs):
+
         #must have a starlight suppression system and science instrument defined
         if not starlightSuppressionSystems:
             raise ValueError("No starlight suppression systems defined.")
+        if not scienceInstruments:
+            raise ValueError("No science isntrument defined.")
 
         #load all values with defaults
         self.lam = float(lam)*u.nm              # detection wavelength (nm) 
-        self.deltaLam = float(deltaLam)*u.nm              # detection wavelength (nm) 
-        self.shapeFac = float(shapeFac)         # shapeFac*diameter**2 = Area
+        self.deltaLam = float(deltaLam)*u.nm    # detection bandwidth (nm) 
+        self.obscurFac = float(obscurFac)       # obscuration factor
+        self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
-        self.pupilArea = self.shapeFac * (self.pupilDiam)**2. # entrance pupil area
-        self.SNchar = float(SNchar)             # Signal to Noise Ratio for characterization
-        self.telescopeKeepout = float(telescopeKeepout)*u.deg # keepout angle in degrees
-        self.attenuation = float(attenuation)   #non-coronagraph attenuation factor
-        self.specLam = float(specLam)*u.nm  # spectral wavelength of interest
-        self.intCutoff = float(intCutoff)*u.day #integration time cutoff 
+        self.pupilArea = self.shapeFac*self.pupilDiam**2.*(1-self.obscurFac)\
+                                                # entrance pupil area
+        self.SNchar = float(SNchar)             # SNR for characterization
+        self.telescopeKeepout = float(telescopeKeepout)*u.deg\
+                                                # keepout angle in degrees
+        self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
+        self.specLam = float(specLam)*u.nm      # spectral wavelength of interest
+        self.intCutoff = float(intCutoff)*u.day # integration time cutoff 
+        self.Npix = float(Npix)					# number of noise pixels
+        self.Ndark = float(Ndark)				# number of dark frames used
         
         #populate all scalar atributes to outspec
         for key in self.__dict__.keys():
@@ -115,166 +130,158 @@ class OpticalSystem(object):
             else:
                 self._outspec[key] = self.__dict__[key]
 
-        # now loop through starlight suppression systems and verify what's there.
-        # the only things that are really required is the system number, the type (external/internal) 
-        # and that the whole thing is a dict
-        sysIWAs = []
-        sysOWAs = []
-        sysdMagLims = []
-        self.haveOcculter = False 
+        #now loop through all starlight suppression systems
+        systIWAs = []
+        systOWAs = []
+        systdMagLims = []
         self._outspec['starlightSuppressionSystems'] = []
-        for sys in starlightSuppressionSystems:
-            assert isinstance(sys,dict), "Starlight suppression systems must be defined as dicts."
-            assert sys.has_key('starlightSuppressionSystemNumber'),\
-                    "All starlight suppression systems must have key starlightSuppressionSystemNumber."
-            assert sys.has_key('type') and isinstance(sys['type'],basestring),\
+        for syst in starlightSuppressionSystems:
+            # The only things that are really required is the system number, 
+            # the type (external/internal) and that the whole thing is a dict.
+            assert isinstance(syst,dict),\
+                    "Starlight suppression systems must be defined as dicts."
+            assert syst.has_key('starlightSuppressionSystemNumber'),\
+                    "All starlight suppression systems must have "\
+                    "key starlightSuppressionSystemNumber."
+            assert syst.has_key('type') and isinstance(syst['type'],basestring),\
                     "All starlight suppression systems must have key type."
-            if (sys['type'].lower() == 'external') or  (sys['type'].lower() == 'hybrid'):
-                self.haveOcculter = True
+            self._outspec['starlightSuppressionSystems'].append(syst.copy())
+
+            #set an occulter, for an external or hybrid system
+            self.haveOcculter = syst['type'].lower() in ('external', 'hybrid')
 
             #handle inf OWA
-            if sys.has_key('OWA') and (sys['OWA'] == 0):
-                sys['OWA'] = np.Inf
-
-            self._outspec['starlightSuppressionSystems'].append(sys.copy())
+            if syst.has_key('OWA') and (syst['OWA'] == 0):
+                syst['OWA'] = np.Inf
 
             #check for throughput
-            if sys.has_key('throughput'):
-                if isinstance(sys['throughput'],basestring):
-                    pth = os.path.normpath(os.path.expandvars(sys['throughput']))
-
+            if syst.has_key('throughput'):
+                if isinstance(syst['throughput'],basestring):
+                    pth = os.path.normpath(os.path.expandvars(syst['throughput']))
                     assert os.path.isfile(pth),\
                             "%s is not a valid file."%pth
-                    tmp = fits.open(pth)
-                    if (len(tmp[0].data.shape) == 2) and (2 in tmp[0].data.shape):
-                        if tmp[0].data.shape[0] != 2:
-                            dat = tmp[0].data.T
-                        else:
-                            dat = tmp[0].data
 
-                        WA = dat[0]
-                        T = dat[1]
+                    with fits.open(pth) as tmp:
+                        if (len(tmp[0].data.shape) == 2) and (2 in tmp[0].data.shape):
+                            if tmp[0].data.shape[0] != 2:
+                                dat = tmp[0].data.T
+                            else:
+                                dat = tmp[0].data
 
-                        if not sys.has_key('IWA'):
-                            sys['IWA'] = np.min(WA)
-                        else:
-                            assert sys['IWA'] >= np.min(WA),\
-                                "IWA mismatch for throughput for starlight suppression system #%d"%sys['starlightSuppressionSystemNumber']
-                        if not sys.has_key('OWA'):
-                            sys['OWA'] = np.max(WA)
-                        else:
-                            assert sys['OWA'] <= np.max(WA),\
-                                "OWA mismatch for throughput for starlight suppression system #%d"%sys['starlightSuppressionSystemNumber']
+                    WA = dat[0]
+                    T = dat[1]
+                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
+                        syst['IWA'] = np.min(WA)
+                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
+                        syst['OWA'] = np.max(WA)
 
-                        Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic', fill_value=np.nan,\
-                                bounds_error=False)
-                        sys['throughput'] = lambda lam,alpha: Tinterp(alpha)
+                    Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic',\
+                            fill_value=np.nan, bounds_error=False)
+                    syst['throughput'] = lambda lam,alpha: Tinterp(alpha)
 
                     #basic validation here for size and IWA/OWA
-                    #sys['throughput'] = lambda or interp
-                elif isinstance(sys['throughput'],numbers.Number):
-                    sys['throughput'] = lambda lam, alpha, T=float(sys['throughput']): T
-
+                    #syst['throughput'] = lambda or interp
+                elif isinstance(syst['throughput'],numbers.Number):
+                    syst['throughput'] = lambda lam, alpha, T=float(syst['throughput']): T
+            
             #check for contrast
-            if sys.has_key('contrast'):
-                if isinstance(sys['contrast'],basestring):
-                    pth = os.path.normpath(os.path.expandvars(sys['contrast']))
-
+            if syst.has_key('contrast'):
+                if isinstance(syst['contrast'],basestring):
+                    pth = os.path.normpath(os.path.expandvars(syst['contrast']))
                     assert os.path.isfile(pth),\
                             "%s is not a valid file."%pth
-                    tmp = fits.open(pth)
-                    if (len(tmp[0].data.shape) == 2) and (2 in tmp[0].data.shape):
-                        if tmp[0].data.shape[0] != 2:
-                            dat = tmp[0].data.T
-                        else:
-                            dat = tmp[0].data
 
-                        WA = dat[0]
-                        C = dat[1]
-
-                        if not sys.has_key('IWA'):
-                            sys['IWA'] = np.min(WA)
-                        else:
-                            assert sys['IWA'] >= np.min(WA),\
-                                "IWA mismatch for throughput for starlight suppression system #%d"%sys['starlightSuppressionSystemNumber']
-                        if not sys.has_key('OWA'):
-                            sys['OWA'] = np.max(WA)
-                        else:
-                            assert sys['OWA'] <= np.max(WA),\
-                                "OWA mismatch for throughput for starlight suppression system #%d"%sys['starlightSuppressionSystemNumber']
-
-                        Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic', fill_value=np.nan,\
-                                bounds_error=False)
-                        sys['contrast'] = lambda lam,alpha: Cinterp(alpha)
-
-                        if not sys.has_key('dMagLim'):
-                            Cmin = scipy.optimize.minimize(Cinterp, WA[np.argmin(C)],\
-                                    bounds=((np.min(WA),np.max(WA)),) )
-                            if Cmin.success:
-                                Cmin = Cmin.fun[0]
+                    with fits.open(pth) as tmp:
+                        if (len(tmp[0].data.shape) == 2) and (2 in tmp[0].data.shape):
+                            if tmp[0].data.shape[0] != 2:
+                                dat = tmp[0].data.T
                             else:
-                                print "Warning: failed to find minimum of contrast interpolant for starlight suppression system #%d"%sys['starlightSuppressionSystemNumber']
-                                Cmin = np.min(C)
-                            
-                            sys['dMagLim'] = -2.5*np.log10(Cmin)
+                                dat = tmp[0].data
 
-                            
-                elif isinstance(sys['contrast'],numbers.Number):
-                    sys['contrast'] = lambda lam, alpha, C=float(sys['contrast']): C
-                    if not sys.has_key('dMagLim'):
-                        sys['dMagLim'] = -2.5*np.log10(float(sys['contrast']))
+                    WA = dat[0]
+                    C = dat[1]
+                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
+                        syst['IWA'] = np.min(WA)
+                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
+                        syst['OWA'] = np.max(WA)
+
+                    Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic',\
+                            fill_value=np.nan, bounds_error=False)
+                    syst['contrast'] = lambda lam,alpha: Cinterp(alpha)
+
+                    if not syst.has_key('dMagLim'):
+                        Cmin = scipy.optimize.minimize(Cinterp, WA[np.argmin(C)],\
+                                bounds=((np.min(WA),np.max(WA)),) )
+                        if Cmin.success:
+                            Cmin = Cmin.fun[0]
+                        else:
+                            print "Warning: failed to find minimum of contrast "\
+                                    "interpolant for starlight suppression system "\
+                                    "#%d"%syst['starlightSuppressionSystemNumber']
+                            Cmin = np.min(C)
+
+                        syst['dMagLim'] = -2.5*np.log10(Cmin)
+
+                elif isinstance(syst['contrast'],numbers.Number):
+                    if not syst.has_key('dMagLim'):
+                        syst['dMagLim'] = -2.5*np.log10(float(syst['contrast']))
+
+                    syst['contrast'] = lambda lam, alpha, C=float(syst['contrast']): C
 
             #check for PSF
-            if sys.has_key('PSF'):
-                if isinstance(sys['PSF'],basestring):
-                    pth = os.path.normpath(os.path.expandvars(sys['PSF']))
+            if syst.has_key('PSF'):
+                if isinstance(syst['PSF'],basestring):
+                    pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                     assert os.path.isfile(pth),\
                             "%s is not a valid file."%pth
-                    tmp = fits.open(pth)
-                    if len(tmp[0].data.shape) == 2:
-                        sys['PSF'] = lambda lam, alpha, P=tmp[0].data: P
-                    if 'SAMPLING' in tmp[0].header.keys():
-                        sys['PSFSampling'] = tmp[0].header['SAMPLING']
+                            
+                    with fits.open(pth) as tmp:
+                        if len(tmp[0].data.shape) == 2:
+                            syst['PSF'] = lambda lam, alpha, P=tmp[0].data: P
+
+                        if 'SAMPLING' in tmp[0].header.keys():
+                            syst['PSFSampling'] = tmp[0].header['SAMPLING']
 
                     #basic validation here for size and IWA/OWA
-                    #sys['PSF'] = lambda or interp
+                    #syst['PSF'] = lambda or interp
                 else:
                     #placeholder PSF
-                    sys['PSF'] = lambda lam, alpha: np.ones((3,3))
+                    syst['PSF'] = lambda lam, alpha: np.ones((3,3))
 
-            # sampling of PSF in arcsec/pixel (otherwise should grab from PSF file header)
-            if sys.has_key('PSFSampling'):
-                sys['PSFSampling'] = float(sys['PSFSampling'])*u.arcsec
+            # sampling of PSF in arcsec/pixel (from specs or PSF file header)
+            if syst.has_key('PSFSampling'):
+                syst['PSFSampling'] = float(syst['PSFSampling'])*u.arcsec
 
             # optical system overhead time
-            if sys.has_key('opticaloh'):
-                sys['opticaloh'] = float(sys['opticaloh'])*u.day
+            if syst.has_key('opticaloh'):
+                syst['opticaloh'] = float(syst['opticaloh'])*u.day
             else:
-                sys['opticaloh'] = 1.*u.day
+                syst['opticaloh'] = 1.*u.day
 
             #time multipliers
-            if not sys.has_key('detectionTimeMultipler'):
-                sys['detectionTimeMultiplier'] = 1.
-            if not sys.has_key('characterizationTimeMultiplier'):
-                sys['characterizationTimeMultiplier'] = 1.
+            if not syst.has_key('detectionTimeMultipler'):
+                syst['detectionTimeMultiplier'] = 1.
+            if not syst.has_key('characterizationTimeMultiplier'):
+                syst['characterizationTimeMultiplier'] = 1.
     
             #check for system's IWA, OWA and dMagLim
-            if sys.has_key('IWA'):
-                sysIWAs.append(sys['IWA'])
-            if sys.has_key('OWA'):
-                sysOWAs.append(sys['OWA'])
-            if sys.has_key('dMagLim'):
-                sysdMagLims.append(sys['dMagLim'])
+            if syst.has_key('IWA'):
+                systIWAs.append(syst['IWA'])
+            if syst.has_key('OWA'):
+                systOWAs.append(syst['OWA'])
+            if syst.has_key('dMagLim'):
+                systdMagLims.append(syst['dMagLim'])
                 
         #sort suppression systems by number
-        self.starlightSuppressionSystems = sorted(starlightSuppressionSystems, key=itemgetter('starlightSuppressionSystemNumber')) 
+        self.starlightSuppressionSystems = sorted(starlightSuppressionSystems,\
+                key=itemgetter('starlightSuppressionSystemNumber')) 
 
         #populate IWA, OWA, and dMagLim as required
         if IWA is not None:
             self.IWA = float(IWA)*u.arcsec
         else:
-            if len(sysIWAs) > 0:
-                self.IWA = float(min(sysIWAs))*u.arcsec
+            if len(systIWAs) > 0:
+                self.IWA = float(min(systIWAs))*u.arcsec
             else:
                 raise ValueError("Could not determine fundamental IWA.")
 
@@ -284,16 +291,16 @@ class OpticalSystem(object):
             else:
                 self.OWA = float(OWA)*u.arcsec
         else:
-            if len(sysOWAs) > 0:
-                self.OWA = float(max(sysOWAs))*u.arcsec
+            if len(systOWAs) > 0:
+                self.OWA = float(max(systOWAs))*u.arcsec
             else:
                 raise ValueError("Could not determine fundamental OWA.")
 
         if dMagLim is not None:
             self.dMagLim = float(dMagLim)
         else:
-            if len(sysdMagLims) > 0:
-                self.dMagLim = float(max(sysdMagLims))
+            if len(systdMagLims) > 0:
+                self.dMagLim = float(max(systdMagLims))
             else:
                 raise ValueError("Could not determine fundamental dMagLim.")
 
@@ -304,53 +311,51 @@ class OpticalSystem(object):
         self._outspec['OWA'] = self.OWA.value
         self._outspec['dMagLim'] = self.dMagLim
 
-
         #now go through all science Instruments
         self._outspec['scienceInstruments'] = []
-        for sys in scienceInstruments:
-            assert isinstance(sys,dict), "Science instruments must be defined as dicts."
-            assert sys.has_key('scienceInstrumentNumber'),\
+        for syst in scienceInstruments:
+            assert isinstance(syst,dict), "Science instruments must be defined as dicts."
+            assert syst.has_key('scienceInstrumentNumber'),\
                     "All science instruments must have key scienceInstrumentNumber."
-            assert sys.has_key('type') and isinstance(sys['type'],basestring),\
+            assert syst.has_key('type') and isinstance(syst['type'],basestring),\
                     "All science instruments must have key type."
 
-            self._outspec['scienceInstruments'].append(sys.copy())
+            self._outspec['scienceInstruments'].append(syst.copy())
 
-            if sys.has_key('pixelArea'): 
-                sys['pixelArea'] = float(sys['pixelArea'])*(u.m)**2 #pixel are in m^2
-            if sys.has_key('focalLength'):
-                sys['focalLength'] = float(sys['focalLength'])*u.m #focal length in m
-            if sys.has_key('darkRate'):
-                sys['darkRate'] = float(sys['darkRate'])*(1/u.s) # detector dark-current rate per pixel
-            if sys.has_key('texp'):
-                sys['texp'] = float(sys['texp'])*u.s  # exposure time per read (s)
-            if sys.has_key('readNoise'):
-                sys['readNoise'] = float(sys['readNoise'])  # detector read noise (e/s)
-            if sys.has_key('Rspec'):
-                sys['Rspec'] = float(sys['Rspec']) 
-            if sys.has_key('Npix'):
-                sys['Npix'] = float(sys['Npix']) 
-            if sys.has_key('Ndark'):
-                sys['Ndark'] = int(sys['Ndark']) 
-            if sys.has_key('ENF'):
-                sys['ENF'] = float(sys['ENF'])
-            if sys.has_key('CIC'):
-                sys['CIC'] = float(sys['CIC'])
+            if syst.has_key('pixelPitch'): 
+                syst['pixelPitch'] = float(syst['pixelPitch'])*(u.m) #pixel pitch in m
+            if syst.has_key('focalLength'):
+                syst['focalLength'] = float(syst['focalLength'])*u.m #focal length in m
+            if syst.has_key('darkCurrent'):
+                syst['darkCurrent'] = float(syst['darkCurrent'])*(1/u.s) # detector dark-current rate per pixel
+            if syst.has_key('texp'):
+                syst['texp'] = float(syst['texp'])*u.s  # exposure time per read (s)
+            if syst.has_key('readNoise'):
+                syst['readNoise'] = float(syst['readNoise'])  # detector read noise (e/s)
+            if syst.has_key('Rspec'):
+                syst['Rspec'] = float(syst['Rspec']) # spectral resolving power
+            if syst.has_key('ENF'):
+                syst['ENF'] = float(syst['ENF']) # excess noise factor
+            if syst.has_key('CIC'):
+                syst['CIC'] = float(syst['CIC']) # clock-induced-charge
+            if syst.has_key('G_EM'):
+                syst['G_EM'] = float(syst['G_EM']) # electron multiplication gain
 
-            if sys.has_key('QE'):
-                if isinstance(sys['QE'],basestring):
-                    assert os.path.isfile(sys['QE']),\
-                            "%s is not a valid file."%sys['QE']
-                    tmp = fits.open(sys['QE'])
+            if syst.has_key('QE'):
+                if isinstance(syst['QE'],basestring):
+                    assert os.path.isfile(syst['QE']),\
+                            "%s is not a valid file."%syst['QE']
+                    tmp = fits.open(syst['QE'])
                     #basic validation here for size and wavelength
-                    #sys['QE'] = lambda or interp
-                elif isinstance(sys['QE'],numbers.Number):
-                    sys['QE'] = lambda lam, QE=float(sys['QE']): QE
+                    #syst['QE'] = lambda or interp
+                elif isinstance(syst['QE'],numbers.Number):
+                    syst['QE'] = lambda lam, QE=float(syst['QE']): QE
         
-        self.scienceInstruments = sorted(scienceInstruments, key=itemgetter('scienceInstrumentNumber')) 
+        self.scienceInstruments = sorted(scienceInstruments,\
+                key=itemgetter('scienceInstrumentNumber')) 
 
-
-        #finally:  if we only have one science instrument/suppression system, bring their attributes to top
+        # Finally: if we only have one science instrument/suppression system, 
+        # bring their attributes to top
         if len(self.starlightSuppressionSystems) == 1:
             for key in self.starlightSuppressionSystems[0].keys():
                 if key not in self.__dict__.keys():
@@ -397,8 +402,9 @@ class OpticalSystem(object):
                     targlist.ZodiacalLight:
                         ZodiacalLight class object
                     targlist.Completeness:
-                        Completeness object
-        
+                        Completeness class object
+                    targlist.PostProcessing:
+                        PostProcessing class object
         Returns:
             maxintTime (Quantity):
                 1D numpy ndarray of maximum integration times (default units of
@@ -411,24 +417,28 @@ class OpticalSystem(object):
         
         return maxintTime
         
-    def calc_intTime(self, targlist, universe, s_ind, planInds):
+    def calc_intTime(self, targlist, starInd, dMagPlan, WA, I):
         """Finds integration time for a specific target system 
         
-        This method is called by a method in the SurveySimulation object class.
+        This method is called by a method in the SurveySimulation class object.
         
         This method defines the data type expected, integration time is 
         determined by specific OpticalSystem classes.
         
         Args:
-            targlist (TargetList):
+            targlist:
                 TargetList class object
-            universe (SimulatedUniverse):
-                SimulatedUniverse class object
-            s_ind (int):
-                target star index
-            planInds (ndarray):
-                planet index linking back to target star
-        
+            starInd (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            dMagPlan:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
+
         Returns:
             intTime (Quantity):
                 1D numpy ndarray of integration times (default units of day)
@@ -436,6 +446,6 @@ class OpticalSystem(object):
         """
         
         # integration time given as 1 day
-        intTime = np.array([1.]*len(planInds))*u.day
+        intTime = np.array([1.]*len(dMagPlan))*u.day
         
         return intTime

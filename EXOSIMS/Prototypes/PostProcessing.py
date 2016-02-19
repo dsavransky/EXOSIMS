@@ -16,18 +16,22 @@ class PostProcessing(object):
             False Alarm Probability
         MDP (float):
             Missed Detection Probability
+        ppFact (flaot):
+        	Post-processing factor
+		SNR (float):
+			Signal-to-noise ratio threshold
             
     """
     
     _modtype = 'PostProcessing'
     _outspec = {}
 
-    def __init__(self, FAP=1e-5, MDP = 1e-3, **specs):
+    def __init__(self, FAP=3e-5, MDP = 1e-3, ppFact=0.1, SNR=5., **specs):
        
-        # false alarm probability
         self.FAP = float(FAP)
-        # missed detection probability
         self.MDP = float(MDP)
+        self.ppFact = float(ppFact)
+        self.SNR = float(SNR)
     
         for key in self.__dict__.keys():
             self._outspec[key] = self.__dict__[key]  

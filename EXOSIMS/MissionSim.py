@@ -88,10 +88,6 @@ class MissionSim(object):
         TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
         self.modules['TimeKeeping'] = TK(**specs)
 
-        # import postprocessing class
-        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
-        self.modules['PostProcessing'] = PP(**specs)
-        
         #collect sub-initializations
         self.modules['OpticalSystem'] = self.modules['SimulatedUniverse'].OpticalSystem # optical system object
         self.modules['PlanetPopulation'] = self.modules['SimulatedUniverse'].PlanetPopulation # planet population object
@@ -99,6 +95,7 @@ class MissionSim(object):
         self.modules['BackgroundSources'] = self.modules['SimulatedUniverse'].BackgroundSources #Background sources object
         self.modules['Completeness'] = self.modules['SimulatedUniverse'].Completeness # completeness object
         self.modules['PlanetPhysicalModel'] = self.modules['SimulatedUniverse'].PlanetPhysicalModel # planet physical model object
+        self.modules['PostProcessing'] = self.modules['SimulatedUniverse'].PostProcessing # postprocessing model object
         self.modules['TargetList'] = self.modules['SimulatedUniverse'].TargetList # target list object
         
         #grab sim and ensemble classes  

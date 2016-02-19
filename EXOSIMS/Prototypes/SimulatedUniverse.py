@@ -30,6 +30,10 @@ class SimulatedUniverse(object):
             PlanetPopulation class object
         ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
+        BackgroundSources (BackgroundSources):
+            BackgroundSources class object
+        PostProcessing (PostProcessing):
+            PostProcessing class object
         Completeness (Completeness):
             Completeness class object
         planInds (ndarray):
@@ -98,6 +102,8 @@ class SimulatedUniverse(object):
         self.BackgroundSources = self.TargetList.BackgroundSources
         # completeness class object
         self.Completeness = self.TargetList.Completeness 
+        # postprocessing object
+        self.PostProcessing = self.TargetList.PostProcessing
         
         # planets mapped to target stars
         self.planInds = self.planet_to_star()
@@ -161,7 +167,7 @@ class SimulatedUniverse(object):
         # assign between 0 and 8 planets to each star in the target list
         planSys = np.array([],dtype=int)
             
-        for i in range(len(self.TargetList.Name)):
+        for i in range(self.TargetList.nStars):
             nump = np.random.randint(0, high=8)
             planSys = np.hstack((planSys, np.array([i]*nump,dtype=int)))
         
@@ -508,3 +514,29 @@ class SimulatedUniverse(object):
             i += 1
                   
         return E
+
+
+    def get_current_WA(self, Inds):
+        """Calculate the current working angles for planets specified by the 
+        given indices.
+
+        Args:
+            Inds (integer ndarray):
+                Numpy ndarray containing integer indices of the planets of interest
+        
+        Returns:
+            wa (Quantity):
+                numpy ndarray of working angles (units of arcsecons)        
+        """
+
+        #calculate s values
+        rs = self.r[Inds.astype(int)]
+        ss = rs.to('AU').value[:,0:2]
+        ss = np.sqrt(np.sum(ss**2.,1)) # projected separation in AU
+        
+        #calculate distance to star
+        starDists = self.TargetList.dist[self.planInds[Inds]]
+		
+        wa = ss/starDists*u.arcsec
+
+        return wa

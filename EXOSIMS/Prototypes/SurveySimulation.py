@@ -92,14 +92,11 @@ class SurveySimulation(object):
             Obs = get_module(specs['modules']['Observatory'], 'Observatory')
             # import timekeeping class
             TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
-            # import postprocessing class
-            PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
             
             self.SimulatedUniverse = SimUni(**specs)
             self.Observatory = Obs(**specs)
             self.TimeKeeping = TK(**specs)
-            self.PostProcessing = PP(**specs)
-            
+                        
             # bring inherited class objects to top level of Survey Simulation
             self.OpticalSystem = self.SimulatedUniverse.OpticalSystem # optical system class object
             self.PlanetPopulation = self.SimulatedUniverse.PlanetPopulation # planet population class object
@@ -107,6 +104,7 @@ class SurveySimulation(object):
             self.BackgroundSources = self.SimulatedUniverse.BackgroundSources #Background sources object
             self.Completeness = self.SimulatedUniverse.Completeness # completeness class object
             self.PlanetPhysicalModel = self.SimulatedUniverse.PlanetPhysicalModel # planet physical model class object
+            self.PostProcessing = self.SimulatedUniverse.PostProcessing #postprocessing class object
             self.TargetList = self.SimulatedUniverse.TargetList # target list class object
         else:
             #these are the modules that must be present if you are passed already instantiated objects
@@ -462,7 +460,8 @@ class SurveySimulation(object):
             # find irradiance
             Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[s_ind]+dMag)/2.5)
             # find true integration time
-            t_trueint = self.OpticalSystem.calc_intTime(self.TargetList, self.SimulatedUniverse, s_ind, pInds)
+            t_trueint = self.OpticalSystem.calc_intTime(self.TargetList, s_ind, dMag, \
+                    self.SimulatedUniverse.get_current_WA(pInds),  self.SimulatedUniverse.r[pInds])
             # update observationPossible
             observationPossible = np.logical_and(observationPossible, t_trueint <= self.OpticalSystem.intCutoff) 
 

@@ -1,7 +1,7 @@
 {
   "missionLifetime": 5,
   "missionPortion": 1,
-  "lamb": 550,
+  "lam": 550,
   "deltaLam": 100,
   "universalParam2": 2,
   "keepStarCatalog": false,

@@ -39,7 +39,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.SurveySimulation</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
@@ -86,7 +86,7 @@
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;SurveySimulation&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;SurveySimulation&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">scriptfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
@@ -103,77 +103,75 @@
 <span class="sd">                or object references.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c"># if a script file is provided read it in</span>
+        <span class="c1"># if a script file is provided read it in</span>
         <span class="k">if</span> <span class="n">scriptfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="kn">import</span> <span class="nn">json</span>
             <span class="kn">import</span> <span class="nn">os.path</span>
         
-            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">),</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a file.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">),</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a file.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">script</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
                 <span class="n">specs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> improperly formatted.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
+                <span class="k">print</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> improperly formatted.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">print</span> <span class="s2">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">raise</span>
 
-            <span class="c"># modules array must be present</span>
-            <span class="k">if</span> <span class="s">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
+            <span class="c1"># modules array must be present</span>
+            <span class="k">if</span> <span class="s1">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
 
-        <span class="c">#if any of the modules is a string, assume that they are all strings and we need to initalize</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">basestring</span><span class="p">):</span>
+        <span class="c1">#if any of the modules is a string, assume that they are all strings and we need to initalize</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">basestring</span><span class="p">):</span>
 
-            <span class="c"># get desired module names (prototype or specific)</span>
-            <span class="c"># import simulated universe class</span>
-            <span class="n">SimUni</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">],</span> <span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">)</span>
-            <span class="c"># import observatory class</span>
-            <span class="n">Obs</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;Observatory&#39;</span><span class="p">],</span> <span class="s">&#39;Observatory&#39;</span><span class="p">)</span>
-            <span class="c"># import timekeeping class</span>
-            <span class="n">TK</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;TimeKeeping&#39;</span><span class="p">],</span> <span class="s">&#39;TimeKeeping&#39;</span><span class="p">)</span>
-            <span class="c"># import postprocessing class</span>
-            <span class="n">PP</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PostProcessing&#39;</span><span class="p">],</span> <span class="s">&#39;PostProcessing&#39;</span><span class="p">)</span>
+            <span class="c1"># get desired module names (prototype or specific)</span>
+            <span class="c1"># import simulated universe class</span>
+            <span class="n">SimUni</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">],</span> <span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">)</span>
+            <span class="c1"># import observatory class</span>
+            <span class="n">Obs</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;Observatory&#39;</span><span class="p">],</span> <span class="s1">&#39;Observatory&#39;</span><span class="p">)</span>
+            <span class="c1"># import timekeeping class</span>
+            <span class="n">TK</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">],</span> <span class="s1">&#39;TimeKeeping&#39;</span><span class="p">)</span>
             
             <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span> <span class="o">=</span> <span class="n">SimUni</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span> <span class="o">=</span> <span class="n">Obs</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span> <span class="o">=</span> <span class="n">TK</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">PP</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-            
-            <span class="c"># bring inherited class objects to top level of Survey Simulation</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c"># optical system class object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c"># planet population class object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c"># zodiacal light class object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="c">#Background sources object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Completeness</span> <span class="c"># completeness class object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c"># planet physical model class object</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">TargetList</span> <span class="c"># target list class object</span>
+                        
+            <span class="c1"># bring inherited class objects to top level of Survey Simulation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c1"># optical system class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c1"># planet population class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c1"># zodiacal light class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="c1">#Background sources object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Completeness</span> <span class="c1"># completeness class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c1"># planet physical model class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="c1">#postprocessing class object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">TargetList</span> <span class="c1"># target list class object</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c">#these are the modules that must be present if you are passed already instantiated objects</span>
-            <span class="n">neededObjMods</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;SimulatedUniverse&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;Observatory&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;TimeKeeping&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;PostProcessing&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;OpticalSystem&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;PlanetPopulation&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;ZodiacalLight&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;Completeness&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;PlanetPhysicalModel&#39;</span><span class="p">,</span>
-                          <span class="s">&#39;TargetList&#39;</span><span class="p">]</span>
+            <span class="c1">#these are the modules that must be present if you are passed already instantiated objects</span>
+            <span class="n">neededObjMods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;Observatory&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;TimeKeeping&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;PostProcessing&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;OpticalSystem&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;Completeness&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;TargetList&#39;</span><span class="p">]</span>
 
-            <span class="c">#ensure that you have the minimal set</span>
+            <span class="c1">#ensure that you have the minimal set</span>
             <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">neededObjMods</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">modName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> module not provided.&quot;</span><span class="o">%</span><span class="n">modName</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">modName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> module not provided.&quot;</span><span class="o">%</span><span class="n">modName</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="k">assert</span> <span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">]</span><span class="o">.</span><span class="n">_modtype</span> <span class="o">==</span> <span class="n">modName</span><span class="p">),</span> \
-                <span class="s">&quot;Provided instance of </span><span class="si">%s</span><span class="s"> has incorrect modtype.&quot;</span><span class="o">%</span><span class="n">modName</span>
+            <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">assert</span> <span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">]</span><span class="o">.</span><span class="n">_modtype</span> <span class="o">==</span> <span class="n">modName</span><span class="p">),</span> \
+                <span class="s2">&quot;Provided instance of </span><span class="si">%s</span><span class="s2"> has incorrect modtype.&quot;</span><span class="o">%</span><span class="n">modName</span>
 
-                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modName</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">])</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modName</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">])</span>
                 
-        <span class="c"># list of simulation results, each item is a dictionary</span>
+        <span class="c1"># list of simulation results, each item is a dictionary</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>        
     
 <div class="viewcode-block" id="SurveySimulation.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -185,9 +183,9 @@
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Survey Simulation class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s1">&#39;Survey Simulation class object attributes&#39;</span></div>
         
 <div class="viewcode-block" id="SurveySimulation.run_sim"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim">[docs]</a>    <span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs the survey simulation </span>
@@ -220,83 +218,83 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># initialize values updated later</span>
-        <span class="c"># number of visits to target star</span>
+        <span class="c1"># initialize values updated later</span>
+        <span class="c1"># number of visits to target star</span>
         <span class="n">visited</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">),),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="c"># target revisit list</span>
+        <span class="c1"># target revisit list</span>
         <span class="n">revisit_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="c"># current time (normalized to zero at mission start) of planet positions</span>
+        <span class="c1"># current time (normalized to zero at mission start) of planet positions</span>
         <span class="n">planPosTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c"># number of planet observations</span>
+        <span class="c1"># number of planet observations</span>
         <span class="n">observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="c"># set occulter separation if haveOcculter</span>
+        <span class="c1"># set occulter separation if haveOcculter</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">currentSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">occulterSep</span>
         
         <span class="n">extended_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
         
-        <span class="c"># initialize run options</span>
-        <span class="c"># perform characterization if doChar = True</span>
+        <span class="c1"># initialize run options</span>
+        <span class="c1"># perform characterization if doChar = True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">SNchar</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
             <span class="n">doChar</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">doChar</span> <span class="o">=</span> <span class="bp">False</span>
         
-        <span class="c"># keep track of spectral characterizations, 0 is no characterization           </span>
+        <span class="c1"># keep track of spectral characterizations, 0 is no characterization           </span>
         <span class="n">spectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
             
-        <span class="c"># get index of first target star</span>
+        <span class="c1"># get index of first target star</span>
         <span class="n">s_ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_target</span><span class="p">()</span>
         
-        <span class="c"># loop until mission is finished</span>
+        <span class="c1"># loop until mission is finished</span>
         <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Current mission time&#39;</span>
+            <span class="k">print</span> <span class="s1">&#39;Current mission time&#39;</span>
             <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
             <span class="n">obsbegin</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
-            <span class="c"># dictionary containing results</span>
+            <span class="c1"># dictionary containing results</span>
             <span class="n">DRM</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="c"># store target star index</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;target_ind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_ind</span>
-            <span class="c"># store arrival time</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="c1"># store target star index</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;target_ind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_ind</span>
+            <span class="c1"># store arrival time</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             
-            <span class="c"># store spacecraft mass</span>
+            <span class="c1"># store spacecraft mass</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;scMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;scMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                         
-            <span class="c"># get target list star index of detections for extended_list</span>
+            <span class="c1"># get target list star index of detections for extended_list</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionLife</span> <span class="ow">and</span> <span class="n">extended_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">)):</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;det&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                        <span class="n">extended_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">extended_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;target_ind&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;det&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">extended_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">extended_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;target_ind&#39;</span><span class="p">]))</span>
                         <span class="n">extended_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">extended_list</span><span class="p">)</span>
             
-            <span class="c"># find planets belonging to target star</span>
+            <span class="c1"># find planets belonging to target star</span>
             <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">planInds</span> <span class="o">==</span> <span class="n">s_ind</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             
-            <span class="c"># update visited list for current star</span>
+            <span class="c1"># update visited list for current star</span>
             <span class="n">visited</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-            <span class="c"># find out if observations are possible and get relevant data</span>
+            <span class="c1"># find out if observations are possible and get relevant data</span>
             <span class="n">observationPossible</span><span class="p">,</span> <span class="n">t_int</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">Ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_detection</span><span class="p">(</span><span class="n">pInds</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">planPosTime</span><span class="p">)</span>        
             <span class="n">t_int</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">settlingTime</span>
-            <span class="c"># store detection integration time</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_int_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_int</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="c1"># store detection integration time</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_int_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_int</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             
-            <span class="c"># if integration time goes beyond observation duration, set quantities</span>
+            <span class="c1"># if integration time goes beyond observation duration, set quantities</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="n">t_int</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-                <span class="c"># integration time is beyond observation duration</span>
+                <span class="c1"># integration time is beyond observation duration</span>
                 <span class="n">observationPossible</span> <span class="o">=</span> <span class="bp">False</span>
                 <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># integration time is okay</span>
+                <span class="c1"># integration time is okay</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">t_int</span><span class="p">)</span>
 
-            <span class="c"># determine detection, missed detection, false alarm booleans</span>
+            <span class="c1"># determine detection, missed detection, false alarm booleans</span>
             <span class="n">FA</span><span class="p">,</span> <span class="n">DET</span><span class="p">,</span> <span class="n">MD</span><span class="p">,</span> <span class="n">NULL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span><span class="o">.</span><span class="n">det_occur</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">)</span>
             
-            <span class="c"># encode detection status</span>
+            <span class="c1"># encode detection status</span>
             <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">Ip</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">observed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det_data</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">Ip</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">FA</span><span class="p">,</span> 
                                                        <span class="n">DET</span><span class="p">,</span> <span class="n">MD</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">pInds</span><span class="p">,</span> 
                                                        <span class="n">observationPossible</span><span class="p">,</span> 
@@ -305,70 +303,70 @@
             <span class="k">if</span> <span class="n">doChar</span><span class="p">:</span>
                 <span class="n">DRM</span><span class="p">,</span> <span class="n">FA</span><span class="p">,</span> <span class="n">spectra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_characterization</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="n">pInds</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">spectra</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">Ip</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">FA</span><span class="p">,</span> <span class="n">t_int</span><span class="p">)</span>
                 
-            <span class="c"># schedule a revisit if there is a planet</span>
+            <span class="c1"># schedule a revisit if there is a planet</span>
             <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">DET</span> <span class="ow">or</span> <span class="n">FA</span><span class="p">:</span>
-                    <span class="c"># find mu based on planet with minimum separation</span>
+                    <span class="c1"># find mu based on planet with minimum separation</span>
                     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
                         <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">muind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">s</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                         <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">muind</span><span class="p">]]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>    
-                    <span class="c"># calculate the orbital period based on minimum apparent separation</span>
+                    <span class="c1"># calculate the orbital period based on minimum apparent separation</span>
                     <span class="n">T</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span>
                     <span class="n">t_rev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="n">T</span><span class="o">/</span><span class="mf">2.</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="c"># find mu based on planet with minimum separation</span>
+                    <span class="c1"># find mu based on planet with minimum separation</span>
                     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
                         <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">muind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">s</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                         <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">muind</span><span class="p">]]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
-                    <span class="c"># calculate orbital period based on average of population semi-major axis</span>
+                    <span class="c1"># calculate orbital period based on average of population semi-major axis</span>
                     <span class="n">T</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span>
                     <span class="n">t_rev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">*</span><span class="n">T</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># revisit based on average of population semi-major axis and mass</span>
+                <span class="c1"># revisit based on average of population semi-major axis and mass</span>
                 <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
                 <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
                 <span class="n">T</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span>
                 <span class="n">t_rev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">*</span><span class="n">T</span>
             
-            <span class="c"># populate revisit list (s_ind is converted to float)</span>
+            <span class="c1"># populate revisit list (s_ind is converted to float)</span>
             <span class="k">if</span> <span class="n">revisit_list</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">revisit_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">revisit_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s_ind</span><span class="p">,</span> <span class="n">t_rev</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">revisit_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">revisit_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s_ind</span><span class="p">,</span> <span class="n">t_rev</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])))</span>
             
             <span class="n">obsend</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
-            <span class="c"># find next available time for planet-finding</span>
+            <span class="c1"># find next available time for planet-finding</span>
             <span class="n">nexttime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">)</span>
           
             <span class="n">dt</span> <span class="o">=</span> <span class="n">nexttime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
             
-            <span class="c"># update completeness values</span>
+            <span class="c1"># update completeness values</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">)</span>
             
-            <span class="c"># acquire a new target star index</span>
+            <span class="c1"># acquire a new target star index</span>
             <span class="n">s_ind</span><span class="p">,</span> <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">revisit_list</span><span class="p">,</span> <span class="n">extended_list</span><span class="p">,</span> <span class="n">DRM</span><span class="p">)</span>
             
-            <span class="c"># append result values to self.DRM</span>
+            <span class="c1"># append result values to self.DRM</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DRM</span><span class="p">)</span>
             
-            <span class="c"># with occulter if spacecraft fuel is depleted, exit loop</span>
+            <span class="c1"># with occulter if spacecraft fuel is depleted, exit loop</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">dryMass</span><span class="p">:</span>
-                    <span class="k">print</span> <span class="s">&#39;Total fuel mass excedeed at </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>                    
+                    <span class="k">print</span> <span class="s1">&#39;Total fuel mass excedeed at </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>                    
                     <span class="k">break</span>
-<span class="c">#            break</span>
-<span class="c">#            if visited[s_ind] == 3:</span>
-<span class="c">#                self.TimeKeeping.currenttimeNorm = 100*u.year</span>
-<span class="c">#            if self.TimeKeeping.currenttimeNorm &gt; 100*u.day:</span>
-<span class="c">#                self.TimeKeeping.currenttimeNorm = 100*u.year                       </span>
+<span class="c1">#            break</span>
+<span class="c1">#            if visited[s_ind] == 3:</span>
+<span class="c1">#                self.TimeKeeping.currenttimeNorm = 100*u.year</span>
+<span class="c1">#            if self.TimeKeeping.currenttimeNorm &gt; 100*u.day:</span>
+<span class="c1">#                self.TimeKeeping.currenttimeNorm = 100*u.year                       </span>
         
-        <span class="k">return</span> <span class="s">&#39;Simulation results in .DRM&#39;</span></div>
+        <span class="k">return</span> <span class="s1">&#39;Simulation results in .DRM&#39;</span></div>
         
 <div class="viewcode-block" id="SurveySimulation.initial_target"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.initial_target">[docs]</a>    <span class="k">def</span> <span class="nf">initial_target</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns index of initial target star</span>
@@ -405,10 +403,10 @@
         <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="k">while</span> <span class="n">sinds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">telescopeKeepout</span><span class="p">)</span>
-            <span class="c"># find Observatoryervable targets at current mission time            </span>
+            <span class="c1"># find Observatoryervable targets at current mission time            </span>
             <span class="n">sinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">kogood</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="c"># if no observable targets, update mission time by one day and </span>
-            <span class="c"># check that resulting time is okay with duty cycle</span>
+            <span class="c1"># if no observable targets, update mission time by one day and </span>
+            <span class="c1"># check that resulting time is okay with duty cycle</span>
             <span class="k">if</span> <span class="n">sinds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
@@ -416,13 +414,13 @@
                     <span class="n">dt0</span> <span class="o">=</span> <span class="n">nexttime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt0</span><span class="p">)</span>
                 
-            <span class="c"># if the current mission time is greater than the mission lifetime</span>
-            <span class="c"># break this loop</span>
+            <span class="c1"># if the current mission time is greater than the mission lifetime</span>
+            <span class="c1"># break this loop</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionLife</span><span class="p">:</span>
                 <span class="k">break</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionLife</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;No targets available&#39;</span>
+            <span class="k">print</span> <span class="s1">&#39;No targets available&#39;</span>
             
         <span class="n">s0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sinds</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
         <span class="n">s_ind</span> <span class="o">=</span> <span class="n">sinds</span><span class="p">[</span><span class="n">s0</span><span class="p">]</span>
@@ -456,23 +454,23 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># dMag and Ip placeholders</span>
+        <span class="c1"># dMag and Ip placeholders</span>
         <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mf">0.5</span><span class="p">)</span>
         <span class="n">Ip</span> <span class="o">=</span> <span class="p">(</span><span class="mf">9.5e7</span><span class="o">/</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">+</span><span class="n">dMag</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span> 
-        <span class="c"># apparent separation placeholders</span>
+        <span class="c1"># apparent separation placeholders</span>
         <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">][:,</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">][:,</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="c"># determine if there are any planets at the target star and</span>
-        <span class="c"># propagate the system if necessary</span>
+        <span class="c1"># determine if there are any planets at the target star and</span>
+        <span class="c1"># propagate the system if necessary</span>
         <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c"># there are planets so observation is possible</span>
+            <span class="c1"># there are planets so observation is possible</span>
             <span class="n">observationPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">),),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-            <span class="c"># if planet position times do not match up with current time</span>
-            <span class="c"># propagate the positions to the current time</span>
+            <span class="c1"># if planet position times do not match up with current time</span>
+            <span class="c1"># propagate the positions to the current time</span>
             <span class="k">if</span> <span class="n">planPosTime</span><span class="p">[</span><span class="n">pInds</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="p">:</span>
-                <span class="c"># propagate planet positions and velocities</span>
+                <span class="c1"># propagate planet positions and velocities</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">prop_system</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> 
@@ -480,35 +478,36 @@
                                         <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> 
                                         <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">planInds</span><span class="p">[</span><span class="n">pInds</span><span class="p">]],</span> 
                                         <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">-</span> <span class="n">planPosTime</span><span class="p">[</span><span class="n">pInds</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="c"># update planet position times</span>
+                    <span class="c1"># update planet position times</span>
                     <span class="n">planPosTime</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="n">observationPossible</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">observationPossible</span> <span class="o">=</span> <span class="bp">False</span>
 
-        <span class="c"># determine if planets are inside IWA or outside OWA</span>
+        <span class="c1"># determine if planets are inside IWA or outside OWA</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
             <span class="n">observationPossible</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_IWA_OWA</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">OWA</span><span class="p">)</span>
 
-        <span class="c"># determine if planets are bright enough</span>
+        <span class="c1"># determine if planets are bright enough</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
             <span class="n">observationPossible</span><span class="p">,</span> <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_brightness</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Rp</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
 
-        <span class="c"># set integration time to max integration time as a default</span>
+        <span class="c1"># set integration time to max integration time as a default</span>
         <span class="n">t_int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">maxintTime</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span>
             
-        <span class="c"># determine integration time and update observationPossible</span>
+        <span class="c1"># determine integration time and update observationPossible</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
-            <span class="c"># find irradiance</span>
+            <span class="c1"># find irradiance</span>
             <span class="n">Ip</span> <span class="o">=</span> <span class="p">(</span><span class="mf">9.5e7</span><span class="o">/</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">+</span><span class="n">dMag</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span>
-            <span class="c"># find true integration time</span>
-            <span class="n">t_trueint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">pInds</span><span class="p">)</span>
-            <span class="c"># update observationPossible</span>
+            <span class="c1"># find true integration time</span>
+            <span class="n">t_trueint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">get_current_WA</span><span class="p">(</span><span class="n">pInds</span><span class="p">),</span>  <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">])</span>
+            <span class="c1"># update observationPossible</span>
             <span class="n">observationPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="n">t_trueint</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span> 
 
-        <span class="c"># determine if planets are observable at the end of observation</span>
-        <span class="c"># and update integration time</span>
+        <span class="c1"># determine if planets are observable at the end of observation</span>
+        <span class="c1"># and update integration time</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">t_int</span><span class="p">,</span> <span class="n">observationPossible</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_visible_end</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="n">t_int</span><span class="p">,</span> <span class="n">t_trueint</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">pInds</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
@@ -516,16 +515,16 @@
                 <span class="n">observationPossible</span> <span class="o">=</span> <span class="bp">False</span>
                 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
-            <span class="c"># find disturbance forces on occulter</span>
+            <span class="c1"># find disturbance forces on occulter</span>
             <span class="n">dF_lateral</span><span class="p">,</span> <span class="n">dF_axial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">distForces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">)</span>    
-            <span class="c"># store these values</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;dF_lateral&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dF_lateral</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;dF_axial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dF_axial</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="c"># decrement mass for station-keeping</span>
+            <span class="c1"># store these values</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;dF_lateral&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dF_lateral</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;dF_axial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dF_axial</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="c1"># decrement mass for station-keeping</span>
             <span class="n">intMdot</span><span class="p">,</span> <span class="n">mass_used</span><span class="p">,</span> <span class="n">deltaV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">mass_dec</span><span class="p">(</span><span class="n">dF_lateral</span><span class="p">,</span> <span class="n">t_int</span><span class="p">)</span>
-            <span class="c"># store these values</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deltaV</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="c1"># store these values</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deltaV</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-=</span> <span class="n">mass_used</span>
             
         <span class="k">return</span> <span class="n">observationPossible</span><span class="p">,</span> <span class="n">t_int</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">Ip</span></div>
@@ -563,19 +562,19 @@
 <span class="sd">                </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># check if characterization has been done</span>
+        <span class="c1"># check if characterization has been done</span>
         <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="c"># perform first characterization</span>
-                <span class="c"># find throughput and contrast</span>
+                <span class="c1"># perform first characterization</span>
+                <span class="c1"># find throughput and contrast</span>
                 <span class="n">throughput</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">throughput</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">))</span>
                 <span class="n">contrast</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">contrast</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">))</span>
-                <span class="c"># find characterization time                    </span>
+                <span class="c1"># find characterization time                    </span>
                 <span class="n">t_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_t_char</span><span class="p">(</span><span class="n">throughput</span><span class="p">,</span> <span class="n">contrast</span><span class="p">,</span> <span class="n">Ip</span><span class="p">,</span> <span class="n">FA</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">pInds</span><span class="p">)</span>
-                <span class="c"># account for 5 bands and one coronagraph</span>
+                <span class="c1"># account for 5 bands and one coronagraph</span>
                 <span class="n">t_char</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">*</span><span class="mi">4</span>
-                <span class="c"># determine which planets will be observable at the end</span>
-                <span class="c"># of observation</span>
+                <span class="c1"># determine which planets will be observable at the end</span>
+                <span class="c1"># of observation</span>
                 <span class="n">charPossible</span> <span class="o">=</span> <span class="n">observationPossible</span>                   
                 <span class="n">charPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">charPossible</span><span class="p">,</span> <span class="n">t_char</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span>
                 <span class="n">chargo</span> <span class="o">=</span> <span class="bp">False</span>
@@ -584,46 +583,46 @@
                     <span class="n">t_char</span><span class="p">,</span> <span class="n">charPossible</span><span class="p">,</span> <span class="n">chargo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_visible_end</span><span class="p">(</span><span class="n">charPossible</span><span class="p">,</span> <span class="n">t_char</span><span class="p">,</span> <span class="n">t_char</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">pInds</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                     <span class="n">chargo</span> <span class="o">=</span> <span class="bp">False</span>
-                <span class="c">#chargo = True            </span>
+                <span class="c1">#chargo = True            </span>
                 <span class="k">if</span> <span class="n">chargo</span><span class="p">:</span>
-                    <span class="c"># encode relevant first characterization data</span>
+                    <span class="c1"># encode relevant first characterization data</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
-                        <span class="c"># decrement sc mass</span>
-                        <span class="c"># find disturbance forces on occulter</span>
+                        <span class="c1"># decrement sc mass</span>
+                        <span class="c1"># find disturbance forces on occulter</span>
                         <span class="n">dF_lateral</span><span class="p">,</span> <span class="n">dF_axial</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">distForces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">)</span>    
-                        <span class="c"># decrement mass for station-keeping</span>
+                        <span class="c1"># decrement mass for station-keeping</span>
                         <span class="n">intMdot</span><span class="p">,</span> <span class="n">mass_used</span><span class="p">,</span> <span class="n">deltaV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">mass_dec</span><span class="p">(</span><span class="n">dF_lateral</span><span class="p">,</span> <span class="n">t_int</span><span class="p">)</span>
                         <span class="n">mass_used_char</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">*</span><span class="n">intMdot</span>
                         <span class="n">deltaV_char</span> <span class="o">=</span> <span class="n">dF_lateral</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">t_char</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-=</span> <span class="n">mass_used_char</span>
-                        <span class="c"># encode information in DRM</span>
-                        <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-                        <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deltaV_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-                        <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                        <span class="c1"># encode information in DRM</span>
+                        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deltaV_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                 
-                    <span class="c"># if integration time goes beyond observation duration, set quantities</span>
+                    <span class="c1"># if integration time goes beyond observation duration, set quantities</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="n">t_char</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-                        <span class="c"># integration time is beyond observation duration</span>
+                        <span class="c1"># integration time is beyond observation duration</span>
                         <span class="n">charPossible</span> <span class="o">=</span> <span class="bp">False</span>
                         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>        
-                        <span class="c"># update mission time</span>
+                        <span class="c1"># update mission time</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">t_char</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
                         
-                    <span class="c"># if this was a false alarm, it has been noted, update FA</span>
+                    <span class="c1"># if this was a false alarm, it has been noted, update FA</span>
                     <span class="k">if</span> <span class="n">FA</span><span class="p">:</span>
                         <span class="n">FA</span> <span class="o">=</span> <span class="bp">False</span>
                         
-                    <span class="c"># if planet is visible at end of characterization,</span>
-                    <span class="c"># spectrum is captured</span>
+                    <span class="c1"># if planet is visible at end of characterization,</span>
+                    <span class="c1"># spectrum is captured</span>
                     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">charPossible</span><span class="p">):</span>
                         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
                             <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                            <span class="c"># encode success</span>
-                            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                            <span class="c1"># encode success</span>
+                            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">nld</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">shapeFac</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">lam</span>
@@ -631,12 +630,12 @@
                             <span class="n">lambdaeff</span> <span class="o">=</span> <span class="n">lambdaeff</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">shapeFac</span><span class="p">)</span>
                             <span class="n">lambdaeff</span> <span class="o">=</span> <span class="n">lambdaeff</span><span class="o">/</span><span class="n">nld</span>
                             <span class="n">charPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">charPossible</span><span class="p">,</span> <span class="n">lambdaeff</span> <span class="o">&gt;=</span> <span class="mf">800.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
-                            <span class="c"># encode results</span>
+                            <span class="c1"># encode results</span>
                             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">charPossible</span><span class="p">):</span>
                                 <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lambdaeff</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lambdaeff</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                        
         <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">FA</span><span class="p">,</span> <span class="n">spectra</span></div>
                 
@@ -667,7 +666,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># find apparent separation</span>
+        <span class="c1"># find apparent separation</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">r</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         
         <span class="n">observationPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span>
@@ -700,11 +699,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">dMag</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">p</span><span class="o">*</span><span class="p">(</span><span class="n">Rp</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        <span class="c"># planetary phase function calculation, from Sobolev 1975</span>
+        <span class="c1"># planetary phase function calculation, from Sobolev 1975</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
         <span class="n">Phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">beta</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
 
-        <span class="c"># delta magnitude of each planet</span>
+        <span class="c1"># delta magnitude of each planet</span>
         <span class="n">dMag</span> <span class="o">-=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Phi</span><span class="p">)</span>
         <span class="n">observationPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">,</span> <span class="n">dMag</span> <span class="o">&lt;=</span> <span class="n">dMagLim</span><span class="p">)</span>
         
@@ -751,7 +750,7 @@
 <span class="sd">                characterization data (t_char_calc = True only)                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># set chargo to False initially</span>
+        <span class="c1"># set chargo to False initially</span>
         <span class="n">chargo</span> <span class="o">=</span> <span class="bp">False</span>
         
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">)):</span>
@@ -770,10 +769,10 @@
                 <span class="n">obsRes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_end_res</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">Mp</span><span class="p">,</span> <span class="n">MsTrue</span><span class="p">,</span> <span class="n">Rp</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">obsRes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c"># planet visible at the end of observation</span>
+                    <span class="c1"># planet visible at the end of observation</span>
                     <span class="n">observationPossible</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">t_char_calc</span><span class="p">:</span>
-                        <span class="c"># update integration time</span>
+                        <span class="c1"># update integration time</span>
                         <span class="k">if</span> <span class="n">t_int</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">maxintTime</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]:</span>
                             <span class="n">t_int</span> <span class="o">=</span> <span class="n">t_trueint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                         <span class="k">else</span><span class="p">:</span>
@@ -830,14 +829,14 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># update keepout to end of observation time</span>
+        <span class="c1"># update keepout to end of observation time</span>
         <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="o">+</span><span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">telescopeKeepout</span><span class="p">)</span>
-        <span class="c"># if star is not inside keepout zone at end of observation, see if </span>
-        <span class="c"># planet is still observable</span>
+        <span class="c1"># if star is not inside keepout zone at end of observation, see if </span>
+        <span class="c1"># planet is still observable</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">kogood</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]:</span>
-            <span class="c"># propagate planet to observational period end and find dMag</span>
+            <span class="c1"># propagate planet to observational period end and find dMag</span>
             <span class="n">rend</span><span class="p">,</span> <span class="n">vend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">prop_system</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">Mp</span><span class="p">,</span> <span class="n">MsTrue</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
-            <span class="c"># calculate dMagend</span>
+            <span class="c1"># calculate dMagend</span>
             <span class="n">send</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rend</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">rend</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">rendmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">rend</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
             <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">rend</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="n">rendmag</span><span class="p">)</span>
@@ -902,13 +901,13 @@
 <span class="sd">                observations for each planet                </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># default DRM detection status to null detection</span>
-        <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># default DRM detection status to null detection</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         
         <span class="k">if</span> <span class="n">FA</span><span class="p">:</span>
-            <span class="c"># false alarm</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
-            <span class="c"># generate random WA and dMag for detection</span>
+            <span class="c1"># false alarm</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+            <span class="c1"># generate random WA and dMag for detection</span>
             <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
                 <span class="n">s</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">L</span><span class="p">[</span><span class="n">s_ind</span><span class="p">])</span>
@@ -917,21 +916,21 @@
             <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span><span class="o">*</span><span class="mf">0.5</span><span class="p">)</span>
             <span class="n">Ip</span> <span class="o">=</span> <span class="p">(</span><span class="mf">9.5e7</span><span class="o">/</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">+</span><span class="n">dMag</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">MD</span><span class="p">:</span>
-            <span class="c"># missed detection, set status in DRM</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="c1"># missed detection, set status in DRM</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">elif</span> <span class="n">DET</span><span class="p">:</span>
-            <span class="c"># encode detection</span>
+            <span class="c1"># encode detection</span>
             <span class="n">observed</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="c"># set status in DRM</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="c"># set WA and Delta Mag of detection in DRM</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">marcsec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dMag</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># set status in DRM</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="c1"># set WA and Delta Mag of detection in DRM</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">marcsec</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dMag</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observationPossible</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">marcsec</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
-                <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;det_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dMag</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observationPossible</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">marcsec</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dMag</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
         
         <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">Ip</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">observed</span></div>
         
@@ -969,14 +968,14 @@
         <span class="n">QE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">QE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="p">)</span>
         <span class="n">FluxB</span> <span class="o">=</span> <span class="mf">9.5e7</span><span class="o">/</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>
         
-        <span class="c"># planet count</span>
+        <span class="c1"># planet count</span>
         <span class="n">cp</span> <span class="o">=</span> <span class="n">QE</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">attenuation</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">Rspec</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">Ip</span><span class="o">/</span><span class="p">(</span><span class="mf">9.5e7</span><span class="o">/</span>
         <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">))</span><span class="o">*</span><span class="n">FluxB</span><span class="o">*</span><span class="n">throughput</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">pupilArea</span>
-        <span class="c"># star count</span>
+        <span class="c1"># star count</span>
         <span class="n">cs</span> <span class="o">=</span> <span class="n">QE</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">attenuation</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">Rspec</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">pupilArea</span><span class="p">)</span><span class="o">*</span><span class="n">FluxB</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span><span class="o">*</span><span class="n">contrast</span><span class="o">/</span><span class="mi">2</span>
         
-        <span class="c"># zodi count</span>
+        <span class="c1"># zodi count</span>
         <span class="k">if</span> <span class="n">FA</span><span class="p">:</span>
             <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="n">s_ind</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">)</span>
             <span class="n">Z</span> <span class="o">=</span> <span class="n">FluxB</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">23.54</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">temp</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">specLam</span><span class="o">/</span>
@@ -1029,10 +1028,10 @@
         <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="k">while</span> <span class="n">sinds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">telescopeKeepout</span><span class="p">)</span>
-            <span class="c"># find observable targets at current mission time            </span>
+            <span class="c1"># find observable targets at current mission time            </span>
             <span class="n">sinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">kogood</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="c"># if no observable targets, update mission time by one day and </span>
-            <span class="c"># check that resulting time is okay with duty cycle</span>
+            <span class="c1"># if no observable targets, update mission time by one day and </span>
+            <span class="c1"># check that resulting time is okay with duty cycle</span>
             <span class="k">if</span> <span class="n">sinds</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
@@ -1040,38 +1039,38 @@
                     <span class="n">dt0</span> <span class="o">=</span> <span class="n">nexttime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt0</span><span class="p">)</span>
                 
-            <span class="c"># if the current mission time is greater than the mission lifetime</span>
-            <span class="c"># break this loop</span>
+            <span class="c1"># if the current mission time is greater than the mission lifetime</span>
+            <span class="c1"># break this loop</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionLife</span><span class="p">:</span>
                 <span class="k">break</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionLife</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;No targets available&#39;</span>
+            <span class="k">print</span> <span class="s1">&#39;No targets available&#39;</span>
         
-        <span class="c"># pick a random star from the stars not in keepout zones</span>
+        <span class="c1"># pick a random star from the stars not in keepout zones</span>
         <span class="n">s0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sinds</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         
         <span class="n">new_s_ind</span> <span class="o">=</span> <span class="n">sinds</span><span class="p">[</span><span class="n">s0</span><span class="p">]</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
-            <span class="c"># add transit time and reduce starshade mass</span>
+            <span class="c1"># add transit time and reduce starshade mass</span>
             <span class="n">ao</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">thrust</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">scMass</span>
             <span class="n">targetSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">occulterSep</span>
-            <span class="c"># find position vector of previous target star</span>
+            <span class="c1"># find position vector of previous target star</span>
             <span class="n">r_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">)</span>
-            <span class="c"># find position vector of new target star            </span>
+            <span class="c1"># find position vector of new target star            </span>
             <span class="n">r_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">new_s_ind</span><span class="p">)</span>
-            <span class="c"># find unit vectors</span>
+            <span class="c1"># find unit vectors</span>
             <span class="n">u_old</span> <span class="o">=</span> <span class="n">r_old</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_old</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
             <span class="n">u_new</span> <span class="o">=</span> <span class="n">r_new</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_new</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-            <span class="c"># find angle between old and new stars</span>
+            <span class="c1"># find angle between old and new stars</span>
             <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_old</span><span class="p">,</span> <span class="n">u_new</span><span class="p">))</span>
-            <span class="c"># find slew distance</span>
+            <span class="c1"># find slew distance</span>
             <span class="n">slew_dist</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">targetSep</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sd</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
             <span class="n">slew_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">slew_dist</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ao</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span><span class="p">))</span>
             <span class="n">mass_used</span> <span class="o">=</span> <span class="n">slew_time</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">flowRate</span>
 
-            <span class="c"># update times</span>
+            <span class="c1"># update times</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">slew_time</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
@@ -1079,10 +1078,10 @@
                 <span class="n">dt</span> <span class="o">=</span> <span class="n">nexttime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currenttimeNorm</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">update_times</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
             
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;slew_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slew_time</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;slew_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ao</span><span class="o">*</span><span class="n">slew_time</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">defburnPortion</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;slew_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-            <span class="n">DRM</span><span class="p">[</span><span class="s">&#39;slew_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sd</span>     
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slew_time</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ao</span><span class="o">*</span><span class="n">slew_time</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">defburnPortion</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sd</span>     
         
         <span class="k">return</span> <span class="n">new_s_ind</span><span class="p">,</span> <span class="n">DRM</span></div></div>
 </pre></div>
@@ -1121,7 +1120,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

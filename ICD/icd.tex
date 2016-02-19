@@ -156,6 +156,7 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
             \item scipy.special
             \item scipy.interpolate
         \end{itemize}
+    \item jplephem (\emph{optional})
 \end{itemize}
 }
 
@@ -247,9 +248,9 @@ The JSON specification file will contain a series of objects with members enumer
          "occulterRedEdge": value,
          "IWA": value,
          "OWA": value,
-         "PSFfile": "/data/mdo1_psf.fits",
-         "throughputFile": "/data/mdo1_thru.fits",
-         "contrastFile":  "/data1/mdo1_contrast.fits"
+         "PSF": "/data/mdo1_psf.fits",
+         "throughput": "/data/mdo1_thru.fits",
+         "contrast":  "/data1/mdo1_contrast.fits"
         },
         {
          "occulterDistanceNumber": 2,
@@ -258,9 +259,9 @@ The JSON specification file will contain a series of objects with members enumer
          "occulterRedEdge": value,
          "IWA": value,
          "OWA": value,
-         "PSFfile": "/data/mdo1_psf.fits",
-         "throughputFile": "/data/mdo1_thru.fits",
-         "contrastFile":  "/data1/mdo1_contrast.fits"
+         "PSF": "/data/mdo1_psf.fits",
+         "throughput": "/data/mdo1_thru.fits",
+         "contrast":  "/data1/mdo1_contrast.fits"
         }
       ],
       "occulterWetMass": value,
@@ -269,30 +270,39 @@ The JSON specification file will contain a series of objects with members enumer
     {
       "starlightSuppressionSystemNumber": 2,
       "type": "internal",
-      "detectionTimeMultiplier": value,
-      "characterizationTimeMultiplier": value,
       "IWA": value,
       "OWA": value,
-      "PSFfile": "/data/coron1_psf.fits",
-      "throughputFile": "/data/coron1_thru.fits",
-      "contrastFile":  "/data1/coron1_contrast.fits"
+      "PSF": "/data/coron1_psf.fits",
+      "throughput": "/data/coron1_thru.fits",
+      "contrast":  "/data1/coron1_contrast.fits",
+      "detectionTimeMultiplier": value,
+      "characterizationTimeMultiplier": value,
+      "opticaloh": value
     }
   ],
   "scienceInstruments": [
     {
       "scienceInstrumentNumber": 1,
       "type": "imager-EMCCD",
-      "cic": value,
-      "darkRate": value,
-      "QE": value/filename
-    },
+      "QE": 0.88,
+      "darkCurrent": 9e-5,
+      "CIC": 0.0013,
+      "readNoise": 16,
+      "texp": 1000,
+      "pixelPitch": 13e-6,
+      "focalLength": 240,
+      "ENF": 1.414,
+      "G_EM": 500
+    }
     {
       "scienceInstrumentNumber": 2,
       "type": "IFS-CCD",
-      "readNoise": value,
-      "darkRate": value,
-      "QE": value/filename,
-      "readRate": value
+      "QE": 0.88,
+      "darkCurrent": 9e-5,
+      "CIC": 0.0013,
+      "readNoise": 3,
+      "texp": 1000,
+      "Rspec": 70.0,
     }
   ],
   modules: {
@@ -325,20 +335,20 @@ If the module implementations are in the appropriate subfolder in the EXOSIMS tr
 These parameters apply to all simulations, and are described in detail in their specific module definitions:
 
 \begin{itemize}[leftmargin=1in,font={\ttfamily}]
-\item[missionLifetime] (float) The total mission lifetime in years.  When the mission time is equal or greater to this value, the mission simulation stops.
+\item[missionLifetime] (float) The total mission lifetime in $ years $.  When the mission time is equal or greater to this value, the mission simulation stops.
 \item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1.  When the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion the mission simulation stops.
-\item[lam]  (float) Central or detection wavelength in nm.
-\item[deltaLam]  (float) Detection bandwidth in nm.
+\item[lam]  (float) Central or detection wavelength in $ nm $.
+\item[deltaLam]  (float) Detection bandwidth in $ nm $.
 \item[shapeFac] (float)  Telescope aperture shape factor.
 \item[keepStarCatalog] (bool) Boolean representing whether to delete the star catalog after assembling the target list.  If true, object reference will be available from TargetList object.
 \item[pupilDiam] (float) Entrance pupil diameter in m.
 \item[SNchar] (float) Signal to Noise Ratio for characterization.
 \item[telescopeKeepout] (float) Telescope keepout angle in degrees
-\item[IWA] (float) Fundamental Inner Working Angle in $ arcseconds $. No planets can ever be observed at smaller separations.
-\item[OWA] (float) Fundamental Outer Working Angle in $ arcseconds $. Set to Inf for no OWA. JSON values of 0 will be interpreted as Inf.
+\item[IWA] (float) Fundamental Inner Working Angle in $ arcsec $. No planets can ever be observed at smaller separations.
+\item[OWA] (float) Fundamental Outer Working Angle in $ arcsec $. Set to $ Inf $ for no OWA. JSON values of 0 will be interpreted as $ Inf $.
 \item[dMagLim] (float) Fundamental limiting $\Delta$mag (difference in magnitude between star and planet). 
 \item[attenuation] (float) Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
-\item[specLam] (float) Spectral wavelength of interest in nm.
+\item[specLam] (float) Spectral wavelength of interest in $ nm $.
 \item[intCutoff] (float)  Maximum allowed integration time in $ days $. No integrations will be started that would take longer than this value.
 \item[minComp] (float) Minimum completeness value for inclusion in target list. 
 \item[exozodi] (float) Mean Exo-zodi level in zodi.
@@ -356,8 +366,7 @@ These parameters apply to all simulations, and are described in detail in their 
 \item [scaleOrbits]   (Boolean) True means planetary orbits are scaled by the square root of stellar luminosity. 
 \item[missionStart]  (float) Mission start time in $ MJD $. 
 \item[missionLife]  (float) Total length of mission in $ years $. 
-\item[extendedLife]  (float) Extended mission time in $ years $.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed.
-\item[missionPortion] (float)  Portion of mission time devoted to planet-finding. ($\le 1$)
+\item[extendedLife]  (float) Extended mission time in $ years $.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed
 \item[settlingTime] (float) Amount of time needed for observatory to settle after a repointing in $ days $.             
 \item[thrust] (float) Occulter slew thrust in $ mN $.
 \item[slewIsp] (float) Occulter slew specific impulse in $ s $. 
@@ -366,6 +375,8 @@ These parameters apply to all simulations, and are described in detail in their 
 \item[coMass] (float) Telescope (or non-maneuvering spacecraft) mass in $ kg $. 
 \item[skIsp] (float) Specific impulse for station keeping in $ s $. 
 \item[defburnPortion] (float) Default burn portion for slewing. 
+\item[spkpath] (string) Full path to SPK kernel file.
+\item[forceStaticEphem]  (Boolean) Force use of static solar system ephemeris if set to True, even if jplephem module is present.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -505,7 +516,7 @@ The Star Catalog prototype creates empty 1D NumPy ndarrays for each of the outpu
         \item[StarCatalog.Spec] \hfill \\
         1D NumPy ndarray of spectral types
         \item[StarCatalog.parx] \hfill \\
-        1D NumPy ndarray of parallax in milliarcseconds
+        1D NumPy ndarray of parallax in $ mas $
         \item[StarCatalog.Umag] \hfill \\
         1D NumPy ndarray of U magnitude
         \item[StarCatalog.Bmag] \hfill \\
@@ -535,13 +546,13 @@ The Star Catalog prototype creates empty 1D NumPy ndarrays for each of the outpu
         \item[StarCatalog.coords] \hfill \\
         Astropy \href{http://astropy.readthedocs.org/en/latest/api/astropy.coordinates.SkyCoord.html}{SkyCoord object} containing list of star positions (e.g., right ascension and declination)
         \item[StarCatalog.pmra] \hfill \\
-        1D NumPy ndarray of proper motion in right ascension in milliarcseconds/year
+        1D NumPy ndarray of proper motion in right ascension in $ mas/year $
         \item[StarCatalog.pmdec] \hfill \\
-        1D NumPy ndarray of proper motion in declination in milliarcseconds/year
+        1D NumPy ndarray of proper motion in declination in $ mas/year $
         \item[StarCatalog.rv] \hfill \\
         1D NumPy ndarray of radial velocity in kilometers/second
         \item[StarCatalog.Binary\_Cut] \hfill \\
-        Boolean 1D NumPy ndarray where True is companion star closer than 10 arcseconds
+        Boolean 1D NumPy ndarray where True is companion star closer than $ 10 arcsec $
     \end{description}
 \end{itemize}
 
@@ -587,42 +598,46 @@ Information from simulation specification JSON file organized into a Python dict
     \item[SNchar] \hfill \\
     Signal to Noise Ratio for characterization. Default value is 11.
     \item[IWA] \hfill \\
-    Fundamental Inner Working Angle in $ arcseconds $. No planets can ever be observed at smaller separations. If not set, defaults to smallest IWA of all starlightSuppressionSystems.
+    Fundamental Inner Working Angle in $ arcsec $. No planets can ever be observed at smaller separations. If not set, defaults to smallest IWA of all starlightSuppressionSystems.
     \item[OWA] \hfill \\
-    Fundamental Outer Working Angle in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as Inf.
+    Fundamental Outer Working Angle in $ arcsec $. Set to $ Inf $ for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as $ Inf $.
     \item[dMagLim] \hfill \\
     Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is minimum of contrast.
     \item[attenuation] \hfill \\
     Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements. Default value is 0.57.
     \item[specLam] \hfill \\
-    Spectral wavelength of interest in nm. Default value is equal to lam.
+    Spectral wavelength of interest in $ nm $. Default value is equal to lam.
     \item[intCutoff] \hfill \\
     Maximum allowed integration time in $ days $. Default value is 50. No integrations will be started that would take longer than this value.
- 
+    \item[Npix] \hfill \\
+    Number of noise pixels. Default value is 14.3.
+    \item[Ndark] \hfill \\
+    Number of dark frames used. Default value is 10.
+
     \item[starLightSuppressionSystems] \hfill\\ Array of dictionaries containing these (or other) starlight suppression system values.
     \begin{description}
     \item[starlightSuppressionSystemNumber] \hfill\\ (Required) Integer counter of the system.
     \item[type] \hfill\\ (Required) String indicating type of sytems.  Standard values are `internal',`external', and `hybrid'.
     \item[IWA] \hfill \\
-     Inner Working Angle of this system in $ arcseconds $.  If not set, defaults to smallest WA of contrast/throughput definitions.
+     Inner Working Angle of this system in $ arcsec $. If not set, or if too small for this system contrast/throughput definitions, defaults to smallest WA of contrast/throughput definitions.
     \item[OWA] \hfill \\
-    Specific Outer Working Angle of this system in $ arcseconds $. Set to Inf for no OWA. If not set, defaults to largest WA of contrast/throughput definitions.  JSON values of 0 will be interpreted as Inf.
+    Specific Outer Working Angle of this system in $ arcsec $. Set to $ Inf $ for no OWA. If not set, or if too large for this system contrast/throughput definitions, defaults to largest WA of contrast/throughput definitions.  JSON values of 0 will be interpreted as $ Inf $.
     \item[dMagLim] \hfill \\
     Limiting $ \Delta$mag for this system. Default value is minimum of the system contrast.
     \item[throughput] \hfill \\
-    Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs.  May be data or FITS filename. Default is scalar 0.5.
+    Coronagraph throughput: either a scalar for constant throughput, a two-column array for angular separation-dependent throughput, where the first column contains the separations in $ arcsec $, or a 2D array for angular separation- and wavelength- dependent throughput, where the first column contains the angular separation values in as and the first row contains the wavelengths in $ nm $.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs.  May be data or FITS filename. Default is scalar 0.5.
     \item[contrast] \hfill \\
-    Optical system contrast: either a scalar for constant contrast, a two-column array for angular separation-dependent contrast, where the first column contains the separations in arcseconds, or a 2D array for angular separation- and wavelength- dependent contrast, where the first column contains the angular separation values in as and the first row contains the wavelengths in nm.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs. May be data or FITS filename. Default is scalar 1e-10.
+    Optical system contrast: either a scalar for constant contrast, a two-column array for angular separation-dependent contrast, where the first column contains the separations in $ arcsec $, or a 2D array for angular separation- and wavelength- dependent contrast, where the first column contains the angular separation values in as and the first row contains the wavelengths in $ nm $.  The ranges on all parameters must be consistent with the values for the IWA, OWA, lam and deltaLam inputs. May be data or FITS filename. Default is scalar 1e-10.
     \item[PSF] \hfill \\
     Instrument point spread function. Either a 2D array of a single-PSF, or a 3D array of wavelength-dependent PSFs. May be data or FITS filename. Default is numpy.ones((3,3)).
     \item[PSFsampling] \hfill \\
-    Sampling of the PSF in arcsec/pixel. Default value is 10.
+    Sampling of the PSF in $ arcsec/pixel $. Default value is 10.
     \item[detectionTimeMultiplier]\hfill \\
     Duty cycle of a detection observation.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full field of view (i.e., if a shaped pupil with a dark hole that covers 1/3 of the field of view is used for detection, this value would equal 3).  Defaults to 1.
     \item[characterizationTimeMultiplier]\hfill \\
     Characterization duty cycle.  If only a single integration is required for the initial detection observation, then this value is 1.  Otherwise, it is equal to the number of discrete integrations needed to cover the full wavelength band and all required polarization states.  For example, if the band is split into three sub-bands, and there are two polarization states that must be measured, and each of these must be done sequentially, then this value would equal 6.  However, if the three sub-bands could be observed at the same time (e.g., by separate detectors) then the value would by two (for the two polarization states). Defaults to 1.
     \item[opticaloh] \hfill \\
-    Optical system overhead time in $days$.  Default value is 1 day.  This is the (assumed constant) amount of time required to set up the optical system (i.e., dig the dark hole or do fine alignment with the occulter).  It is added to every observation, and is separate from the observatory overhead defined in the observatory module, which represents the observatory's settling time.  Both overheads are added to the integration time to determine the full duration of each detection observation.
+    Optical system overhead time in $ days $.  Default value is 1 day.  This is the (assumed constant) amount of time required to set up the optical system (i.e., dig the dark hole or do fine alignment with the occulter).  It is added to every observation, and is separate from the observatory overhead defined in the observatory module, which represents the observatory's settling time.  Both overheads are added to the integration time to determine the full duration of each detection observation.
     \item[occulterDiameter]\hfill \\
     Occulter diameter in $ m $.  Measured petal tip-to-tip.
     \item [NocculterDistances]\hfill \\
@@ -638,26 +653,27 @@ Information from simulation specification JSON file organized into a Python dict
     \item[scienceInstruments] \hfill\\ Array of dictionaries containing these (or other) detector system values.  Defaults are filled in only when listed.
     \begin{description}
     \item[scienceInstrumentNumber] \hfill\\ (Required) Integer counter of the system.
-    \item[type] \hfill\\ (Required) String indicating type of system.  Standard values are `internal',`external', and `hybrid'.
-    \item[darkRate] \hfill \\
-    Detector dark current rate per pixel in units of electrons/second/pix (float). 
+    \item[type] \hfill\\ (Required) String indicating type of system.  Standard values are `imaging' and `spectro'.
+    \item[darkCurrent] \hfill \\
+    Detector dark-current rate in units of $ electrons /s /pix $ (float). 
     \item[readNoise] \hfill \\
-    Detector read noise in electrons/read (float). 
+    Detector read noise in $ electrons/frame $ (float). 
     \item[texp] \hfill \\
-    Exposure time per read in $ s $. 
+    Exposure time in $ s/frame $. 
     \item[QE] \hfill \\
-    Detector quantum efficiency: either a scalar for constant QE, or a two-column array for wavelength-dependent QE, where the first column contains the wavelengths in nm. The ranges on all parameters must be consistent with the values for lam and deltaLam inputs. May be data or FITS filename. 
-    \item[pixelArea] \hfill \\
-    Pixel area in $ m^2 $ (float). 
+    Detector quantum efficiency: either a scalar for constant QE, or a two-column array for wavelength-dependent QE, where the first column contains the wavelengths in $ nm $. The ranges on all parameters must be consistent with the values for lam and deltaLam inputs. May be data or FITS filename. 
+    \item[pixelPitch] \hfill \\
+    Pixel pitch in $ m $ (float). 
     \item[focalLength] \hfill \\
     Focal length in $ m $ (float). 
     \item[Rspec] \hfill \\
     (Specific to spectrometers) Spectral resolving power defined as $\lambda/\Delta\lambda$ (float). 
+    \item[CIC] \hfill \\
+    (Specific to CCDs) Clock-induced-charge in units of $ electrons/pix/frame $
     \item[ENF] \hfill \\
     (Specific to EM-CCDs) Excess noise factor (float).
-    \item[CIC] \hfill \\
-    (Specific to EM-CCDs) Clock-induced-charge in units of electrons/pix/frame
-    \end{description}
+    \item[G\_EM] \hfill \\
+    (Specific to EM-CCDs) Electron multiplication gain    \end{description}
 \end{description}
 \end{itemize}
 For all values that may be either scalars or interpolants, in the case where scalar values are given, the optical system module will automatically wrap them in lambda functions so that they become callable (just like the interpolant) but will always return the same value for all arguments.  The inputs for interpolants may be filenames (full absolute paths) with tabulated data, or NumPy ndarrays of argument and data (in that order in rows so that input[0] is the argument and input[1] is the data).  When the input is derived from a JSON file, these must either be scalars or filenames.
@@ -675,33 +691,33 @@ These will always be present in an OpticalSystem object and directly accessible 
     Detection wavelength (astropy Quantity initially set in $ nm $)
     \item[deltaLam] \hfill \\
     Detection bandwidth $ \Delta\lambda $ (astropy Quantity initially set in $ nm $)
+    \item[obscurFac] \hfill \\
+    Obscuration factor due to secondary mirror and spiders
     \item[shapeFac] \hfill \\
-    Shape factor so that $ shapeFac \times diameter^2 = Area $
+    Shape factor of the unobscured pupil area, so that $ shapeFac \times pupilDiam^2  \times (1-obscurFac) = pupilArea $
+    \item[pupilDiam] \hfill \\
+    Entrance pupil diameter (astropy Quantity initially set in $ m $)
     \item[pupilArea] \hfill \\
     Entrance pupil area (astropy Quantity initially set in $ m^{2} $)
     \item[SNchar] \hfill \\
     Signal to Noise Ratio for characterization
     Focal length (astropy Quantity initially set in $ m $)
     \item[IWA] \hfill \\
-    Fundamental Inner Working Angle (astropy Quantity initially set in $ arcseconds $)
+    Fundamental Inner Working Angle (astropy Quantity initially set in $ arcsec $)
     \item[OWA] \hfill \\
     Fundamental Outer Working Angle (astropy Quantity initially set in $ as $)
     \item[dMagLim] \hfill \\
     Fundamental Limiting $ \Delta$mag (difference in magnitude between star and planet)
-    \item[OpticalSystem.telescopeKeepout] \hfill \\
-    Telescope keepout angle in degrees
-    \item[OpticalSystem.specLam] \hfill \\
-    Spectral wavelength of interest (astropy Quantity initially set in $ nm $)
     \item[telescopeKeepout] \hfill \\
     Telescope keepout angle (astropy Quantity initially set in degrees)
-    \item[specLam] \hfill \\
-    Spectral wavelength of interest (astropy Quantity initially set in $ nm $)
     \item[attenuation] \hfill \\
     Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements (float).
+    \item[specLam] \hfill \\
+    Spectral wavelength of interest (astropy Quantity initially set in $ nm $)
     \item[intCutoff] \hfill \\
     Maximum allowed integration time (astropy Quantity initially set in $ days $)
-    \item[starlightSuppressionSystems] \hfill \\  Array of dicts containing all supplied starlight suppression system attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonlly used attributes.
-    \item[scienceInstruments] \hfill \\  Array of dicts containing all supplied science instrument attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for detection, but this is not a requirement.  See above for other commonly used attributes.
+    \item[starlightSuppressionSystems] \hfill \\  Array of dicts containing all supplied starlight suppression system attributes.  Only required attributes are `starlightSuppressionSystemNumber' and `type'.  Typically the first system will be the one used for imaging, and the second one for spectroscopy, but this is not a requirement.  See above for other commonly used attributes.
+    \item[scienceInstruments] \hfill \\  Array of dicts containing all supplied science instrument attributes.  Only required attributes are `scienceInstrumentNumber' and `type'.  Typically the first system will be the one used for imaging, and the second one for spectroscopy, but this is not a requirement.  See above for other commonly used attributes.
 \end{description}
 \end{itemize}
 In cases where either of the two attribute dictionary lists (starlight suppression systems and science instruments) only contain one dictionary (i.e., there's only one coronagraph and/or detector), then all attributes will be linked as direct attributes of the object as well as stored in the dictionary.
@@ -713,7 +729,7 @@ The \verb+calc_maxintTime+ method calculates the maximum integration time for ea
     \item 
     \begin{description}
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of available attributes
+        Instantiated TargetList object from TargetList module see \S\ref{sec:targetlist} for definition of available attributes
     \end{description}
 \end{itemize}
 
@@ -733,13 +749,15 @@ The \verb+calc_intTime+ method calculates the integration time required for a sp
     \item 
     \begin{description}
         \item[targlist] \hfill \\
-        Instantiated Target List object from Target List module see \S\ref{sec:targetlist} for definition of available attributes
-        \item[universe] \hfill \\
-        Instantiated Simulated Universe object from Simulated Universe module see \S\ref{sec:simulateduniverse} for definition of available attributes
-        \item[s\_ind] \hfill \\
-        Index of target star from Target List module
-        \item[planInds] \hfill \\
-        Index of planets belonging to target star
+        Instantiated TargetList object from TargetList module see \S\ref{sec:targetlist} for definition of available attributes
+        \item[starInd] \hfill \\
+        Numpy ndarray containing integer indices of the stars of interest, with the length of the number of planets of interest. For instance, if a star hosts $n$ planets, the index of this star must be repeated $n$ times.
+        \item[dMagPlan] \hfill \\
+        Numpy ndarray containing differences in magnitude between planets and their host star, with the length of the number of planets of interest.
+        \item[WA] \hfill \\
+        Numpy ndarray containing working angles of the planets of interest
+        \item[I] \hfill \\
+        Numpy ndarray containing inclinations of the planets of interest
     \end{description}
 \end{itemize}
 
@@ -748,7 +766,7 @@ The \verb+calc_intTime+ method calculates the integration time required for a sp
     \item 
     \begin{description}
         \item[intTime] \hfill \\
-        Integration time for each of the planets indexed by planInds as 1D NumPy ndarray with astropy Quantity units of time attached 
+        Integration time for each of the planets of interest as 1D NumPy ndarray with astropy Quantity units of time in $ days $
     \end{description}
 \end{itemize}
 
@@ -776,7 +794,9 @@ The Zodiacal Light module contains the \verb+fzodi+ method.  This method calcula
             \item[exozodi] \hfill \\
             Exo-zodi level in zodi. Defaults to 1.5.
             \item[exozodiVar] \hfill \\
-            Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero.  Default to 0.
+            Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero.  Defaults to 0.
+            \item[exozodiMag] \hfill \\
+            1 exo-zodi brightness in $ mag/asec^2 $. Defaults to 23.54.
 \end{description}
 \end{itemize}
 
@@ -788,6 +808,8 @@ The Zodiacal Light module contains the \verb+fzodi+ method.  This method calcula
         Exo-zodi level in zodi
         \item[exozodiVar] \hfill \\
         Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero.
+        \item[exozodiMag] \hfill \\
+        1 exo-zodi brightness in $ mag/asec^2 $.
 \end{description}
 \end{itemize}
 
@@ -896,6 +918,10 @@ The inputs, outputs, and updated attributes of the required Observatory module m
             Specific impulse for station keeping in $ s $. Default value is 220.
             \item[defburnPortion] \hfill \\
             Default burn portion for slewing. Default value is 0.05
+            \item[spkpath] \hfill\\
+            String with full path to SPK kernel file (only used if using jplephem for solar system body propagation - see \ref{sec:ssbPosTask}.
+            \item[forceStaticEphem] \hfill \\
+            Boolean, forcing use of static solar system ephemeris if set to True, even if jplephem module is present (see \ref{sec:ssbPosTask}).  Default value is False.
         \end{description}
     \end{description}
 \end{itemize}
@@ -905,7 +931,7 @@ The inputs, outputs, and updated attributes of the required Observatory module m
     \item
     \begin{description}
         \item[settlingTime] \hfill \\
-        Amount of time needed for observatory to settle after a repointing (astropy Quantity initially set in days)
+        Amount of time needed for observatory to settle after a repointing (astropy Quantity initially set in $ days $)
         \item[thrust] \hfill \\
         Occulter slew thrust (astropy Quantity initially set in $ mN $)
         \item[slewIsp] \hfill \\
@@ -996,10 +1022,35 @@ The \verb+keepout+ method determines which stars in the target list are observab
     \end{description}
 \end{itemize}
 
+\subsubsection{solarSystem\_body\_position Method}\label{sec:ssbPosTask}
+The \verb+solarSystem_body_position+ returns the position of any solar system body (Earth, Sun, Moon, etc.) at a given time in the common Heliocentric Equatorial frame.  The observatory prototype will attempt to load the jplephem module, and use a local SPK file for all propagations if available.  The SPK file is not packaged with the software but may be downloaded from JPL's website at: \url{http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/}.  The location of the spk file is assumed to be in the Observatory directory but can be set by the \verb+spkpath+ input.  
+
+If jplephem is not present, the Observatory prototype will load static ephemeris derived from Vallado (2004) and use those for propagation.  This behavior can be forced even when jplephem is available by setting the \verb+forceStaticEphem+ input to True.
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[time] \hfill \\
+        astropy Time object which may be \verb+TimeKeeping.currenttimeAbs+ (see \ref{sec:currenttime} for definition)
+        \item[bodyname] \hfill \\
+        String containing object name, capitalized by convention.
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item
+    \begin{description}
+        \item[r\_body] \hfill \\
+        (Quantity) heliocentric equatorial position vector (units of km)
+    \end{description}
+\end{itemize}
+
 % TIME KEEPING 
 
 \subsection{Time Keeping} \label{sec:time}
-The Time Keeping module is responsible for keeping track of the current mission time.  It encodes only the mission start time, the mission duration, and the current time within a simulation.  All functions in all modules requiring knowledge of the current time call functions or access parameters implemented within the Time module.  Internal encoding of time is implemented as the time from mission start (measured in days).  The Time Keeping module also provides functionality for converting between this time measure and standard measures such as Julian Day Number and UTC time.
+The Time Keeping module is responsible for keeping track of the current mission time.  It encodes only the mission start time, the mission duration, and the current time within a simulation.  All functions in all modules requiring knowledge of the current time call functions or access parameters implemented within the Time module.  Internal encoding of time is implemented as the time from mission start (measured in $ days $).  The Time Keeping module also provides functionality for converting between this time measure and standard measures such as Julian Day Number and UTC time.
   
 The Time Keeping module contains the \verb+update_times+ and \verb+duty_cycle+ methods.  These  methods updates the mission time during a survey simulation.  The duty cycle determines when during the mission timeline the observatory is allowed to perform planet-finding operations.  The duty cycle function takes the current mission time as input and outputs the next available time when exoplanet observations may begin or resume, along with the duration of the observational period. The outputs of this method are used in the Survey Simulation module to determine when and how long exoplanet finding and characterization observations occur.  The inputs and updated attributes for the Time Keeping methods are depicted in \reffig{fig:timekeepingmodule}.
 
@@ -1308,13 +1359,15 @@ The Target List module takes in information from the Optical System, Star Catalo
         \item[Completeness] \hfill \\
         Instance of Completeness module (see \ref{sec:completeness})
         \item[maxintTime] \hfill \\
-        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSystem.calc_maxintTime+ \S\ref{sec:calcmaxintTimetask} (astropy Quantity with units of time)
+        1D NumPy ndarray of maximum integration time for each target star found from \verb+OpticalSystem.calc_maxintTime+ \S\ref{sec:calcmaxintTimetask} (astropy Quantity with units of $days$)
         \item[comp0] \hfill \\
         1D NumPy ndarray of completeness value for each target star found from \verb+Completeness.target_completeness+ \S\ref{sec:targetcompletenesstask}
         \item[MsEst] \hfill \\
         Approximate stellar mass in $ M_{sun} $
         \item[MsTrue] \hfill \\
         Stellar mass with an error component included in $ M_{sun} $
+        \item[nStars] \hfill \\
+        Number of target stars
     \end{description}
 \end{itemize}
 
@@ -1337,7 +1390,9 @@ The Simulated Universe module contains the following methods:
 \item[]  \verb+planet_albedos+
 \item[]  \verb+planet_inclinations+
 \item[]  \verb+planet_pos_vel+
-\item[]  \verb+prop_system+.
+\item[]  \verb+prop_system+
+\item[]  \verb+eccanom+
+\item[]  \verb+get_current_WA+
 \end{itemize}
  \verb+planet_pos_vel+ finds initial position and velocity vectors for each planet (see \S\ref{sec:planetposveltask}).  \verb+prop_system+ propagates planet position and velocity vectors in time (see \S\ref{sec:propsystemtask}).  The rest of the methods assign orbital or physical quantities to each planet (see \S\ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetalbedostask}, and \ref{sec:planetinclinationstask}. The inputs and outputs for these methods are depicted in \reffig{fig:simulateduniversemodule}.
 
@@ -1524,31 +1579,6 @@ This method does not take any explicit inputs.  It uses the inherited Planet Pop
     \end{description}
 \end{itemize}
 
-\subsubsection{planet\_pos\_vel Method Input/Output Description} \label{sec:planetposveltask}
-The \verb+planet_pos_vel+ method assigns each planet an initial position and velocity vector with appropriate astropy Quantity units attached.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the following attributes assigned before calling this method:
-\begin{itemize}
-    \item \verb+SimulatedUniverse.a+
-    \item \verb+SimulatedUniverse.e+
-    \item \verb+SimulatedUniverse.Mp+
-    \item \verb+SimulatedUniverse.I+
-    \item \verb+SimulatedUniverse.w+
-    \item \verb+SimulatedUniverse.O+
-\end{itemize}
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[r] \hfill \\
-        NumPy ndarray containing initial position vector for each planet (astropy Quantity with default units of $ km $)
-        \item[v] \hfill \\
-        NumPy ndarray containing initial velocity vector for each planet (astropy Quantity with default units of $ km/s $)
-    \end{description}
-\end{itemize}
-
 \subsubsection{planet\_albedos Method Input/Output Description} \label{sec:planetalbedostask}
 The \verb+planet_albedos+ method assigns each planet a geometric albedo value. The prototype samples the probablity density function \verb+PlanetPopulation.albedo(x)+ \S\ref{sec:pdfs} and returns appropriate output.
 
@@ -1576,6 +1606,31 @@ This method does not take any explicit inputs.  It uses the inherited Planet Pop
     \begin{description}
         \item[I] \hfill \\
         1D NumPy ndarray containing inclination for each planet in degrees 
+    \end{description}
+\end{itemize}
+
+\subsubsection{planet\_pos\_vel Method Input/Output Description} \label{sec:planetposveltask}
+The \verb+planet_pos_vel+ method assigns each planet an initial position and velocity vector with appropriate astropy Quantity units attached.
+
+\subsubsection*{Inputs}
+This method does not take any explicit inputs.  It uses the following attributes assigned before calling this method:
+\begin{itemize}
+    \item \verb+SimulatedUniverse.a+
+    \item \verb+SimulatedUniverse.e+
+    \item \verb+SimulatedUniverse.Mp+
+    \item \verb+SimulatedUniverse.I+
+    \item \verb+SimulatedUniverse.w+
+    \item \verb+SimulatedUniverse.O+
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[r] \hfill \\
+        NumPy ndarray containing initial position vector for each planet (astropy Quantity with default units of $ km $)
+        \item[v] \hfill \\
+        NumPy ndarray containing initial velocity vector for each planet (astropy Quantity with default units of $ km/s $)
     \end{description}
 \end{itemize}
 
@@ -1607,6 +1662,50 @@ The \verb+prop_system+ method propagates planet state vectors (position and velo
         NumPy ndarray of propagated position vectors relative to host star (astropy Quantity with units of distance)
         \item[vnew] \hfill \\
         NumPy ndarray of propagated velocity vectors relative to host star (astropy Quantity with units of distance/time)
+    \end{description}
+\end{itemize}
+
+\subsubsection{eccanom Method Input/Output Description} \label{sec:eccanomtask}
+The \verb+eccanom+ method uses algorithm 2 from Vallado to find the eccentric anomaly from mean anomaly and eccentricity.
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[M] \hfill \\
+        Mean anomaly (float)
+        \item[e] \hfill \\
+        Eccentricity (float)
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[E] \hfill \\
+        Eccentric anomaly (float)
+    \end{description}
+\end{itemize}
+
+\subsubsection{get\_current\_WA Method Input/Output Description} \label{sec:getcurrentWAtask}
+The \verb+get_current_WA+ method calculates the current working angles for planets specified by the given indices.
+
+\subsubsection*{Inputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[Inds] \hfill \\
+        1D NumPy ndarray containing integer indices of the planets of interest
+    \end{description}
+\end{itemize}
+
+\subsubsection*{Outputs}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[wa] \hfill \\
+        1D NumPy ndarray containing working angles (units of arcsecons)
     \end{description}
 \end{itemize}
 
@@ -1727,7 +1826,7 @@ This method does not take any explicit inputs.  It uses the inherited modules to
                 \item -2 = false alarm
             \end{itemize}
             \item[det\_WA] \hfill \\
-            Detection WA in $ milliarcseconds $
+            Detection WA in $ mas $
             \item[det\_dMag] \hfill \\
             Detection $ \Delta $mag
             \item[char\_1\_time] \hfill \\
@@ -1908,7 +2007,7 @@ The \verb+next_target+ sub-task is called from the \verb+run_sim+ task to determ
         \item[targlist] \hfill \\
         Target List module (see \ref{sec:targetlist})
         \item[revisit\_list] \hfill \\
-        NumPy ndarray containing index of target star and time in days of target stars from the target list to revisit
+        NumPy ndarray containing index of target star and time in $ days $ of target stars from the target list to revisit
         \item[extended\_list] \hfill \\
         1D NumPy ndarray containing the indices of stars in the target list to consider if in extended mission time
         \item[DRM] \hfill \\

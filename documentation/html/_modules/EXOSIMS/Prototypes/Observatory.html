@@ -39,11 +39,12 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.Observatory</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
 <span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">constants</span> <span class="k">as</span> <span class="n">const</span>
 <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
 
 <div class="viewcode-block" id="Observatory"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory">[docs]</a><span class="k">class</span> <span class="nc">Observatory</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Observatory class template</span>
@@ -85,143 +86,170 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;Observatory&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;Observatory&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
      
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settlingTime</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">thrust</span><span class="o">=</span><span class="mf">450.</span><span class="p">,</span> <span class="n">slewIsp</span><span class="o">=</span><span class="mf">4160.</span><span class="p">,</span>\
                  <span class="n">scMass</span><span class="o">=</span><span class="mf">6000.</span><span class="p">,</span> <span class="n">dryMass</span><span class="o">=</span><span class="mf">3400.</span><span class="p">,</span> <span class="n">coMass</span><span class="o">=</span><span class="mf">5800.</span><span class="p">,</span> <span class="n">skIsp</span><span class="o">=</span><span class="mf">220.</span><span class="p">,</span>\
-                 <span class="n">defburnPortion</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+                 <span class="n">defburnPortion</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">spkpath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">forceStaticEphem</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>\
+                 <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c"># default Observatory values</span>
-        <span class="c"># instrument settling time after repoint (days)</span>
+        <span class="c1"># default Observatory values</span>
+        <span class="c1"># instrument settling time after repoint (days)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">settlingTime</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">settlingTime</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> 
-        <span class="c"># occulter slew thrust (mN)</span>
+        <span class="c1"># occulter slew thrust (mN)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thrust</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">thrust</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mN</span> 
-        <span class="c"># occulter slew specific impulse (s)</span>
+        <span class="c1"># occulter slew specific impulse (s)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slewIsp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">slewIsp</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> 
-        <span class="c"># occulter (maneuvering sc) initial (wet) mass (kg)</span>
+        <span class="c1"># occulter (maneuvering sc) initial (wet) mass (kg)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">scMass</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
-        <span class="c"># occulter (maneuvering sc) dry mass (kg)</span>
+        <span class="c1"># occulter (maneuvering sc) dry mass (kg)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dryMass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dryMass</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
-        <span class="c"># telescope (or non-maneuvering sc) mass (kg)</span>
+        <span class="c1"># telescope (or non-maneuvering sc) mass (kg)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coMass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">coMass</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span> 
-        <span class="c"># station-keeping Isp (s)</span>
+        <span class="c1"># station-keeping Isp (s)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">skIsp</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> 
-        <span class="c"># default burn portion</span>
+        <span class="c1"># default burn portion</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">defburnPortion</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">defburnPortion</span><span class="p">)</span>
 
-        <span class="c"># occulter-telescope distance (km)</span>
+        <span class="c1"># occulter-telescope distance (km)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> <span class="o">=</span> <span class="mf">55000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>                
 
+        <span class="c1">#if jplephem is available, we&#39;ll use that for propagating solar system bodies</span>
+        <span class="c1">#otherwise, use static ephemeris</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">forceStaticEphem</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">jplephem.spk</span> <span class="kn">import</span> <span class="n">SPK</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s2">&quot;WARNING: Module jplephem not found, using static solar system ephemeris.&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">print</span> <span class="s2">&quot;Using static solar system ephemeris.&quot;</span>
+
+        <span class="c1">#record all values populated so far to outspec</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-        <span class="c"># initialize values updated by functions</span>
-        <span class="c"># observatory keepout booleans</span>
+                   
+        <span class="c1"># initialize values updated by functions</span>
+        <span class="c1"># observatory keepout booleans</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> 
-        <span class="c"># observatory orbit position vector (km)</span>
+        <span class="c1"># observatory orbit position vector (km)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> 
-        <span class="c"># current occulter separation</span>
+        <span class="c1"># current occulter separation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> 
         
-        <span class="c"># set values derived from quantities above</span>
-        <span class="c"># slew flow rate (kg/day)</span>
+        <span class="c1"># set values derived from quantities above</span>
+        <span class="c1"># slew flow rate (kg/day)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">flowRate</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thrust</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">g0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">slewIsp</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kg</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
-        
-        <span class="c"># All ephemeride data from Vallado Appendix D.4</span>
-        <span class="c"># Store Mercury ephemerides data (ecliptic)</span>
-        <span class="n">Mercurya</span> <span class="o">=</span> <span class="mf">0.387098310</span>
-        <span class="n">Mercurye</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.20563175</span><span class="p">,</span> <span class="mf">0.000020406</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000284</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000017</span><span class="p">]</span>
-        <span class="n">Mercuryi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">7.004986</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0059516</span><span class="p">,</span> <span class="mf">0.00000081</span><span class="p">,</span> <span class="mf">0.000000041</span><span class="p">]</span>
-        <span class="n">MercuryO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">48.330893</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1254229</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00008833</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000196</span><span class="p">]</span>
-        <span class="n">Mercuryw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">77.456119</span><span class="p">,</span> <span class="mf">0.1588643</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00001343</span><span class="p">,</span> <span class="mf">0.000000039</span><span class="p">]</span>
-        <span class="n">MercurylM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">252.250906</span><span class="p">,</span> <span class="mf">149472.6746358</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000535</span><span class="p">,</span> <span class="mf">0.000000002</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mercury</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Mercurya</span><span class="p">,</span> <span class="n">Mercurye</span><span class="p">,</span> <span class="n">Mercuryi</span><span class="p">,</span> <span class="n">MercuryO</span><span class="p">,</span> <span class="n">Mercuryw</span><span class="p">,</span> <span class="n">MercurylM</span><span class="p">)</span>
-        
-        <span class="c"># Store Venus epemerides data (ecliptic)</span>
-        <span class="n">Venusa</span> <span class="o">=</span> <span class="mf">0.723329820</span>
-        <span class="n">Venuse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.00677188</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000047766</span><span class="p">,</span> <span class="mf">0.0000000975</span><span class="p">,</span> <span class="mf">0.00000000044</span><span class="p">]</span>
-        <span class="n">Venusi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">3.394662</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0008568</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00003244</span><span class="p">,</span> <span class="mf">0.000000010</span><span class="p">]</span>
-        <span class="n">VenusO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">76.679920</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2780080</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00014256</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000198</span><span class="p">]</span>
-        <span class="n">Venusw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">131.563707</span><span class="p">,</span> <span class="mf">0.0048646</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00138232</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000005332</span><span class="p">]</span>
-        <span class="n">VenuslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">181.979801</span><span class="p">,</span> <span class="mf">58517.8156760</span><span class="p">,</span> <span class="mf">0.00000165</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000002</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Venus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Venusa</span><span class="p">,</span> <span class="n">Venuse</span><span class="p">,</span> <span class="n">Venusi</span><span class="p">,</span> <span class="n">VenusO</span><span class="p">,</span> <span class="n">Venusw</span><span class="p">,</span> <span class="n">VenuslM</span><span class="p">)</span>
-        
-        <span class="c"># Store Earth ephemerides data (ecliptic)</span>
-        <span class="n">Eartha</span> <span class="o">=</span> <span class="mf">1.000001018</span>
-        <span class="n">Earthe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01670862</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000042037</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000001236</span><span class="p">,</span> <span class="mf">0.00000000004</span><span class="p">]</span>
-        <span class="n">Earthi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.0130546</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000931</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000034</span><span class="p">]</span>
-        <span class="n">EarthO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">174.873174</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2410908</span><span class="p">,</span> <span class="mf">0.00004067</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000001327</span><span class="p">]</span>
-        <span class="n">Earthw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">102.937348</span><span class="p">,</span> <span class="mf">0.3225557</span><span class="p">,</span> <span class="mf">0.00015026</span><span class="p">,</span> <span class="mf">0.000000478</span><span class="p">]</span>
-        <span class="n">EarthlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.466449</span><span class="p">,</span> <span class="mf">35999.3728519</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000568</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Eartha</span><span class="p">,</span> <span class="n">Earthe</span><span class="p">,</span> <span class="n">Earthi</span><span class="p">,</span> <span class="n">EarthO</span><span class="p">,</span> <span class="n">Earthw</span><span class="p">,</span> <span class="n">EarthlM</span><span class="p">)</span>
-        
-        <span class="c"># Store Mars ephemerides data (ecliptic)</span>
-        <span class="n">Marsa</span> <span class="o">=</span> <span class="mf">1.523679342</span>
-        <span class="n">Marse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.09340062</span><span class="p">,</span> <span class="mf">0.000090483</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000806</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000035</span><span class="p">]</span>
-        <span class="n">Marsi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.849726</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0081479</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00002255</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000027</span><span class="p">]</span>
-        <span class="n">MarsO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">49.558093</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2949846</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00063993</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000002143</span><span class="p">]</span>
-        <span class="n">Marsw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">336.060234</span><span class="p">,</span> <span class="mf">0.4438898</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00017321</span><span class="p">,</span> <span class="mf">0.000000300</span><span class="p">]</span>
-        <span class="n">MarslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">355.433275</span><span class="p">,</span> <span class="mf">19140.2993313</span><span class="p">,</span> <span class="mf">0.00000261</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000003</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Marsa</span><span class="p">,</span> <span class="n">Marse</span><span class="p">,</span> <span class="n">Marsi</span><span class="p">,</span> <span class="n">MarsO</span><span class="p">,</span> <span class="n">Marsw</span><span class="p">,</span> <span class="n">MarslM</span><span class="p">)</span>
-        
-        <span class="c"># Store Jupiter ephemerides data (ecliptic)</span>
-        <span class="n">Jupitera</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.202603191</span><span class="p">,</span> <span class="mf">0.0000001913</span><span class="p">]</span>
-        <span class="n">Jupitere</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.04849485</span><span class="p">,</span> <span class="mf">0.000163244</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000004719</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000197</span><span class="p">]</span>
-        <span class="n">Jupiteri</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.303270</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0019872</span><span class="p">,</span> <span class="mf">0.00003318</span><span class="p">,</span> <span class="mf">0.000000092</span><span class="p">]</span>
-        <span class="n">JupiterO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.464441</span><span class="p">,</span> <span class="mf">0.1766828</span><span class="p">,</span> <span class="mf">0.00090387</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000007032</span><span class="p">]</span>
-        <span class="n">Jupiterw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">14.331309</span><span class="p">,</span> <span class="mf">0.2155525</span><span class="p">,</span> <span class="mf">0.00072252</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000004590</span><span class="p">]</span>
-        <span class="n">JupiterlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">34.351484</span><span class="p">,</span> <span class="mf">3034.9056746</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00008501</span><span class="p">,</span> <span class="mf">0.000000004</span><span class="p">]</span>
+            
+        <span class="c1"># if you have jplephem, load spice file. otherwise, load static ephem.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">spkpath</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">spkpath</span><span class="p">)):</span>
+                <span class="c1"># if the path does not exist, load the default de432s.bsp</span>
+                    <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span><span class="s1">&#39;..&#39;</span><span class="p">,</span><span class="s1">&#39;Observatory&#39;</span><span class="p">))</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;de432s.bsp&#39;</span>
+                    <span class="n">spkpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">SPK</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">spkpath</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># All ephemeride data from Vallado Appendix D.4</span>
+            <span class="c1"># Store Mercury ephemerides data (ecliptic)</span>
+            <span class="n">Mercurya</span> <span class="o">=</span> <span class="mf">0.387098310</span>
+            <span class="n">Mercurye</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.20563175</span><span class="p">,</span> <span class="mf">0.000020406</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000284</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000017</span><span class="p">]</span>
+            <span class="n">Mercuryi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">7.004986</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0059516</span><span class="p">,</span> <span class="mf">0.00000081</span><span class="p">,</span> <span class="mf">0.000000041</span><span class="p">]</span>
+            <span class="n">MercuryO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">48.330893</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1254229</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00008833</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000196</span><span class="p">]</span>
+            <span class="n">Mercuryw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">77.456119</span><span class="p">,</span> <span class="mf">0.1588643</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00001343</span><span class="p">,</span> <span class="mf">0.000000039</span><span class="p">]</span>
+            <span class="n">MercurylM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">252.250906</span><span class="p">,</span> <span class="mf">149472.6746358</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000535</span><span class="p">,</span> <span class="mf">0.000000002</span><span class="p">]</span>
+            <span class="n">Mercury</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Mercurya</span><span class="p">,</span> <span class="n">Mercurye</span><span class="p">,</span> <span class="n">Mercuryi</span><span class="p">,</span> <span class="n">MercuryO</span><span class="p">,</span> <span class="n">Mercuryw</span><span class="p">,</span> <span class="n">MercurylM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Venus epemerides data (ecliptic)</span>
+            <span class="n">Venusa</span> <span class="o">=</span> <span class="mf">0.723329820</span>
+            <span class="n">Venuse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.00677188</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000047766</span><span class="p">,</span> <span class="mf">0.0000000975</span><span class="p">,</span> <span class="mf">0.00000000044</span><span class="p">]</span>
+            <span class="n">Venusi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">3.394662</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0008568</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00003244</span><span class="p">,</span> <span class="mf">0.000000010</span><span class="p">]</span>
+            <span class="n">VenusO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">76.679920</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2780080</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00014256</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000198</span><span class="p">]</span>
+            <span class="n">Venusw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">131.563707</span><span class="p">,</span> <span class="mf">0.0048646</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00138232</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000005332</span><span class="p">]</span>
+            <span class="n">VenuslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">181.979801</span><span class="p">,</span> <span class="mf">58517.8156760</span><span class="p">,</span> <span class="mf">0.00000165</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000002</span><span class="p">]</span>
+            <span class="n">Venus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Venusa</span><span class="p">,</span> <span class="n">Venuse</span><span class="p">,</span> <span class="n">Venusi</span><span class="p">,</span> <span class="n">VenusO</span><span class="p">,</span> <span class="n">Venusw</span><span class="p">,</span> <span class="n">VenuslM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Earth ephemerides data (ecliptic)</span>
+            <span class="n">Eartha</span> <span class="o">=</span> <span class="mf">1.000001018</span>
+            <span class="n">Earthe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01670862</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000042037</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000001236</span><span class="p">,</span> <span class="mf">0.00000000004</span><span class="p">]</span>
+            <span class="n">Earthi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.0130546</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000931</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000034</span><span class="p">]</span>
+            <span class="n">EarthO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">174.873174</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2410908</span><span class="p">,</span> <span class="mf">0.00004067</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000001327</span><span class="p">]</span>
+            <span class="n">Earthw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">102.937348</span><span class="p">,</span> <span class="mf">0.3225557</span><span class="p">,</span> <span class="mf">0.00015026</span><span class="p">,</span> <span class="mf">0.000000478</span><span class="p">]</span>
+            <span class="n">EarthlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.466449</span><span class="p">,</span> <span class="mf">35999.3728519</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000568</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]</span>
+            <span class="n">Earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Eartha</span><span class="p">,</span> <span class="n">Earthe</span><span class="p">,</span> <span class="n">Earthi</span><span class="p">,</span> <span class="n">EarthO</span><span class="p">,</span> <span class="n">Earthw</span><span class="p">,</span> <span class="n">EarthlM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Mars ephemerides data (ecliptic)</span>
+            <span class="n">Marsa</span> <span class="o">=</span> <span class="mf">1.523679342</span>
+            <span class="n">Marse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.09340062</span><span class="p">,</span> <span class="mf">0.000090483</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000806</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000035</span><span class="p">]</span>
+            <span class="n">Marsi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.849726</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0081479</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00002255</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000027</span><span class="p">]</span>
+            <span class="n">MarsO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">49.558093</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2949846</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00063993</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000002143</span><span class="p">]</span>
+            <span class="n">Marsw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">336.060234</span><span class="p">,</span> <span class="mf">0.4438898</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00017321</span><span class="p">,</span> <span class="mf">0.000000300</span><span class="p">]</span>
+            <span class="n">MarslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">355.433275</span><span class="p">,</span> <span class="mf">19140.2993313</span><span class="p">,</span> <span class="mf">0.00000261</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000003</span><span class="p">]</span>
+            <span class="n">Mars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Marsa</span><span class="p">,</span> <span class="n">Marse</span><span class="p">,</span> <span class="n">Marsi</span><span class="p">,</span> <span class="n">MarsO</span><span class="p">,</span> <span class="n">Marsw</span><span class="p">,</span> <span class="n">MarslM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Jupiter ephemerides data (ecliptic)</span>
+            <span class="n">Jupitera</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.202603191</span><span class="p">,</span> <span class="mf">0.0000001913</span><span class="p">]</span>
+            <span class="n">Jupitere</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.04849485</span><span class="p">,</span> <span class="mf">0.000163244</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000004719</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000197</span><span class="p">]</span>
+            <span class="n">Jupiteri</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.303270</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0019872</span><span class="p">,</span> <span class="mf">0.00003318</span><span class="p">,</span> <span class="mf">0.000000092</span><span class="p">]</span>
+            <span class="n">JupiterO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.464441</span><span class="p">,</span> <span class="mf">0.1766828</span><span class="p">,</span> <span class="mf">0.00090387</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000007032</span><span class="p">]</span>
+            <span class="n">Jupiterw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">14.331309</span><span class="p">,</span> <span class="mf">0.2155525</span><span class="p">,</span> <span class="mf">0.00072252</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000004590</span><span class="p">]</span>
+            <span class="n">JupiterlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">34.351484</span><span class="p">,</span> <span class="mf">3034.9056746</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00008501</span><span class="p">,</span> <span class="mf">0.000000004</span><span class="p">]</span>
+            <span class="n">Jupiter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Jupitera</span><span class="p">,</span> <span class="n">Jupitere</span><span class="p">,</span> <span class="n">Jupiteri</span><span class="p">,</span> <span class="n">JupiterO</span><span class="p">,</span> <span class="n">Jupiterw</span><span class="p">,</span> <span class="n">JupiterlM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Saturn ephemerides data (ecliptic)</span>
+            <span class="n">Saturna</span> <span class="o">=</span> <span class="p">[</span><span class="mf">9.554909596</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000021389</span><span class="p">]</span>
+            <span class="n">Saturne</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05550862</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000346818</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000006456</span><span class="p">,</span> <span class="mf">0.00000000338</span><span class="p">]</span>
+            <span class="n">Saturni</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.488878</span><span class="p">,</span> <span class="mf">0.0025515</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00004903</span><span class="p">,</span> <span class="mf">0.000000018</span><span class="p">]</span>
+            <span class="n">SaturnO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">113.665524</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2566649</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00018345</span><span class="p">,</span> <span class="mf">0.000000357</span><span class="p">]</span>
+            <span class="n">Saturnw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">93.056787</span><span class="p">,</span> <span class="mf">0.5665496</span><span class="p">,</span> <span class="mf">0.00052809</span><span class="p">,</span> <span class="mf">0.000004882</span><span class="p">]</span>
+            <span class="n">SaturnlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">50.077471</span><span class="p">,</span> <span class="mf">1222.1137943</span><span class="p">,</span> <span class="mf">0.00021004</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000019</span><span class="p">]</span>
+            <span class="n">Saturn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Saturna</span><span class="p">,</span> <span class="n">Saturne</span><span class="p">,</span> <span class="n">Saturni</span><span class="p">,</span> <span class="n">SaturnO</span><span class="p">,</span> <span class="n">Saturnw</span><span class="p">,</span> <span class="n">SaturnlM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Uranus ephemerides data (ecliptic)</span>
+            <span class="n">Uranusa</span> <span class="o">=</span> <span class="p">[</span><span class="mf">19.218446062</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000372</span><span class="p">,</span> <span class="mf">0.00000000098</span><span class="p">]</span>
+            <span class="n">Uranuse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.04629590</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000027337</span><span class="p">,</span> <span class="mf">0.0000000790</span><span class="p">,</span> <span class="mf">0.00000000025</span><span class="p">]</span>
+            <span class="n">Uranusi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.773196</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0016869</span><span class="p">,</span> <span class="mf">0.00000349</span><span class="p">,</span> <span class="mf">0.000000016</span><span class="p">]</span>
+            <span class="n">UranusO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">74.005947</span><span class="p">,</span> <span class="mf">0.0741461</span><span class="p">,</span> <span class="mf">0.00040540</span><span class="p">,</span> <span class="mf">0.000000104</span><span class="p">]</span>
+            <span class="n">Uranusw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">173.005159</span><span class="p">,</span> <span class="mf">0.0893206</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00009470</span><span class="p">,</span> <span class="mf">0.000000413</span><span class="p">]</span>
+            <span class="n">UranuslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">314.055005</span><span class="p">,</span> <span class="mf">428.4669983</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000486</span><span class="p">,</span> <span class="mf">0.000000006</span><span class="p">]</span>
+            <span class="n">Uranus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Uranusa</span><span class="p">,</span> <span class="n">Uranuse</span><span class="p">,</span> <span class="n">Uranusi</span><span class="p">,</span> <span class="n">UranusO</span><span class="p">,</span> <span class="n">Uranusw</span><span class="p">,</span> <span class="n">UranuslM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Neptune ephemerides data (ecliptic)</span>
+            <span class="n">Neptunea</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.110386869</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000001663</span><span class="p">,</span> <span class="mf">0.00000000069</span><span class="p">]</span>
+            <span class="n">Neptunee</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.00898809</span><span class="p">,</span> <span class="mf">0.000006408</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000008</span><span class="p">]</span>
+            <span class="n">Neptunei</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.769952</span><span class="p">,</span> <span class="mf">0.0002257</span><span class="p">,</span> <span class="mf">0.00000023</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000000</span><span class="p">]</span>
+            <span class="n">NeptuneO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">131.784057</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0061651</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000219</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000078</span><span class="p">]</span>
+            <span class="n">Neptunew</span> <span class="o">=</span> <span class="p">[</span><span class="mf">48.123691</span><span class="p">,</span> <span class="mf">0.0291587</span><span class="p">,</span> <span class="mf">0.00007051</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]</span>
+            <span class="n">NeptunelM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">304.348665</span><span class="p">,</span> <span class="mf">218.4862002</span><span class="p">,</span> <span class="mf">0.00000059</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000002</span><span class="p">]</span>
+            <span class="n">Neptune</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Neptunea</span><span class="p">,</span> <span class="n">Neptunee</span><span class="p">,</span> <span class="n">Neptunei</span><span class="p">,</span> <span class="n">NeptuneO</span><span class="p">,</span> <span class="n">Neptunew</span><span class="p">,</span> <span class="n">NeptunelM</span><span class="p">)</span>
+            
+            <span class="c1"># Store Pluto ephemerides data (ecliptic)</span>
+            <span class="n">Plutoa</span> <span class="o">=</span> <span class="p">[</span><span class="mf">39.48168677</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00076912</span><span class="p">]</span>
+            <span class="n">Plutoe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.24880766</span><span class="p">,</span> <span class="mf">0.00006465</span><span class="p">]</span>
+            <span class="n">Plutoi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">17.14175</span><span class="p">,</span> <span class="mf">0.003075</span><span class="p">]</span>
+            <span class="n">PlutoO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">110.30347</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.01036944</span><span class="p">]</span>
+            <span class="n">Plutow</span> <span class="o">=</span> <span class="p">[</span><span class="mf">224.06676</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03673611</span><span class="p">]</span>
+            <span class="n">PlutolM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">238.92881</span><span class="p">,</span> <span class="mf">145.2078</span><span class="p">]</span>
+            <span class="n">Pluto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Plutoa</span><span class="p">,</span> <span class="n">Plutoe</span><span class="p">,</span> <span class="n">Plutoi</span><span class="p">,</span> <span class="n">PlutoO</span><span class="p">,</span> <span class="n">Plutow</span><span class="p">,</span> <span class="n">PlutolM</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">Jupiter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Jupitera</span><span class="p">,</span> <span class="n">Jupitere</span><span class="p">,</span> <span class="n">Jupiteri</span><span class="p">,</span> <span class="n">JupiterO</span><span class="p">,</span> <span class="n">Jupiterw</span><span class="p">,</span> <span class="n">JupiterlM</span><span class="p">)</span>
-        
-        <span class="c"># Store Saturn ephemerides data (ecliptic)</span>
-        <span class="n">Saturna</span> <span class="o">=</span> <span class="p">[</span><span class="mf">9.554909596</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000021389</span><span class="p">]</span>
-        <span class="n">Saturne</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05550862</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000346818</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000006456</span><span class="p">,</span> <span class="mf">0.00000000338</span><span class="p">]</span>
-        <span class="n">Saturni</span> <span class="o">=</span> <span class="p">[</span><span class="mf">2.488878</span><span class="p">,</span> <span class="mf">0.0025515</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00004903</span><span class="p">,</span> <span class="mf">0.000000018</span><span class="p">]</span>
-        <span class="n">SaturnO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">113.665524</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2566649</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00018345</span><span class="p">,</span> <span class="mf">0.000000357</span><span class="p">]</span>
-        <span class="n">Saturnw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">93.056787</span><span class="p">,</span> <span class="mf">0.5665496</span><span class="p">,</span> <span class="mf">0.00052809</span><span class="p">,</span> <span class="mf">0.000004882</span><span class="p">]</span>
-        <span class="n">SaturnlM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">50.077471</span><span class="p">,</span> <span class="mf">1222.1137943</span><span class="p">,</span> <span class="mf">0.00021004</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000019</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Saturn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Saturna</span><span class="p">,</span> <span class="n">Saturne</span><span class="p">,</span> <span class="n">Saturni</span><span class="p">,</span> <span class="n">SaturnO</span><span class="p">,</span> <span class="n">Saturnw</span><span class="p">,</span> <span class="n">SaturnlM</span><span class="p">)</span>
-        
-        <span class="c"># Store Uranus ephemerides data (ecliptic)</span>
-        <span class="n">Uranusa</span> <span class="o">=</span> <span class="p">[</span><span class="mf">19.218446062</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000372</span><span class="p">,</span> <span class="mf">0.00000000098</span><span class="p">]</span>
-        <span class="n">Uranuse</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.04629590</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000027337</span><span class="p">,</span> <span class="mf">0.0000000790</span><span class="p">,</span> <span class="mf">0.00000000025</span><span class="p">]</span>
-        <span class="n">Uranusi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.773196</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0016869</span><span class="p">,</span> <span class="mf">0.00000349</span><span class="p">,</span> <span class="mf">0.000000016</span><span class="p">]</span>
-        <span class="n">UranusO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">74.005947</span><span class="p">,</span> <span class="mf">0.0741461</span><span class="p">,</span> <span class="mf">0.00040540</span><span class="p">,</span> <span class="mf">0.000000104</span><span class="p">]</span>
-        <span class="n">Uranusw</span> <span class="o">=</span> <span class="p">[</span><span class="mf">173.005159</span><span class="p">,</span> <span class="mf">0.0893206</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00009470</span><span class="p">,</span> <span class="mf">0.000000413</span><span class="p">]</span>
-        <span class="n">UranuslM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">314.055005</span><span class="p">,</span> <span class="mf">428.4669983</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000486</span><span class="p">,</span> <span class="mf">0.000000006</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Uranus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Uranusa</span><span class="p">,</span> <span class="n">Uranuse</span><span class="p">,</span> <span class="n">Uranusi</span><span class="p">,</span> <span class="n">UranusO</span><span class="p">,</span> <span class="n">Uranusw</span><span class="p">,</span> <span class="n">UranuslM</span><span class="p">)</span>
-        
-        <span class="c"># Store Neptune ephemerides data (ecliptic)</span>
-        <span class="n">Neptunea</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.110386869</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000001663</span><span class="p">,</span> <span class="mf">0.00000000069</span><span class="p">]</span>
-        <span class="n">Neptunee</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.000898809</span><span class="p">,</span> <span class="mf">0.000006408</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000008</span><span class="p">]</span>
-        <span class="n">Neptunei</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.769952</span><span class="p">,</span> <span class="mf">0.0002257</span><span class="p">,</span> <span class="mf">0.00000023</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000000</span><span class="p">]</span>
-        <span class="n">NeptuneO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">131.784057</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0061651</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000219</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000078</span><span class="p">]</span>
-        <span class="n">Neptunew</span> <span class="o">=</span> <span class="p">[</span><span class="mf">48.123691</span><span class="p">,</span> <span class="mf">0.0291587</span><span class="p">,</span> <span class="mf">0.00007051</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]</span>
-        <span class="n">NeptunelM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">304.348665</span><span class="p">,</span> <span class="mf">218.4862002</span><span class="p">,</span> <span class="mf">0.00000059</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.000000002</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Neptune</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Neptunea</span><span class="p">,</span> <span class="n">Neptunee</span><span class="p">,</span> <span class="n">Neptunei</span><span class="p">,</span> <span class="n">NeptuneO</span><span class="p">,</span> <span class="n">Neptunew</span><span class="p">,</span> <span class="n">NeptunelM</span><span class="p">)</span>
-        
-        <span class="c"># Store Pluto ephemerides data (ecliptic)</span>
-        <span class="n">Plutoa</span> <span class="o">=</span> <span class="p">[</span><span class="mf">39.48168677</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00076912</span><span class="p">]</span>
-        <span class="n">Plutoe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.24880766</span><span class="p">,</span> <span class="mf">0.00006465</span><span class="p">]</span>
-        <span class="n">Plutoi</span> <span class="o">=</span> <span class="p">[</span><span class="mf">17.14175</span><span class="p">,</span> <span class="mf">0.003075</span><span class="p">]</span>
-        <span class="n">PlutoO</span> <span class="o">=</span> <span class="p">[</span><span class="mf">110.30347</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.01036944</span><span class="p">]</span>
-        <span class="n">Plutow</span> <span class="o">=</span> <span class="p">[</span><span class="mf">224.06676</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.03673611</span><span class="p">]</span>
-        <span class="n">PlutolM</span> <span class="o">=</span> <span class="p">[</span><span class="mf">238.92881</span><span class="p">,</span> <span class="mf">145.2078</span><span class="p">]</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">Pluto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SolarEph</span><span class="p">(</span><span class="n">Plutoa</span><span class="p">,</span> <span class="n">Plutoe</span><span class="p">,</span> <span class="n">Plutoi</span><span class="p">,</span> <span class="n">PlutoO</span><span class="p">,</span> <span class="n">Plutow</span><span class="p">,</span> <span class="n">PlutolM</span><span class="p">)</span>
-        
+            <span class="c1">#store all as dictionary:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">planets</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Mercury&#39;</span><span class="p">:</span> <span class="n">Mercury</span><span class="p">,</span>
+                            <span class="s1">&#39;Venus&#39;</span><span class="p">:</span> <span class="n">Venus</span><span class="p">,</span>
+                            <span class="s1">&#39;Earth&#39;</span><span class="p">:</span> <span class="n">Earth</span><span class="p">,</span>
+                            <span class="s1">&#39;Mars&#39;</span><span class="p">:</span> <span class="n">Mars</span><span class="p">,</span>
+                            <span class="s1">&#39;Jupiter&#39;</span><span class="p">:</span> <span class="n">Jupiter</span><span class="p">,</span>
+                            <span class="s1">&#39;Saturn&#39;</span><span class="p">:</span> <span class="n">Saturn</span><span class="p">,</span>
+                            <span class="s1">&#39;Uranus&#39;</span><span class="p">:</span> <span class="n">Uranus</span><span class="p">,</span>
+                            <span class="s1">&#39;Neptune&#39;</span><span class="p">:</span> <span class="n">Neptune</span><span class="p">,</span>
+                            <span class="s1">&#39;Pluto&#39;</span><span class="p">:</span> <span class="n">Pluto</span><span class="p">}</span>
+
 <div class="viewcode-block" id="Observatory.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Observatory object</span>
 <span class="sd">        </span>
@@ -231,9 +259,9 @@
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Observatory class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s1">&#39;Observatory class object attributes&#39;</span></div>
         
 <div class="viewcode-block" id="Observatory.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds observatory orbit position vector, returns True if successful</span>
@@ -256,8 +284,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span><span class="p">)])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span><span class="p">)</span> <span class="c"># finds if all values are finite </span>
-        <span class="n">success</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c"># returns True if all values of self.r_sc are finite</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span><span class="p">)</span> <span class="c1"># finds if all values are finite </span>
+        <span class="n">success</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c1"># returns True if all values of self.r_sc are finite</span>
         
         <span class="k">return</span> <span class="n">success</span></div>
     
@@ -281,21 +309,105 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># update spacecraft orbital position</span>
+        <span class="c1"># update spacecraft orbital position</span>
         <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currenttime</span><span class="p">)</span> 
         
         <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">])</span>
         
-        <span class="c"># check to make sure all elements in self.kogood are Boolean</span>
+        <span class="c1"># check to make sure all elements in self.kogood are Boolean</span>
         <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span><span class="p">]</span>
         <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">]</span>        
-        <span class="c"># return True if orbital position is successful and all elements of </span>
-        <span class="c"># self.kogood are Boolean</span>
+        <span class="c1"># return True if orbital position is successful and all elements of </span>
+        <span class="c1"># self.kogood are Boolean</span>
         <span class="n">success</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> 
         
         <span class="k">return</span> <span class="n">success</span></div>
 
-<div class="viewcode-block" id="Observatory.keplerplanet"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">[docs]</a>    <span class="k">def</span> <span class="nf">keplerplanet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">planet</span><span class="p">):</span>
+<div class="viewcode-block" id="Observatory.solarSystem_body_position"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position">[docs]</a>    <span class="k">def</span> <span class="nf">solarSystem_body_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
+<span class="sd">        </span>
+<span class="sd">        This passes all arguments to one of spk_body or keplerplanet, depending</span>
+<span class="sd">        on the value of self.havejplephem.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            time (Time):</span>
+<span class="sd">                absolute time</span>
+<span class="sd">            bodyname (str):</span>
+<span class="sd">                solar system object name</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_body (Quantity):</span>
+<span class="sd">                heliocentric equatorial position vector in 1D numpy ndarray</span>
+<span class="sd">                (units of km)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">spk_body</span><span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">bodyname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">bodyname</span><span class="p">)</span></div>
+
+
+        
+<div class="viewcode-block" id="Observatory.spk_body"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.spk_body">[docs]</a>    <span class="k">def</span> <span class="nf">spk_body</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
+<span class="sd">        </span>
+<span class="sd">        This method uses spice kernel from NAIF to find heliocentric</span>
+<span class="sd">        equatorial position vectors (astropy Quantity in km) for solar system</span>
+<span class="sd">        objects.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            time (Time):</span>
+<span class="sd">                absolute time</span>
+<span class="sd">            bodyname (str):</span>
+<span class="sd">                solar system object name</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_body (Quantity):</span>
+<span class="sd">                heliocentric equatorial position vector in 1D numpy ndarray</span>
+<span class="sd">                (units of km)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># dictionary of solar system bodies available in spice kernel</span>
+        <span class="n">bodies</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Mercury&#39;</span><span class="p">:</span><span class="mi">199</span><span class="p">,</span>
+                  <span class="s1">&#39;Venus&#39;</span><span class="p">:</span><span class="mi">299</span><span class="p">,</span>
+                  <span class="s1">&#39;Earth&#39;</span><span class="p">:</span><span class="mi">399</span><span class="p">,</span>
+                  <span class="s1">&#39;Mars&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+                  <span class="s1">&#39;Jupiter&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span>
+                  <span class="s1">&#39;Saturn&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span>
+                  <span class="s1">&#39;Uranus&#39;</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span>
+                  <span class="s1">&#39;Neptune&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+                  <span class="s1">&#39;Pluto&#39;</span><span class="p">:</span><span class="mi">9</span><span class="p">,</span>
+                  <span class="s1">&#39;Sun&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
+                  <span class="s1">&#39;Moon&#39;</span><span class="p">:</span><span class="mi">301</span><span class="p">}</span>
+        
+        <span class="k">assert</span> <span class="n">bodies</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">bodyname</span><span class="p">),</span>\
+                 <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a recognized body name.&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">bodyname</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]</span> <span class="o">==</span> <span class="mi">199</span><span class="p">:</span>
+            <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">199</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="k">elif</span> <span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]</span> <span class="o">==</span> <span class="mi">299</span><span class="p">:</span>
+            <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">299</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="k">elif</span> <span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]</span> <span class="o">==</span> <span class="mi">399</span><span class="p">:</span>
+            <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">399</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="k">elif</span> <span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]</span> <span class="o">==</span> <span class="mi">301</span><span class="p">:</span>
+            <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">+</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">301</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        
+        <span class="k">return</span> <span class="n">r_body</span></div>
+
+<div class="viewcode-block" id="Observatory.keplerplanet"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">[docs]</a>    <span class="k">def</span> <span class="nf">keplerplanet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses algorithms 2 and 10 from Vallado 2013 to find </span>
@@ -305,41 +417,49 @@
 <span class="sd">        Args:</span>
 <span class="sd">            time (Time):</span>
 <span class="sd">                absolute time</span>
-<span class="sd">            planet (SolarEph):</span>
-<span class="sd">                SolarEph class object</span>
+<span class="sd">            bodyname (str):</span>
+<span class="sd">                solar system object name</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            r_planet (Quantity):</span>
+<span class="sd">            r_body (Quantity):</span>
 <span class="sd">                heliocentric equatorial position vector in 1D numpy ndarray </span>
 <span class="sd">                (units of km)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># find Julian centuries from J2000</span>
+        <span class="k">if</span> <span class="n">bodyname</span> <span class="o">==</span> <span class="s1">&#39;Moon&#39;</span><span class="p">:</span>
+            <span class="n">r_Earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r_Earth</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">moon_earth</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">planets</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">bodyname</span><span class="p">),</span>\
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a recognized body name.&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">bodyname</span><span class="p">)</span>
+
+        <span class="n">planet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planets</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]</span> 
+        <span class="c1"># find Julian centuries from J2000</span>
         <span class="n">TDB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
-        <span class="c"># update ephemeride data</span>
+        <span class="c1"># update ephemeride data</span>
         <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">TDB</span><span class="p">)</span>
         <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">e</span><span class="p">,</span> <span class="n">TDB</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
         <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">O</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
         <span class="n">lM</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">lM</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
-        <span class="c"># Find mean anomaly and argument of perigee</span>
+        <span class="c1"># Find mean anomaly and argument of perigee</span>
         <span class="n">M</span> <span class="o">=</span> <span class="n">lM</span> <span class="o">-</span> <span class="n">w</span>
         <span class="n">wp</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="n">O</span>
-        <span class="c"># Find eccentric anomaly</span>
+        <span class="c1"># Find eccentric anomaly</span>
         <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
-        <span class="c"># Find true anomaly</span>
+        <span class="c1"># Find true anomaly</span>
         <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span><span class="p">)</span>
-        <span class="c"># Find semiparameter</span>
+        <span class="c1"># Find semiparameter</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="c"># position vector (km) in orbital plane</span>
+        <span class="c1"># position vector (km) in orbital plane</span>
         <span class="n">r_planet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">p</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">))),</span> <span class="p">(</span><span class="n">p</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)),</span> <span class="mf">0.</span><span class="p">])</span>
-        <span class="c"># position vector (km) in ecliptic plane        </span>
+        <span class="c1"># position vector (km) in ecliptic plane        </span>
         <span class="n">r_planet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">O</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">wp</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span><span class="n">r_planet</span><span class="p">))</span>
-        <span class="c"># find obliquity of the ecliptic</span>
+        <span class="c1"># find obliquity of the ecliptic</span>
         <span class="n">obe</span> <span class="o">=</span> <span class="mf">23.439279</span> <span class="o">-</span> <span class="mf">0.0130102</span><span class="o">*</span><span class="n">TDB</span> <span class="o">-</span> <span class="mf">5.086e-8</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">5.565e-7</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.6e-10</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.21e-11</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>       
-        <span class="c"># position vector (km) in heliocentric equatorial frame</span>
+        <span class="c1"># position vector (km) in heliocentric equatorial frame</span>
         <span class="n">r_planet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span><span class="n">r_planet</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
         
         <span class="k">return</span> <span class="n">r_planet</span>   </div>
@@ -382,7 +502,7 @@
         
         <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">23.439291</span> <span class="o">-</span> <span class="mf">0.0130042</span><span class="o">*</span><span class="n">TDB</span> <span class="o">-</span> <span class="mf">1.64e-7</span><span class="o">*</span><span class="n">TDB</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">5.04e-7</span><span class="o">*</span><span class="n">TDB</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
         
-        <span class="n">r</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">P</span><span class="p">)</span><span class="o">*</span><span class="mf">6378.137</span> <span class="c"># km</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">P</span><span class="p">)</span><span class="o">*</span><span class="mf">6378.137</span> <span class="c1"># km</span>
         
         <span class="n">r_moon</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">la</span><span class="p">),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">la</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
@@ -407,43 +527,43 @@
 <span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># right ascension value</span>
+        <span class="c1"># right ascension value</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  
-        <span class="c"># declination value</span>
+        <span class="c1"># declination value</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
-        <span class="c"># right ascension proper motion (mas/yr)</span>
+        <span class="c1"># right ascension proper motion (mas/yr)</span>
         <span class="n">mua</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
-        <span class="c"># declination proper motion (mas/yr)</span>
+        <span class="c1"># declination proper motion (mas/yr)</span>
         <span class="n">mud</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
-        <span class="c"># radial velocity (km/s)</span>
+        <span class="c1"># radial velocity (km/s)</span>
         <span class="n">vr</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
-        <span class="c"># parallax (mas)</span>
+        <span class="c1"># parallax (mas)</span>
         <span class="n">parx</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
         
-        <span class="c"># helpful units</span>
-        <span class="c"># AU/yr in units</span>
+        <span class="c1"># helpful units</span>
+        <span class="c1"># AU/yr in units</span>
         <span class="n">AUyr</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span><span class="p">)</span> 
-        <span class="c"># km/s in units</span>
+        <span class="c1"># km/s in units</span>
         <span class="n">kms</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> 
-        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;jyear&#39;</span><span class="p">)</span>
+        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
         
-        <span class="c"># proper motion magnitudes</span>
+        <span class="c1"># proper motion magnitudes</span>
         <span class="n">VE</span> <span class="o">=</span> <span class="p">(</span><span class="n">mua</span><span class="o">/</span><span class="n">parx</span><span class="p">)</span><span class="o">*</span><span class="n">AUyr</span>
         <span class="n">VN</span> <span class="o">=</span> <span class="p">(</span><span class="n">mud</span><span class="o">/</span><span class="n">parx</span><span class="p">)</span><span class="o">*</span><span class="n">AUyr</span>
         <span class="n">VR</span> <span class="o">=</span> <span class="n">vr</span><span class="o">*</span><span class="n">kms</span>
 
-        <span class="c"># conversion to heliocentric equatorial frame</span>
+        <span class="c1"># conversion to heliocentric equatorial frame</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="mf">0.</span><span class="p">])</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">d</span><span class="p">)])</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">d</span><span class="p">)])</span>
         
-        <span class="c"># total velocity vector</span>
+        <span class="c1"># total velocity vector</span>
         <span class="n">V</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">VE</span> <span class="o">+</span> <span class="n">q</span><span class="o">*</span><span class="n">VN</span> <span class="o">+</span> <span class="n">r</span><span class="o">*</span><span class="n">VR</span>
 
-        <span class="c"># initial position at J2000 epoch</span>
+        <span class="c1"># initial position at J2000 epoch</span>
         <span class="n">r0</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="o">/</span><span class="n">parx</span><span class="p">)</span><span class="o">*</span><span class="mf">1000.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
         
-        <span class="c"># position</span>
+        <span class="c1"># position</span>
         <span class="n">r_star</span> <span class="o">=</span> <span class="n">r0</span> <span class="o">+</span> <span class="n">V</span><span class="o">*</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
         
         <span class="k">return</span> <span class="n">r_star</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span></div>
@@ -463,7 +583,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;jyear&#39;</span><span class="p">)</span>
+        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
         
         <span class="n">TDB</span> <span class="o">=</span> <span class="p">(</span><span class="n">currenttime</span><span class="o">.</span><span class="n">jd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span><span class="o">/</span><span class="mf">36525.</span>
         
@@ -524,17 +644,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-        <span class="c"># initial guess        </span>
+        <span class="c1"># initial guess        </span>
         <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="n">pi</span> <span class="o">&lt;</span> <span class="n">M</span> <span class="ow">and</span> <span class="n">M</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">M</span> <span class="o">&gt;</span> <span class="n">pi</span><span class="p">):</span>
             <span class="n">E</span> <span class="o">=</span> <span class="n">M</span> <span class="o">-</span> <span class="n">e</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">E</span> <span class="o">=</span> <span class="n">M</span> <span class="o">+</span> <span class="n">e</span>
-        <span class="c"># Newton-Raphson setup</span>
+        <span class="c1"># Newton-Raphson setup</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">err</span> <span class="o">=</span> <span class="mf">1.</span>
         <span class="n">tol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="o">*</span><span class="mf">4.1</span>
         <span class="n">maxi</span> <span class="o">=</span> <span class="mi">200</span>
-        <span class="c"># Newton-Raphson iteration</span>
+        <span class="c1"># Newton-Raphson iteration</span>
         <span class="k">while</span> <span class="n">err</span> <span class="o">&gt;</span> <span class="n">tol</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxi</span><span class="p">:</span>
             <span class="n">Enew</span> <span class="o">=</span> <span class="n">E</span> <span class="o">+</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="n">E</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
             <span class="n">err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Enew</span> <span class="o">-</span> <span class="n">E</span><span class="p">)</span>
@@ -588,38 +708,38 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># occulter separation distance</span>
+        <span class="c1"># occulter separation distance</span>
         <span class="n">occulterSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span>
         
-        <span class="c"># get spacecraft position vector</span>
+        <span class="c1"># get spacecraft position vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">)</span>
         <span class="n">r_Ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span>
-        <span class="c"># sun -&gt; earth position vector</span>
+        <span class="c1"># sun -&gt; earth position vector</span>
         <span class="n">r_Es</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Earth</span><span class="p">)</span>
-        <span class="c"># sun -&gt; target star vector</span>
+        <span class="c1"># sun -&gt; target star vector</span>
         <span class="n">r_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">currenttimeAbs</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">)</span>
-        <span class="c"># Telescope -&gt; target vector and unit vector</span>
+        <span class="c1"># Telescope -&gt; target vector and unit vector</span>
         <span class="n">r_tT</span> <span class="o">=</span> <span class="n">r_ts</span> <span class="o">-</span> <span class="n">r_Ts</span>
         <span class="n">u_tT</span> <span class="o">=</span> <span class="n">r_tT</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_tT</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-        <span class="c"># sun -&gt; occulter vector</span>
+        <span class="c1"># sun -&gt; occulter vector</span>
         <span class="n">r_Os</span> <span class="o">=</span> <span class="n">r_Ts</span> <span class="o">+</span> <span class="n">occulterSep</span><span class="o">*</span><span class="n">u_tT</span>
-        <span class="c"># Earth-Moon barycenter -&gt; spacecraft vectors</span>
+        <span class="c1"># Earth-Moon barycenter -&gt; spacecraft vectors</span>
         <span class="n">r_TE</span> <span class="o">=</span> <span class="n">r_Ts</span> <span class="o">-</span> <span class="n">r_Es</span>
         <span class="n">r_OE</span> <span class="o">=</span> <span class="n">r_Os</span> <span class="o">-</span> <span class="n">r_Es</span>
 
-        <span class="c"># force on occulter</span>
+        <span class="c1"># force on occulter</span>
         <span class="n">F_sO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">r_Os</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Os</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         <span class="n">mEMB</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">/</span><span class="mf">328900.56</span>
         <span class="n">F_EO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">r_OE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_OE</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
 
         <span class="n">F_O</span> <span class="o">=</span> <span class="n">F_sO</span> <span class="o">+</span> <span class="n">F_EO</span>
 
-        <span class="c"># force on telescope</span>
+        <span class="c1"># force on telescope</span>
         <span class="n">F_sT</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_Ts</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Ts</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         <span class="n">F_ET</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_TE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_TE</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         <span class="n">F_T</span> <span class="o">=</span> <span class="n">F_sT</span> <span class="o">+</span> <span class="n">F_ET</span>
 
-        <span class="c"># differential force</span>
+        <span class="c1"># differential force</span>
         <span class="n">dF</span> <span class="o">=</span> <span class="p">((</span><span class="n">F_O</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-</span> <span class="n">F_T</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
         
         <span class="n">dF_axial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dF</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">N</span><span class="p">),</span> <span class="n">u_tT</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">N</span>
@@ -700,23 +820,23 @@
         
         <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">lM</span><span class="p">):</span>
             
-            <span class="c"># attach units of AU</span>
+            <span class="c1"># attach units of AU</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> 
-            <span class="c"># change to km</span>
+            <span class="c1"># change to km</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="p">)</span> 
-            <span class="c"># strip dimensions</span>
+            <span class="c1"># strip dimensions</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">value</span> 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="c"># store list of dimensionless eccentricity values</span>
+            <span class="c1"># store list of dimensionless eccentricity values</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">e</span> 
-            <span class="c"># store list of inclination values (degrees)</span>
+            <span class="c1"># store list of inclination values (degrees)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">i</span> 
-            <span class="c"># store list of right ascension of ascending node values (degrees)</span>
+            <span class="c1"># store list of right ascension of ascending node values (degrees)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">O</span> 
-            <span class="c"># store list of longitude of periapsis values (degrees)</span>
+            <span class="c1"># store list of longitude of periapsis values (degrees)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">w</span> 
-            <span class="c"># store list of mean longitude values (degrees)</span>
+            <span class="c1"># store list of mean longitude values (degrees)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lM</span> <span class="o">=</span> <span class="n">lM</span>
         
 <div class="viewcode-block" id="Observatory.SolarEph.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.__str__">[docs]</a>        <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -727,9 +847,9 @@
             
             <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+                <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
             
-            <span class="k">return</span> <span class="s">&#39;SolarEph class object attributes&#39;</span></div></div></div>
+            <span class="k">return</span> <span class="s1">&#39;SolarEph class object attributes&#39;</span></div></div></div>
 </pre></div>
 
           </div>
@@ -766,7 +886,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

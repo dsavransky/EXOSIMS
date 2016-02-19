@@ -17,18 +17,20 @@ class ZodiacalLight(object):
             exozodi level in zodi
         exozodiVar (float):
             exozodi variation (variance of log-normal distribution)
+        exozodiMag (float):
+            1 zodi brightness in mag per asec2
         
     """
 
     _modtype = 'ZodiacalLight'
     _outspec = {}
     
-    def __init__(self, exozodi = 1.5, exozodiVar = 0., **specs):
-                
-        # default values
-        self.exozodi = float(exozodi) # exo-zodi level in zodi
-        self.exozodiVar = float(exozodiVar) # exo-zodi variation (variance of log-normal distribution)
-        
+    def __init__(self, exozodi=1.5, exozodiVar=0., exozodiMag=23.54, **specs):
+
+        self.exozodi = float(exozodi);          # exo-zodi level in zodi
+        self.exozodiVar = float(exozodiVar);    # exo-zodi variation (variance of log-normal distribution)
+        self.exozodiMag = float(exozodiMag);    # 1 zodi brightness in mag per asec2
+
         for key in self.__dict__.keys():
             self._outspec[key] = self.__dict__[key]          
 

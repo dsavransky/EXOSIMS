@@ -30,39 +30,42 @@
 \BOOKMARK [3][-]{subsubsection.5.7.1}{Observatory Object Attribute Initialization Input/Output Description}{subsection.5.7}% 30
 \BOOKMARK [3][-]{subsubsection.5.7.2}{orbit Method Input/Output Description}{subsection.5.7}% 31
 \BOOKMARK [3][-]{subsubsection.5.7.3}{keepout Method Input/Output Description}{subsection.5.7}% 32
-\BOOKMARK [2][-]{subsection.5.8}{Time Keeping}{section.5}% 33
-\BOOKMARK [3][-]{subsubsection.5.8.1}{Time Keeping Object Attribute Initialization Input/Output Description}{subsection.5.8}% 34
-\BOOKMARK [3][-]{subsubsection.5.8.2}{update\137times Method Input/Output Description}{subsection.5.8}% 35
-\BOOKMARK [3][-]{subsubsection.5.8.3}{duty\137cycle Method Input/Output Description}{subsection.5.8}% 36
-\BOOKMARK [2][-]{subsection.5.9}{Post-Processing}{section.5}% 37
-\BOOKMARK [3][-]{subsubsection.5.9.1}{Post-Processing Object Attribute Initialization Input/Output Description}{subsection.5.9}% 38
-\BOOKMARK [3][-]{subsubsection.5.9.2}{det\137occur Method Input/Output Description}{subsection.5.9}% 39
-\BOOKMARK [1][-]{section.6}{Simulation Modules}{}% 40
-\BOOKMARK [2][-]{subsection.6.1}{Completeness}{section.6}% 41
-\BOOKMARK [3][-]{subsubsection.6.1.1}{Completeness Object Attribute Initialization Input/Output Description}{subsection.6.1}% 42
-\BOOKMARK [3][-]{subsubsection.6.1.2}{target\137completeness Method Input/Output Description}{subsection.6.1}% 43
-\BOOKMARK [3][-]{subsubsection.6.1.3}{completeness\137update Method Input/Output Description}{subsection.6.1}% 44
-\BOOKMARK [2][-]{subsection.6.2}{Target List}{section.6}% 45
-\BOOKMARK [3][-]{subsubsection.6.2.1}{Target List Object Attribute Initialization Input/Output Description}{subsection.6.2}% 46
-\BOOKMARK [2][-]{subsection.6.3}{Simulated Universe}{section.6}% 47
-\BOOKMARK [3][-]{subsubsection.6.3.1}{Simulated Universe Object Attribute Initialization Input/Output Description}{subsection.6.3}% 48
-\BOOKMARK [3][-]{subsubsection.6.3.2}{planet\137to\137star Method Input/Output Description}{subsection.6.3}% 49
-\BOOKMARK [3][-]{subsubsection.6.3.3}{planet\137a Method Input/Output Description}{subsection.6.3}% 50
-\BOOKMARK [3][-]{subsubsection.6.3.4}{planet\137e Method Input/Output Description}{subsection.6.3}% 51
-\BOOKMARK [3][-]{subsubsection.6.3.5}{planet\137w Method Input/Output Description}{subsection.6.3}% 52
-\BOOKMARK [3][-]{subsubsection.6.3.6}{planet\137O Method Input/Output Description}{subsection.6.3}% 53
-\BOOKMARK [3][-]{subsubsection.6.3.7}{planet\137masses Method Input/Output Description}{subsection.6.3}% 54
-\BOOKMARK [3][-]{subsubsection.6.3.8}{planet\137radii Method Input/Output Description}{subsection.6.3}% 55
-\BOOKMARK [3][-]{subsubsection.6.3.9}{planet\137pos\137vel Method Input/Output Description}{subsection.6.3}% 56
-\BOOKMARK [3][-]{subsubsection.6.3.10}{planet\137albedos Method Input/Output Description}{subsection.6.3}% 57
-\BOOKMARK [3][-]{subsubsection.6.3.11}{planet\137inclinations Method Input/Output Description}{subsection.6.3}% 58
-\BOOKMARK [3][-]{subsubsection.6.3.12}{prop\137system Method Input/Output Description}{subsection.6.3}% 59
-\BOOKMARK [2][-]{subsection.6.4}{Survey Simulation}{section.6}% 60
-\BOOKMARK [3][-]{subsubsection.6.4.1}{Survey Simulation Object Attribute Initialization Input/Output Description}{subsection.6.4}% 61
-\BOOKMARK [3][-]{subsubsection.6.4.2}{run\137sim Method Input/Output Description}{subsection.6.4}% 62
-\BOOKMARK [3][-]{subsubsection.6.4.3}{initial\137target Sub-task Input/Output Description}{subsection.6.4}% 63
-\BOOKMARK [3][-]{subsubsection.6.4.4}{observation\137detection Sub-task Input/Output Description}{subsection.6.4}% 64
-\BOOKMARK [3][-]{subsubsection.6.4.5}{det\137data Sub-task Input/Output Description}{subsection.6.4}% 65
-\BOOKMARK [3][-]{subsubsection.6.4.6}{observation\137characterization Sub-task Input/Output Description}{subsection.6.4}% 66
-\BOOKMARK [3][-]{subsubsection.6.4.7}{next\137target Sub-task Input/Output Description}{subsection.6.4}% 67
-\BOOKMARK [2][-]{subsection.6.5}{Survey Ensemble}{section.6}% 68
+\BOOKMARK [3][-]{subsubsection.5.7.4}{solarSystem\137body\137position Method}{subsection.5.7}% 33
+\BOOKMARK [2][-]{subsection.5.8}{Time Keeping}{section.5}% 34
+\BOOKMARK [3][-]{subsubsection.5.8.1}{Time Keeping Object Attribute Initialization Input/Output Description}{subsection.5.8}% 35
+\BOOKMARK [3][-]{subsubsection.5.8.2}{update\137times Method Input/Output Description}{subsection.5.8}% 36
+\BOOKMARK [3][-]{subsubsection.5.8.3}{duty\137cycle Method Input/Output Description}{subsection.5.8}% 37
+\BOOKMARK [2][-]{subsection.5.9}{Post-Processing}{section.5}% 38
+\BOOKMARK [3][-]{subsubsection.5.9.1}{Post-Processing Object Attribute Initialization Input/Output Description}{subsection.5.9}% 39
+\BOOKMARK [3][-]{subsubsection.5.9.2}{det\137occur Method Input/Output Description}{subsection.5.9}% 40
+\BOOKMARK [1][-]{section.6}{Simulation Modules}{}% 41
+\BOOKMARK [2][-]{subsection.6.1}{Completeness}{section.6}% 42
+\BOOKMARK [3][-]{subsubsection.6.1.1}{Completeness Object Attribute Initialization Input/Output Description}{subsection.6.1}% 43
+\BOOKMARK [3][-]{subsubsection.6.1.2}{target\137completeness Method Input/Output Description}{subsection.6.1}% 44
+\BOOKMARK [3][-]{subsubsection.6.1.3}{completeness\137update Method Input/Output Description}{subsection.6.1}% 45
+\BOOKMARK [2][-]{subsection.6.2}{Target List}{section.6}% 46
+\BOOKMARK [3][-]{subsubsection.6.2.1}{Target List Object Attribute Initialization Input/Output Description}{subsection.6.2}% 47
+\BOOKMARK [2][-]{subsection.6.3}{Simulated Universe}{section.6}% 48
+\BOOKMARK [3][-]{subsubsection.6.3.1}{Simulated Universe Object Attribute Initialization Input/Output Description}{subsection.6.3}% 49
+\BOOKMARK [3][-]{subsubsection.6.3.2}{planet\137to\137star Method Input/Output Description}{subsection.6.3}% 50
+\BOOKMARK [3][-]{subsubsection.6.3.3}{planet\137a Method Input/Output Description}{subsection.6.3}% 51
+\BOOKMARK [3][-]{subsubsection.6.3.4}{planet\137e Method Input/Output Description}{subsection.6.3}% 52
+\BOOKMARK [3][-]{subsubsection.6.3.5}{planet\137w Method Input/Output Description}{subsection.6.3}% 53
+\BOOKMARK [3][-]{subsubsection.6.3.6}{planet\137O Method Input/Output Description}{subsection.6.3}% 54
+\BOOKMARK [3][-]{subsubsection.6.3.7}{planet\137masses Method Input/Output Description}{subsection.6.3}% 55
+\BOOKMARK [3][-]{subsubsection.6.3.8}{planet\137radii Method Input/Output Description}{subsection.6.3}% 56
+\BOOKMARK [3][-]{subsubsection.6.3.9}{planet\137albedos Method Input/Output Description}{subsection.6.3}% 57
+\BOOKMARK [3][-]{subsubsection.6.3.10}{planet\137inclinations Method Input/Output Description}{subsection.6.3}% 58
+\BOOKMARK [3][-]{subsubsection.6.3.11}{planet\137pos\137vel Method Input/Output Description}{subsection.6.3}% 59
+\BOOKMARK [3][-]{subsubsection.6.3.12}{prop\137system Method Input/Output Description}{subsection.6.3}% 60
+\BOOKMARK [3][-]{subsubsection.6.3.13}{eccanom Method Input/Output Description}{subsection.6.3}% 61
+\BOOKMARK [3][-]{subsubsection.6.3.14}{get\137current\137WA Method Input/Output Description}{subsection.6.3}% 62
+\BOOKMARK [2][-]{subsection.6.4}{Survey Simulation}{section.6}% 63
+\BOOKMARK [3][-]{subsubsection.6.4.1}{Survey Simulation Object Attribute Initialization Input/Output Description}{subsection.6.4}% 64
+\BOOKMARK [3][-]{subsubsection.6.4.2}{run\137sim Method Input/Output Description}{subsection.6.4}% 65
+\BOOKMARK [3][-]{subsubsection.6.4.3}{initial\137target Sub-task Input/Output Description}{subsection.6.4}% 66
+\BOOKMARK [3][-]{subsubsection.6.4.4}{observation\137detection Sub-task Input/Output Description}{subsection.6.4}% 67
+\BOOKMARK [3][-]{subsubsection.6.4.5}{det\137data Sub-task Input/Output Description}{subsection.6.4}% 68
+\BOOKMARK [3][-]{subsubsection.6.4.6}{observation\137characterization Sub-task Input/Output Description}{subsection.6.4}% 69
+\BOOKMARK [3][-]{subsubsection.6.4.7}{next\137target Sub-task Input/Output Description}{subsection.6.4}% 70
+\BOOKMARK [2][-]{subsection.6.5}{Survey Ensemble}{section.6}% 71

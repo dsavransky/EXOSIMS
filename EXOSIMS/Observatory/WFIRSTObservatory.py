@@ -38,7 +38,7 @@ class WFIRSTObservatory(Observatory):
         r = 42164.*u.km # orbital height in km
         
         # Find Earth position vector (km in heliocentric equatorial frame)
-        r_earth = self.keplerplanet(time, self.Earth)
+        r_earth = self.solarSystem_body_position(time, 'Earth')
         
         # Find spacecraft position vector with respect to Earth in orbital plane
         t = time.mjd - int(time.mjd) # gives percent of day
@@ -88,16 +88,16 @@ class WFIRSTObservatory(Observatory):
 
         # list of bright object position vectors wrt sun
         r_bright = [-self.r_sc, # sun
-                    self.keplerplanet(time, self.Mercury), # Mercury
-                    self.keplerplanet(time, self.Venus), # Venus
-                    self.keplerplanet(time, self.Earth), # Earth
-                    self.keplerplanet(time, self.Mars), # Mars
-                    self.keplerplanet(time, self.Jupiter), # Jupiter
-                    self.keplerplanet(time, self.Saturn), # Saturn
-                    self.keplerplanet(time, self.Uranus), # Uranus
-                    self.keplerplanet(time, self.Neptune), # Neptune
-                    self.keplerplanet(time, self.Pluto), # Pluto
-                    self.keplerplanet(time, self.Earth) + self.moon_earth(time)] # moon
+                    self.solarSystem_body_position(time, 'Mercury'), # Mercury
+                    self.solarSystem_body_position(time, 'Venus'), # Venus
+                    self.solarSystem_body_position(time, 'Earth'), # Earth
+                    self.solarSystem_body_position(time, 'Mars'), # Mars
+                    self.solarSystem_body_position(time, 'Jupiter'), # Jupiter
+                    self.solarSystem_body_position(time, 'Saturn'), # Saturn
+                    self.solarSystem_body_position(time, 'Uranus'), # Uranus
+                    self.solarSystem_body_position(time, 'Neptune'), # Neptune
+                    self.solarSystem_body_position(time, 'Pluto'), # Pluto
+                    self.solarSystem_body_position(time, 'Moon')] # moon
         u_bright = r_bright # initialize list of unit vectors
 
         # Find position and unit vectors for bright objects wrt spacecraft    

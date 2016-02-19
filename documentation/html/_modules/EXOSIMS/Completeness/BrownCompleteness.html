@@ -39,7 +39,7 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Completeness.BrownCompleteness</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
@@ -85,56 +85,56 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c"># bring in inherited Completeness prototype __init__ values</span>
+        <span class="c1"># bring in inherited Completeness prototype __init__ values</span>
         <span class="n">Completeness</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-        <span class="c"># set up &quot;ensemble visit photometric and obscurational completeness&quot;</span>
-        <span class="c"># interpolant for initial completeness values</span>
-        <span class="c"># bins for interpolant</span>
+        <span class="c1"># set up &quot;ensemble visit photometric and obscurational completeness&quot;</span>
+        <span class="c1"># interpolant for initial completeness values</span>
+        <span class="c1"># bins for interpolant</span>
         <span class="n">bins</span> <span class="o">=</span> <span class="mi">1000</span>
-        <span class="c"># xedges is array of separation values for interpolant</span>
+        <span class="c1"># xedges is array of separation values for interpolant</span>
         <span class="n">xedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">bins</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
         <span class="n">xedges</span> <span class="o">=</span> <span class="n">xedges</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
 
-        <span class="c"># yedges is array of delta magnitude values for interpolant</span>
+        <span class="c1"># yedges is array of delta magnitude values for interpolant</span>
         <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
         <span class="n">ymax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">1e-11</span><span class="p">)))</span>
         <span class="n">yedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
-        <span class="c"># generate completeness values for interpolant</span>
-        <span class="c"># total number of planets for completeness calcs</span>
+        <span class="c1"># generate completeness values for interpolant</span>
+        <span class="c1"># total number of planets for completeness calcs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span> <span class="o">=</span> <span class="mf">1e8</span>
-        <span class="c"># number of planets for each Monte Carlo simulation</span>
+        <span class="c1"># number of planets for each Monte Carlo simulation</span>
         <span class="n">nplan</span> <span class="o">=</span> <span class="mf">1e6</span>
-        <span class="c"># number of simulations to perform (must be integer)</span>
+        <span class="c1"># number of simulations to perform (must be integer)</span>
         <span class="n">steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span><span class="o">/</span><span class="n">nplan</span><span class="p">)</span>
         
-        <span class="c"># get path to completeness interpolant stored in a pickled .comp file</span>
+        <span class="c1"># get path to completeness interpolant stored in a pickled .comp file</span>
         <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;PlanetPopulation&#39;</span><span class="p">]</span>
-<span class="c">#        if &#39;popname&#39; in specs:</span>
-<span class="c">#            # if specific Planet Population module is used get its name</span>
-<span class="c">#            filename = specs[&#39;popname&#39;]</span>
-<span class="c">#        else:</span>
-<span class="c">#            # use the prototype</span>
-<span class="c">#            filename = &#39;PlanetPopulation&#39;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">]</span>
+<span class="c1">#        if &#39;popname&#39; in specs:</span>
+<span class="c1">#            # if specific Planet Population module is used get its name</span>
+<span class="c1">#            filename = specs[&#39;popname&#39;]</span>
+<span class="c1">#        else:</span>
+<span class="c1">#            # use the prototype</span>
+<span class="c1">#            filename = &#39;PlanetPopulation&#39;</span>
         
-        <span class="c"># path to 2D completeness array for interpolation</span>
-        <span class="n">Cpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="o">+</span><span class="s">&#39;.comp&#39;</span><span class="p">)</span>
+        <span class="c1"># path to 2D completeness array for interpolation</span>
+        <span class="n">Cpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="o">+</span><span class="s1">&#39;.comp&#39;</span><span class="p">)</span>
         
         <span class="n">C</span><span class="p">,</span> <span class="n">xedges2</span><span class="p">,</span> <span class="n">yedges2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genC</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">EVPOC</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp2d</span><span class="p">(</span><span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">C</span><span class="p">)</span>
 
-        <span class="c"># attributes needed for completeness updates</span>
-        <span class="c"># indices of observed target stars</span>
+        <span class="c1"># attributes needed for completeness updates</span>
+        <span class="c1"># indices of observed target stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">obsinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="c"># initial observation time of observed target stars</span>
+        <span class="c1"># initial observation time of observed target stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initialobstime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c"># accumulated completeness</span>
+        <span class="c1"># accumulated completeness</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">accumulated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="c"># time comparison value</span>
+        <span class="c1"># time comparison value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c"># non-observable completeness value</span>
+        <span class="c1"># non-observable completeness value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">non</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
     
 <div class="viewcode-block" id="BrownCompleteness.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -148,9 +148,9 @@
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Completeness class object attributes&#39;</span></div>
+        <span class="k">return</span> <span class="s1">&#39;Completeness class object attributes&#39;</span></div>
         
 <div class="viewcode-block" id="BrownCompleteness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
@@ -174,17 +174,17 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># calculate separations based on IWA</span>
+        <span class="c1"># calculate separations based on IWA</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="n">targlist</span><span class="o">.</span><span class="n">dist</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
-        <span class="c"># calculate dMags based on limiting dMag</span>
+        <span class="c1"># calculate dMags based on limiting dMag</span>
         <span class="n">dMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span> <span class="o">+</span> <span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
             <span class="n">dMag</span> <span class="o">=</span> <span class="n">dMag</span> <span class="o">-</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
             
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),))</span>
-        <span class="c"># interpolation returns a 2D array, but comp0 should be 1D</span>
-        <span class="c"># for now do a for loop</span>
+        <span class="c1"># interpolation returns a 2D array, but comp0 should be 1D</span>
+        <span class="c1"># for now do a for loop</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
             <span class="n">comp0</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EVPOC</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dMag</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span>
             
@@ -214,18 +214,18 @@
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">comp0</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">s_ind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obsinds</span><span class="p">:</span>
-            <span class="c"># unique observation of star, add to obsinds</span>
+            <span class="c1"># unique observation of star, add to obsinds</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">obsinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">obsinds</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">))</span>
-            <span class="c"># add observation begin time to initialobstime</span>
+            <span class="c1"># add observation begin time to initialobstime</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">initialobstime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">initialobstime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">obsbegin</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-            <span class="c"># add accumulated completeness to accumulated</span>
+            <span class="c1"># add accumulated completeness to accumulated</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">accumulated</span><span class="p">,</span> <span class="n">comp0</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]))</span>
-            <span class="c"># store time comparison value</span>
+            <span class="c1"># store time comparison value</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="n">targlist</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
             <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span> <span class="o">+</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">mu</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-            <span class="c"># store non-observable completeness (rmax &lt; s)</span>
+            <span class="c1"># store non-observable completeness (rmax &lt; s)</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="mi">20000</span><span class="p">,</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="mi">20000</span><span class="p">,</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">rmax</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">e</span><span class="p">)</span>
@@ -233,13 +233,13 @@
             <span class="n">no</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span><span class="o">/</span><span class="mf">20000.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">non</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">non</span><span class="p">,</span> <span class="n">no</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># update the accumulated value</span>
+            <span class="c1"># update the accumulated value</span>
             <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obsinds</span> <span class="o">==</span> <span class="n">s_ind</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">accumulated</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">+=</span> <span class="n">comp0</span><span class="p">[</span><span class="n">s_ind</span><span class="p">]</span>
             
-        <span class="c"># find time delta</span>
+        <span class="c1"># find time delta</span>
         <span class="n">tnext</span> <span class="o">=</span> <span class="n">nexttime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialobstime</span>
-        <span class="c"># calculate dynamic completeness</span>
+        <span class="c1"># calculate dynamic completeness</span>
         <span class="n">inds1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tnext</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">inds2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tnext</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">dynamic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -278,37 +278,37 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># if the 2D completeness array exists as a .comp file load it</span>
+        <span class="c1"># if the 2D completeness array exists as a .comp file load it</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">Cpath</span><span class="p">):</span>
-            <span class="k">print</span> <span class="s">&#39;Loading completeness file from </span><span class="si">%s</span><span class="s">&#39;</span><span class="o">%</span><span class="n">Cpath</span>
-            <span class="n">C</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">))</span>
-            <span class="k">print</span> <span class="s">&#39;Completeness Loaded&#39;</span>
-            <span class="c">#h, xedges, yedges = self.hist(nplan, xedges, yedges)</span>
+            <span class="k">print</span> <span class="s1">&#39;Loading completeness file from </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">Cpath</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;Completeness Loaded&#39;</span>
+            <span class="c1">#h, xedges, yedges = self.hist(nplan, xedges, yedges)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># run Monte Carlo simulation and pickle the resulting array</span>
-            <span class="k">print</span> <span class="s">&#39;Beginning Monte Carlo completeness calculations&#39;</span>
+            <span class="c1"># run Monte Carlo simulation and pickle the resulting array</span>
+            <span class="k">print</span> <span class="s1">&#39;Beginning Monte Carlo completeness calculations&#39;</span>
             
             
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
-                <span class="k">print</span> <span class="s">&#39;iteration: </span><span class="si">%r</span><span class="s"> / </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
-                <span class="c"># get completeness histogram</span>
+                <span class="k">print</span> <span class="s1">&#39;iteration: </span><span class="si">%r</span><span class="s1"> / </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
+                <span class="c1"># get completeness histogram</span>
                 <span class="n">h</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">H</span> <span class="o">=</span> <span class="n">h</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">H</span> <span class="o">+=</span> <span class="n">h</span>
         
-            <span class="c"># initialize completeness</span>
+            <span class="c1"># initialize completeness</span>
             <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="n">mult</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
             <span class="n">C</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span> <span class="n">mult</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">C</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">mult</span><span class="p">)</span>
             
-            <span class="c"># store 2D completeness array as .comp file</span>
-            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">))</span>
-            <span class="k">print</span> <span class="s">&#39;Monte Carlo completeness calculations finished&#39;</span>
-            <span class="k">print</span> <span class="s">&#39;2D completeness array stored in </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
+            <span class="c1"># store 2D completeness array as .comp file</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s1">&#39;Monte Carlo completeness calculations finished&#39;</span>
+            <span class="k">print</span> <span class="s1">&#39;2D completeness array stored in </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
         
         <span class="k">return</span> <span class="n">C</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span></div>
         
@@ -332,7 +332,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genplans</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
-        <span class="c"># get histogram</span>
+        <span class="c1"># get histogram</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">xedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">dMag</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[[</span><span class="n">yedges</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">yedges</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="p">[</span><span class="n">xedges</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">xedges</span><span class="o">.</span><span class="n">max</span><span class="p">()]])</span>
         
         <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span></div>
@@ -351,21 +351,21 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nplan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
 
-        <span class="c"># sample uniform distribution of mean anomaly</span>
+        <span class="c1"># sample uniform distribution of mean anomaly</span>
         <span class="n">M</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
-        <span class="c"># sample semi-major axis        </span>
+        <span class="c1"># sample semi-major axis        </span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
-        <span class="c"># sample other necessary orbital parameters</span>
+        <span class="c1"># sample other necessary orbital parameters</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c"># all circular orbits</span>
+            <span class="c1"># all circular orbits</span>
             <span class="n">nu</span> <span class="o">=</span> <span class="n">M</span>
             <span class="n">r</span> <span class="o">=</span> <span class="n">a</span>
             <span class="n">e</span> <span class="o">=</span> <span class="mf">0.</span>
             <span class="n">E</span> <span class="o">=</span> <span class="n">M</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># sample eccentricity            </span>
+            <span class="c1"># sample eccentricity            </span>
             <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="c"># Newton-Raphson to find E</span>
+            <span class="c1"># Newton-Raphson to find E</span>
             <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">err</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">E</span> <span class="o">=</span> <span class="n">M</span> <span class="o">+</span> <span class="n">e</span>
@@ -381,7 +381,7 @@
                 <span class="n">E</span> <span class="o">=</span> <span class="n">Enew</span>
                 
             
-        <span class="c"># RAAN, arument of perigee, inclination sampling</span>
+        <span class="c1"># RAAN, arument of perigee, inclination sampling</span>
         <span class="n">Omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">RAAN</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
         <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arg_perigee</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
         <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">inclination</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
@@ -407,17 +407,17 @@
         
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rps</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">rps</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">rps</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
                
-        <span class="c"># compute Lambert phase</span>
+        <span class="c1"># compute Lambert phase</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">rps</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">Phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
         
-        <span class="c"># sample albedo and planetary radius</span>
+        <span class="c1"># sample albedo and planetary radius</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">albedo</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">R</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">unit</span>
         
-        <span class="c"># calculate dMag</span>
+        <span class="c1"># calculate dMag</span>
         <span class="n">dMag</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">((</span><span class="n">p</span><span class="o">*</span><span class="p">(</span><span class="n">R</span><span class="o">/</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">Phi</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        <span class="c"># calculate apparent separation</span>
+        <span class="c1"># calculate apparent separation</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rps</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">rps</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span></div></div>
@@ -457,7 +457,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

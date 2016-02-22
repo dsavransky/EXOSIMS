@@ -743,7 +743,7 @@ star position vector in heliocentric equatorial</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>lam=500.0</em>, <em>deltaLam=100.0</em>, <em>obscurFac=0.2</em>, <em>shapeFac=0.7853981633974483</em>, <em>pupilDiam=4.0</em>, <em>SNchar=11.0</em>, <em>telescopeKeepout=45.0</em>, <em>attenuation=0.57</em>, <em>specLam=760.0</em>, <em>intCutoff=50.0</em>, <em>Npix=14.3</em>, <em>Ndark=10.0</em>, <em>IWA=None</em>, <em>OWA=None</em>, <em>dMagLim=None</em>, <em>starlightSuppressionSystems=None</em>, <em>scienceInstruments=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>lam=500.0</em>, <em>deltaLam=100.0</em>, <em>obscurFac=0.2</em>, <em>shapeFac=0.7853981633974483</em>, <em>pupilDiam=4.0</em>, <em>SNchar=11.0</em>, <em>telescopeKeepout=45.0</em>, <em>attenuation=0.57</em>, <em>specLam=760.0</em>, <em>specBW=0.18</em>, <em>intCutoff=50.0</em>, <em>Npix=14.3</em>, <em>Ndark=10.0</em>, <em>IWA=None</em>, <em>OWA=None</em>, <em>dMagLim=None</em>, <em>starlightSuppressionSystems=None</em>, <em>scienceInstruments=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -768,14 +768,14 @@ simulation.</p>
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLam">
 <code class="descname">deltaLam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.deltaLam" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
-<dl class="docutils">
-<dt>bandpass (default units of nm)</dt>
-<dd><dl class="first last docutils">
-<dt>obscurFac (float):</dt>
-<dd>Obscuration factor due to secondary mirror and spiders</dd>
-</dl>
-</dd>
-</dl>
+<p>bandpass (default units of nm)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.obscurFac">
+<code class="descname">obscurFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.obscurFac" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>Obscuration factor due to secondary mirror and spiders</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -930,11 +930,44 @@ method will print the attribute values contained in the object</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime">
+<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds characterization time for a specific target system</p>
+<p>This method is called by a method in the SurveySimulation class object.
+This method defines the data type expected, characterization time is
+determined by specific OpticalSystem classes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>targlist</strong> &#8211; TargetList class object</li>
+<li><strong>starInd</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+with the length of the number of planets of interest.</li>
+<li><strong>dMagPlan</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
+and their host star</li>
+<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;
+1D numpy ndarray of characterization times (default units of day)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">
 <code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
-<p>This method is called by a method in the SurveySimulation class object.</p>
-<p>This method defines the data type expected, integration time is
+<p>This method is called by a method in the SurveySimulation class object.
+This method defines the data type expected, integration time is
 determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -967,36 +1000,18 @@ and their host star</li>
 <code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds maximum integration time for target systems</p>
 <p>This method is called in the __init__ method of the TargetList class
-object.</p>
-<p>This method defines the data type expected, maximum integration time is
-determined by specific OpticalSystem classes.</p>
+object. The working angle is set to the optical system IWA value, and
+the planet inclination is set to 0.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
-object attributes, has available:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>targlist.OpticalSystem:</dt>
-<dd>OpticalSystem class object</dd>
-<dt>targlist.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-<dt>targlist.ZodiacalLight:</dt>
-<dd>ZodiacalLight class object</dd>
-<dt>targlist.Completeness:</dt>
-<dd>Completeness class object</dd>
-<dt>targlist.PostProcessing:</dt>
-<dd>PostProcessing class object</dd>
-</dl>
-</div></blockquote>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>maxintTime</strong> &#8211;
-1D numpy ndarray of maximum integration times (default units of
-day)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
+list stars (astropy Quantity with units of day)</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.TargetList.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.TargetList.maxintTime">maxintTime</a></td>
 </tr>
 </tbody>
 </table>
@@ -1318,7 +1333,7 @@ probability density function value</td>
 <span id="exosims-prototypes-postprocessing-module"></span><h2>EXOSIMS.Prototypes.PostProcessing module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PostProcessing" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>FAP=3e-05</em>, <em>MDP=0.001</em>, <em>ppFact=0.1</em>, <em>SNR=5.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>FAP=3e-05</em>, <em>MDP=0.001</em>, <em>ppFact=1.0</em>, <em>SNR=5.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Post Processing class template</p>
 <p>This class contains all variables and functions necessary to perform

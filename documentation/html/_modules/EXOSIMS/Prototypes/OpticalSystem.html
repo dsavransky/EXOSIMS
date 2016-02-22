@@ -65,8 +65,8 @@
 <span class="sd">            detection wavelength (default units of nm)</span>
 <span class="sd">        deltaLam (Quantity):</span>
 <span class="sd">            bandpass (default units of nm)</span>
-<span class="sd">		obscurFac (float):</span>
-<span class="sd">			Obscuration factor due to secondary mirror and spiders        </span>
+<span class="sd">        obscurFac (float):</span>
+<span class="sd">            Obscuration factor due to secondary mirror and spiders        </span>
 <span class="sd">        shapeFac (float):</span>
 <span class="sd">            shape factor (also known as fill factor) where </span>
 <span class="sd">            :math:`shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea`</span>
@@ -137,8 +137,8 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lam</span><span class="o">=</span><span class="mf">500.</span><span class="p">,</span> <span class="n">deltaLam</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span> <span class="n">obscurFac</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">shapeFac</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.</span><span class="p">,</span>\
             <span class="n">pupilDiam</span><span class="o">=</span><span class="mf">4.</span><span class="p">,</span> <span class="n">SNchar</span><span class="o">=</span><span class="mf">11.</span><span class="p">,</span> <span class="n">telescopeKeepout</span><span class="o">=</span><span class="mf">45.</span><span class="p">,</span> <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.57</span><span class="p">,</span>\
-            <span class="n">specLam</span><span class="o">=</span><span class="mf">760.</span><span class="p">,</span><span class="n">intCutoff</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">Npix</span><span class="o">=</span><span class="mf">14.3</span><span class="p">,</span> <span class="n">Ndark</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> <span class="n">IWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>\
-            <span class="n">OWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">dMagLim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">starlightSuppressionSystems</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>\
+            <span class="n">specLam</span><span class="o">=</span><span class="mf">760.</span><span class="p">,</span> <span class="n">specBW</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span> <span class="n">intCutoff</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">Npix</span><span class="o">=</span><span class="mf">14.3</span><span class="p">,</span> <span class="n">Ndark</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span>\
+            <span class="n">IWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">OWA</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dMagLim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">starlightSuppressionSystems</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>\
             <span class="n">scienceInstruments</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
 
         <span class="c1">#must have a starlight suppression system and science instrument defined</span>
@@ -160,9 +160,11 @@
                                                 <span class="c1"># keepout angle in degrees</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attenuation</span><span class="p">)</span>   <span class="c1"># non-coronagraph attenuation factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">specLam</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">specLam</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span>      <span class="c1"># spectral wavelength of interest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specBW</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">specBW</span><span class="p">)</span>             <span class="c1"># spectral bandwidth fraction </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specDeltaLam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">specLam</span><span class="o">*</span><span class="n">specBW</span> <span class="c1"># spectral bandwidth</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intCutoff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">intCutoff</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="c1"># integration time cutoff </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Npix</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Npix</span><span class="p">)</span>					<span class="c1"># number of noise pixels</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Ndark</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Ndark</span><span class="p">)</span>				<span class="c1"># number of dark frames used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Npix</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Npix</span><span class="p">)</span>                 <span class="c1"># number of noise pixels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ndark</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Ndark</span><span class="p">)</span>               <span class="c1"># number of dark frames used</span>
         
         <span class="c1">#populate all scalar atributes to outspec</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -208,17 +210,33 @@
                                 <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
-
                     <span class="n">WA</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">T</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;IWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
-                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;OWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
-                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
-
                     <span class="n">Tinterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>\
                             <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
                     <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;throughput&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span><span class="n">alpha</span><span class="p">:</span> <span class="n">Tinterp</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+                    <span class="c1"># Calculate max throughput</span>
+                    <span class="n">Tmax</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="o">-</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;throughput&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span><span class="n">x</span><span class="p">),</span>\
+                            <span class="n">WA</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">T</span><span class="p">)],</span><span class="n">bounds</span><span class="o">=</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)),)</span> <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">Tmax</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                        <span class="n">Tmax</span> <span class="o">=</span> <span class="o">-</span><span class="n">Tmax</span><span class="o">.</span><span class="n">fun</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="s2">&quot;Warning: failed to find maximum of throughput &quot;</span>\
+                                <span class="s2">&quot;interpolant for starlight suppression system &quot;</span>\
+                                <span class="s2">&quot;#</span><span class="si">%d</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;starlightSuppressionSystemNumber&#39;</span><span class="p">]</span>
+                        <span class="n">Tmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">Tmax</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+
+                    <span class="c1"># Calculate IWA and OWA, defined as angular separations</span>
+                    <span class="c1"># corresponding to 50% of maximum throughput</span>
+                    <span class="n">WA_min</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">fsolve</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;throughput&#39;</span><span class="p">]</span>\
+                            <span class="p">(</span><span class="n">lam</span><span class="p">,</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">Tmax</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">));</span>
+                    <span class="n">WA_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span><span class="o">-</span><span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">fsolve</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;throughput&#39;</span><span class="p">]</span>\
+                            <span class="p">(</span><span class="n">lam</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span><span class="o">-</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">Tmax</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span><span class="mf">0.</span><span class="p">);</span>                    
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;IWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
+                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">WA_min</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;OWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
+                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">WA_max</span>
 
                     <span class="c1">#basic validation here for size and IWA/OWA</span>
                     <span class="c1">#syst[&#39;throughput&#39;] = lambda or interp</span>
@@ -238,18 +256,16 @@
                                 <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">T</span>
                             <span class="k">else</span><span class="p">:</span>
                                 <span class="n">dat</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
-
                     <span class="n">WA</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">C</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;IWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
-                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;OWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
-                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
-
                     <span class="n">Cinterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>\
                             <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
                     <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;contrast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lam</span><span class="p">,</span><span class="n">alpha</span><span class="p">:</span> <span class="n">Cinterp</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
 
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;IWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
+                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;OWA&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">):</span>
+                        <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;dMagLim&#39;</span><span class="p">):</span>
                         <span class="n">Cmin</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">Cinterp</span><span class="p">,</span> <span class="n">WA</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">C</span><span class="p">)],</span>\
                                 <span class="n">bounds</span><span class="o">=</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">WA</span><span class="p">)),)</span> <span class="p">)</span>
@@ -363,24 +379,24 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;scienceInstruments&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">syst</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
 
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">):</span> 
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span> <span class="c1">#pixel pitch in m</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;focalLength&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;focalLength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;focalLength&#39;</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">m</span> <span class="c1">#focal length in m</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> <span class="c1"># detector dark-current rate per pixel</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;texp&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;texp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;texp&#39;</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>  <span class="c1"># exposure time per read (s)</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;readNoise&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;readNoise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;readNoise&#39;</span><span class="p">])</span>  <span class="c1"># detector read noise (e/s)</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;Rspec&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;Rspec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;Rspec&#39;</span><span class="p">])</span> <span class="c1"># spectral resolving power</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;ENF&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">])</span> <span class="c1"># excess noise factor</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;CIC&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;CIC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;CIC&#39;</span><span class="p">])</span> <span class="c1"># clock-induced-charge</span>
-            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;G_EM&#39;</span><span class="p">):</span>
-                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;G_EM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;G_EM&#39;</span><span class="p">])</span> <span class="c1"># electron multiplication gain</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">):</span>          <span class="c1">#pixel pitch in m</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;pixelPitch&#39;</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;focalLength&#39;</span><span class="p">):</span>         <span class="c1">#focal length in m</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;focalLength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;focalLength&#39;</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">m</span> 
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">):</span>         <span class="c1"># detector dark-current rate per pixel</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;darkCurrent&#39;</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span> 
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;texp&#39;</span><span class="p">):</span>                <span class="c1"># exposure time per read (s)</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;texp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;texp&#39;</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;readNoise&#39;</span><span class="p">):</span>           <span class="c1"># detector read noise (e/s)</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;readNoise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;readNoise&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;Rspec&#39;</span><span class="p">):</span>               <span class="c1"># spectral resolving power</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;Rspec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;Rspec&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;ENF&#39;</span><span class="p">):</span>                 <span class="c1"># excess noise factor</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;CIC&#39;</span><span class="p">):</span>                 <span class="c1"># clock-induced-charge</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;CIC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;CIC&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;G_EM&#39;</span><span class="p">):</span>                <span class="c1"># electron multiplication gain</span>
+                <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;G_EM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;G_EM&#39;</span><span class="p">])</span>
 
             <span class="k">if</span> <span class="n">syst</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;QE&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">syst</span><span class="p">[</span><span class="s1">&#39;QE&#39;</span><span class="p">],</span><span class="nb">basestring</span><span class="p">):</span>
@@ -409,7 +425,7 @@
         <span class="c1"># set values derived from quantities above</span>
         <span class="c1">#if np.isinf(self.OWA.value):</span>
         <span class="c1">#    self.OWA = np.pi/2</span>
-                
+
 <div class="viewcode-block" id="OpticalSystem.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Optical System object</span>
 <span class="sd">        </span>
@@ -422,47 +438,33 @@
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Optical System class object attributes&#39;</span></div>
-        
+
 <div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called in the __init__ method of the TargetList class</span>
-<span class="sd">        object.</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, maximum integration time is</span>
-<span class="sd">        determined by specific OpticalSystem classes.</span>
+<span class="sd">        object. The working angle is set to the optical system IWA value, and</span>
+<span class="sd">        the planet inclination is set to 0.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist (TargetList):</span>
-<span class="sd">                TargetList class object which, in addition to TargetList class</span>
-<span class="sd">                object attributes, has available:</span>
-<span class="sd">                    targlist.OpticalSystem:</span>
-<span class="sd">                        OpticalSystem class object</span>
-<span class="sd">                    targlist.PlanetPopulation:</span>
-<span class="sd">                        PlanetPopulation class object</span>
-<span class="sd">                    targlist.ZodiacalLight:</span>
-<span class="sd">                        ZodiacalLight class object</span>
-<span class="sd">                    targlist.Completeness:</span>
-<span class="sd">                        Completeness class object</span>
-<span class="sd">                    targlist.PostProcessing:</span>
-<span class="sd">                        PostProcessing class object</span>
+<span class="sd">            targlist:</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            maxintTime (Quantity):</span>
-<span class="sd">                1D numpy ndarray of maximum integration times (default units of</span>
-<span class="sd">                day)</span>
+<span class="sd">            maxintTime:</span>
+<span class="sd">                1D numpy array containing maximum integration time for target</span>
+<span class="sd">                list stars (astropy Quantity with units of day)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># maximum integration time is given as 1 day for each system in target list</span>
-        <span class="n">maxintTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">targlist</span><span class="p">,</span><span class="nb">range</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">nStars</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">IWA</span><span class="p">,</span><span class="mf">0.</span><span class="p">);</span>
         
         <span class="k">return</span> <span class="n">maxintTime</span></div>
-        
+
 <div class="viewcode-block" id="OpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">starInd</span><span class="p">,</span> <span class="n">dMagPlan</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called by a method in the SurveySimulation class object.</span>
-<span class="sd">        </span>
 <span class="sd">        This method defines the data type expected, integration time is </span>
 <span class="sd">        determined by specific OpticalSystem classes.</span>
 <span class="sd">        </span>
@@ -479,17 +481,47 @@
 <span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
 <span class="sd">            I:</span>
 <span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
-
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            intTime (Quantity):</span>
 <span class="sd">                1D numpy ndarray of integration times (default units of day)</span>
-<span class="sd">      </span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># integration time given as 1 day</span>
-        <span class="n">intTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">dMagPlan</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="n">intTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="n">targlist</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
-        <span class="k">return</span> <span class="n">intTime</span></div></div>
+        <span class="k">return</span> <span class="n">intTime</span></div>
+
+<div class="viewcode-block" id="OpticalSystem.calc_charTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_charTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">starInd</span><span class="p">,</span> <span class="n">dMagPlan</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds characterization time for a specific target system </span>
+<span class="sd">        </span>
+<span class="sd">        This method is called by a method in the SurveySimulation class object.</span>
+<span class="sd">        This method defines the data type expected, characterization time is </span>
+<span class="sd">        determined by specific OpticalSystem classes.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            targlist:</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            starInd (integer ndarray):</span>
+<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
+<span class="sd">                with the length of the number of planets of interest.</span>
+<span class="sd">            dMagPlan:</span>
+<span class="sd">                Numpy ndarray containing differences in magnitude between planets </span>
+<span class="sd">                and their host star</span>
+<span class="sd">            WA:</span>
+<span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
+<span class="sd">            I:</span>
+<span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            charTime (Quantity):</span>
+<span class="sd">                1D numpy ndarray of characterization times (default units of day)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">charTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="n">targlist</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        
+        <span class="k">return</span> <span class="n">charTime</span></div></div>
 </pre></div>
 
           </div>

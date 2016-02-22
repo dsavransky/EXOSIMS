@@ -24,8 +24,8 @@ class OpticalSystem(object):
             detection wavelength (default units of nm)
         deltaLam (Quantity):
             bandpass (default units of nm)
-		obscurFac (float):
-			Obscuration factor due to secondary mirror and spiders        
+        obscurFac (float):
+            Obscuration factor due to secondary mirror and spiders        
         shapeFac (float):
             shape factor (also known as fill factor) where 
             :math:`shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea`
@@ -96,8 +96,8 @@ class OpticalSystem(object):
 
     def __init__(self, lam=500., deltaLam=100., obscurFac=0.2, shapeFac=np.pi/4.,\
             pupilDiam=4., SNchar=11., telescopeKeepout=45., attenuation=0.57,\
-            specLam=760.,intCutoff=50., Npix=14.3, Ndark=10., IWA=None,\
-            OWA=None,dMagLim=None, starlightSuppressionSystems=None,\
+            specLam=760., specBW=0.18, intCutoff=50., Npix=14.3, Ndark=10.,\
+            IWA=None, OWA=None, dMagLim=None, starlightSuppressionSystems=None,\
             scienceInstruments=None, **specs):
 
         #must have a starlight suppression system and science instrument defined
@@ -119,9 +119,11 @@ class OpticalSystem(object):
                                                 # keepout angle in degrees
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.specLam = float(specLam)*u.nm      # spectral wavelength of interest
+        self.specBW = float(specBW)             # spectral bandwidth fraction 
+        self.specDeltaLam = self.specLam*specBW # spectral bandwidth
         self.intCutoff = float(intCutoff)*u.day # integration time cutoff 
-        self.Npix = float(Npix)					# number of noise pixels
-        self.Ndark = float(Ndark)				# number of dark frames used
+        self.Npix = float(Npix)                 # number of noise pixels
+        self.Ndark = float(Ndark)               # number of dark frames used
         
         #populate all scalar atributes to outspec
         for key in self.__dict__.keys():
@@ -167,17 +169,33 @@ class OpticalSystem(object):
                                 dat = tmp[0].data.T
                             else:
                                 dat = tmp[0].data
-
                     WA = dat[0]
                     T = dat[1]
-                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
-                        syst['IWA'] = np.min(WA)
-                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
-                        syst['OWA'] = np.max(WA)
-
                     Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic',\
                             fill_value=np.nan, bounds_error=False)
                     syst['throughput'] = lambda lam,alpha: Tinterp(alpha)
+
+                    # Calculate max throughput
+                    Tmax = scipy.optimize.minimize(lambda x:-syst['throughput'](lam,x),\
+                            WA[np.argmax(T)],bounds=((np.min(WA),np.max(WA)),) )
+                    if Tmax.success:
+                        Tmax = -Tmax.fun[0]
+                    else:
+                        print "Warning: failed to find maximum of throughput "\
+                                "interpolant for starlight suppression system "\
+                                "#%d"%syst['starlightSuppressionSystemNumber']
+                        Tmax = np.Tmax(T)
+
+                    # Calculate IWA and OWA, defined as angular separations
+                    # corresponding to 50% of maximum throughput
+                    WA_min = scipy.optimize.fsolve(lambda x:syst['throughput']\
+                            (lam,x)-Tmax/2.,np.min(WA));
+                    WA_max = np.max(WA)-scipy.optimize.fsolve(lambda x:syst['throughput']\
+                            (lam,np.max(WA)-x)-Tmax/2.,0.);                    
+                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
+                        syst['IWA'] = WA_min
+                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
+                        syst['OWA'] = WA_max
 
                     #basic validation here for size and IWA/OWA
                     #syst['throughput'] = lambda or interp
@@ -197,18 +215,16 @@ class OpticalSystem(object):
                                 dat = tmp[0].data.T
                             else:
                                 dat = tmp[0].data
-
                     WA = dat[0]
                     C = dat[1]
-                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
-                        syst['IWA'] = np.min(WA)
-                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
-                        syst['OWA'] = np.max(WA)
-
                     Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic',\
                             fill_value=np.nan, bounds_error=False)
                     syst['contrast'] = lambda lam,alpha: Cinterp(alpha)
 
+                    if not syst.has_key('IWA') or syst['IWA'] < np.min(WA):
+                        syst['IWA'] = np.min(WA)
+                    if not syst.has_key('OWA') or syst['OWA'] > np.max(WA):
+                        syst['OWA'] = np.max(WA)
                     if not syst.has_key('dMagLim'):
                         Cmin = scipy.optimize.minimize(Cinterp, WA[np.argmin(C)],\
                                 bounds=((np.min(WA),np.max(WA)),) )
@@ -322,24 +338,24 @@ class OpticalSystem(object):
 
             self._outspec['scienceInstruments'].append(syst.copy())
 
-            if syst.has_key('pixelPitch'): 
-                syst['pixelPitch'] = float(syst['pixelPitch'])*(u.m) #pixel pitch in m
-            if syst.has_key('focalLength'):
-                syst['focalLength'] = float(syst['focalLength'])*u.m #focal length in m
-            if syst.has_key('darkCurrent'):
-                syst['darkCurrent'] = float(syst['darkCurrent'])*(1/u.s) # detector dark-current rate per pixel
-            if syst.has_key('texp'):
-                syst['texp'] = float(syst['texp'])*u.s  # exposure time per read (s)
-            if syst.has_key('readNoise'):
-                syst['readNoise'] = float(syst['readNoise'])  # detector read noise (e/s)
-            if syst.has_key('Rspec'):
-                syst['Rspec'] = float(syst['Rspec']) # spectral resolving power
-            if syst.has_key('ENF'):
-                syst['ENF'] = float(syst['ENF']) # excess noise factor
-            if syst.has_key('CIC'):
-                syst['CIC'] = float(syst['CIC']) # clock-induced-charge
-            if syst.has_key('G_EM'):
-                syst['G_EM'] = float(syst['G_EM']) # electron multiplication gain
+            if syst.has_key('pixelPitch'):          #pixel pitch in m
+                syst['pixelPitch'] = float(syst['pixelPitch'])*(u.m)
+            if syst.has_key('focalLength'):         #focal length in m
+                syst['focalLength'] = float(syst['focalLength'])*u.m 
+            if syst.has_key('darkCurrent'):         # detector dark-current rate per pixel
+                syst['darkCurrent'] = float(syst['darkCurrent'])*(1/u.s) 
+            if syst.has_key('texp'):                # exposure time per read (s)
+                syst['texp'] = float(syst['texp'])*u.s
+            if syst.has_key('readNoise'):           # detector read noise (e/s)
+                syst['readNoise'] = float(syst['readNoise'])
+            if syst.has_key('Rspec'):               # spectral resolving power
+                syst['Rspec'] = float(syst['Rspec'])
+            if syst.has_key('ENF'):                 # excess noise factor
+                syst['ENF'] = float(syst['ENF'])
+            if syst.has_key('CIC'):                 # clock-induced-charge
+                syst['CIC'] = float(syst['CIC'])
+            if syst.has_key('G_EM'):                # electron multiplication gain
+                syst['G_EM'] = float(syst['G_EM'])
 
             if syst.has_key('QE'):
                 if isinstance(syst['QE'],basestring):
@@ -368,7 +384,7 @@ class OpticalSystem(object):
         # set values derived from quantities above
         #if np.isinf(self.OWA.value):
         #    self.OWA = np.pi/2
-                
+
     def __str__(self):
         """String representation of the Optical System object
         
@@ -381,47 +397,33 @@ class OpticalSystem(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Optical System class object attributes'
-        
+
     def calc_maxintTime(self, targlist):
         """Finds maximum integration time for target systems 
         
         This method is called in the __init__ method of the TargetList class
-        object.
-        
-        This method defines the data type expected, maximum integration time is
-        determined by specific OpticalSystem classes.
+        object. The working angle is set to the optical system IWA value, and
+        the planet inclination is set to 0.
         
         Args:
-            targlist (TargetList):
-                TargetList class object which, in addition to TargetList class
-                object attributes, has available:
-                    targlist.OpticalSystem:
-                        OpticalSystem class object
-                    targlist.PlanetPopulation:
-                        PlanetPopulation class object
-                    targlist.ZodiacalLight:
-                        ZodiacalLight class object
-                    targlist.Completeness:
-                        Completeness class object
-                    targlist.PostProcessing:
-                        PostProcessing class object
+            targlist:
+                TargetList class object
+        
         Returns:
-            maxintTime (Quantity):
-                1D numpy ndarray of maximum integration times (default units of
-                day)
+            maxintTime:
+                1D numpy array containing maximum integration time for target
+                list stars (astropy Quantity with units of day)
         
         """
         
-        # maximum integration time is given as 1 day for each system in target list
-        maxintTime = np.array([1.]*len(targlist.Name))*u.day
+        maxintTime = self.calc_intTime(targlist,range(targlist.nStars),self.dMagLim,self.IWA,0.);
         
         return maxintTime
-        
+
     def calc_intTime(self, targlist, starInd, dMagPlan, WA, I):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
-        
         This method defines the data type expected, integration time is 
         determined by specific OpticalSystem classes.
         
@@ -438,14 +440,44 @@ class OpticalSystem(object):
                 Numpy ndarray containing working angles of the planets of interest
             I:
                 Numpy ndarray containing inclinations of the planets of interest
-
+        
         Returns:
             intTime (Quantity):
                 1D numpy ndarray of integration times (default units of day)
-      
+        
         """
         
-        # integration time given as 1 day
-        intTime = np.array([1.]*len(dMagPlan))*u.day
+        intTime = np.array([1.]*targlist.nStars)*u.day
         
         return intTime
+
+    def calc_charTime(self, targlist, starInd, dMagPlan, WA, I):
+        """Finds characterization time for a specific target system 
+        
+        This method is called by a method in the SurveySimulation class object.
+        This method defines the data type expected, characterization time is 
+        determined by specific OpticalSystem classes.
+        
+        Args:
+            targlist:
+                TargetList class object
+            starInd (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            dMagPlan:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
+        
+        Returns:
+            charTime (Quantity):
+                1D numpy ndarray of characterization times (default units of day)
+        
+        """
+        
+        charTime = np.array([1.]*targlist.nStars)*u.day
+        
+        return charTime

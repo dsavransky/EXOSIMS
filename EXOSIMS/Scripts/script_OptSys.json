@@ -1,13 +1,18 @@
 {
   "missionLifetime": 6.0,
   "missionPortion": 0.167,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
   "lam": 565.0,
   "deltaLam": 56.5,
-  "keepStarCatalog": false,
+  "specLam": 660.0,
+  "specBW": 0.18,
   "pupilDiam": 2.37,
-  "dMagLim": 24.0,
-  "minComp": 0.1,
-  "spkpath" : "$HOME/CODE/Python/exomissionsim/EXOSIMS/Prototypes/de432s.bsp",
+  "obscurFac": 0.2,
+  "dMagLim": 25.0,
+  "attenuation": 0.57,
+  "intCutoff": 100.0,
+  "SNchar": 5.0,
   "starlightSuppressionSystems": [
     {
       "starlightSuppressionSystemNumber": 1,
@@ -29,10 +34,10 @@
       "CIC": 0.0013,
       "readNoise": 16,
       "texp": 1000,
-      "pixelPitch": 13e-6,
-      "focalLength": 240,
       "ENF": 1.414,
-      "G_EM": 100
+      "G_EM": 100.0,
+      "pixelPitch": 13e-6,
+      "focalLength": 240
     },
     {
       "scienceInstrumentNumber": 2,
@@ -42,6 +47,8 @@
       "CIC": 0.0013,
       "readNoise": 3,
       "texp": 1000,
+      "ENF": 1.0,
+      "G_EM": 1.0,
       "Rspec": 70.0
     }
   ],

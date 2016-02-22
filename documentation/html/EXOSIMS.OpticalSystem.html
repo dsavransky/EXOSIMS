@@ -64,6 +64,11 @@ in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
+<dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_charTime">
+<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_charTime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_intTime">
 <code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
@@ -95,26 +100,6 @@ units of day)</p>
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration time for target systems</p>
-<p>This method is called in the __init__ for the TargetList class object.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> &#8211; TargetList class object</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
-list stars (astropy Quantity with units of day)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.TargetList.maxintTime">maxintTime</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -123,7 +108,7 @@ list stars (astropy Quantity with units of day)</td>
 <dl class="class">
 <dt id="EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati">
 <em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.OptSys_Nemati.</code><code class="descname">OptSys_Nemati</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Nemati.html#OptSys_Nemati"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.OpticalSystem.OpticalSystem</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin" title="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin</span></code></a></p>
 <p>WFIRST Optical System class</p>
 <p>This class contains all variables and methods specific to the WFIRST
 optical system needed to perform Optical System Module calculations
@@ -163,26 +148,6 @@ units of day)</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime</p>
 </td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Nemati.html#OptSys_Nemati.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration time for target systems</p>
-<p>This method is called in the __init__ for the TargetList class object.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> &#8211; TargetList class object</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
-list stars (astropy Quantity with units of day)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.TargetList.maxintTime">maxintTime</a></td>
 </tr>
 </tbody>
 </table>

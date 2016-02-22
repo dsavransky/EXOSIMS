@@ -26,7 +26,7 @@ class PostProcessing(object):
     _modtype = 'PostProcessing'
     _outspec = {}
 
-    def __init__(self, FAP=3e-5, MDP = 1e-3, ppFact=0.1, SNR=5., **specs):
+    def __init__(self, FAP=3e-5, MDP = 1e-3, ppFact=1.0, SNR=5., **specs):
        
         self.FAP = float(FAP)
         self.MDP = float(MDP)

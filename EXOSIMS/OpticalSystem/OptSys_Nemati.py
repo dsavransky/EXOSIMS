@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
+from EXOSIMS.OpticalSystem.OptSys_Kasdin import OptSys_Kasdin
 from astropy import units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 
-class OptSys_Nemati(OpticalSystem):
+class OptSys_Nemati(OptSys_Kasdin):
     """WFIRST Optical System class
     
     This class contains all variables and methods specific to the WFIRST
@@ -15,47 +15,13 @@ class OptSys_Nemati(OpticalSystem):
     Args:
         \*\*specs:
             user specified values
-
+    
     """
     
     def __init__(self, **specs):
-                
-        OpticalSystem.__init__(self, **specs)
+        
+        OptSys_Kasdin.__init__(self, **specs)
 
-    def calc_maxintTime(self, targlist):
-        """Finds maximum integration time for target systems 
-        
-        This method is called in the __init__ for the TargetList class object.
-        
-        Args:
-            targlist:
-                TargetList class object
-        
-        Returns:
-            maxintTime:
-                1D numpy array containing maximum integration time for target
-                list stars (astropy Quantity with units of day)
-        
-        """
-        
-        # Inclination for max zodi level
-        Imax = np.array([0.]*targlist.nStars);
-        Imin = np.array([0.0403/(2*0.000269)]*targlist.nStars); # from Lindler
-        
-        # Calculate IWA and OWA, defined as angular separations
-        # corresponding to 50% of maximum throughput
-        xmin = self.IWA.value;
-        xmax = self.OWA.value;
-        xopt = opt.fmin(lambda x:-self.throughput(self.lam,x),xmax,disp=0);
-        Tmax = self.throughput(self.lam,xopt);
-        IWA = opt.fsolve(lambda x:self.throughput(self.lam,x)-Tmax/2.,xmin);
-        OWA = xmax-opt.fsolve(lambda x:self.throughput(self.lam,xmax-x)-Tmax/2.,0.);
-        
-        # calculate max integration time of the stars of interest
-        maxintTime = self.calc_intTime(targlist,range(targlist.nStars),self.dMagLim,IWA,Imax);
-        
-        return maxintTime
-        
     def calc_intTime(self, targlist, starInd, dMagPlan, WA, I):
         """Finds integration time for a specific target system 
         
@@ -100,8 +66,6 @@ class OptSys_Nemati(OpticalSystem):
                 CIC = syst['CIC'];
                 readNoise = syst['readNoise'];
                 texp = syst['texp'];
-                pixelPitch = syst['pixelPitch'];
-                focalLength = syst['focalLength'];
                 ENF = syst['ENF'];
                 G_EM = syst['G_EM'];
 
@@ -136,7 +100,7 @@ class OptSys_Nemati(OpticalSystem):
         
         # Nemati14+ method
         r_noise = ENF**2*(r_pl + r_CG + r_zodi + r_dark + r_cic) + r_read;
-        SNR = PP.SNR;  # SNR threshold
+        SNR = PP.SNR;                               # SNR threshold for imaging/detection
 
         intTime = (SNR**2*r_noise)/(r_pl**2 - SNR**2*r_CG**2);
 

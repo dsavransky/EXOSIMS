@@ -15,47 +15,13 @@ class OptSys_Kasdin(OpticalSystem):
     Args:
         \*\*specs:
             user specified values
-
+    
     """
     
     def __init__(self, **specs):
-                
+        
         OpticalSystem.__init__(self, **specs)
 
-    def calc_maxintTime(self, targlist):
-        """Finds maximum integration time for target systems 
-        
-        This method is called in the __init__ for the TargetList class object.
-        
-        Args:
-            targlist:
-                TargetList class object
-        
-        Returns:
-            maxintTime:
-                1D numpy array containing maximum integration time for target
-                list stars (astropy Quantity with units of day)
-        
-        """
-        
-        # Inclination for max zodi level
-        Imax = np.array([0.]*targlist.nStars);
-        Imin = np.array([0.0403/(2*0.000269)]*targlist.nStars); # from Lindler
-        
-        # Calculate IWA and OWA, defined as angular separations
-        # corresponding to 50% of maximum throughput
-        xmin = self.IWA.value;
-        xmax = self.OWA.value;
-        xopt = opt.fmin(lambda x:-self.throughput(self.lam,x),xmax,disp=0);
-        Tmax = self.throughput(self.lam,xopt);
-        IWA = opt.fsolve(lambda x:self.throughput(self.lam,x)-Tmax/2.,xmin);
-        OWA = xmax-opt.fsolve(lambda x:self.throughput(self.lam,xmax-x)-Tmax/2.,0.);
-        
-        # calculate max integration time of the stars of interest
-        maxintTime = self.calc_intTime(targlist,range(targlist.nStars),self.dMagLim,IWA,Imax);
-        
-        return maxintTime
-        
     def calc_intTime(self, targlist, starInd, dMagPlan, WA, I):
         """Finds integration time for a specific target system 
         
@@ -100,10 +66,10 @@ class OptSys_Kasdin(OpticalSystem):
                 CIC = syst['CIC'];
                 readNoise = syst['readNoise'];
                 texp = syst['texp'];
-                pixelPitch = syst['pixelPitch'];
-                focalLength = syst['focalLength'];
                 ENF = syst['ENF'];
                 G_EM = syst['G_EM'];
+                pixelPitch = syst['pixelPitch'];
+                focalLength = syst['focalLength'];
 
         # values derived from the normalized PSF
         PSF = self.PSF(self.lam, WA);
@@ -147,4 +113,65 @@ class OptSys_Kasdin(OpticalSystem):
         intTime = 1./beta*(K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2/(Qbar*Ta*Psi)
 
         return intTime.to(u.day)
+
+    def calc_charTime(self, targlist, starInd, dMagPlan, WA, I):
+
+        PP = targlist.PostProcessing                # post-processing module
+        ppFact = PP.ppFact;                         # post-processing contrast factor
+        Vmag = targlist.Vmag[starInd];              # star visual magnitude
+        zodi = targlist.ZodiacalLight               # zodiacalLight module
+        EZlevel = zodi.fzodi(starInd,I,targlist);   # exozodi level
+        EZmag = zodi.exozodiMag;                    # 1 zodi brightness in mag per asec2
+        Omega = np.pi*(0.7*self.specLam.to(u.m)/self.pupilDiam\
+                *(u.rad.to(u.arcsec)))**2;          # solid angle subtended by photometry aperture
+
+        # values taken from the imaging camera
+        for syst in self.scienceInstruments:
+            if 'spec' in syst['type']:
+                QEfunc = syst['QE'];
+                darkCurrent = syst['darkCurrent'];
+                CIC = syst['CIC'];
+                readNoise = syst['readNoise'];
+                texp = syst['texp'];
+                ENF = syst['ENF'];
+                G_EM = syst['G_EM'];
+                Rspec = syst['Rspec'];
+
+        # values derived from the normalized PSF
+        PSF = self.PSF(self.specLam, WA);
+        Pbar = PSF/np.max(PSF);
+        P1 = np.sum(Pbar);
+        Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2;
+        Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3;
+        # nb of pixels for photometry aperture = 1/sharpness
+        Npix = 1./Psi;
+
+        # throughput, contrast
+        f_SR = 1./(Rspec*self.specBW);
+        T = f_SR*self.attenuation**2*self.throughput(self.specLam, WA);
+        Q = ppFact*self.contrast(self.specLam, WA);
+
+        # average irradiance in detection band [photons /s /m2 /nm]
+        F0 = 3631*1.51e7/self.specLam *u.photon/u.s/u.m**2; #zero-magnitude star = 3631 Jy
+        I_psf = F0*10.**(-Vmag/2.5);
+        I_pl = F0*10.**(-(Vmag + dMagPlan)/2.5); 
+        I_CG = I_psf * Q;
+        I_zodi = F0*10.**(-EZmag/2.5)*EZlevel*Omega;
+
+        # electron rates [ s^-1 ]
+        QE = QEfunc(self.specLam) /u.photon;
+        r_pl = I_pl*QE*T*self.pupilArea*self.specDeltaLam;
+        r_CG = I_CG*QE*T*self.pupilArea*self.specDeltaLam;
+        r_zodi = I_zodi*QE*T*self.pupilArea*self.specDeltaLam;
+        r_dark = darkCurrent*Npix;
+        r_cic = CIC*Npix/texp;
+        r_read = (readNoise/G_EM)**2*Npix/texp;
+
+        # Nemati14+ method
+        r_noise = ENF**2*(r_pl + r_CG + r_zodi + r_dark + r_cic) + r_read;
+        SNR = self.SNchar;                          # SNR threshold for characterization
+
+        charTime = (SNR**2*r_noise)/(r_pl**2 - SNR**2*r_CG**2);
+
+        return charTime.to(u.day)
 

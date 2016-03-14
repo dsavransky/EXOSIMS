@@ -2,6 +2,7 @@
 from astropy import units as u
 from astropy import constants as const
 import numpy as np
+import copy
 
 class PlanetPopulation(object):
     """Planet Population Description class template
@@ -75,7 +76,12 @@ class PlanetPopulation(object):
         #populate all atributes to outspec
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],u.Quantity):
-                self._outspec[key] = self.__dict__[key].value
+                self._outspec[key] = copy.copy(self.__dict__[key].value)
+                if key == 'Mprange':
+                    self._outspec[key] /= const.M_earth.value
+                elif key == 'Rrange':
+                    self._outspec[key] /= const.R_earth.value
+
             else:
                 self._outspec[key] = self.__dict__[key]
     

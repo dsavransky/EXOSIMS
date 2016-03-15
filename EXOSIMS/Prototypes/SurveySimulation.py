@@ -221,13 +221,14 @@ class SurveySimulation(object):
             if self.OpticalSystem.haveOcculter:
                 DRM['scMass'] = self.Observatory.scMass.to(u.kg).value
                         
-            # get target list star index of detections for extended_list
+            # get target list star index of detections for extended_list 
             if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife and extended_list.shape[0] == 0:
                 for i in xrange(len(self.DRM)):
                     if self.DRM[i]['det'] == 1:
                         extended_list = np.hstack((extended_list, self.DRM[i]['target_ind']))
                         extended_list = np.unique(extended_list)
             
+##!!!!oflloded to simulated universe
             # find planets belonging to target star
             pInds = np.where(self.SimulatedUniverse.planInds == s_ind)[0]
             
@@ -240,6 +241,7 @@ class SurveySimulation(object):
             # store detection integration time
             DRM['det_int_time'] = t_int.to(u.day).value
             
+#!!!!!!!offload to timekeeping
             # if integration time goes beyond observation duration, set quantities
             if self.TimeKeeping.currenttimeNorm + t_int > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
                 # integration time is beyond observation duration
@@ -261,7 +263,8 @@ class SurveySimulation(object):
             
             if doChar:
                 DRM, FA, spectra = self.observation_characterization(observationPossible, pInds, s_ind, spectra, s, Ip, DRM, FA, t_int)
-                
+             
+            ##offload to own method 
             # schedule a revisit if there is a planet
             if pInds.shape[0] != 0:
                 if DET or FA:
@@ -291,12 +294,16 @@ class SurveySimulation(object):
                 T = 2.*np.pi*np.sqrt(self.PlanetPopulation.arange.mean()**3/mu)
                 t_rev = self.TimeKeeping.currenttimeNorm + 0.75*T
             
+
+###fix this!
             # populate revisit list (s_ind is converted to float)
             if revisit_list.size == 0:
                 revisit_list = np.hstack((revisit_list, np.array([s_ind, t_rev.to(u.day).value])))
             else:
                 revisit_list = np.vstack((revisit_list, np.array([s_ind, t_rev.to(u.day).value])))
-            
+           
+
+            ### more methods inside timekeeping
             obsend = copy.copy(self.TimeKeeping.currenttimeNorm)
             # find next available time for planet-finding
             nexttime = self.TimeKeeping.duty_cycle(self.TimeKeeping.currenttimeNorm)
@@ -326,7 +333,9 @@ class SurveySimulation(object):
 #                self.TimeKeeping.currenttimeNorm = 100*u.year                       
         
         return 'Simulation results in .DRM'
-        
+
+
+###fold into next target determination
     def initial_target(self):
         """Returns index of initial target star
         
@@ -385,7 +394,9 @@ class SurveySimulation(object):
         s_ind = sinds[s0]
         
         return s_ind
-        
+       
+
+####cleanup all offloaded to opticalsystem
     def observation_detection(self, pInds, s_ind, DRM, planPosTime):
         """Finds if planet observations are possible and relevant information
         
@@ -668,6 +679,8 @@ class SurveySimulation(object):
         
         return observationPossible, dMag
     
+
+#####check for messy statements
     def check_visible_end(self, observationPossible, t_int, t_trueint, s_ind, pInds, t_char_calc):
         """Determines if planets are visible at the end of the observation time
         
@@ -1029,6 +1042,7 @@ class SurveySimulation(object):
             slew_time = np.sqrt(slew_dist/np.abs(ao)/(self.Observatory.defburnPortion/2. - self.Observatory.defburnPortion**2/4.))
             mass_used = slew_time*self.Observatory.defburnPortion*self.Observatory.flowRate
 
+###again will offload to timekeeping
             # update times
             self.TimeKeeping.update_times(slew_time)
             

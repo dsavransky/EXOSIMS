@@ -13,26 +13,29 @@ class ZodiacalLight(object):
             user specified values
     
     Attributes:
-        exozodi (float):
-            exozodi level in zodi
-        exozodiVar (float):
-            exozodi variation (variance of log-normal distribution)
-        exozodiMag (float):
+        Zmag (float):
+            zodi level in zodi
+        exoZmag (float):
             1 zodi brightness in mag per asec2
+        exoZnumber (float):
+            exozodi level in zodi
+        exoZvar (float):
+            exozodi variation (variance of log-normal distribution)
         
     """
 
     _modtype = 'ZodiacalLight'
     _outspec = {}
-    
-    def __init__(self, exozodi=1.5, exozodiVar=0., exozodiMag=23.54, **specs):
 
-        self.exozodi = float(exozodi);          # exo-zodi level in zodi
-        self.exozodiVar = float(exozodiVar);    # exo-zodi variation (variance of log-normal distribution)
-        self.exozodiMag = float(exozodiMag);    # 1 zodi brightness in mag per asec2
+    def __init__(self, Zmag=22.5, exoZmag=23.5, exoZnumber=1.5, exoZvar=0., **specs):
+
+        self.Zmag = float(Zmag);                # 1 zodi brightness in mag per asec2
+        self.exoZmag = float(exoZmag);          # 1 exozodi brightness in mag per asec2
+        self.exoZnumber = float(exoZnumber);    # exozodi level in zodi
+        self.exoZvar = float(exoZvar);          # exozodi variation (variance of log-normal distribution)
 
         for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]          
+            self._outspec[key] = self.__dict__[key]
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -60,20 +63,20 @@ class ZodiacalLight(object):
                 and declination in degrees
                 
         Returns:
-            el (ndarray):
+            beta (ndarray):
                 ecliptic latitudes in degrees
         
         """
         
-        eps = 23.439281 # obliquity of ecliptic in degrees
+        eps = 23.439281                 # J2000 obliquity of ecliptic in degrees
         a = np.cos(np.radians(eps))*np.sin(coords.dec)
         b = np.sin(coords.ra)*np.cos(coords.dec)*np.sin(np.radians(eps))
-        el = np.degrees(np.abs(np.arcsin(a-b)))
+        beta = np.degrees(np.abs(np.arcsin(a-b)))
 
-        return el
-        
+        return beta
+
     def fzodi(self, Inds, I, targlist):
-        """Returns exozodi levels for systems 
+        """Returns total zodi flux levels (local and exo)  
         
         This method is called in __init__ of SimulatedUniverse.
         
@@ -87,10 +90,11 @@ class ZodiacalLight(object):
         
         Returns:
             fzodicurr (ndarray):
-                1D numpy ndarray of exozodiacal light levels
+                1D numpy ndarray of zodiacal light levels
 
         """
         
-        fzodicurr = np.array([10.]*len(Inds))
+        fzodicurr = np.array([1e-9]*len(Inds))
         
         return fzodicurr
+

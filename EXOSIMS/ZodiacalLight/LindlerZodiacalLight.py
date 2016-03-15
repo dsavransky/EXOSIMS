@@ -8,8 +8,18 @@ class LindlerZodiacalLight(ZodiacalLight):
     
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
-    the model from Lindler."""
-                        
+    the model from Lindler.
+
+    Args:
+        \*\*specs:
+            user specified values
+    
+    """
+    
+    def __init__(self, **specs):
+        
+        ZodiacalLight.__init__(self, **specs)
+
     def fzodi(self, Inds, I, targlist):
         """Returns exozodi levels for systems with planets 
         
@@ -24,7 +34,7 @@ class LindlerZodiacalLight(ZodiacalLight):
                 TargetList class object
         
         Returns:
-            fzodicurr (ndarray):
+            fzodi (ndarray):
                 1D numpy ndarray of exozodiacal light levels
 
         """
@@ -38,19 +48,19 @@ class LindlerZodiacalLight(ZodiacalLight):
         if type(I) == np.ndarray:
             I[i] = 180. - I[i]
         
-        if self.exozodiVar == 0:
-            fzodicurr = self.fbeta(lats[Inds]) + \
-            2.*self.exozodi*self.fbeta(I)*2.5**(4.78-MV[Inds])
+        if self.exoZvar == 0:
+            R = self.exoZnumber
         else:
             # assume log-normal distribution of variance
-            mu = np.log(self.exozodi) - 0.5*np.log(1. + self.exozodiVar/self.exozodi**2)
-            v = np.sqrt(np.log(self.exozodiVar/self.exozodi**2 + 1.))
+            mu = np.log(self.exoZnumber) - 0.5*np.log(1. + self.exoZvar/self.exoZnumber**2)
+            v = np.sqrt(np.log(self.exoZvar/self.exoZnumber**2 + 1.))
             R = np.random.lognormal(mean=mu, sigma=v, size=(len(Inds),))
-            fzodicurr = self.fbeta(lats[Inds]) + \
-            2.*R*self.fbeta(I)*2.5**(4.78-MV[Inds])
-        
-        return fzodicurr
-        
+
+        fzodi = 10**(-0.4*self.Zmag) * self.fbeta(lats[Inds]) \
+                 + 10**(-0.4*self.exoZmag) * R*2.*self.fbeta(I)*2.5**(4.78-MV[Inds])
+
+        return fzodi
+
     def fbeta(self, beta):
         """Empirically derived variation of zodiacal light with viewing angle
         

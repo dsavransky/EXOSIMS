@@ -9,7 +9,7 @@ class StarkZodiacalLight(ZodiacalLight):
     
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
-    the model from Stark."""
+    the model from Stark et al. 2014."""
 
     def fzodi(self, Inds, I, targlist):
         """Returns exozodi levels for systems with planets 

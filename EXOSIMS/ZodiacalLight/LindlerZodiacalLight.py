@@ -20,14 +20,15 @@ class LindlerZodiacalLight(ZodiacalLight):
         
         ZodiacalLight.__init__(self, **specs)
 
-    def fzodi(self, Inds, I, targlist):
-        """Returns exozodi levels for systems with planets 
+    def fzodi(self, sInd, I, targlist):
+        """Returns total zodi flux levels (local and exo)  
         
         This method is called in __init__ of SimulatedUniverse.
         
         Args:
-            Inds (ndarray):
-                1D numpy ndarray of indicies referring back to target list stars
+            sInd (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
             I (ndarray):
                 1D numpy ndarray or scalar value of inclination in degrees
             targlist (TargetList):
@@ -35,7 +36,7 @@ class LindlerZodiacalLight(ZodiacalLight):
         
         Returns:
             fzodi (ndarray):
-                1D numpy ndarray of exozodiacal light levels
+                1D numpy ndarray of zodiacal light levels
 
         """
          
@@ -54,10 +55,10 @@ class LindlerZodiacalLight(ZodiacalLight):
             # assume log-normal distribution of variance
             mu = np.log(self.exoZnumber) - 0.5*np.log(1. + self.exoZvar/self.exoZnumber**2)
             v = np.sqrt(np.log(self.exoZvar/self.exoZnumber**2 + 1.))
-            R = np.random.lognormal(mean=mu, sigma=v, size=(len(Inds),))
+            R = np.random.lognormal(mean=mu, sigma=v, size=(len(sInd),))
 
-        fzodi = 10**(-0.4*self.Zmag) * self.fbeta(lats[Inds]) \
-                 + 10**(-0.4*self.exoZmag) * R*2.*self.fbeta(I)*2.5**(4.78-MV[Inds])
+        fzodi = 10**(-0.4*self.Zmag) * self.fbeta(lats[sInd]) \
+                 + 10**(-0.4*self.exoZmag) * R*2.*self.fbeta(I)*2.5**(4.78-MV[sInd])
 
         return fzodi
 

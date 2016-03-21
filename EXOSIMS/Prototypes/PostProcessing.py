@@ -17,22 +17,26 @@ class PostProcessing(object):
         MDP (float):
             Missed Detection Probability
         ppFact (flaot):
-        	Post-processing factor
-		SNR (float):
-			Signal-to-noise ratio threshold
+            Post-processing contrast factor
+        SNimag (float):
+            Signal-to-noise ratio threshold for imaging/detection
+        SNchar (float):
+            Signal-to-noise ratio threshold for characterization
             
     """
     
     _modtype = 'PostProcessing'
     _outspec = {}
 
-    def __init__(self, FAP=3e-5, MDP = 1e-3, ppFact=1.0, SNR=5., **specs):
-       
+    def __init__(self,FAP=3e-5,MDP=1e-3,ppFact=1.0,SNimag=5.,SNchar=11.,**specs):
+
+        #load all values with defaults
         self.FAP = float(FAP)
         self.MDP = float(MDP)
         self.ppFact = float(ppFact)
-        self.SNR = float(SNR)
-    
+        self.SNimag = float(SNimag)             # SNR for imaging/detection
+        self.SNchar = float(SNchar)             # SNR for characterization
+
         for key in self.__dict__.keys():
             self._outspec[key] = self.__dict__[key]  
 

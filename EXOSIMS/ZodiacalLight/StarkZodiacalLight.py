@@ -11,22 +11,23 @@ class StarkZodiacalLight(ZodiacalLight):
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Stark et al. 2014."""
 
-    def fzodi(self, Inds, I, targlist):
-        """Returns exozodi levels for systems with planets 
+    def fzodi(self, sInd, I, targlist):
+        """Returns total zodi flux levels (local and exo)  
         
         This method is called in __init__ of SimulatedUniverse.
         
         Args:
-            Inds (ndarray):
-                1D numpy ndarray of indicies referring back to target list stars
-            I (ndarray):
-                1D numpy ndarray or scalar value of inclination in degrees
-            targlist (TargetList):
+            sInd (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
+            targlist:
                 TargetList class object
         
         Returns:
             fzodicurr (ndarray):
-                1D numpy ndarray of exozodiacal light levels
+                1D numpy ndarray of zodiacal light levels
 
         """
          
@@ -37,9 +38,9 @@ class StarkZodiacalLight(ZodiacalLight):
         #solar elongation
         elon = 59                       # need to set elongation as an input
         # wavelength
-        lb = targlist.OpticalSystem.lam.value
+        lam = targlist.OpticalSystem.Imager['lam'].value
         
-        i = np.where(I > 90.)
+        i = np.where(I.value > 90.)
         if type(I) == np.ndarray:
             I[i] = 180. - I[i]
         
@@ -49,13 +50,13 @@ class StarkZodiacalLight(ZodiacalLight):
             # assume log-normal distribution of variance
             mu = np.log(self.exoZnumber) - 0.5*np.log(1. + self.exoZvar/self.exoZnumber**2)
             v = np.sqrt(np.log(self.exoZvar/self.exoZnumber**2 + 1.))
-            R = np.random.lognormal(mean=mu, sigma=v, size=(len(Inds),))
+            R = np.random.lognormal(mean=mu, sigma=v, size=(len(sInd),))
 
-        fzodi = self.fbeta(beta[Inds],elon,lb) + 2.*R*self.fbeta(I,elon,lb)*2.5**(4.78-MV[Inds])
+        fzodi = self.fbeta(beta[sInd],elon,lam) + 2.*R*self.fbeta(I,elon,lam)*2.5**(4.78-MV[sInd])
 
         return fzodi
         
-    def fbeta(self, beta, elon,lb):
+    def fbeta(self, beta, elon, lam):
         """Variation of zodiacal light with viewing angle, based on interpolation 
         of Leinert et al. (1998) table.
         
@@ -64,7 +65,7 @@ class StarkZodiacalLight(ZodiacalLight):
                 ecliptic latitude angle in degrees
             elon (ndarray):
                 solar elongation angle in degrees
-            lb:
+            lam:
                 wavelength
 
         Returns:
@@ -123,15 +124,15 @@ class StarkZodiacalLight(ZodiacalLight):
         #It's better to interpolate w/ a quadratic in log-log space
         x = np.log10(zodi_lam)
         y = np.log10(zodi_Blam)
-        f_corr = 10.**(interp1d(x,y,kind='quadratic')(np.log10(lb*1e-3)))
+        f_corr = 10.**(interp1d(x,y,kind='quadratic')(np.log10(lam*1e-3)))
         f_corr *= 1e7                   # convert W to erg s^-1
         f_corr /= 4.25e10               # convert sr^-1 to arcsec^-2
         f_corr /= 1000.                 # convert micron^-1 to nm^-1
         h = 6.6260755e-27               # Planck constant in erg s
         c = 2.99792458e8                # speed of light in vacuum in m s-1
-        ephoton = h*c/(lb*1e-9)         # energy of a photon in erg
+        ephoton = h*c/(lam*1e-9)        # energy of a photon in erg
         f_corr /= ephoton               # photons s^-1 m^-2 arcsec^-2 nm^-1
-        F0 = 3631*1.51e7/lb             # zero-magnitude star in photon s-1 m-2 nm-1
+        F0 = 3631*1.51e7/lam            # zero-magnitude star in photon s-1 m-2 nm-1
         f_corr /= F0                    # color correction factor
         
         fbeta *= f_corr

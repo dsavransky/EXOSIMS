@@ -75,14 +75,15 @@ class ZodiacalLight(object):
 
         return beta
 
-    def fzodi(self, Inds, I, targlist):
+    def fzodi(self, sInd, I, targlist):
         """Returns total zodi flux levels (local and exo)  
         
         This method is called in __init__ of SimulatedUniverse.
         
         Args:
-            Inds (ndarray):
-                1D numpy array of indices referring back to target list stars
+            sInd (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
             I (ndarray):
                 1D numpy ndarray or scalar value of inclination in degrees
             targlist (TargetList):
@@ -94,7 +95,7 @@ class ZodiacalLight(object):
 
         """
         
-        fzodicurr = np.array([1e-9]*len(Inds))
+        fzodicurr = np.array([1e-9]*len(sInd))
         
         return fzodicurr
 

@@ -62,15 +62,16 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;Completeness&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="c1"># get desired Planet Population module</span>
-        
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">Nplanets</span><span class="o">=</span><span class="mf">1e8</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="c1"># import PlanetPopulation class</span>
         <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">],</span> <span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">Pop</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># planet population object class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
        
         <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minComp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span> <span class="o">=</span> <span class="n">Nplanets</span> <span class="c1"># total number of planets for completeness calcs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;minComp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;Nplanets&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span>
 
     
 <div class="viewcode-block" id="Completeness.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

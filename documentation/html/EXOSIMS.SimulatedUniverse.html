@@ -45,78 +45,55 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-EXOSIMS.SimulatedUniverse.PlanetSim">
-<span id="exosims-simulateduniverse-planetsim-module"></span><h2>EXOSIMS.SimulatedUniverse.PlanetSim module<a class="headerlink" href="#module-EXOSIMS.SimulatedUniverse.PlanetSim" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.SimulatedUniverse.KeplerLikeUniverse">
+<span id="exosims-simulateduniverse-keplerlikeuniverse-module"></span><h2>EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module<a class="headerlink" href="#module-EXOSIMS.SimulatedUniverse.KeplerLikeUniverse" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim">
-<em class="property">class </em><code class="descclassname">EXOSIMS.SimulatedUniverse.PlanetSim.</code><code class="descname">PlanetSim</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.</code><code class="descname">KeplerLikeUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/KeplerLikeUniverse.html#KeplerLikeUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse</span></code></a></p>
+<p>Simulated universe implementation inteded to work with the Kepler-like
+planetary population implementations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<p>Attributes:</p>
+<p class="rubric">Notes</p>
+<p>The occurrence rate in these universes is set entirely by the radius
+distribution.</p>
 <dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_a">
-<code class="descname">planet_a</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_a"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_a" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet semi major axis in km</p>
-<p>Output: a - numpy array containing semi major axis of each planet (astropy
-unit object in km)</p>
+<dt id="EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.gen_planetary_systems">
+<code class="descname">gen_planetary_systems</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/KeplerLikeUniverse.html#KeplerLikeUniverse.gen_planetary_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.gen_planetary_systems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the planetary systems for the current simulated universe.
+This routine populates arrays of the orbital elements and physical
+characteristics of all planets, and generates indexes that map from
+planet to parent star.</p>
+<p>All paramters except for albedo and mass are sampled, while those are
+calculated via the physical model.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_e">
-<code class="descname">planet_e</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_e"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_e" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet eccentricity</p>
-<p>Output: e - numpy array containing eccentricity of each planet</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_masses">
-<code class="descname">planet_masses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_masses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet mass in kg</p>
-<p>This method has access to the following:
-self.TargetList - target list object
-self.PlanetPhysicalModel - planet physical model object
-self.OpticalSystem - optical system object
-self.PlanetPopulation - planet population object
-self.ZodiacalLight - zodiacal light object
-self.Completeness - completeness object
-self.planInds - indices mapping planet to target star
-self.nPlans - number of planets
-self.sysInds - indices of target stars with planets</p>
-<p>Output: M - numpy array containing masses of each planet (astropy
-unit object in kg)</p>
-<p>This defines the data type expected, specific SimulatedUniverse class
-objects will populate these values more realistically</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_radii">
-<code class="descname">planet_radii</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_radii" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet a radius in km</p>
-<p>This method has access to the following:
-self.TargetList - target list object
-self.PlanetPhysicalModel - planet physical model object
-self.OpticalSystem - optical system object
-self.PlanetPopulation - planet population object
-self.rules - rules object
-self.ZodiacalLight - zodiacal light object
-self.Completeness - completeness object
-self.planInds - indices mapping planet to target star
-self.nPlans - number of planets
-self.sysInds - indices of target stars with planets
-self.Mp - planet masses</p>
-<p>Output: R - numpy array containing radius of each planet (astropy
-unit object in km)</p>
-<p>This defines the data type expected, specific SimulatedUniverse class
-objects will populate these values more realistically</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_to_star">
-<code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/PlanetSim.html#PlanetSim.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.PlanetSim.PlanetSim.planet_to_star" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns planets to stars and returns index of star in target star
-list</p>
-<p>Output: planSys - numpy array containing indices of the target star
-each planet (element in the list) belongs to
-This defines the data type expected, specific SimulatedUniverse class
-objects will populate these indices more realistically</p>
+<dt id="EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.planet_to_star">
+<code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/KeplerLikeUniverse.html#KeplerLikeUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns index of star in target star list to each planet</p>
+<p>This assumes that self.nPlans will have already been set by sampling the radius
+distribution.</p>
+<dl class="docutils">
+<dt>Attributes updated:</dt>
+<dd><dl class="first last docutils">
+<dt>planInds (ndarray):</dt>
+<dd>1D numpy array containing indices of the target star to which
+each planet (each element of the array) belongs</dd>
+<dt>sysInds (ndarray):</dt>
+<dd>1D numpy array of indices of the subset of the targetlist with
+planets</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -137,7 +114,7 @@ objects will populate these indices more realistically</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.SimulatedUniverse package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.SimulatedUniverse.PlanetSim">EXOSIMS.SimulatedUniverse.PlanetSim module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SimulatedUniverse.KeplerLikeUniverse">EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SimulatedUniverse">Module contents</a></li>
 </ul>
 </li>

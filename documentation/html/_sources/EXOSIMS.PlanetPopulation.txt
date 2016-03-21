@@ -12,10 +12,10 @@ EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.PlanetPopulation.PlanetFunc module
-------------------------------------------
+EXOSIMS.PlanetPopulation.KeplerLike1 module
+-------------------------------------------
 
-.. automodule:: EXOSIMS.PlanetPopulation.PlanetFunc
+.. automodule:: EXOSIMS.PlanetPopulation.KeplerLike1
     :members:
     :undoc-members:
     :show-inheritance:

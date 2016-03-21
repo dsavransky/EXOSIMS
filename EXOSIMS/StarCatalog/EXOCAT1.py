@@ -39,7 +39,7 @@ class EXOCAT1(StarCatalog):
             catalogpath = os.path.join(classpath, filename)
         
         if not os.path.exists(catalogpath):
-                raise IOError('Catalog File %s Not Found.'%catalogpath)
+            raise IOError('Catalog File %s Not Found.'%catalogpath)
 
         #read votable
         votable = parse(catalogpath)

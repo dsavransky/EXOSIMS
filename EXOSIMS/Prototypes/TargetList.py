@@ -22,6 +22,8 @@ class TargetList(object):
             OpticalSystem class object
         PlanetPopulation (PlanetPopulation):
             PlanetPopulation class object
+        PlanetPhyiscalModel (PlanetPhysicalModel):
+            Physical model class object
         ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
         Completeness (Completeness):
@@ -132,7 +134,8 @@ class TargetList(object):
         Comp = get_module(specs['modules']['Completeness'], 'Completeness')        
         self.Completeness = Comp(**specs) # completeness model object 
         self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object 
-        
+        self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel #planet physical model object
+
         # import PostProcessing class
         PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
         self.PostProcessing = PP(**specs)

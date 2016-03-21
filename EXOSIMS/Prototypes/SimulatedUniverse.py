@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.eccanom import eccanom
 import EXOSIMS.util.statsFun as statsFun 
+import numbers
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
     
     This class contains all variables and functions necessary to perform 
     Simulated Universe Module calculations in exoplanet mission simulation.
-    
-    It inherits the following class objects which are defined in __init__:
-    TargetList, PlanetPhysicalModel
     
     Args:
         \*\*specs:
@@ -48,9 +46,9 @@ class SimulatedUniverse(object):
             (default units of AU)
         e (ndarray):
             1D numpy ndarray containing eccentricity for each planet
-        w (ndarray):
+        w (Quantity):
             1D numpy ndarray containing argument of perigee in degrees
-        O (ndarray):
+        O (Quantity):
             1D numpy ndarray containing right ascension of the ascending node 
             in degrees
         Mp (Quantity):
@@ -65,12 +63,10 @@ class SimulatedUniverse(object):
         v (Quantity):
             numpy ndarray containing velocity vector for each planet (default 
             units of km/s)
-        I (ndarray):
+        I (Quantity):
             1D numpy ndarray containing inclination in degrees for each planet            
         p (ndarray):
             1D numpy ndarray containing albedo for each planet        
-        rtype (ndarray):
-            1D numpy ndarray containing rock/ice fraction for each planet
         fzodicurr (ndarray):
             1D numpy ndarray containing exozodi level for each planet
     
@@ -79,23 +75,28 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, **specs):
-        
-        # get desired module names (prototype or specific)
-        
+    def __init__(self, eta=0.1, **specs):
+       
+        #check inputs
+        assert isinstance(eta,numbers.Number) and (eta > 0),\
+                "eta must be a positive number."
+
+
+        #global occurrence rate defined as expected number of planets per 
+        #star in a given universe
+        self.eta = eta
+
         # import TargetList class
         TL = get_module(specs['modules']['TargetList'], 'TargetList')
         self.TargetList = TL(**specs)
-        
-        # import PlanetPhysicalModel class
-        PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
-        self.PlanetPhysicalModel = PlanPhys(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
         # optical system class object
         self.OpticalSystem = self.TargetList.OpticalSystem 
         # planet population class object
         self.PlanetPopulation = self.TargetList.PlanetPopulation 
+        # planet physical model class object
+        self.PlanetPhysicalModel = self.TargetList.PlanetPhysicalModel
         # zodiacal light class object
         self.ZodiacalLight = self.TargetList.ZodiacalLight 
         # background sources
@@ -104,29 +105,37 @@ class SimulatedUniverse(object):
         self.Completeness = self.TargetList.Completeness 
         # postprocessing object
         self.PostProcessing = self.TargetList.PostProcessing
-        
-        # planets mapped to target stars
-        self.planInds = self.planet_to_star()
-        # number of planets
-        self.nPlans = len(self.planInds) 
-        # indices of target stars with planets
-        self.sysInds = np.unique(self.planInds)
+    
+        self.gen_planetary_systems(**specs)
+
+    def gen_planetary_systems(self,**specs):
+        """
+        Generate the planetary systems for the current simulated universe.
+        This routine populates arrays of the orbital elements and physical 
+        characteristics of all planets, and generates indexes that map from 
+        planet to parent star.
+        """
+
+        # Map planets to target stars
+        self.planet_to_star()                   # generate index of target star for each planet
+        self.nPlans = len(self.planInds)        # number of planets in universe
+
         # planet semi-major axis
-        self.a = self.planet_a()
+        self.a = self.PlanetPopulation.gen_sma(self.nPlans)
         # planet eccentricities
-        self.e = self.planet_e()
-        # planet argument of perigee
-        self.w = self.planet_w()
-        # planet right ascension of the ascending node
-        self.O = self.planet_O()
+        self.e = self.PlanetPopulation.gen_eccentricity(self.nPlans)
+        # planet argument of periapse
+        self.w = self.PlanetPopulation.gen_w(self.nPlans)   
+        # planet longitude of ascending node
+        self.O = self.PlanetPopulation.gen_O(self.nPlans)
+        # planet inclination
+        self.I = self.PlanetPopulation.gen_I(self.nPlans)
         # planet radii
-        self.Rp = self.planet_radii() 
+        self.Rp = self.PlanetPopulation.gen_radius(self.nPlans)
         # planet masses
-        self.Mp = self.planet_masses()
+        self.Mp = self.PlanetPopulation.gen_mass(self.nPlans)
         # planet albedos
-        self.p = self.planet_albedos() 
-        # inclination in degrees of each planet
-        self.I = self.planet_inclinations()
+        self.p = self.PlanetPopulation.gen_albedo(self.nPlans)
         # planet initial positions
         self.r, self.v = self.planet_pos_vel() 
         # exozodi levels for systems with planets
@@ -148,200 +157,26 @@ class SimulatedUniverse(object):
     def planet_to_star(self):
         """Assigns index of star in target star list to each planet
         
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these indices.
-        
-        This method uses the following inherited class objects:
-            self.TargetList:
-                TargetList class object
-            self.PlanetPopulation:
-                PlanetPopulation class object
-                
-        Returns:
-            planSys (ndarray):
+        The prototype implementation uses the global occurrence rate as the 
+        probability of each target star having one planet (thus limiting the 
+        universe to single planet systems).
+
+        Attributes updated:
+            planInds (ndarray):
                 1D numpy array containing indices of the target star to which 
                 each planet (each element of the array) belongs
+            sysInds (ndarray):
+                1D numpy array of indices of the subset of the targetlist with
+                planets
         
         """
         
-        # assign between 0 and 8 planets to each star in the target list
-        planSys = np.array([],dtype=int)
-            
-        for i in range(self.TargetList.nStars):
-            nump = np.random.randint(0, high=8)
-            planSys = np.hstack((planSys, np.array([i]*nump,dtype=int)))
+        probs = np.random.uniform(size=self.TargetList.nStars)
+        self.planInds = np.where(probs > self.eta)[0]
+        self.sysInds = np.unique(self.planInds) 
         
-        return planSys
+        return 
     
-    def planet_a(self):
-        """Assigns each planet semi-major axis in AU
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-        
-        This method uses the following inherited class objects:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            a (Quantity):
-                1D numpy ndarray containing semi-major axis for each planet 
-                (default units of AU)
-        
-        """
-        
-        # assign planets a semi-major axis 
-        a = statsFun.simpSample(self.PlanetPopulation.semi_axis, self.nPlans, self.PlanetPopulation.arange[0].value, self.PlanetPopulation.arange[1].value)*self.PlanetPopulation.arange.unit
-        
-        return a
-        
-    def planet_e(self):
-        """Assigns each planet eccentricity
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            e (ndarray):
-                1D numpy ndarray containing eccentricity for each planet 
-        
-        """
-        
-        # assign planets an eccentricity 
-        e = statsFun.simpSample(self.PlanetPopulation.eccentricity, self.nPlans, self.PlanetPopulation.erange[0], self.PlanetPopulation.erange[1])
-        
-        return e
-        
-    def planet_w(self):
-        """Assigns each planet argument of perigee
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            w (ndarray):
-                1D numpy ndarray containing argument of perigee for each planet 
-                in degrees
-        
-        """
-        
-        # assign planets an argument of perigee 
-        w = statsFun.simpSample(self.PlanetPopulation.arg_perigee, self.nPlans, self.PlanetPopulation.wrange[0].value, self.PlanetPopulation.wrange[1].value)
-                
-        return w
-        
-    def planet_O(self):
-        """Assigns each planet right ascension of the ascending node
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            O (ndarray):
-                1D numpy ndarray containing right ascension of the ascending node
-                for each planet in degrees
-        
-        """
-        
-        # assign planets right ascension of the ascending node 
-        O = statsFun.simpSample(self.PlanetPopulation.RAAN, self.nPlans, self.PlanetPopulation.Orange[0].value, self.PlanetPopulation.Orange[1].value)
-                
-        return O
-        
-    def planet_radii(self):
-        """Assigns each planet a radius in km
-        
-        This defines the data type expected, specific SimulatedUniverse class
-        objects will populate these values.
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            R (Quantity):
-                1D numpy ndarray containing radius of each planet (units of 
-                distance)
-        
-        """
-        
-        # assign planets a radius 
-        R = statsFun.simpSample(self.PlanetPopulation.radius, self.nPlans, self.PlanetPopulation.Rrange[0].value, self.PlanetPopulation.Rrange[1].value)*self.PlanetPopulation.Rrange.unit
-        
-        return R
-            
-    def planet_masses(self):
-        """Assigns each planet mass in kg
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            M (Quantity):
-                1D numpy ndarray containing mass for each planet (units of kg)
-        
-        """
-        
-        # assign planets a mass 
-        M = statsFun.simpSample(self.PlanetPopulation.mass, self.nPlans, self.PlanetPopulation.Mprange[0].value, self.PlanetPopulation.Mprange[1].value)*self.PlanetPopulation.Mprange.unit
-        
-        return M
-        
-    def planet_albedos(self):
-        """Assigns each planet albedo 
-        
-        This method defines the data type expected, specific SimulatedUniverse 
-        classes will populate these values.
-
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-        
-        Returns:
-            p (ndarray):
-                1D numpy ndarray containing albedo for each planet
-        
-        """
-        
-        # assign planets an albedo uniformly distributed between min and max
-        # values from PlanetPopulation class object
-        p = statsFun.simpSample(self.PlanetPopulation.albedo, self.nPlans, self.PlanetPopulation.prange[0], self.PlanetPopulation.prange[1])
-        
-        return p
-        
-    def planet_inclinations(self):
-        """Assigns each planet an inclination in degrees 
-        
-        This method uses the following inherited class object:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-                
-        Returns:
-            I (ndarray):
-                1D numpy ndarray containing inclination of each planet in 
-                degrees
-        
-        """
-        
-        I = statsFun.simpSample(self.PlanetPopulation.inclination, self.nPlans, self.PlanetPopulation.Irange[0].value, self.PlanetPopulation.Irange[1].value)
-        
-        return I
         
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)
@@ -371,17 +206,16 @@ class SimulatedUniverse(object):
                 
         """
         
-        Omega = np.radians(self.O)
-        omega = np.radians(self.w)
-        I = np.radians(self.I)
+        Omega = self.O.to('rad').value
+        omega = self.w.to('rad').value
+        I = self.I.to('rad').value
         a = self.a
         e = self.e
-        # find eccentric anomaly in radians
-        E = np.array([])
-        for i in xrange(len(self.e)):
-            Enew = self.eccanom(2.*np.pi*np.random.rand(), self.e[i])
-            E = np.hstack((E,Enew))
-            
+
+        #generate random mean anomlay and calculate eccentric anomaly
+        M = np.random.uniform(high=2.*np.pi,size=self.nPlans)
+        E = eccanom(M,e)
+
         a1 = (a*(np.cos(Omega)*np.cos(omega) - np.sin(Omega)*np.cos(I)*np.sin(omega))).to(u.AU).value
         a2 = (a*(np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.cos(I)*np.sin(omega))).to(u.AU).value
         a3 = (a*np.sin(I)*np.sin(omega)).to(u.AU).value
@@ -477,45 +311,6 @@ class SimulatedUniverse(object):
         
         return rnew, vnew
         
-    def eccanom(self, M, e):
-        """Finds eccentric anomaly from mean anomaly and eccentricity
-        
-        This method uses algorithm 2 from Vallado to find the eccentric anomaly
-        from mean anomaly and eccentricity.
-        
-        Args:
-            M (float):
-                mean anomaly
-            e (float):
-                eccentricity
-                
-        Returns:
-            E (float):
-                eccentric anomaly
-        
-        """
-
-        pi = np.pi
-        # initial guess        
-        if (-pi < M and M < 0) or (M > pi):
-            E = M - e
-        else:
-            E = M + e
-        # Newton-Raphson setup
-        i = 0
-        err = 1.
-        tol = np.finfo(float).eps*4.1
-        maxi = 200
-        # Newton-Raphson iteration
-        while err > tol and i < maxi:
-            Enew = E + (M - E + e*np.sin(E))/(1. - e*np.cos(E))
-            err = abs(Enew - E)
-            E = Enew
-            i += 1
-                  
-        return E
-
-
     def get_current_WA(self, Inds):
         """Calculate the current working angles for planets specified by the 
         given indices.

@@ -26,7 +26,7 @@
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
-    <link rel="next" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
+    <link rel="next" title="EXOSIMS.PlanetPhysicalModel package" href="EXOSIMS.PlanetPhysicalModel.html" />
     <link rel="prev" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
    
   
@@ -156,122 +156,6 @@ units of day)</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem">
-<span id="exosims-opticalsystem-wfirstopticalsystem-module"></span><h2>EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.</code><code class="descname">WFIRSTOpticalSystem</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/WFIRSTOpticalSystem.html#WFIRSTOpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.OpticalSystem.OpticalSystem</span></code></a></p>
-<p>WFIRST Optical System class</p>
-<p>This class contains all variables and methods specific to the WFIRST
-optical system needed to perform Optical System Module calculations
-in exoplanet mission simulation.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.dAlpha">
-<code class="descname">dAlpha</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.dAlpha" title="Permalink to this definition">¶</a></dt>
-<dd><p>pixel size in square arcseconds (astropy Quantity in arcsec**2)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Psi">
-<code class="descname">Psi</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Psi" title="Permalink to this definition">¶</a></dt>
-<dd><p>instrument specific value &#8216;sharpness&#8217; derived from PSF</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Xi">
-<code class="descname">Xi</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Xi" title="Permalink to this definition">¶</a></dt>
-<dd><p>instrument specific value derived from PSF</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.P1">
-<code class="descname">P1</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.P1" title="Permalink to this definition">¶</a></dt>
-<dd><p>instrument specific value derived from PSF</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.alphaBar">
-<code class="descname">alphaBar</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.alphaBar" title="Permalink to this definition">¶</a></dt>
-<dd><p>instrument specific value</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Ta">
-<code class="descname">Ta</code><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.Ta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Airy throughput</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>opt</em>, <em>rules</em>, <em>universe</em>, <em>s_ind</em>, <em>planInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/WFIRSTOpticalSystem.html#WFIRSTOpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds integration time for a specific target system</p>
-<p>This method is called from a method in the SurveySimulation class
-object.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> &#8211; TargetList class object</li>
-<li><strong>opt</strong> &#8211; OpticalSystem class object</li>
-<li><strong>rules</strong> &#8211; Rules class object</li>
-<li><strong>universe</strong> &#8211; SimulatedUniverse class object</li>
-<li><strong>s_ind</strong> &#8211; target star index</li>
-<li><strong>planInds</strong> &#8211; planet indices linking back to target star</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">1D numpy array of integration times (astropy Quantity with
-units of day)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/WFIRSTOpticalSystem.html#WFIRSTOpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration time for target systems</p>
-<p>This method is called in the __init__ for the TargetList class object.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> &#8211; <dl class="docutils">
-<dt>TargetList class object which also has access to:</dt>
-<dd><dl class="first last docutils">
-<dt>targlist.ZodiacalLight:</dt>
-<dd>ZodiacalLight class object</dd>
-</dl>
-</dd>
-</dl>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
-list stars (astropy Quantity with units of day)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.TargetList.maxintTime">maxintTime</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-EXOSIMS.OpticalSystem">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -289,7 +173,6 @@ list stars (astropy Quantity with units of day)</td>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.OptSys_Kasdin">EXOSIMS.OpticalSystem.OptSys_Kasdin module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.OptSys_Nemati">EXOSIMS.OpticalSystem.OptSys_Nemati module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem">EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem">Module contents</a></li>
 </ul>
 </li>
@@ -300,7 +183,7 @@ list stars (astropy Quantity with units of day)</td>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
       <li>Previous: <a href="EXOSIMS.Observatory.html" title="previous chapter">EXOSIMS.Observatory package</a></li>
-      <li>Next: <a href="EXOSIMS.PlanetPopulation.html" title="next chapter">EXOSIMS.PlanetPopulation package</a></li>
+      <li>Next: <a href="EXOSIMS.PlanetPhysicalModel.html" title="next chapter">EXOSIMS.PlanetPhysicalModel package</a></li>
   </ul></li>
   </ul></li>
 </ul>

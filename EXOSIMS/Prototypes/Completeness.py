@@ -21,15 +21,16 @@ class Completeness(object):
     _modtype = 'Completeness'
     _outspec = {}
     
-    def __init__(self, minComp=0.1, **specs):
-        # get desired Planet Population module
-        
+    def __init__(self, minComp=0.1, Nplanets=1e8, **specs):
         # import PlanetPopulation class
         Pop = get_module(specs['modules']['PlanetPopulation'], 'PlanetPopulation')
         self.PlanetPopulation = Pop(**specs) # planet population object class
+        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
        
         self.minComp = float(minComp)
+        self.Nplanets = Nplanets # total number of planets for completeness calcs
         self._outspec['minComp'] = self.minComp
+        self._outspec['Nplanets'] = self.Nplanets
 
     
     def __str__(self):

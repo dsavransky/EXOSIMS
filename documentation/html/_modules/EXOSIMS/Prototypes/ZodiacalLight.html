@@ -54,26 +54,29 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        exozodi (float):</span>
-<span class="sd">            exozodi level in zodi</span>
-<span class="sd">        exozodiVar (float):</span>
-<span class="sd">            exozodi variation (variance of log-normal distribution)</span>
-<span class="sd">        exozodiMag (float):</span>
+<span class="sd">        Zmag (float):</span>
+<span class="sd">            zodi level in zodi</span>
+<span class="sd">        exoZmag (float):</span>
 <span class="sd">            1 zodi brightness in mag per asec2</span>
+<span class="sd">        exoZnumber (float):</span>
+<span class="sd">            exozodi level in zodi</span>
+<span class="sd">        exoZvar (float):</span>
+<span class="sd">            exozodi variation (variance of log-normal distribution)</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;ZodiacalLight&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exozodi</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">exozodiVar</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">exozodiMag</span><span class="o">=</span><span class="mf">23.54</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">exozodi</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exozodi</span><span class="p">);</span>          <span class="c1"># exo-zodi level in zodi</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exozodiVar</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exozodiVar</span><span class="p">);</span>    <span class="c1"># exo-zodi variation (variance of log-normal distribution)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exozodiMag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exozodiMag</span><span class="p">);</span>    <span class="c1"># 1 zodi brightness in mag per asec2</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Zmag</span><span class="o">=</span><span class="mf">22.5</span><span class="p">,</span> <span class="n">exoZmag</span><span class="o">=</span><span class="mf">23.5</span><span class="p">,</span> <span class="n">exoZnumber</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">exoZvar</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Zmag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Zmag</span><span class="p">);</span>                <span class="c1"># 1 zodi brightness in mag per asec2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exoZmag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exoZmag</span><span class="p">);</span>          <span class="c1"># 1 exozodi brightness in mag per asec2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exoZnumber</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exoZnumber</span><span class="p">);</span>    <span class="c1"># exozodi level in zodi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exoZvar</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">exoZvar</span><span class="p">);</span>          <span class="c1"># exozodi variation (variance of log-normal distribution)</span>
 
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>          
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
 <div class="viewcode-block" id="ZodiacalLight.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Zodiacal Light object</span>
@@ -101,20 +104,20 @@
 <span class="sd">                and declination in degrees</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            el (ndarray):</span>
+<span class="sd">            beta (ndarray):</span>
 <span class="sd">                ecliptic latitudes in degrees</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">eps</span> <span class="o">=</span> <span class="mf">23.439281</span> <span class="c1"># obliquity of ecliptic in degrees</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="mf">23.439281</span>                 <span class="c1"># J2000 obliquity of ecliptic in degrees</span>
         <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">eps</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">eps</span><span class="p">))</span>
-        <span class="n">el</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="p">)))</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="p">)))</span>
 
-        <span class="k">return</span> <span class="n">el</span></div>
-        
+        <span class="k">return</span> <span class="n">beta</span></div>
+
 <div class="viewcode-block" id="ZodiacalLight.fzodi"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi">[docs]</a>    <span class="k">def</span> <span class="nf">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Inds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns exozodi levels for systems </span>
+        <span class="sd">&quot;&quot;&quot;Returns total zodi flux levels (local and exo)  </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called in __init__ of SimulatedUniverse.</span>
 <span class="sd">        </span>
@@ -128,13 +131,14 @@
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            fzodicurr (ndarray):</span>
-<span class="sd">                1D numpy ndarray of exozodiacal light levels</span>
+<span class="sd">                1D numpy ndarray of zodiacal light levels</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">fzodicurr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">Inds</span><span class="p">))</span>
+        <span class="n">fzodicurr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1e-9</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">Inds</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="n">fzodicurr</span></div></div>
+
 </pre></div>
 
           </div>

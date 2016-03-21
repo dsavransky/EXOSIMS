@@ -63,6 +63,8 @@
 <span class="sd">            OpticalSystem class object</span>
 <span class="sd">        PlanetPopulation (PlanetPopulation):</span>
 <span class="sd">            PlanetPopulation class object</span>
+<span class="sd">        PlanetPhyiscalModel (PlanetPhysicalModel):</span>
+<span class="sd">            Physical model class object</span>
 <span class="sd">        ZodiacalLight (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
 <span class="sd">        Completeness (Completeness):</span>
@@ -173,7 +175,8 @@
         <span class="n">Comp</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;Completeness&#39;</span><span class="p">],</span> <span class="s1">&#39;Completeness&#39;</span><span class="p">)</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">Comp</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span> <span class="c1"># completeness model object </span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c1"># planet population object </span>
-        
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c1">#planet physical model object</span>
+
         <span class="c1"># import PostProcessing class</span>
         <span class="n">PP</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">],</span> <span class="s1">&#39;PostProcessing&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">PP</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>

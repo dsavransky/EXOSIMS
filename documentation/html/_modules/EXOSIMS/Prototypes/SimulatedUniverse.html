@@ -39,22 +39,20 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.SimulatedUniverse</h1><div class="highlight"><pre>
-<span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.keplerSTM</span> <span class="kn">import</span> <span class="n">planSys</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.eccanom</span> <span class="kn">import</span> <span class="n">eccanom</span>
 <span class="kn">import</span> <span class="nn">EXOSIMS.util.statsFun</span> <span class="kn">as</span> <span class="nn">statsFun</span> 
+<span class="kn">import</span> <span class="nn">numbers</span>
 
 <div class="viewcode-block" id="SimulatedUniverse"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">[docs]</a><span class="k">class</span> <span class="nc">SimulatedUniverse</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Simulated Universe class template</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and functions necessary to perform </span>
 <span class="sd">    Simulated Universe Module calculations in exoplanet mission simulation.</span>
-<span class="sd">    </span>
-<span class="sd">    It inherits the following class objects which are defined in __init__:</span>
-<span class="sd">    TargetList, PlanetPhysicalModel</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
@@ -89,9 +87,9 @@
 <span class="sd">            (default units of AU)</span>
 <span class="sd">        e (ndarray):</span>
 <span class="sd">            1D numpy ndarray containing eccentricity for each planet</span>
-<span class="sd">        w (ndarray):</span>
+<span class="sd">        w (Quantity):</span>
 <span class="sd">            1D numpy ndarray containing argument of perigee in degrees</span>
-<span class="sd">        O (ndarray):</span>
+<span class="sd">        O (Quantity):</span>
 <span class="sd">            1D numpy ndarray containing right ascension of the ascending node </span>
 <span class="sd">            in degrees</span>
 <span class="sd">        Mp (Quantity):</span>
@@ -106,12 +104,10 @@
 <span class="sd">        v (Quantity):</span>
 <span class="sd">            numpy ndarray containing velocity vector for each planet (default </span>
 <span class="sd">            units of km/s)</span>
-<span class="sd">        I (ndarray):</span>
+<span class="sd">        I (Quantity):</span>
 <span class="sd">            1D numpy ndarray containing inclination in degrees for each planet            </span>
 <span class="sd">        p (ndarray):</span>
 <span class="sd">            1D numpy ndarray containing albedo for each planet        </span>
-<span class="sd">        rtype (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing rock/ice fraction for each planet</span>
 <span class="sd">        fzodicurr (ndarray):</span>
 <span class="sd">            1D numpy ndarray containing exozodi level for each planet</span>
 <span class="sd">    </span>
@@ -120,23 +116,28 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;SimulatedUniverse&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        
-        <span class="c1"># get desired module names (prototype or specific)</span>
-        
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+       
+        <span class="c1">#check inputs</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">eta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span>\
+                <span class="s2">&quot;eta must be a positive number.&quot;</span>
+
+
+        <span class="c1">#global occurrence rate defined as expected number of planets per </span>
+        <span class="c1">#star in a given universe</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="n">eta</span>
+
         <span class="c1"># import TargetList class</span>
         <span class="n">TL</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;TargetList&#39;</span><span class="p">],</span> <span class="s1">&#39;TargetList&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="n">TL</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        
-        <span class="c1"># import PlanetPhysicalModel class</span>
-        <span class="n">PlanPhys</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">],</span> <span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">PlanPhys</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1"># bring inherited class objects to top level of Simulated Universe</span>
         <span class="c1"># optical system class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">OpticalSystem</span> 
         <span class="c1"># planet population class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">PlanetPopulation</span> 
+        <span class="c1"># planet physical model class object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
         <span class="c1"># zodiacal light class object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">ZodiacalLight</span> 
         <span class="c1"># background sources</span>
@@ -145,33 +146,41 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Completeness</span> 
         <span class="c1"># postprocessing object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">PostProcessing</span>
-        
-        <span class="c1"># planets mapped to target stars</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">planInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_to_star</span><span class="p">()</span>
-        <span class="c1"># number of planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">)</span> 
-        <span class="c1"># indices of target stars with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sysInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">)</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">gen_planetary_systems</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SimulatedUniverse.gen_planetary_systems"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems">[docs]</a>    <span class="k">def</span> <span class="nf">gen_planetary_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate the planetary systems for the current simulated universe.</span>
+<span class="sd">        This routine populates arrays of the orbital elements and physical </span>
+<span class="sd">        characteristics of all planets, and generates indexes that map from </span>
+<span class="sd">        planet to parent star.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Map planets to target stars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planet_to_star</span><span class="p">()</span>                   <span class="c1"># generate index of target star for each planet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">)</span>        <span class="c1"># number of planets in universe</span>
+
         <span class="c1"># planet semi-major axis</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_a</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
         <span class="c1"># planet eccentricities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_e</span><span class="p">()</span>
-        <span class="c1"># planet argument of perigee</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_w</span><span class="p">()</span>
-        <span class="c1"># planet right ascension of the ascending node</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_O</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccentricity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
+        <span class="c1"># planet argument of periapse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>   
+        <span class="c1"># planet longitude of ascending node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
+        <span class="c1"># planet inclination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_I</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
         <span class="c1"># planet radii</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_radii</span><span class="p">()</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
         <span class="c1"># planet masses</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_masses</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
         <span class="c1"># planet albedos</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_albedos</span><span class="p">()</span> 
-        <span class="c1"># inclination in degrees of each planet</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_inclinations</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
         <span class="c1"># planet initial positions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_pos_vel</span><span class="p">()</span> 
         <span class="c1"># exozodi levels for systems with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fzodicurr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fzodi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimulatedUniverse.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Simulated Universe object</span>
@@ -189,200 +198,26 @@
 <div class="viewcode-block" id="SimulatedUniverse.planet_to_star"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star">[docs]</a>    <span class="k">def</span> <span class="nf">planet_to_star</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns index of star in target star list to each planet</span>
 <span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these indices.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class objects:</span>
-<span class="sd">            self.TargetList:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            planSys (ndarray):</span>
+<span class="sd">        The prototype implementation uses the global occurrence rate as the </span>
+<span class="sd">        probability of each target star having one planet (thus limiting the </span>
+<span class="sd">        universe to single planet systems).</span>
+
+<span class="sd">        Attributes updated:</span>
+<span class="sd">            planInds (ndarray):</span>
 <span class="sd">                1D numpy array containing indices of the target star to which </span>
 <span class="sd">                each planet (each element of the array) belongs</span>
+<span class="sd">            sysInds (ndarray):</span>
+<span class="sd">                1D numpy array of indices of the subset of the targetlist with</span>
+<span class="sd">                planets</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># assign between 0 and 8 planets to each star in the target list</span>
-        <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-            
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">nStars</span><span class="p">):</span>
-            <span class="n">nump</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-            <span class="n">planSys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">planSys</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">nump</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)))</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">probs</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sysInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">planInds</span><span class="p">)</span> 
         
-        <span class="k">return</span> <span class="n">planSys</span></div>
+        <span class="k">return</span> </div>
     
-<div class="viewcode-block" id="SimulatedUniverse.planet_a"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_a">[docs]</a>    <span class="k">def</span> <span class="nf">planet_a</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet semi-major axis in AU</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class objects:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            a (Quantity):</span>
-<span class="sd">                1D numpy ndarray containing semi-major axis for each planet </span>
-<span class="sd">                (default units of AU)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets a semi-major axis </span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">semi_axis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
-        
-        <span class="k">return</span> <span class="n">a</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_e"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_e">[docs]</a>    <span class="k">def</span> <span class="nf">planet_e</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet eccentricity</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            e (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing eccentricity for each planet </span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets an eccentricity </span>
-        <span class="n">e</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        
-        <span class="k">return</span> <span class="n">e</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_w"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_w">[docs]</a>    <span class="k">def</span> <span class="nf">planet_w</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet argument of perigee</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            w (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing argument of perigee for each planet </span>
-<span class="sd">                in degrees</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets an argument of perigee </span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arg_perigee</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">wrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                
-        <span class="k">return</span> <span class="n">w</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_O"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_O">[docs]</a>    <span class="k">def</span> <span class="nf">planet_O</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet right ascension of the ascending node</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            O (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing right ascension of the ascending node</span>
-<span class="sd">                for each planet in degrees</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets right ascension of the ascending node </span>
-        <span class="n">O</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">RAAN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Orange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                
-        <span class="k">return</span> <span class="n">O</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_radii"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_radii">[docs]</a>    <span class="k">def</span> <span class="nf">planet_radii</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet a radius in km</span>
-<span class="sd">        </span>
-<span class="sd">        This defines the data type expected, specific SimulatedUniverse class</span>
-<span class="sd">        objects will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            R (Quantity):</span>
-<span class="sd">                1D numpy ndarray containing radius of each planet (units of </span>
-<span class="sd">                distance)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets a radius </span>
-        <span class="n">R</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rrange</span><span class="o">.</span><span class="n">unit</span>
-        
-        <span class="k">return</span> <span class="n">R</span></div>
-            
-<div class="viewcode-block" id="SimulatedUniverse.planet_masses"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_masses">[docs]</a>    <span class="k">def</span> <span class="nf">planet_masses</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet mass in kg</span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            M (Quantity):</span>
-<span class="sd">                1D numpy ndarray containing mass for each planet (units of kg)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets a mass </span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Mprange</span><span class="o">.</span><span class="n">unit</span>
-        
-        <span class="k">return</span> <span class="n">M</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_albedos"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_albedos">[docs]</a>    <span class="k">def</span> <span class="nf">planet_albedos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet albedo </span>
-<span class="sd">        </span>
-<span class="sd">        This method defines the data type expected, specific SimulatedUniverse </span>
-<span class="sd">        classes will populate these values.</span>
-
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            p (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing albedo for each planet</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># assign planets an albedo uniformly distributed between min and max</span>
-        <span class="c1"># values from PlanetPopulation class object</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">albedo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        
-        <span class="k">return</span> <span class="n">p</span></div>
-        
-<div class="viewcode-block" id="SimulatedUniverse.planet_inclinations"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations">[docs]</a>    <span class="k">def</span> <span class="nf">planet_inclinations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet an inclination in degrees </span>
-<span class="sd">        </span>
-<span class="sd">        This method uses the following inherited class object:</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            I (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing inclination of each planet in </span>
-<span class="sd">                degrees</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">I</span> <span class="o">=</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">inclination</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Irange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">I</span></div>
         
 <div class="viewcode-block" id="SimulatedUniverse.planet_pos_vel"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">[docs]</a>    <span class="k">def</span> <span class="nf">planet_pos_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns each planet an initial position (km) and velocity (km/s)</span>
@@ -412,17 +247,16 @@
 <span class="sd">                </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">Omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="p">)</span>
-        <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+        <span class="n">Omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span>
         <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span>
-        <span class="c1"># find eccentric anomaly in radians</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">e</span><span class="p">)):</span>
-            <span class="n">Enew</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eccanom</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-            <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">E</span><span class="p">,</span><span class="n">Enew</span><span class="p">))</span>
-            
+
+        <span class="c1">#generate random mean anomlay and calculate eccentric anomaly</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
+
         <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">a3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
@@ -518,45 +352,6 @@
         
         <span class="k">return</span> <span class="n">rnew</span><span class="p">,</span> <span class="n">vnew</span></div>
         
-<div class="viewcode-block" id="SimulatedUniverse.eccanom"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eccanom">[docs]</a>    <span class="k">def</span> <span class="nf">eccanom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds eccentric anomaly from mean anomaly and eccentricity</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses algorithm 2 from Vallado to find the eccentric anomaly</span>
-<span class="sd">        from mean anomaly and eccentricity.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            M (float):</span>
-<span class="sd">                mean anomaly</span>
-<span class="sd">            e (float):</span>
-<span class="sd">                eccentricity</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            E (float):</span>
-<span class="sd">                eccentric anomaly</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-        <span class="c1"># initial guess        </span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="n">pi</span> <span class="o">&lt;</span> <span class="n">M</span> <span class="ow">and</span> <span class="n">M</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">M</span> <span class="o">&gt;</span> <span class="n">pi</span><span class="p">):</span>
-            <span class="n">E</span> <span class="o">=</span> <span class="n">M</span> <span class="o">-</span> <span class="n">e</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">E</span> <span class="o">=</span> <span class="n">M</span> <span class="o">+</span> <span class="n">e</span>
-        <span class="c1"># Newton-Raphson setup</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="mf">1.</span>
-        <span class="n">tol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="o">*</span><span class="mf">4.1</span>
-        <span class="n">maxi</span> <span class="o">=</span> <span class="mi">200</span>
-        <span class="c1"># Newton-Raphson iteration</span>
-        <span class="k">while</span> <span class="n">err</span> <span class="o">&gt;</span> <span class="n">tol</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxi</span><span class="p">:</span>
-            <span class="n">Enew</span> <span class="o">=</span> <span class="n">E</span> <span class="o">+</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="n">E</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
-            <span class="n">err</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Enew</span> <span class="o">-</span> <span class="n">E</span><span class="p">)</span>
-            <span class="n">E</span> <span class="o">=</span> <span class="n">Enew</span>
-            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
-                  
-        <span class="k">return</span> <span class="n">E</span></div>
-
-
 <div class="viewcode-block" id="SimulatedUniverse.get_current_WA"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_current_WA">[docs]</a>    <span class="k">def</span> <span class="nf">get_current_WA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Inds</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculate the current working angles for planets specified by the </span>
 <span class="sd">        given indices.</span>

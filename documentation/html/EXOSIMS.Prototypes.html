@@ -105,7 +105,7 @@ arcminute.  Same length as inputs.</p>
 <span id="exosims-prototypes-completeness-module"></span><h2>EXOSIMS.Prototypes.Completeness module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>minComp=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>minComp=0.1</em>, <em>Nplanets=100000000.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Completeness class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -1045,6 +1045,57 @@ Planet Physical Model Module calculations in exoplanet mission simulation.</p>
 this method will return the values contained in the object</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_albedo_from_sma">
+<code class="descname">calc_albedo_from_sma</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_albedo_from_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_albedo_from_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for calculating albedo.
+The prototype provides only a dummy function that always returns the
+same value of 0.367.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>Quanitity</em>) &#8211; Array of semi-major axis values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">p (numpy ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_mass_from_radius">
+<code class="descname">calc_mass_from_radius</code><span class="sig-paren">(</span><em>R</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_mass_from_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_mass_from_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for calculating mass given the radius.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>R</strong> (<em>Quantity</em>) &#8211; Array of radius values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">M (Quantity)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_radius_from_mass">
+<code class="descname">calc_radius_from_mass</code><span class="sig-paren">(</span><em>M</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_radius_from_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_radius_from_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for calculating radius given the mass.</p>
+<p>Prototype provides only a dummy function that assumes a density of water.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>M</strong> (<em>Quantity</em>) &#8211; Array of mass values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (Quantity)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1052,7 +1103,7 @@ this method will return the values contained in the object</p>
 <span id="exosims-prototypes-planetpopulation-module"></span><h2>EXOSIMS.Prototypes.PlanetPopulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], wrange=[0.0, 360.0], Orange=[0.0, 360.0], Irange=[0.0, 180.0], prange=[0.1, 0.6], Rrange=[1.0, 30.0], Mprange=[1.0, 4131.0], scalefac=False, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], wrange=[0.0, 360.0], Orange=[0.0, 360.0], Irange=[0.0, 180.0], prange=[0.1, 0.6], Rrange=[1.0, 30.0], Mprange=[1.0, 4131.0], scaleOrbits=False, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Population Description class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1129,14 +1180,6 @@ in degrees</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits">
-<code class="descname">scaleOrbits</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em></p>
-<p>boolean which signifies if planetary orbits should be scaled by the
-square root of the luminosity</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.rrange">
 <code class="descname">rrange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.rrange" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Quantity</em></p>
@@ -1144,25 +1187,18 @@ square root of the luminosity</p>
 (default units of km)</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.RAAN">
-<code class="descname">RAAN</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.RAAN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.RAAN" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for right ascension of the ascending node</p>
-<p>The prototype gives a uniform distribution between the minimum and
-maximum values in degrees.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; right ascension of the ascending node in degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits">
+<code class="descname">scaleOrbits</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>Scales orbits by sqrt(L) when True</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel">
+<code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>Planet physical model object</p>
 </dd></dl>
 
 <dl class="method">
@@ -1174,153 +1210,157 @@ method will print the attribute values contained in the object</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.albedo">
-<code class="descname">albedo</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.albedo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for planetary albedo</p>
-<p>The prototype gives a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet albedo</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arg_perigee">
-<code class="descname">arg_perigee</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.arg_perigee"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arg_perigee" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for argument of perigee in degrees</p>
-<p>The prototype gives a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; argument of perigee in degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges">
 <code class="descname">checkranges</code><span class="sig-paren">(</span><em>var</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.checkranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function provides asserts on all 2 element lists of ranges</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eccentricity">
-<code class="descname">eccentricity</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eccentricity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for eccentricity</p>
-<p>The prototype gives a uniform distribution between the minimum and
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_I">
+<code class="descname">gen_I</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_I"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_I" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate inclination in degrees</p>
+<p>The prototype provides a sinusoidal distribution between the minimum and
 maximum values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; eccentricity value</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">I (astropy Quantity units degrees)</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.inclination">
-<code class="descname">inclination</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.inclination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.inclination" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for planet orbital inclination (degrees)</p>
-<p>The prototype gives a uniform distribution between the minimum and
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_O">
+<code class="descname">gen_O</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_O"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_O" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate longitude of the ascending node in degrees</p>
+<p>The prototype provides a uniform distribution between the minimum and
 maximum values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet orbital inclination in degrees</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">O (astropy Quantity units degrees)</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.mass">
-<code class="descname">mass</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.mass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for planetary mass in kg</p>
-<p>The prototype gives a uniform distribution between the minimum and
-maximum values in kg.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet mass in kg</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.radius">
-<code class="descname">radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.radius" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for planet radius in km</p>
-<p>The prototype gives a uniform distribution between the minimum and
-maximum values in km.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; planet radius in km</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis">
-<code class="descname">semi_axis</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.semi_axis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.semi_axis" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for semi-major axis in AU</p>
-<p>The prototype gives a uniform distribution between the minimum and
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_albedo">
+<code class="descname">gen_albedo</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_albedo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate geometric albedo values</p>
+<p>The prototype provides a uniform distribution between the minimum and
 maximum values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float</em>) &#8211; semi-major axis value in AU</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>pdf</strong> &#8211;
-probability density function value</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">p (numpy ndarray)</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccentricity">
+<code class="descname">gen_eccentricity</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccentricity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate eccentricity values</p>
+<p>The prototype provides a uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">e (numpy ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_input_check">
+<code class="descname">gen_input_check</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_input_check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_input_check" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8221;
+Helper function checks that input is integer and casts to int</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_mass">
+<code class="descname">gen_mass</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate planetary mass values in kg</p>
+<p>The prototype provides a log-uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Mp (astropy Quantity units kg)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_radius">
+<code class="descname">gen_radius</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate planetary radius values in m</p>
+<p>The prototype provides a log-uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units m)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_sma">
+<code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate semi-major axis values in AU</p>
+<p>The prototype provides a log-uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a (astropy Quantity units AU)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_w">
+<code class="descname">gen_w</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_w"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_w" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate argument of periapse in degrees</p>
+<p>The prototype provides a uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">w (astropy Quantity units degrees)</td>
 </tr>
 </tbody>
 </table>
@@ -1408,13 +1448,11 @@ Null detection boolean</td>
 <span id="exosims-prototypes-simulateduniverse-module"></span><h2>EXOSIMS.Prototypes.SimulatedUniverse module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SimulatedUniverse" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>eta=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Simulated Universe class template</p>
 <p>This class contains all variables and functions necessary to perform
 Simulated Universe Module calculations in exoplanet mission simulation.</p>
-<p>It inherits the following class objects which are defined in __init__:
-TargetList, PlanetPhysicalModel</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1519,14 +1557,14 @@ TargetList</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w">
 <code class="descname">w</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
+<dd><p><em>Quantity</em></p>
 <p>1D numpy ndarray containing argument of perigee in degrees</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O">
 <code class="descname">O</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
+<dd><p><em>Quantity</em></p>
 <p>1D numpy ndarray containing right ascension of the ascending node
 in degrees</p>
 </dd></dl>
@@ -1566,7 +1604,7 @@ units of km/s)</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.I">
 <code class="descname">I</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.I" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
+<dd><p><em>Quantity</em></p>
 <p>1D numpy ndarray containing inclination in degrees for each planet</p>
 </dd></dl>
 
@@ -1575,13 +1613,6 @@ units of km/s)</p>
 <code class="descname">p</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em></p>
 <p>1D numpy ndarray containing albedo for each planet</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.rtype">
-<code class="descname">rtype</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.rtype" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
-<p>1D numpy ndarray containing rock/ice fraction for each planet</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1600,30 +1631,12 @@ this method will return the values contained in the object</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eccanom">
-<code class="descname">eccanom</code><span class="sig-paren">(</span><em>M</em>, <em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.eccanom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eccanom" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds eccentric anomaly from mean anomaly and eccentricity</p>
-<p>This method uses algorithm 2 from Vallado to find the eccentric anomaly
-from mean anomaly and eccentricity.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>M</strong> (<em>float</em>) &#8211; mean anomaly</li>
-<li><strong>e</strong> (<em>float</em>) &#8211; eccentricity</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;
-eccentric anomaly</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
-</td>
-</tr>
-</tbody>
-</table>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems">
+<code class="descname">gen_planetary_systems</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.gen_planetary_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the planetary systems for the current simulated universe.
+This routine populates arrays of the orbital elements and physical
+characteristics of all planets, and generates indexes that map from
+planet to parent star.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1641,169 +1654,6 @@ given indices.</p>
 numpy ndarray of working angles (units of arcsecons)</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_O">
-<code class="descname">planet_O</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_O"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_O" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet right ascension of the ascending node</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>O</strong> &#8211;
-1D numpy ndarray containing right ascension of the ascending node
-for each planet in degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_a">
-<code class="descname">planet_a</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_a"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_a" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet semi-major axis in AU</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class objects:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>a</strong> &#8211;
-1D numpy ndarray containing semi-major axis for each planet
-(default units of AU)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_albedos">
-<code class="descname">planet_albedos</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_albedos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_albedos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet albedo</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;
-1D numpy ndarray containing albedo for each planet</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_e">
-<code class="descname">planet_e</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_e"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_e" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet eccentricity</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>e</strong> &#8211;
-1D numpy ndarray containing eccentricity for each planet</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations">
-<code class="descname">planet_inclinations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_inclinations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_inclinations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet an inclination in degrees</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>I</strong> &#8211;
-1D numpy ndarray containing inclination of each planet in
-degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_masses">
-<code class="descname">planet_masses</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_masses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_masses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet mass in kg</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>M</strong> &#8211;
-1D numpy ndarray containing mass for each planet (units of kg)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
 </tr>
 </tbody>
 </table>
@@ -1849,89 +1699,24 @@ of each planet (units of km/s)</td>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_radii">
-<code class="descname">planet_radii</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_radii"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_radii" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet a radius in km</p>
-<p>This defines the data type expected, specific SimulatedUniverse class
-objects will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>R</strong> &#8211;
-1D numpy ndarray containing radius of each planet (units of
-distance)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star">
 <code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns index of star in target star list to each planet</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these indices.</p>
+<p>The prototype implementation uses the global occurrence rate as the
+probability of each target star having one planet (thus limiting the
+universe to single planet systems).</p>
 <dl class="docutils">
-<dt>This method uses the following inherited class objects:</dt>
+<dt>Attributes updated:</dt>
 <dd><dl class="first last docutils">
-<dt>self.TargetList:</dt>
-<dd>TargetList class object</dd>
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
+<dt>planInds (ndarray):</dt>
+<dd>1D numpy array containing indices of the target star to which
+each planet (each element of the array) belongs</dd>
+<dt>sysInds (ndarray):</dt>
+<dd>1D numpy array of indices of the subset of the targetlist with
+planets</dd>
 </dl>
 </dd>
 </dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>planSys</strong> &#8211;
-1D numpy array containing indices of the target star to which
-each planet (each element of the array) belongs</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_w">
-<code class="descname">planet_w</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_w"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_w" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns each planet argument of perigee</p>
-<p>This method defines the data type expected, specific SimulatedUniverse
-classes will populate these values.</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class object:</dt>
-<dd><dl class="first last docutils">
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>w</strong> &#8211;
-1D numpy ndarray containing argument of perigee for each planet
-in degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -2763,6 +2548,13 @@ StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhyiscalModel">
+<code class="descname">PlanetPhyiscalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhyiscalModel" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PlanetPhysicalModel</em></p>
+<p>Physical model class object</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.ZodiacalLight">
 <code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ZodiacalLight</em></p>
@@ -3340,7 +3132,7 @@ next available time for planet-finding (units of time)</td>
 <span id="exosims-prototypes-zodiacallight-module"></span><h2>EXOSIMS.Prototypes.ZodiacalLight module<a class="headerlink" href="#module-EXOSIMS.Prototypes.ZodiacalLight" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.ZodiacalLight.</code><code class="descname">ZodiacalLight</code><span class="sig-paren">(</span><em>exozodi=1.5</em>, <em>exozodiVar=0.0</em>, <em>exozodiMag=23.54</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.ZodiacalLight.</code><code class="descname">ZodiacalLight</code><span class="sig-paren">(</span><em>Zmag=22.5</em>, <em>exoZmag=23.5</em>, <em>exoZnumber=1.5</em>, <em>exoZvar=0.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Zodiacal Light class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -3354,24 +3146,31 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodi">
-<code class="descname">exozodi</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodi" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.Zmag">
+<code class="descname">Zmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.Zmag" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>zodi level in zodi</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZmag">
+<code class="descname">exoZmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZmag" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em></p>
+<p>1 zodi brightness in mag per asec2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZnumber">
+<code class="descname">exoZnumber</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZnumber" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>exozodi level in zodi</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodiVar">
-<code class="descname">exozodiVar</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodiVar" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZvar">
+<code class="descname">exoZvar</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exoZvar" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em></p>
 <p>exozodi variation (variance of log-normal distribution)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodiMag">
-<code class="descname">exozodiMag</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.exozodiMag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>1 zodi brightness in mag per asec2</p>
 </dd></dl>
 
 <dl class="method">
@@ -3396,7 +3195,7 @@ not yet support this conversion).</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>coords</strong> (<em>SkyCoord</em>) &#8211; numpy ndarray of astropy SkyCoord objects with right ascension
 and declination in degrees</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>el</strong> &#8211;
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>beta</strong> &#8211;
 ecliptic latitudes in degrees</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
@@ -3408,7 +3207,7 @@ ecliptic latitudes in degrees</td>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi">
 <code class="descname">fzodi</code><span class="sig-paren">(</span><em>Inds</em>, <em>I</em>, <em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fzodi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fzodi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns exozodi levels for systems</p>
+<dd><p>Returns total zodi flux levels (local and exo)</p>
 <p>This method is called in __init__ of SimulatedUniverse.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3422,7 +3221,7 @@ ecliptic latitudes in degrees</td>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fzodicurr</strong> &#8211;
-1D numpy ndarray of exozodiacal light levels</p>
+1D numpy ndarray of zodiacal light levels</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>

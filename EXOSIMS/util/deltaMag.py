@@ -9,11 +9,11 @@ def deltaMag(p,R,r,Phi):
         p:
             (1D numpy ndarray) planet albedo
         R:
-            (1D numpy ndarray) planet radius, default astropy units of km
+            (astropy Quantity) planet radius, default astropy units of km
         r:
-            (1D numpy ndarray) planet-star distance, default astropy units of AU
+            (astropy Quantity) planet-star distance, default astropy units of AU
         Phi:
-            (1D numpy ndarray) Lambert phase
+            (1D numpy ndarray) Phase function value
 
     Returns:
         dMag:

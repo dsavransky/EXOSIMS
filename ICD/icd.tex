@@ -336,25 +336,31 @@ These parameters apply to all simulations, and are described in detail in their 
 
 \begin{itemize}[leftmargin=1in,font={\ttfamily}]
 \item[missionLifetime] (float) The total mission lifetime in $ years $.  When the mission time is equal or greater to this value, the mission simulation stops.
-\item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1.  When the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion the mission simulation stops.
-\item[lam]  (float) Central or detection wavelength in $ nm $.
-\item[deltaLam]  (float) Detection bandwidth in $ nm $.
-\item[shapeFac] (float)  Telescope aperture shape factor.
+\item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1. The mission simulation stops when the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion.
 \item[keepStarCatalog] (bool) Boolean representing whether to delete the star catalog after assembling the target list.  If true, object reference will be available from TargetList object.
-\item[pupilDiam] (float) Entrance pupil diameter in m.
-\item[SNchar] (float) Signal to Noise Ratio for characterization.
-\item[telescopeKeepout] (float) Telescope keepout angle in degrees
+\item[minComp] (float) Minimum completeness value for inclusion in target list. 
+\item[lam] (float) Detection central wavelength in $ nm $.
+\item[deltaLam] (float) Detection bandwidth in $ nm $.
+\item[BW] (float) Detection bandwidth fraction = $\Delta\lambda/\lambda$.
+\item[specLam] (float) Spectrograph central wavelength in $ nm $.
+\item[specDeltaLam] (float) Spectrograph bandwidth in $ nm $.
+\item[specBW] (float) Spectrograph bandwidth fraction = $\Delta\lambda_s/\lambda_s$.
+\item[obscurFac] (float) Obscuration factor due to secondary mirror and spiders.
+\item[shapeFac] (float)  Telescope aperture shape factor.
+\item[pupilDiam] (float) Entrance pupil diameter in $m$.
+\item[pupilArea] (float) Entrance pupil area in $m^2$.
 \item[IWA] (float) Fundamental Inner Working Angle in $ arcsec $. No planets can ever be observed at smaller separations.
 \item[OWA] (float) Fundamental Outer Working Angle in $ arcsec $. Set to $ Inf $ for no OWA. JSON values of 0 will be interpreted as $ Inf $.
 \item[dMagLim] (float) Fundamental limiting $\Delta$mag (difference in magnitude between star and planet). 
+\item[telescopeKeepout] (float) Telescope keepout angle in degrees
 \item[attenuation] (float) Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
-\item[specLam] (float) Spectral wavelength of interest in $ nm $.
 \item[intCutoff] (float)  Maximum allowed integration time in $ days $. No integrations will be started that would take longer than this value.
-\item[minComp] (float) Minimum completeness value for inclusion in target list. 
 \item[exozodi] (float) Mean Exo-zodi level in zodi.
 \item[exozodiVar] (float) Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero. 
 \item[FAP] (float) Detection false alarm probability
 \item[MDP] (float) Missed detection probability
+\item[SNimag] (float) Signal to Noise Ratio for imaging/detection.
+\item[SNchar] (float) Signal to Noise Ratio for characterization.
 \item[arange]   2 element list of minimum and maximum semi-major axes in $ AU $. 
 \item[erange]   2 element list of minimum and maximum eccentricity.  
 \item[wrange]   2 element list of minimum and maximum argument of perigee in degrees. 
@@ -407,7 +413,8 @@ The Planet Population module does not model the physics of planetary orbits or t
 \label{sec:planetpopulation}
 \subsubsection{Planet Population Object Attribute Initialization Input/Output Description} 
 \subsubsection*{Inputs}
-The following are all entries in the passed specs dictionary (derived from the JSON script file or another dictionary).  Values not specified will be replaced with defaults, as listed.
+The following are all entries in the passed specs dictionary (derived from the JSON script file or another dictionary).  Values not specified will be replaced with defaults, as listed.  It is important to note that many of these (in particular mass and radius) may be mutually dependent, and so some implementation may choose to only use some for inputs and set the rest via the physical models.
+
 \begin{itemize}
 \item
 \begin{description}
@@ -427,8 +434,6 @@ The following are all entries in the passed specs dictionary (derived from the J
     2 element list of minimum and maximum planetary Radius in Earth radii.  Default value is [1, 30]
     \item[Mprange] \hfill \\
     2 element list of minimum and maximum planetary mass in Earth masses.  Default value is [1, 4131]
-    \item [scaleOrbits] \hfill \\
-    Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
 \end{description}
 \end{itemize}
 
@@ -452,39 +457,62 @@ The following are all entries in the passed specs dictionary (derived from the J
         Planetary radius range defined as [R\_min, R\_max] (astropy Quantity initially set in $ m $)
         \item[Mprange] \hfill \\
         Planetary mass range defined as [Mp\_min, Mp\_max] (astropy Quantity initially set in $ kg $)
-        \item[scaleOrbits] \hfill \\
-        Boolean where True means planetary orbits are scaled by the square root of stellar luminosity
         \item[rrange] \hfill \\
         Planetary orbital radius range defined as [r\_min, r\_max] derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity initially set in $ AU $)
+     \item [scaleOrbits] \hfill \\
+    Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
+         \item[PlanetPhysicalModel] \hfill \\     
+            Planet physical model object
     \end{description}
 \end{itemize}
 
-\subsubsection{Planet Population Probability Density Functions} \label{sec:pdfs}
-Each of the probability density functions contained in the Planet Population module are implemented as functions.  The input to these functions is the quantity of interest and the output is value of the probability density function.  These functions are provided so that the Simulated Universe module may sample these quantities from the probability density functions and create a simulated universe of synthetic planets.  The required functions are given as follows:
+\subsubsection{Planet Population Value Generators} \label{sec:pdfs}
+For each of the parameters represented by the input attributes, the planet population object will provide a method that returns random values for the attribute, within the ranges specified by the attribute (so that, for example, there will be a \verb+gen_sma+ method corresponding to \verb+arange+, etc.).  Each of these methods will take a single input of the number of values to generate.  These methods will encode the probability density functions representing each parameter, and use either a rejection sampler or other (numpy or scipy) provided sampling method to generate random values.  All returned values will have the same type/default units as the attributes. 
+
+In cases where values need to be sampled jointly (for example if you have a joint distribution of semi-major axis and planetary radius) then the sampling will be done by a helper function which stores the last sampled values in memory, and the individual functions (i.e., \verb+gen_sma+ and \verb+gen_radius+) will act as getters for the values.  In cases where there is a deterministic calculation of one parameter from another (as in mass calculated from radius) this will be provided separately in the Planet Physical module. Any non-standard distribution functions being sampled by one of these methods should be created as object attributes in the implementation constructor so that they are available to other modules.
+\\\\
+The methods are:
 
 \begin{itemize}
     \item 
     \begin{description}
-        \item[semi\_axis] \hfill \\
-        Probability density function for semi-major axis
-        \item[eccentricity] \hfill \\
-        Probability density function for eccentricity
-        \item[arg\_perigee] \hfill \\
-        Probability density function for argument of perigee
-        \item[RAAN] \hfill \\
-        Probability density function for right ascension of the ascending node
-        \item[radius] \hfill \\
-        Probability density function for planetary radius
-        \item[mass] \hfill \\
-        Probability density function for planetary mass
-        \item[albedo] \hfill \\
-        Probability density function for planetary geometric albedo
-        \item[inclination] \hfill \\
-        Probability density function for orbital inclination
+        \item[gen\_sma] \hfill \\
+        Returns semi-major axis values (astropy Quantity initially set in $ AU $)
+        \item[gen\_eccentricity] \hfill \\
+        Returns eccentricity values (numpy ndarray)
+        \item[gen\_w] \hfill \\
+        Returns argument of perigee values (astropy Quantity initially set in degrees)
+        \item[gen\_O] \hfill \\
+        Returns longitude of the ascending node values (astropy Quantity initially set in degrees)
+        \item[gen\_radius] \hfill \\
+        Returns planetary radius values  (astropy Quantity initially set in $ m $)
+        \item[gen\_mass] \hfill \\
+        Returns planetary mass values (astropy Quantity initially set in $ kg $)
+        \item[gen\_albedo] \hfill \\
+        Returns planetary geometric albedo (numpy ndarray)
+        \item[gen\_I] \hfill \\
+        Returns values of orbital inclination (astropy Quantity initially set in degrees)
     \end{description}
 \end{itemize}
 
-\emph{In instances where there are dependencies between parameters given by physical models (i.e., density models relating planetary masses to radii), these will be provided by the Planet Physical Model module.}
+% PLANET PHYSICAL MODEL 
+
+\subsection{Planet Physical Model} \label{sec:planetphysicalmodel}
+The Planet Physical Model module contains models of the light emitted or reflected by planets in the wavelength bands under investigation by the current mission simulation.  It takes as inputs the physical quantities sampled from the distributions in the Planet Population module and generates synthetic spectra (or band photometry, as appropriate).  The specific implementation of this module can vary greatly, and can be based on any of the many available planetary geometric albedo, spectra and phase curve models.  As required, this module also provides physical models relating dependent parameters that cannot be sampled independently (for example density models relating plant mass and radius).  While the specific methods will depend highly on the physical models being used, the prototype provides three stubs that will be commonly useful:
+
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[calc\_albedo\_from\_sma] \hfill \\
+        Provides a method to calculate planetary geometric albedo as a function of the semi-major axis
+        \item[calc\_mass\_from\_radius] \hfill \\
+        Provides a method to calculate planetary masses from their radii
+        \item[calc\_radius\_from\_mass] \hfill \\
+        Provides a method to calculate planetary radii from their masses
+    \end{description}
+\end{itemize}
+
+
 
 % STAR CATALOG
 
@@ -586,27 +614,32 @@ Information from simulation specification JSON file organized into a Python dict
     \item 
 \begin{description}
     \item[lam] \hfill \\
-    Central detection wavelength in $ nm $. Default value is 500.
+    Detection central wavelength in $ nm $. Default value is 500.
     \item[deltaLam] \hfill \\
-    Detection bandwidth $ \Delta\lambda $ in $ nm $. Default value is 100.
+    Detection bandwidth $ \Delta\lambda $ in $ nm $.
+    \item[BW] \hfill \\ Detection bandwidth fraction $(\Delta\lambda/\lambda)$. Only applies when deltaLam is not specified. Default value is 0.2.
+    \item[specLam] \hfill \\
+    Spectrograph central wavelength in $ nm $. Default value is equal to lam.
+    \item[specDeltaLam] \hfill \\
+    Spectrograph bandwidth $\Delta\lambda_s$ in $ nm $.
+    \item[specBW] \hfill \\
+    Spectrograph bandwidth fraction $(\Delta\lambda_s/\lambda_s)$. Only applies when specDeltaLam is not specified. Default value is BW.
+    \item[obscurFac] \hfill \\
+    Obscuration factor due to secondary mirror and spiders. Default value is 0.2.
     \item[shapeFac] \hfill \\
     Shape factor (also known as fill factor) so that $ shapeFac \times diameter^2 = Area $. Default value is $ \frac{\pi}{4} $.
     \item[pupilDiam] \hfill \\
     Entrance pupil diameter in  $ m $. Default value is $ 4$.
-    \item[telescopeKeepout] \hfill \\
-        Telescope keepout angle in degrees
-    \item[SNchar] \hfill \\
-    Signal to Noise Ratio for characterization. Default value is 11.
     \item[IWA] \hfill \\
     Fundamental Inner Working Angle in $ arcsec $. No planets can ever be observed at smaller separations. If not set, defaults to smallest IWA of all starlightSuppressionSystems.
     \item[OWA] \hfill \\
     Fundamental Outer Working Angle in $ arcsec $. Set to $ Inf $ for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as $ Inf $.
     \item[dMagLim] \hfill \\
     Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is minimum of contrast.
+    \item[telescopeKeepout] \hfill \\
+    Telescope keepout angle in degrees
     \item[attenuation] \hfill \\
     Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements. Default value is 0.57.
-    \item[specLam] \hfill \\
-    Spectral wavelength of interest in $ nm $. Default value is equal to lam.
     \item[intCutoff] \hfill \\
     Maximum allowed integration time in $ days $. Default value is 50. No integrations will be started that would take longer than this value.
     \item[Npix] \hfill \\
@@ -667,7 +700,7 @@ Information from simulation specification JSON file organized into a Python dict
     \item[focalLength] \hfill \\
     Focal length in $ m $ (float). 
     \item[Rspec] \hfill \\
-    (Specific to spectrometers) Spectral resolving power defined as $\lambda/\Delta\lambda$ (float). 
+    (Specific to spectrometers) Spectral resolving power defined as $\lambda/d\lambda$ (float). 
     \item[CIC] \hfill \\
     (Specific to CCDs) Clock-induced-charge in units of $ electrons/pix/frame $
     \item[ENF] \hfill \\
@@ -862,12 +895,6 @@ The Background Sources module will provide density of background sources for a g
         Numpy ndarray matching size of inputs, containing number densities of background sources for given targets in number per square arcminute.
     \end{description}
 \end{itemize}
-
-
-% PLANET PHYSICAL MODEL 
-
-\subsection{Planet Physical Model} \label{sec:planetphysicalmodel}
-The Planet Physical Model module contains models of the light emitted or reflected by planets in the wavelength bands under investigation by the current mission simulation.  It takes as inputs the physical quantities sampled from the distributions in the Planet Population module and generates synthetic spectra (or band photometry, as appropriate).  The specific implementation of this module can vary greatly, and can be based on any of the many available planetary geometric albedo, spectra and phase curve models.  As required, this module also provides physical models relating dependent parameters that cannot be sampled independently (for example density models relating plant mass and radius).
 
 
 % OBSERVATORY
@@ -1184,9 +1211,15 @@ The Post-Processing module contains the \verb+det_occur+ task.  This task determ
     \item 
     \begin{description}
           \item[FAP] \hfill \\
-            Detection false alarm probability. Default value is $10^{-5}$.
+            Detection false alarm probability. Default value is $3 \times 10^{-5}$.
             \item[MDP] \hfill \\
             Missed detection probability. Default value is $10^{-3}$.
+            \item[ppFact] \hfill \\
+            Post-processing contrast factor, between 0 and 1. Default value is 1.
+            \item[SNimag] \hfill \\
+            Signal to Noise Ratio threshold for imaging/detection. Default value is 5.
+            \item[SNchar] \hfill \\
+            Signal to Noise Ratio threshold for characterization. Default value is 11.
         \end{description}
 \end{itemize}
 
@@ -1374,60 +1407,27 @@ The Target List module takes in information from the Optical System, Star Catalo
 % SIMULATED UNIVERSE 
 
 \subsection{Simulated Universe} \label{sec:simulateduniverse}
-The Simulated Universe module takes as input the outputs of the Target List simulation module to create a synthetic universe composed of the systems in the target list.  For each target, a planetary system is generated based on the statistics encoded in the Planet Population module, so that the overall planet occurrence and multiplicity rates are consistent with the provided distribution functions.  Physical parameters for each planet are similarly sampled from the input density functions.  This universe is encoded as a list where each entry corresponds to one element of the target list, and where the list entries are arrays of planet physical parameters.  In cases of empty planetary systems, the corresponding list entry contains a null array.
-
-The Simulated Universe module also takes as input the Planet Physical Model module instance, so that it can return the specific spectra due to every simulated planet at an arbitrary observation time throughout the mission simulation.
+The Simulated Universe module instantiate the Target List simulation module and creates a synthetic universe by populating planetary systems about some or all of the stars in the target list.  For each target, a planetary system is generated based on the statistics encoded in the Planet Population module, so that the overall planet occurrence and multiplicity rates are consistent with the provided distribution functions.  Physical parameters for each planet are similarly sampled from the input density functions (or calculated via the Planet physical model).  All planetary orbital and physical parameters are encoded as arrays of values, with an indexing array that maps planets to the stars in the target list. 
 
 The Simulated Universe module contains the following methods: 
 \begin{itemize}
 \item[] \verb+planet_to_star+
-\item[]  \verb+planet_a+
-\item[]  \verb+planet_e+
-\item[]  \verb+planet_w+
-\item[]  \verb+planet_O+
-\item[]  \verb+planet_radii+
-\item[]  \verb+planet_masses+
-\item[]  \verb+planet_albedos+
-\item[]  \verb+planet_inclinations+
 \item[]  \verb+planet_pos_vel+
 \item[]  \verb+prop_system+
-\item[]  \verb+eccanom+
 \item[]  \verb+get_current_WA+
 \end{itemize}
- \verb+planet_pos_vel+ finds initial position and velocity vectors for each planet (see \S\ref{sec:planetposveltask}).  \verb+prop_system+ propagates planet position and velocity vectors in time (see \S\ref{sec:propsystemtask}).  The rest of the methods assign orbital or physical quantities to each planet (see \S\ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetalbedostask}, and \ref{sec:planetinclinationstask}. The inputs and outputs for these methods are depicted in \reffig{fig:simulateduniversemodule}.
+ \verb+planet_pos_vel+ finds initial position and velocity vectors for each planet (see \S\ref{sec:planetposveltask}).  \verb+prop_system+ propagates planet position and velocity vectors in time (see \S\ref{sec:propsystemtask}).  All planetary parameters are generated in the constructor via calls to the appropriate value generating functions in the planet population module.
 
-\begin{figure}[ht]
-    \begin{center}
-        \begin{tabular}{c}
-             \includegraphics[width=\textwidth]{SimulatedUniverseTasks}
-        \end{tabular}
-    \end{center}
-    \caption{\label{fig:simulateduniversemodule} Depiction of Simulated Universe module methods including inputs and outputs (see \ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetposveltask}, \ref{sec:planetalbedostask}, \ref{sec:planetinclinationstask}, and \ref{sec:propsystemtask}).}
-\end{figure}
+%\begin{figure}[ht]
+%    \begin{center}
+%        \begin{tabular}{c}
+%             \includegraphics[width=\textwidth]{SimulatedUniverseTasks}
+%        \end{tabular}
+%    \end{center}
+%    \caption{\label{fig:simulateduniversemodule} Depiction of Simulated Universe module methods including inputs and outputs (see \ref{sec:planettostartask}, \ref{sec:planetatask}, \ref{sec:planetetask}, \ref{sec:planetwtask}, \ref{sec:planetOtask}, \ref{sec:planetmassestask}, \ref{sec:planetradiitask}, \ref{sec:planetposveltask}, \ref{sec:planetalbedostask}, \ref{sec:planetinclinationstask}, and \ref{sec:propsystemtask}).}
+%\end{figure}
 
-\subsubsection{Simulated Universe Object Attribute Initialization Input/Output Description}
-\subsubsection*{Inputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[User specification] \hfill \\
-        Information from simulation specification JSON file organized into a Python dictionary. If the below key: value pairs are missing from the dictionary, the Simulated Universe object attributes will be assigned the default values listed.
-        \item[OpticalSystem] \hfill \\
-        Instance of Optical System module inherited from Target List module (see \ref{sec:opticalsystem})
-        \item[PlanetPopulation] \hfill \\
-        Instance of Planet Population module inherited from Target List module (see \ref{sec:planetpopulation})
-        \item[ZodiacalLight] \hfill \\
-        Instance of Zodiacal Light module inherited from Target List module (see \ref{sec:zodiacallight})
-        \item[Completeness] \hfill \\
-        Instance of Completeness module inherited from Target List module (see \ref{sec:completeness})
-        \item[TargetList] \hfill \\
-        Instance of Target List module given by above specs["targlistname"] (see \ref{sec:targetlist})
-        \item[PlanetPhysicalModel] \hfill \\
-        Instance of Planet Physical Model module (see \ref{sec:planetphysicalmodel})
-    \end{description}
-\end{itemize}
-
-\subsubsection*{Attributes}
+\subsubsection{Attributes}
 \begin{itemize}
     \item
     \begin{description}
@@ -1450,25 +1450,25 @@ The Simulated Universe module contains the following methods:
         \item[sysInds] \hfill \\
         1D NumPy ndarray containing indices (referenced to target star list) of target stars with planets
         \item[a] \hfill \\
-        1D NumPy ndarray containing semi-major axis for each planet determined from \verb+planet_a()+ \S\ref{sec:planetatask}
+        Quantity array containing semi-major axis for each planet 
         \item[e] \hfill \\
-        1D NumPy ndarray containing eccentricity values for each planet determined from \verb+planet_e()+ \S\ref{sec:planetetask}
+        1D NumPy ndarray containing eccentricity values for each planet
         \item[w] \hfill \\
-        1D NumPy ndarray containing argument of perigee in degrees for each planet determined from \verb+planet_w()+ \S\ref{sec:planetwtask}
+        Quantity array containing argument of perigee in degrees for each planet
         \item[O] \hfill \\
-        1D NumPy ndarray containing right ascension of the ascending node in degrees for each planet determined from \verb+planet_O()+ \S\ref{sec:planetOtask}
+        Quantity array containing right ascension of the ascending node in degrees for each planet
         \item[Mp] \hfill \\
-        1D NumPy ndarray containing masses of each planet determined from \verb+planet_masses()+ \S\ref{sec:planetmassestask}
+        Quantity array containing masses of each planet
         \item[Rp] \hfill \\
-        1D NumPy ndarray containing radii of each planet determined from \verb+planet_radii()+ \S\ref{sec:planetradiitask}
+        Quantity array containing radii of each planet
         \item[r] \hfill \\
-        1D NumPy ndarray containing planet position vectors relative to host stars determined from \verb+planet_pos_vel()+ \S\ref{sec:planetposveltask}
+        Quantity array containing planet position vectors relative to host stars
         \item[v] \hfill \\
-        1D NumPy ndarray containing planet velocity vectors relative to host stars determined from \verb+planet_pos_vel()+ \S\ref{sec:planetposveltask}
+        Quantity array containing planet velocity vectors relative to host stars 
         \item[p] \hfill \\
-        1D NumPy ndarray containing planet geometric albedos determined from \verb+planet_albedos()+ \S\ref{sec:planetalbedostask}
+        1D NumPy ndarray containing planet geometric albedos
         \item[I] \hfill \\
-        1D NumPy ndarray containing list of inclination of planetary systems in degrees determined from \verb+planet_inclinations()+ \S\ref{sec:planetinclinationstask}
+        Quantity array containing list of inclination of planetary systems in degrees 
         \item[fzodicurr] \hfill \\
         1D NumPy ndarray containing list of exozodi levels for systems with planets determined from \verb+ZodiacalLight.fzodi+ \S\ref{sec:fzoditask}
     \end{description}
@@ -1480,132 +1480,14 @@ The \verb+planet_to_star+ method determines how many planets belong to each star
 \subsubsection*{Inputs}
 This method does not take any explicit inputs.  It uses the inherited Target List and Planet Population objects.
 
-\subsubsection*{Outputs}
+\subsubsection*{Updated Attributes}
 \begin{itemize}
     \item 
     \begin{description}
         \item[planSys] \hfill \\
         1D NumPy ndarray containing the indices of each target star to which each planet (each element of the array) belongs
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_a Method Input/Output Description} \label{sec:planetatask}
-The \verb+planet_a+ method assigns each planet a semi-major axis with astropy Quantity units of distance (AU).  The prototype samples the probablity density function \verb+PlanetPopulation.semi_axis(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[a] \hfill \\
-        1D NumPy ndarray containing semi-major axis for each planet (astropy Quantity with units of $ AU $)
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_e Method Input/Output Description} \label{sec:planetetask}
-The \verb+planet_e+ method assigns each planet an eccentricity value. The prototype samples the probablity density function \verb+PlanetPopulation.eccentricity(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[e] \hfill \\
-        1D NumPy ndarray containing eccentricity for each planet
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_w Method Input/Output Description} \label{sec:planetwtask}
-The \verb+planet_w+ method assigns each planet argument of perigee in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.arg_perigee(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[w] \hfill \\
-        1D NumPy ndarray containing argument of perigee in degrees for each planet
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_O Method Input/Output Description} \label{sec:planetOtask}
-The \verb+planet_O+ method assigns each planet right ascension of the ascending node in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.RAAN(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[O] \hfill \\
-        1D NumPy ndarray containing right ascension of the ascending node in degrees for each planet
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_masses Method Input/Output Description} \label{sec:planetmassestask}
-The \verb+planet_masses+ method assigns each planet mass with astropy Quantity units of mass (default is $ kg $). The prototype samples the probablity density function \verb+PlanetPopulation.mass(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[M] \hfill \\
-        1D NumPy ndarray containing mass for each planet (astropy Quantity with default units of $ kg $)
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_radii Method Input/Output Description} \label{sec:planetradiitask}
-The \verb+planet_radii+ method assigns each planet a radius with astropy Quantity units of distance (default is $ km $). The prototype samples the probablity density function \verb+PlanetPopulation.radius(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[Rp] \hfill \\
-        1D NumPy ndarray containing radius for each planet (astropy Quantity with default units of $ km $)
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_albedos Method Input/Output Description} \label{sec:planetalbedostask}
-The \verb+planet_albedos+ method assigns each planet a geometric albedo value. The prototype samples the probablity density function \verb+PlanetPopulation.albedo(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[p] \hfill \\
-        1D NumPy ndarray containing geometric albedo for each planet 
-    \end{description}
-\end{itemize}
-
-\subsubsection{planet\_inclinations Method Input/Output Description} \label{sec:planetinclinationstask}
-The \verb+planet_inclinations+ method assigns each planet an inclination in degrees. The prototype samples the probablity density function \verb+PlanetPopulation.inclination(x)+ \S\ref{sec:pdfs} and returns appropriate output.
-
-\subsubsection*{Inputs}
-This method does not take any explicit inputs.  It uses the inherited Planet Population object and total number of planets (\verb+SimulatedUniverse.nPlans+).
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[I] \hfill \\
-        1D NumPy ndarray containing inclination for each planet in degrees 
+         \item[sysInds] \hfill \\
+        1D NumPy ndarray containing the indices of only those target stars which have planets
     \end{description}
 \end{itemize}
 
@@ -1662,29 +1544,6 @@ The \verb+prop_system+ method propagates planet state vectors (position and velo
         NumPy ndarray of propagated position vectors relative to host star (astropy Quantity with units of distance)
         \item[vnew] \hfill \\
         NumPy ndarray of propagated velocity vectors relative to host star (astropy Quantity with units of distance/time)
-    \end{description}
-\end{itemize}
-
-\subsubsection{eccanom Method Input/Output Description} \label{sec:eccanomtask}
-The \verb+eccanom+ method uses algorithm 2 from Vallado to find the eccentric anomaly from mean anomaly and eccentricity.
-
-\subsubsection*{Inputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[M] \hfill \\
-        Mean anomaly (float)
-        \item[e] \hfill \\
-        Eccentricity (float)
-    \end{description}
-\end{itemize}
-
-\subsubsection*{Outputs}
-\begin{itemize}
-    \item 
-    \begin{description}
-        \item[E] \hfill \\
-        Eccentric anomaly (float)
     \end{description}
 \end{itemize}
 

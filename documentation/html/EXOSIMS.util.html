@@ -44,6 +44,95 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-EXOSIMS.util.calc_Blam">
+<span id="exosims-util-calc-blam-module"></span><h2>EXOSIMS.util.calc_Blam module<a class="headerlink" href="#module-EXOSIMS.util.calc_Blam" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.calc_Blam.calc_Blam">
+<code class="descclassname">EXOSIMS.util.calc_Blam.</code><code class="descname">calc_Blam</code><span class="sig-paren">(</span><em>lam</em>, <em>temp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/calc_Blam.html#calc_Blam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.calc_Blam.calc_Blam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spectral radiance of a body at absolute temperature T
+using Planck&#8217;s law Blambda(lambda,T) in CGS units</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lam</strong> &#8211; wavelength in nm</li>
+<li><strong>temp</strong> &#8211; temperature in Kelvin</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">spectral radiance in erg cm^-3 s^-1 steradian^-1 (CGS units)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Blam</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.util.deltaMag">
+<span id="exosims-util-deltamag-module"></span><h2>EXOSIMS.util.deltaMag module<a class="headerlink" href="#module-EXOSIMS.util.deltaMag" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.deltaMag.deltaMag">
+<code class="descclassname">EXOSIMS.util.deltaMag.</code><code class="descname">deltaMag</code><span class="sig-paren">(</span><em>p</em>, <em>R</em>, <em>r</em>, <em>Phi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/deltaMag.html#deltaMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.deltaMag.deltaMag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates delta magnitudes for a set of planets, based on their albedo,
+radius, and position with respect to host star.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>p</strong> &#8211; (1D numpy ndarray) planet albedo</li>
+<li><strong>R</strong> &#8211; (astropy Quantity) planet radius, default astropy units of km</li>
+<li><strong>r</strong> &#8211; (astropy Quantity) planet-star distance, default astropy units of AU</li>
+<li><strong>Phi</strong> &#8211; (1D numpy ndarray) Phase function value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(1D numpy ndarray) planet delta magnitudes</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dMag</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.util.eccanom">
+<span id="exosims-util-eccanom-module"></span><h2>EXOSIMS.util.eccanom module<a class="headerlink" href="#module-EXOSIMS.util.eccanom" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.eccanom.eccanom">
+<code class="descclassname">EXOSIMS.util.eccanom.</code><code class="descname">eccanom</code><span class="sig-paren">(</span><em>M</em>, <em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/eccanom.html#eccanom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.eccanom.eccanom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds eccentric anomaly from mean anomaly and eccentricity</p>
+<p>This method uses algorithm 2 from Vallado to find the eccentric anomaly
+from mean anomaly and eccentricity.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>M</strong> (<em>float or ndarray</em>) &#8211; mean anomaly</li>
+<li><strong>e</strong> (<em>float or ndarray</em>) &#8211; eccentricity (eccentricity may be a scalar if M is given as
+an array, but otherwise must match the size of M.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;
+eccentric anomaly</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float or ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util.get_module">
 <span id="exosims-util-get-module-module"></span><h2>EXOSIMS.util.get_module module<a class="headerlink" href="#module-EXOSIMS.util.get_module" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -143,13 +232,18 @@ and continued fraction to solve the Kepler equation.</p>
 <div class="section" id="module-EXOSIMS.util.statsFun">
 <span id="exosims-util-statsfun-module"></span><h2>EXOSIMS.util.statsFun module<a class="headerlink" href="#module-EXOSIMS.util.statsFun" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
+<dt id="EXOSIMS.util.statsFun.calcM">
+<code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">calcM</code><span class="sig-paren">(</span><em>f</em>, <em>xMin</em>, <em>xMax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#calcM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.calcM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="EXOSIMS.util.statsFun.eqLogSample">
 <code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">eqLogSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>bins=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#eqLogSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.eqLogSample" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="EXOSIMS.util.statsFun.simpSample">
-<code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">simpSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>verb=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#simpSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.simpSample" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">EXOSIMS.util.statsFun.</code><code class="descname">simpSample</code><span class="sig-paren">(</span><em>f</em>, <em>numTest</em>, <em>xMin</em>, <em>xMax</em>, <em>M=None</em>, <em>verb=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/statsFun.html#simpSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.statsFun.simpSample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use the rejection sampling method to generate a
 probability distribution according to the given function f,
 between some range xMin and xMax.
@@ -173,6 +267,9 @@ this value.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.calc_Blam">EXOSIMS.util.calc_Blam module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.deltaMag">EXOSIMS.util.deltaMag module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.eccanom">EXOSIMS.util.eccanom module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.keplerSTM">EXOSIMS.util.keplerSTM module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>

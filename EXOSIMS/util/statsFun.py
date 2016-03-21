@@ -5,7 +5,7 @@ from scipy.optimize import fmin_l_bfgs_b
 Collection of useful statistics routines
 '''
 
-def simpSample(f, numTest, xMin, xMax, verb = False):
+def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
     '''
     Use the rejection sampling method to generate a 
     probability distribution according to the given function f, 
@@ -17,14 +17,10 @@ def simpSample(f, numTest, xMin, xMax, verb = False):
     if xMin==xMax:
         return np.zeros(numTest)+xMin
 
-    #find max value
-    #first do a coarse grid to get ic
-    dx = np.linspace(xMin,xMax,1000000)
-    ic = np.argmax(f(dx))
-    g = lambda x: -f(x)
-    M = fmin_l_bfgs_b(g,[dx[ic]],approx_grad=True,bounds=[(xMin,xMax)])
-    M = f(M[0])
-
+    #find max value if not provided
+    if M is None:
+        M = calcM(f,xMin,xMax)
+        
     #initialize
     n = 0
     X = np.zeros(numTest);
@@ -49,6 +45,19 @@ def simpSample(f, numTest, xMin, xMax, verb = False):
         print 'Finished in '+repr(numIter)+' iterations.'
 
     return X
+
+def calcM(f,xMin,xMax):
+    #first do a coarse grid to get ic
+    dx = np.linspace(xMin,xMax,1000000)
+    ic = np.argmax(f(dx))
+    
+    #now optimize
+    g = lambda x: -f(x)
+    M = fmin_l_bfgs_b(g,[dx[ic]],approx_grad=True,bounds=[(xMin,xMax)])
+    M = f(M[0])
+
+    return M
+
 
 def eqLogSample(f, numTest, xMin, xMax, bins=10):
     out = np.array([])

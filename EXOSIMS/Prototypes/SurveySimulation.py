@@ -425,6 +425,7 @@ class SurveySimulation(object):
         """
         
         # dMag and Ip placeholders
+# replace by actual dMmag
         dMag = self.OpticalSystem.dMagLim - np.abs(np.random.randn(1)*0.5)
         Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[s_ind]+dMag)/2.5) 
         # apparent separation placeholders

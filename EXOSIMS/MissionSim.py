@@ -1,5 +1,6 @@
 import sys, json, inspect
 from EXOSIMS.util.get_module import get_module
+import random as py_random
 import numpy as np
 import os.path
 
@@ -61,15 +62,23 @@ class MissionSim(object):
 
             try:
                 script = open(scriptfile).read()
-                specs = json.loads(script)
+                specs_from_file = json.loads(script)
             except ValueError:
                 print "%s improperly formatted."%scriptfile
             except:
                 print "Unexpected error:", sys.exc_info()[0]
                 raise
+        else:
+            specs_from_file = {}
+
+        # extend given specs with file specs
+        specs.update(specs_from_file)
 
         if 'modules' not in specs.keys():
             raise ValueError("No modules field found in script.")
+
+        # set up numpy random number seed at top
+        self.random_seed_initialize(specs)
 
         #preserve star catalog name
         self.StarCatalog = specs['modules']['StarCatalog']
@@ -114,6 +123,19 @@ class MissionSim(object):
         for modName in specs['modules'].keys():
             setattr(self, modName, specs['modules'][modName])
 
+    def random_seed_initialize(self, specs):
+        r"""Initialize random number seed for simulation repeatability.
+
+        Algorithm: Get a large but printable integer from the system generator, which is seeded 
+        automatically, and use this number to seed the numpy generator.  Otherwise, if a seed was
+        given explicitly, use it instead."""
+        if 'seed' in specs:
+            seed = specs['seed']
+        else:
+            seed = py_random.randint(1,1e9)
+        print 'MissionSim: Seed is: ', seed
+        # give this seed to numpy
+        np.random.seed(seed)
 
     def genOutSpec(self, tofile=None):
         """

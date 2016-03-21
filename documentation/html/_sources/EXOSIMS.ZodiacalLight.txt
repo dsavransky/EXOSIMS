@@ -12,6 +12,14 @@ EXOSIMS.ZodiacalLight.LindlerZodiacalLight module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.ZodiacalLight.StarkZodiacalLight module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.ZodiacalLight.StarkZodiacalLight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

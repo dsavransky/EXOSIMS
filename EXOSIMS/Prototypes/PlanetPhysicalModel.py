@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+import numpy as np
+from astropy import units as u
+from astropy import constants as const
+
 class PlanetPhysicalModel(object):
     """Planet Physical Model class template
     
@@ -16,12 +19,8 @@ class PlanetPhysicalModel(object):
 
     def __init__(self, **specs):
         
-        # default values
-        # replace default values with user specification values if any
-        # initialize values updated by functions
-        # set values derived from quantities above
-        pass
-    
+        return
+
     def __str__(self):
         """String representation of Planet Physical Model object
         
@@ -34,3 +33,60 @@ class PlanetPhysicalModel(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Planet Physical Model class object attributes'
+
+
+    def calc_albedo_from_sma(self,a):
+        """
+        Helper function for calculating albedo.
+        The prototype provides only a dummy function that always returns the 
+        same value of 0.367.
+
+        Args:
+            a (Quanitity):
+               Array of semi-major axis values
+
+        Returns:
+            p (numpy ndarray)
+
+        """
+        
+        return np.array([0.367]*a.size)
+
+
+    def calc_radius_from_mass(self, M):
+        """
+        Helper function for calculating radius given the mass.
+        
+        Prototype provides only a dummy function that assumes a density of water.
+
+        Args:
+            M (Quantity):
+               Array of mass values
+
+        Returns:
+            R (Quantity)
+
+        """
+
+        rho = 1000*u.kg/u.m**3.
+
+        return ((3.*M/rho/np.pi/4.)**(1./3.)).decompose()
+
+
+    def calc_mass_from_radius(self, R):
+        """
+        Helper function for calculating mass given the radius.
+
+        Args:
+            R (Quantity):
+               Array of radius values
+
+        Returns:
+            M (Quantity)
+
+        """
+
+        rho = 1000*u.kg/u.m**3.
+
+        return (rho*4*np.pi*R**3./4.).decompose()
+

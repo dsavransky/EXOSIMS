@@ -41,6 +41,7 @@
   <h1>Source code for EXOSIMS.MissionSim</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">py_random</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 
@@ -102,15 +103,23 @@
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">script</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-                <span class="n">specs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
+                <span class="n">specs_from_file</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> improperly formatted.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s2">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">raise</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">specs_from_file</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># extend given specs with file specs</span>
+        <span class="n">specs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">specs_from_file</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># set up numpy random number seed at top</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">random_seed_initialize</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
 
         <span class="c1">#preserve star catalog name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">]</span>
@@ -155,6 +164,19 @@
         <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modName</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">])</span>
 
+<div class="viewcode-block" id="MissionSim.random_seed_initialize"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.random_seed_initialize">[docs]</a>    <span class="k">def</span> <span class="nf">random_seed_initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
+        <span class="sd">r&quot;&quot;&quot;Initialize random number seed for simulation repeatability.</span>
+
+<span class="sd">        Algorithm: Get a large but printable integer from the system generator, which is seeded </span>
+<span class="sd">        automatically, and use this number to seed the numpy generator.  Otherwise, if a seed was</span>
+<span class="sd">        given explicitly, use it instead.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;seed&#39;</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="n">seed</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">seed</span> <span class="o">=</span> <span class="n">py_random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">1e9</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s1">&#39;MissionSim: Seed is: &#39;</span><span class="p">,</span> <span class="n">seed</span>
+        <span class="c1"># give this seed to numpy</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="MissionSim.genOutSpec"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.genOutSpec">[docs]</a>    <span class="k">def</span> <span class="nf">genOutSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tofile</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 from astropy import units as u
 from astropy import constants as const
 import numpy as np
 import copy
+import numbers
+from EXOSIMS.util.get_module import get_module
 
 class PlanetPopulation(object):
     """Planet Population Description class template
@@ -38,12 +39,11 @@ class PlanetPopulation(object):
         Mprange (Quantity):
             1D numpy ndarray containing minimum and maximum planetary mass
             (default units of kg)
-        scaleOrbits (bool):
-            boolean which signifies if planetary orbits should be scaled by the
-            square root of the luminosity
         rrange (Quantity):
             1D numpy array containing minimum and maximum orbital radius
             (default units of km)
+        scaleOrbits (bool):
+            Scales orbits by sqrt(L) when True
         
     """
 
@@ -53,7 +53,7 @@ class PlanetPopulation(object):
     def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
                  wrange=[0.,360.], Orange=[0.,360.], Irange=[0.,180.],\
                  prange=[0.1,0.6], Rrange=[1.,30.], Mprange = [1.,4131.],\
-                 scalefac=False, **specs):
+                 scaleOrbits = False, **specs):
         
         #do all input checks
         self.arange = self.checkranges(arange,'arange')*u.AU
@@ -65,9 +65,9 @@ class PlanetPopulation(object):
         self.Rrange = self.checkranges(Rrange,'Rrange')*const.R_earth
         self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
 
-        assert isinstance(scalefac,bool), "scalefac must be boolean"
+        assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
-        self.scaleOrbits = scalefac
+        self.scaleOrbits = scaleOrbits
         
         # orbital radius range
         self.rrange = [self.arange[0].value*(1.-self.erange[1]),\
@@ -84,6 +84,10 @@ class PlanetPopulation(object):
 
             else:
                 self._outspec[key] = self.__dict__[key]
+
+        # import PlanetPhysicalModel
+        PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
+        self.PlanetPhysicalModel = PlanPhys(**specs)
     
     def checkranges(self,var,name):
         """Helper function provides asserts on all 2 element lists of ranges
@@ -107,163 +111,173 @@ class PlanetPopulation(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Planet Population class object attributes'
+    
+    def gen_input_check(self,n):
+        """"
+        Helper function checks that input is integer and casts to int
+        """
+        assert isinstance(n,numbers.Number) and float(n).is_integer(),\
+            "Input must be an integer value."
+        return int(n)
         
-    def semi_axis(self, x):
-        """Probability density function for semi-major axis in AU
+
+    def gen_sma(self, n):
+        """Generate semi-major axis values in AU
         
-        The prototype gives a uniform distribution between the minimum and 
+        The prototype provides a log-uniform distribution between the minimum and 
         maximum values.
         
         Args:
-            x (float):
-                semi-major axis value in AU
+            n (numeric):
+                Number of samples to generate
                 
         Returns:
-            pdf (float):
-                probability density function value
-        
+            a (astropy Quantity units AU)
+
         """
+        n = self.gen_input_check(n)
+        v = self.arange.value
+        vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
-        pdf = 1./(self.arange[1].value - self.arange[0].value)
-        
-        return pdf
-        
-    def eccentricity(self, x):
-        """Probability density function for eccentricity
-        
-        The prototype gives a uniform distribution between the minimum and 
+        return vals*self.arange.unit
+
+    def gen_eccentricity(self, n):
+        """Generate eccentricity values
+
+        The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
         Args:
-            x (float):
-                eccentricity value
-        
+            n (numeric):
+                Number of samples to generate
+                
         Returns:
-            pdf (float):
-                probability density function value
-        
+            e (numpy ndarray)
+
         """
+        n = self.gen_input_check(n)
+        vals = self.erange[0] +(self.erange[1] - self.erange[0])*np.random.uniform(size=n)
         
-        pdf = 1./(self.erange[1] - self.erange[0])
-        
-        return pdf
-        
-    def arg_perigee(self, x):
-        """Probability density function for argument of perigee in degrees
-        
-        The prototype gives a uniform distribution between the minimum and 
+        return vals
+
+    def gen_w(self, n):
+        """Generate argument of periapse in degrees
+
+        The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
         Args:
-            x (float):
-                argument of perigee in degrees
-        
-        Returns:
-            pdf (float):
-                probability density function value
-        
-        """
-        
-        pdf = 1./(self.wrange[1].value - self.wrange[0].value)
-        
-        return pdf
-        
-    def RAAN(self, x):
-        """Probability density function for right ascension of the ascending node
-        
-        The prototype gives a uniform distribution between the minimum and
-        maximum values in degrees.
-        
-        Args:
-            x (float):
-                right ascension of the ascending node in degrees
+            n (numeric):
+                Number of samples to generate
                 
         Returns:
-            pdf (float):
-                probability density function value
-        
+            w (astropy Quantity units degrees)
+
         """
+        n = self.gen_input_check(n)
+        v = self.wrange.value
+        vals = v[0]+(v[1]-v[0])*np.random.uniform(size=n)
         
-        pdf = 1./(self.Orange[1].value - self.Orange[0].value)
-        
-        return pdf
-        
-    def radius(self, x):
-        """Probability density function for planet radius in km
-        
-        The prototype gives a uniform distribution between the minimum and 
-        maximum values in km.
-        
-        Args:
-            x (float):
-                planet radius in km
-        
-        Returns:
-            pdf (float):
-                probability density function value
-        
-        """
-        
-        pdf = 1./(self.Rrange[1].to(u.km).value - self.Rrange[0].to(u.km).value)
-        
-        return pdf
-        
-    def mass(self, x):
-        """Probability density function for planetary mass in kg
-        
-        The prototype gives a uniform distribution between the minimum and 
-        maximum values in kg.
-        
-        Args:
-            x (float):
-                planet mass in kg
-                
-        Returns:
-            pdf (float):
-                probability density function value
-            
-        """
-        
-        pdf = 1./(self.Mprange[1].to(u.kg).value - self.Mprange[0].to(u.kg).value)
-        
-        return pdf
-        
-    def albedo(self, x):
-        """Probability density function for planetary albedo
-        
-        The prototype gives a uniform distribution between the minimum and 
+        return vals*self.wrange.unit
+
+    def gen_O(self, n):
+        """Generate longitude of the ascending node in degrees
+
+        The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
         Args:
-            x (float):
-                planet albedo
+            n (numeric):
+                Number of samples to generate
                 
         Returns:
-            pdf (float):
-                probability density function value
-        
+            O (astropy Quantity units degrees)
+
         """
+        n = self.gen_input_check(n)
+        v = self.Orange.value
+        vals = v[0]+(v[1]-v[0])*np.random.uniform(size=n)
         
-        pdf = 1./(self.prange[1] - self.prange[0])
+        return vals*self.Orange.unit
+
+    def gen_radius(self, n):
+        """Generate planetary radius values in m
         
-        return pdf
-        
-    def inclination(self, x):
-        """Probability density function for planet orbital inclination (degrees)
-        
-        The prototype gives a uniform distribution between the minimum and 
+        The prototype provides a log-uniform distribution between the minimum and 
         maximum values.
         
         Args:
-            x (float):
-                planet orbital inclination in degrees
+            n (numeric):
+                Number of samples to generate
                 
         Returns:
-            pdf (float):
-                probability density function
-        
+            R (astropy Quantity units m)
+
         """
+        n = self.gen_input_check(n)
+        v = self.Rrange.value
+        vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
-        pdf = (1./2.)*np.sin(np.radians(x))
+        return vals*self.Rrange.unit
+   
+
+    def gen_mass(self, n):
+        """Generate planetary mass values in kg
         
-        return pdf
+        The prototype provides a log-uniform distribution between the minimum and 
+        maximum values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+                
+        Returns:
+            Mp (astropy Quantity units kg)
+
+        """
+        n = self.gen_input_check(n)
+        v = self.Mprange.value
+        vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
+        
+        return vals*self.Mprange.unit
+   
+    def gen_albedo(self, n):
+        """Generate geometric albedo values
+
+        The prototype provides a uniform distribution between the minimum and 
+        maximum values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+                
+        Returns:
+            p (numpy ndarray)
+
+        """
+        n = self.gen_input_check(n)
+        vals = self.prange[0] +(self.prange[1] - self.prange[0])*np.random.uniform(size=n)
+        
+        return vals
+
+
+    def gen_I(self, n):
+        """Generate inclination in degrees
+
+        The prototype provides a sinusoidal distribution between the minimum and 
+        maximum values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+                
+        Returns:
+            I (astropy Quantity units degrees)
+
+        """
+        n = self.gen_input_check(n)
+        v = np.sort(np.cos(self.Irange))
+        vals = np.arccos(v[0]+(v[1]-v[0])*np.random.uniform(size=n)).to(self.Irange.unit)
+        
+        return vals
+

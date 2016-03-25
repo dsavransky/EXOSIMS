@@ -19,6 +19,8 @@ class KeplerLike1(PlanetPopulation):
     Attributes: 
         smaknee (numeric) 
             Location (in AU) of semi-major axis decay point.
+        esigma (numeric)
+            Sigma value of Rayleigh distribution for eccentricity.
         
 
     Notes:  

@@ -67,7 +67,7 @@ class SimulatedUniverse(object):
             1D numpy ndarray containing inclination in degrees for each planet            
         p (ndarray):
             1D numpy ndarray containing albedo for each planet        
-        fzodicurr (ndarray):
+        fEZ (ndarray):
             1D numpy ndarray containing exozodi level for each planet
     
     """
@@ -138,8 +138,8 @@ class SimulatedUniverse(object):
         self.p = self.PlanetPopulation.gen_albedo(self.nPlans)
         # planet initial positions
         self.r, self.v = self.planet_pos_vel() 
-        # exozodi levels for systems with planets
-        self.fzodicurr = self.ZodiacalLight.fzodi(self.planInds, self.I, self.TargetList)
+        # exo-zodi levels for systems with planets
+        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.planInds,self.I)
 
     def __str__(self):
         """String representation of Simulated Universe object

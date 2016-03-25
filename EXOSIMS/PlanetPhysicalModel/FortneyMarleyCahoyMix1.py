@@ -81,6 +81,12 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
                                     self.ggdat['x3'].flatten().astype(float),\
                                     Rtmp.flatten().astype(float))).T
         self.giant_vals = self.ggdat['x2'].flatten()
+
+        self.giant_pts2 = np.vstack((self.ggdat['x1'].flatten().astype(float),\
+                                    self.ggdat['x3'].flatten().astype(float),\
+                                    self.ggdat['x2'].flatten().astype(float))).T
+        self.giant_vals2 = Rtmp.flatten().astype(float)
+
         self.ggdat['radii'] = self.ggdat['radii']*const.R_jup
 
 
@@ -91,7 +97,7 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
 
 
         Args:
-            a (Quanitity):
+            a (Quanitity)
                Array of semi-major axis values
 
         Returns:
@@ -119,11 +125,12 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         and then things that can be giants.
 
         Args:
-            R (Quantity):
+            R (Quantity)
                Array of radius values
 
         Returns:
             M (Quantity)
+                Array of mass values
 
         """
 
@@ -167,11 +174,61 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
                  (Rtmp/const.R_earth).decompose().value))
         if np.any(np.isnan(Mtmp)):
             inds2 = np.isnan(Mtmp)
-            Mtmp[inds2] = (((1.33*u.g/u.cm**3.)*4*np.pi*Rtmp[inds2]**3./4.).decompose()/const.M_earth).value
-            
-            ((3.*M/(1.33*u.g/u.cm**3.)/np.pi/4.)**(1./3.)).decompose()
-        
+            Mtmp[inds2] = (((1.33*u.g/u.cm**3.)*4*np.pi*Rtmp[inds2]**3./3.).decompose()/const.M_earth).value
+                    
         M[inds] = Mtmp  
 
         return M*const.M_earth
+
+    def calc_radius_from_mass(self, M):
+        """
+        Helper function for calculating radius given the mass.  The calculation
+        is done in two steps, first covering all things that can only ice/rock/iron, 
+        and then things that can be giants.
+
+        Args:
+            M (Quantity)
+               Array of mass values
+
+        Returns:
+            R (Quantity)
+                Array of radius values
+
+        """
+
+        R = np.zeros(M.shape)
+        
+        #Everything below the tabulated mass values is treated as
+        #ice/rock/iron
+        inds = M <= np.nanmin(self.ggdat['planet_mass'])
+        Mtmp = M[inds]
+        Rtmp = np.zeros(Mtmp.shape)
+        fracs = np.random.uniform(size=Mtmp.size, low=-1.,high=1.)
+
+        #ice/rock
+        icerock = fracs < 0
+        Rtmp[icerock] = self.R_ir(np.abs(fracs[icerock]),\
+                (Mtmp[icerock]/const.M_earth).decompose().value)
+        
+        #rock/iron
+        rockiron = fracs >= 0
+        Rtmp[rockiron] = self.R_ri(np.abs(fracs[rockiron]),\
+                (Mtmp[rockiron]/const.M_earth).decompose().value)
+
+        R[inds] = Rtmp
+
+        #everything else is a giant. 
+        inds = M > np.nanmin(self.ggdat['planet_mass'])
+        Mtmp = M[inds]
+        R[inds] = interpolate.griddata(self.giant_pts2, self.giant_vals2,\
+                (np.random.uniform(low=0,high=100,size=Mtmp.size),\
+                 np.exp(np.log(0.02)+(np.log(9.5)-np.log(0.02))*np.random.uniform(size=Mtmp.size)),\
+                 (Mtmp/const.M_earth).decompose().value))
+
+        #things that failed
+        inds = np.isnan(R) | (R == 0.)
+        if np.any(inds):
+            R[inds] =   (((3.*M[inds]/(1.33*u.g/u.cm**3.)/np.pi/4.)**(1./3.)).decompose()/const.R_earth).value
+
+        return R*const.R_earth
 

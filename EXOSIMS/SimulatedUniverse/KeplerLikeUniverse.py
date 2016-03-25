@@ -59,8 +59,8 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.p = self.PlanetPhysicalModel.calc_albedo_from_sma(self.a)
         # planet initial positions
         self.r, self.v = self.planet_pos_vel() 
-        # exozodi levels for systems with planets
-        self.fzodicurr = self.ZodiacalLight.fzodi(self.planInds, self.I, self.TargetList)
+        # exo-zodi levels for systems with planets
+        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.planInds,self.I)
 
 
     def planet_to_star(self):

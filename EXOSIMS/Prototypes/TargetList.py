@@ -97,20 +97,10 @@ class TargetList(object):
     _outspec = {}
     
     def __init__(self, keepStarCatalog=False, **specs):
-        """Initializes target list
+        """
+        Initializes target list
                 
-        nan data from star catalog quantities are removed
-        binary stars are removed
-        maximum integration time is calculated
-        Filters applied to star catalog data:
-            *nan data from star catalog quantities are removed
-            *systems with planets inside the IWA removed
-            *systems where maximum delta mag is not in allowable orbital range 
-            removed
-            *systems where integration time is longer than maximum time removed
-            *systems not meeting the completeness threshold removed
-            
-        Additional filters are given in specific TargetList classes."""
+        """
         
         # get desired module names (specific or prototype)
                     
@@ -141,52 +131,21 @@ class TargetList(object):
         self.PostProcessing = PP(**specs)
 
         # list of possible Star Catalog attributes
-        atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
+        self.catalog_atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
-        # bring Star Catalog values to top level of Target List
-        for att in atts:
-            if type(getattr(self.StarCatalog, att)) == np.ma.core.MaskedArray:
-                setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
-            else:
-                setattr(self, att, getattr(self.StarCatalog, att))
-        
-        # number of target stars
-        self.nStars = len(self.Name);
-        # filter out nan attribute values from Star Catalog
-        self.nan_filter(atts)
-        # populate completion values
-        self.comp0 = self.Completeness.target_completeness(self)
-        # include completeness now that it is set
-        atts.append('comp0')
-        # populate maximum integration time
-        self.maxintTime = self.OpticalSystem.calc_maxintTime(self)
-        # include integration time now that it is set
-        atts.append('maxintTime')
-        # calculate 'true' and 'approximate' stellar masses
-        self.stellar_mass()
-        # if additional filters are desired, need atts fully populated
-        atts.append('MsEst')
-        atts.append('MsTrue')
-        
-        # filter out binary stars
-        self.binary_filter(atts)
-        # filter out systems with planets within the IWA
-        self.outside_IWA_filter(atts)
-        # filter out systems where maximum delta mag is not in allowable orbital range
-        self.max_dmag_filter(atts)
-        # filter out systems where integration time is longer than maximum time
-        self.int_cutoff_filter(atts)
-        # filter out systems which do not reach the completeness threshold
-        self.completeness_filter(atts)
-        
+
+        # now populate and filter the list
+        self.populate_target_list(**specs)
+        self.filter_target_list(**specs)
+
         # have target list, no need for catalog now
         if not keepStarCatalog:
             del self.StarCatalog
 
         self._outspec['nStars'] = self.nStars
         self._outspec['keepStarCatalog'] = keepStarCatalog
-        
+
     def __str__(self):
         """String representation of the Target List object
         
@@ -200,22 +159,88 @@ class TargetList(object):
         
         return 'Target List class object attributes'
                 
-    def nan_filter(self, atts):
+
+    def populate_target_list(self, **specs):
+        """ 
+        This function is actually responsible for populating values from the star catalog
+        (or any other source) into the target list attributes.
+
+        The prototype implementation does the following:
+
+        Copy directly from star catalog and remove stars with any NaN attributes
+        Calculate completeness and max integration time, and generates stellar masses.
+        
+        """
+
+        # bring Star Catalog values to top level of Target List
+        for att in self.catalog_atts:
+            if type(getattr(self.StarCatalog, att)) == np.ma.core.MaskedArray:
+                setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
+            else:
+                setattr(self, att, getattr(self.StarCatalog, att))
+        
+        # number of target stars
+        self.nStars = len(self.Name);
+        # filter out nan attribute values from Star Catalog
+        self.nan_filter()
+
+        # populate completness values
+        self.comp0 = self.Completeness.target_completeness(self)
+        # include completeness now that it is set
+        self.catalog_atts.append('comp0')
+        # populate maximum integration time
+        self.maxintTime = self.OpticalSystem.calc_maxintTime(self)
+        # include integration time now that it is set
+        self.catalog_atts.append('maxintTime')
+        # calculate 'true' and 'approximate' stellar masses
+        self.stellar_mass()
+        
+    
+    def filter_target_list(self,**specs):
+        """ 
+        This function is responsible for filtering by any required metrics.
+        
+        The prototype implementation does the following:
+
+        binary stars are removed
+        maximum integration time is calculated
+        Filters applied to star catalog data:
+            *nan data from star catalog quantities are removed
+            *systems with planets inside the IWA removed
+            *systems where maximum delta mag is not in allowable orbital range 
+            removed
+            *systems where integration time is longer than maximum time removed
+            *systems not meeting the completeness threshold removed
+            
+        Additional filters can be provided in specific TargetList implementations.
+        """
+
+        # filter out binary stars
+        self.binary_filter()
+        # filter out systems with planets within the IWA
+        self.outside_IWA_filter()
+        # filter out systems where maximum delta mag is not in allowable orbital range
+        self.max_dmag_filter()
+        # filter out systems where integration time is longer than maximum time
+        self.int_cutoff_filter()
+        # filter out systems which do not reach the completeness threshold
+        self.completeness_filter()
+
+
+    def nan_filter(self):
         """Populates Target List and filters out values which are nan
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
         # filter out nan values in numerical attributes
-        for att in atts:
+        for att in self.catalog_atts:
             if getattr(self, att).shape[0] == 0:
                 pass
             elif type(getattr(self, att)[0]) == str:
                 i = np.where(getattr(self, att) != float('nan'))
-                self.revise_lists(atts, i)
+                self.revise_lists(i)
             elif type(getattr(self, att)[0]) != np.unicode_ and type(getattr(self, att)[0]) != np.bool_:
                 if att == 'coords':
                     i1 = np.where(~np.isnan(self.coords.ra.value))
@@ -229,42 +254,36 @@ class TargetList(object):
                 else:
                     i = np.where(~np.isnan(getattr(self, att)))
 
-                self.revise_lists(atts, i)
+                self.revise_lists(i)
                 
-    def binary_filter(self, atts):
+    def binary_filter(self):
         """Removes stars which have attribute Binary_Cut == True
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
         # indices from Target List to keep
         i = np.where(self.Binary_Cut == False)
         
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def life_expectancy_filter(self, atts):
+    def life_expectancy_filter(self):
         """Removes stars from Target List which have BV < 0.3
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
         # indices from Target List to keep
         i = np.where(self.BV > 0.3)
         
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def main_sequence_filter(self, atts):
+    def main_sequence_filter(self):
         """Removes stars from Target List which are not main sequence
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
@@ -286,14 +305,13 @@ class TargetList(object):
         
         i = np.intersect1d(ia,ib)
        
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def fgk_filter(self, atts):
+    def fgk_filter(self):
         """Includes only F, G, K spectral type stars in Target List
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
+
         
         """
         
@@ -306,14 +324,12 @@ class TargetList(object):
         i = np.append(i, iK)
         i = np.unique(i)
         
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
     
-    def vis_mag_filter(self, atts, Vmagcrit):
+    def vis_mag_filter(self, Vmagcrit):
         """Includes stars which are below the maximum apparent visual magnitude
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
             Vmagcrit (float):
                 maximum apparent visual magnitude
         
@@ -322,9 +338,9 @@ class TargetList(object):
         # indices from Target List to keep
         i = np.where(self.Vmag < Vmagcrit)
         
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
 
-    def outside_IWA_filter(self, atts):
+    def outside_IWA_filter(self):
         """Includes stars with planets with orbits outside of the IWA 
         
         This method uses the following inherited class objects:
@@ -334,8 +350,6 @@ class TargetList(object):
                 PlanetPopulation class object
                 
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
@@ -344,9 +358,9 @@ class TargetList(object):
         else:
             i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist*u.pc))
    
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def int_cutoff_filter(self, atts):
+    def int_cutoff_filter(self):
         """Includes stars if calculated integration time is less than cutoff
         
         This method uses the following inherited class object:
@@ -354,16 +368,14 @@ class TargetList(object):
                 Rules class object
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
         i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)
 
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def max_dmag_filter(self, atts):
+    def max_dmag_filter(self):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
         This method uses the following inherited class objects:
@@ -373,8 +385,6 @@ class TargetList(object):
                 OpticalSystem class object
                 
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
                 
         """
         
@@ -408,9 +418,9 @@ class TargetList(object):
         t1 = np.max(self.PlanetPopulation.Rrange).to(u.AU).value**2*np.max(self.PlanetPopulation.prange)      
         i = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.OpticalSystem.dMagLim)
         
-        self.revise_lists(atts, i)
+        self.revise_lists(i)
         
-    def completeness_filter(self, atts):
+    def completeness_filter(self):
         """Includes stars if completeness is larger than the minimum value
         
         This method uses the following inherited class object:
@@ -418,28 +428,24 @@ class TargetList(object):
                 Completeness class object
                 
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
         
         """
         
         i = np.where(self.comp0 > self.Completeness.minComp)
 
-        self.revise_lists(atts, i)        
+        self.revise_lists(i)        
         
-    def revise_lists(self, atts, ind):
+    def revise_lists(self, ind):
         """Replaces Target List catalog attributes with filtered values, 
         and updates the number of target stars.
         
         Args:
-            atts (list):
-                list of StarCatalog class object attribute names
             ind (ndarray):
                 1D numpy ndarray of indices to keep
         
         """
         
-        for att in atts:
+        for att in self.catalog_atts:
             if att == 'coords':
                 self.coords = SkyCoord(ra=self.coords.ra[ind].value, dec=self.coords.dec[ind].value, unit='deg')
             else:
@@ -461,4 +467,8 @@ class TargetList(object):
         # normally distributed 'error'
         err = (np.random.random(len(self.MV))*2. - 1.)*0.07
         self.MsTrue = (1. + err)*self.MsEst
+
+        # if additional filters are desired, need self.catalog_atts fully populated
+        self.catalog_atts.append('MsEst')
+        self.catalog_atts.append('MsTrue')
         

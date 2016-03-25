@@ -44,6 +44,8 @@ class PlanetPopulation(object):
             (default units of km)
         scaleOrbits (bool):
             Scales orbits by sqrt(L) when True
+        PlanetPhysicalModel (PlanetPhysicalModel):
+            Planet physical model object
         
     """
 
@@ -75,15 +77,12 @@ class PlanetPopulation(object):
 
         #populate all atributes to outspec
         for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],u.Quantity):
-                self._outspec[key] = copy.copy(self.__dict__[key].value)
-                if key == 'Mprange':
-                    self._outspec[key] /= const.M_earth.value
-                elif key == 'Rrange':
-                    self._outspec[key] /= const.R_earth.value
-
-            else:
-                self._outspec[key] = self.__dict__[key]
+            att = self.__dict__[key]
+            self._outspec[key] = copy.copy(att.value) if isinstance(att,u.Quantity) else att
+            if key == 'Mprange':
+                self._outspec[key] /= const.M_earth.value
+            elif key == 'Rrange':
+                self._outspec[key] /= const.R_earth.value
 
         # import PlanetPhysicalModel
         PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')

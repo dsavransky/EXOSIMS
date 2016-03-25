@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.OpticalSystem.OptSys_Kasdin import OptSys_Kasdin
+from EXOSIMS.OpticalSystem.KasdinBraems import KasdinBraems
 from astropy import units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 
-class OptSys_Nemati(OptSys_Kasdin):
-    """WFIRST Optical System class
+class Nemati(KasdinBraems):
+    """Nemati Optical System class
     
-    This class contains all variables and methods specific to the WFIRST
-    optical system needed to perform Optical System Module calculations
-    in exoplanet mission simulation.
+    This class contains all variables and methods necessary to perform
+    Optical System Module calculations in exoplanet mission simulation using
+    the model from Nemati 2014.
     
     Args:
         \*\*specs:
@@ -20,7 +20,7 @@ class OptSys_Nemati(OptSys_Kasdin):
     
     def __init__(self, **specs):
         
-        OptSys_Kasdin.__init__(self, **specs)
+        KasdinBraems.__init__(self, **specs)
 
     def calc_intTime(self, targlist, sInd, I, dMag, WA):
         """Finds integration time for a specific target system,
@@ -48,7 +48,7 @@ class OptSys_Nemati(OptSys_Kasdin):
         """
 
         inst = self.Imager
-        syst = self.HLC
+        syst = self.ImagerSyst
         lam = inst['lam']
 
         # nb of pixels for photometry aperture = 1/sharpness

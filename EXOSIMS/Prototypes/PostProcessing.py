@@ -37,8 +37,9 @@ class PostProcessing(object):
         self.SNimag = float(SNimag)             # SNR for imaging/detection
         self.SNchar = float(SNchar)             # SNR for characterization
 
+        # populate outspec
         for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]  
+            self._outspec[key] = self.__dict__[key]
 
     def __str__(self):
         """String representation of Post Processing object

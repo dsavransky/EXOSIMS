@@ -22,8 +22,6 @@ class MissionSim(object):
             Observatory class object
         TimeKeeping (TimeKeeping):
             TimeKeeping class object
-        PostProcessing (PostProcessing):
-            PostProcessing class object
         TargetList (TargetList):
             TargetList class object
         PlanetPhysicalModel (PlanetPhysicalModel):
@@ -34,12 +32,12 @@ class MissionSim(object):
             PlanetPopulation class object
         ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
+        PostProcessing (PostProcessing):
+            PostProcessing class object
         Completeness (Completeness):
             Completeness class object
         BackgroundSources (BackgroundSources):
             Background Source class object
-        ZodiacalLight (ZodiacalLight):
-            Zodiacal light class object
         SurveyEnsemble (SurveyEnsemble):
             Survey Ensemble class object
     """

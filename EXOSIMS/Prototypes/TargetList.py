@@ -153,7 +153,6 @@ class TargetList(object):
         
         # number of target stars
         self.nStars = len(self.Name);
-        
         # filter out nan attribute values from Star Catalog
         self.nan_filter(atts)
         # populate completion values
@@ -185,6 +184,7 @@ class TargetList(object):
         if not keepStarCatalog:
             del self.StarCatalog
 
+        self._outspec['nStars'] = self.nStars
         self._outspec['keepStarCatalog'] = keepStarCatalog
         
     def __str__(self):

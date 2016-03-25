@@ -5,12 +5,12 @@ import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 
-class OptSys_Kasdin(OpticalSystem):
-    """WFIRST Optical System class
+class KasdinBraems(OpticalSystem):
+    """KasdinBraems Optical System class
     
-    This class contains all variables and methods specific to the WFIRST
-    optical system needed to perform Optical System Module calculations
-    in exoplanet mission simulation.
+    This class contains all variables and methods necessary to perform
+    Optical System Module calculations in exoplanet mission simulation using
+    the model from Kasdin & Braems 2006.
     
     Args:
         \*\*specs:
@@ -22,22 +22,11 @@ class OptSys_Kasdin(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
 
-        self.Imager,self.Spectro,self.HLC,self.SPC = None,None,None,None
-        for inst in self.scienceInstruments:
-            if 'imag' in inst['type'].lower():
-                self.Imager = inst
-            if 'spec' in inst['type'].lower():
-                self.Spectro = inst
-        for syst in self.starlightSuppressionSystems:
-            if 'hlc' in syst['type'].lower():
-                self.HLC = syst
-            if 'spc' in syst['type'].lower():
-                self.SPC = syst
-
-        assert self.Imager, "No imager defined."
-        assert self.Spectro, "No spectrograph defined."
-        assert self.HLC, "No hybrid Lyot coronagraph defined."
-        assert self.SPC, "No shaped pupil coronagraph defined."
+        # default detectors and imagers
+        self.Imager = self.scienceInstruments[0]
+        self.ImagerSyst = self.starlightSuppressionSystems[0]
+        self.Spectro = self.scienceInstruments[-1]
+        self.SpectroSyst = self.starlightSuppressionSystems[-1]
 
     def Cp_Cb(self, targlist, sInd, I, dMag, WA, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
@@ -76,19 +65,20 @@ class OptSys_Kasdin(OpticalSystem):
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
-        mag = self.starMag(targlist,sInd,lam)       # star visual magnitude
+        mV = self.starMag(targlist,sInd,lam)        # star visual magnitude
         zodi = targlist.ZodiacalLight               # zodiacalLight module
-        fzodi = zodi.fzodi(sInd,I,targlist)         # local + exozodi level
+        fZ = zodi.fZ(targlist,sInd,lam)             # surface brightness of local zodi
+        fEZ = zodi.fEZ(targlist,sInd,I)             # surface brightness of exo-zodi
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
-        Theta = X*lam.to(u.m)/self.pupilDiam*u.rad.to(u.arcsec)\
+        Theta = (X*lam.to(u.m)/self.pupilDiam*u.rad).to(u.arcsec) \
                                                     # aperture photometry angular radius
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
 
         # electron count rates [ s^-1 ]
         C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
-        C_p = C_F0*10.**(-0.4*(mag + dMag))         # planet signal
-        C_s = C_F0*10.**(-0.4*mag)*Q                # residual suppressed starlight (coro)
-        C_z = C_F0*fzodi*Omega                      # zodiacal light = local + exo
+        C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
+        C_s = C_F0*10.**(-0.4*mV)*Q                 # residual suppressed starlight (coro)
+        C_z = C_F0*(fZ+fEZ)*Omega                   # zodiacal light = local + exo
         C_id = Npix*inst['idark']                   # dark current
         C_cc = Npix*inst['CIC']/inst['texp']        # clock-induced-charge
         C_sr = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
@@ -120,9 +110,9 @@ class OptSys_Kasdin(OpticalSystem):
                 units of day)
         
         """
-
+        
         inst = self.Imager
-        syst = self.HLC
+        syst = self.ImagerSyst
         lam = inst['lam']
 
         # nb of pixels for photometry aperture = 1/sharpness
@@ -172,8 +162,9 @@ class OptSys_Kasdin(OpticalSystem):
                 1D numpy ndarray of characterization times (default units of day)
         
         """
+        
         inst = self.Spectro
-        syst = self.SPC
+        syst = self.SpectroSyst
         lam = inst['lam']
 
         # nb of pixels for photometry aperture = 1/sharpness

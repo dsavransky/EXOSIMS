@@ -117,14 +117,7 @@ class BrownCompleteness(Completeness):
         
         Args:
             targlist (TargetList): 
-                TargetList class object which, in addition to TargetList class
-                object attributes, has available:
-                    targlist.OpticalSystem: 
-                        OpticalSystem class object
-                    targlist.rules: 
-                        Rules class object
-                    targlist.ZodiacalLight: 
-                        ZodiacalLight class object
+                TargetList class object
             
         Returns:
             comp0 (ndarray): 

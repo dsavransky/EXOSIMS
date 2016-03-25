@@ -203,7 +203,7 @@ class SurveySimulation(object):
         spectra = np.zeros((self.SimulatedUniverse.nPlans,1), dtype=int)
             
         # get index of first target star
-        s_ind = self.initial_target()
+        sInd = self.initial_target()
         
         # loop until mission is finished
         while self.TimeKeeping.currenttimeNorm < self.TimeKeeping.missionFinishNorm:
@@ -213,7 +213,7 @@ class SurveySimulation(object):
             # dictionary containing results
             DRM = {}
             # store target star index
-            DRM['target_ind'] = s_ind
+            DRM['target_ind'] = sInd
             # store arrival time
             DRM['arrival_time'] = self.TimeKeeping.currenttimeNorm.to(u.day).value
             
@@ -230,13 +230,13 @@ class SurveySimulation(object):
             
 ##!!!!oflloded to simulated universe
             # find planets belonging to target star
-            pInds = np.where(self.SimulatedUniverse.planInds == s_ind)[0]
+            pInds = np.where(self.SimulatedUniverse.planInds == sInd)[0]
             
             # update visited list for current star
-            visited[s_ind] += 1
+            visited[sInd] += 1
 
             # find out if observations are possible and get relevant data
-            observationPossible, t_int, DRM, s, dMag, Ip = self.observation_detection(pInds, s_ind, DRM, planPosTime)        
+            observationPossible, t_int, DRM, s, dMag, Ip = self.observation_detection(pInds, sInd, DRM, planPosTime)        
             t_int += self.Observatory.settlingTime
             # store detection integration time
             DRM['det_int_time'] = t_int.to(u.day).value
@@ -257,12 +257,12 @@ class SurveySimulation(object):
             
             # encode detection status
             s, dMag, Ip, DRM, observed = self.det_data(s, dMag, Ip, DRM, FA, 
-                                                       DET, MD, s_ind, pInds, 
+                                                       DET, MD, sInd, pInds, 
                                                        observationPossible, 
                                                        observed)
             
             if doChar:
-                DRM, FA, spectra = self.observation_characterization(observationPossible, pInds, s_ind, spectra, s, Ip, DRM, FA, t_int)
+                DRM, FA, spectra = self.observation_characterization(observationPossible, pInds, sInd, spectra, s, Ip, DRM, FA, t_int)
              
             ##offload to own method 
             # schedule a revisit if there is a planet
@@ -270,37 +270,37 @@ class SurveySimulation(object):
                 if DET or FA:
                     # find mu based on planet with minimum separation
                     if np.isscalar(s.value):
-                        mu = const.G*(self.SimulatedUniverse.Mp[pInds] + self.TargetList.MsTrue[s_ind]*const.M_sun)
+                        mu = const.G*(self.SimulatedUniverse.Mp[pInds] + self.TargetList.MsTrue[sInd]*const.M_sun)
                     else:
                         muind = np.where(np.min(s))[0][0]
-                        mu = const.G*(self.SimulatedUniverse.Mp[pInds[muind]] + self.TargetList.MsTrue[s_ind]*const.M_sun)    
+                        mu = const.G*(self.SimulatedUniverse.Mp[pInds[muind]] + self.TargetList.MsTrue[sInd]*const.M_sun)    
                     # calculate the orbital period based on minimum apparent separation
                     T = 2.*np.pi*np.sqrt(np.min(s)**3/mu)
                     t_rev = self.TimeKeeping.currenttimeNorm + T/2.
                 else:
                     # find mu based on planet with minimum separation
                     if np.isscalar(s.value):
-                        mu = const.G*(self.SimulatedUniverse.Mp[pInds] + self.TargetList.MsTrue[s_ind]*const.M_sun)
+                        mu = const.G*(self.SimulatedUniverse.Mp[pInds] + self.TargetList.MsTrue[sInd]*const.M_sun)
                     else:
                         muind = np.where(s == np.min(s))[0][0]
-                        mu = const.G*(self.SimulatedUniverse.Mp[pInds[muind]] + self.TargetList.MsTrue[s_ind]*const.M_sun)
+                        mu = const.G*(self.SimulatedUniverse.Mp[pInds[muind]] + self.TargetList.MsTrue[sInd]*const.M_sun)
                     # calculate orbital period based on average of population semi-major axis
                     T = 2.*np.pi*np.sqrt(self.PlanetPopulation.arange.mean()**3/mu)
                     t_rev = self.TimeKeeping.currenttimeNorm + 0.75*T
             else:
                 # revisit based on average of population semi-major axis and mass
                 Mp = self.SimulatedUniverse.Mp.mean()
-                mu = const.G*(Mp + self.TargetList.MsTrue[s_ind]*const.M_sun)
+                mu = const.G*(Mp + self.TargetList.MsTrue[sInd]*const.M_sun)
                 T = 2.*np.pi*np.sqrt(self.PlanetPopulation.arange.mean()**3/mu)
                 t_rev = self.TimeKeeping.currenttimeNorm + 0.75*T
             
 
 ###fix this!
-            # populate revisit list (s_ind is converted to float)
+            # populate revisit list (sInd is converted to float)
             if revisit_list.size == 0:
-                revisit_list = np.hstack((revisit_list, np.array([s_ind, t_rev.to(u.day).value])))
+                revisit_list = np.hstack((revisit_list, np.array([sInd, t_rev.to(u.day).value])))
             else:
-                revisit_list = np.vstack((revisit_list, np.array([s_ind, t_rev.to(u.day).value])))
+                revisit_list = np.vstack((revisit_list, np.array([sInd, t_rev.to(u.day).value])))
            
 
             ### more methods inside timekeeping
@@ -313,10 +313,10 @@ class SurveySimulation(object):
             self.TimeKeeping.update_times(dt)
             
             # update completeness values
-            self.TargetList.comp0 = self.Completeness.completeness_update(s_ind, self.TargetList, obsbegin, obsend, nexttime)
+            self.TargetList.comp0 = self.Completeness.completeness_update(sInd, self.TargetList, obsbegin, obsend, nexttime)
             
             # acquire a new target star index
-            s_ind, DRM = self.next_target(s_ind, self.TargetList, revisit_list, extended_list, DRM)
+            sInd, DRM = self.next_target(sInd, self.TargetList, revisit_list, extended_list, DRM)
             
             # append result values to self.DRM
             self.DRM.append(DRM)
@@ -327,7 +327,7 @@ class SurveySimulation(object):
                     print 'Total fuel mass excedeed at %r' % self.TimeKeeping.currenttimeNorm                    
                     break
 #            break
-#            if visited[s_ind] == 3:
+#            if visited[sInd] == 3:
 #                self.TimeKeeping.currenttimeNorm = 100*u.year
 #            if self.TimeKeeping.currenttimeNorm > 100*u.day:
 #                self.TimeKeeping.currenttimeNorm = 100*u.year                       
@@ -362,7 +362,7 @@ class SurveySimulation(object):
                 TargetList class object
         
         Returns:
-            s_ind (int):
+            sInd (int):
                 index of initial target star
         
         """
@@ -391,13 +391,13 @@ class SurveySimulation(object):
             print 'No targets available'
             
         s0 = self.TargetList.comp0[sinds].argmax()
-        s_ind = sinds[s0]
+        sInd = sinds[s0]
         
-        return s_ind
+        return sInd
        
 
 ####cleanup all offloaded to opticalsystem
-    def observation_detection(self, pInds, s_ind, DRM, planPosTime):
+    def observation_detection(self, pInds, sInd, DRM, planPosTime):
         """Finds if planet observations are possible and relevant information
         
         This method makes use of the following inherited class objects:
@@ -405,7 +405,7 @@ class SurveySimulation(object):
         Args:
             pInds (ndarray):
                 1D numpy ndarray of planet indices
-            s_ind (int):
+            sInd (int):
                 target star index
             DRM (dict):
                 dictionary containing simulation results
@@ -427,7 +427,7 @@ class SurveySimulation(object):
         # dMag and Ip placeholders
 # replace by actual dMmag
         dMag = self.OpticalSystem.dMagLim - np.abs(np.random.randn(1)*0.5)
-        Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[s_ind]+dMag)/2.5) 
+        Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[sInd]+dMag)/2.5) 
         # apparent separation placeholders
         if pInds.size == 0:
             s = np.array([1.])*u.AU
@@ -458,22 +458,23 @@ class SurveySimulation(object):
 
         # determine if planets are inside IWA or outside OWA
         if np.any(observationPossible):
-            observationPossible, s = self.check_IWA_OWA(observationPossible,self.SimulatedUniverse.r[pInds],self.TargetList.dist[s_ind],self.OpticalSystem.IWA,self.OpticalSystem.OWA)
+            observationPossible, s = self.check_IWA_OWA(observationPossible,self.SimulatedUniverse.r[pInds],self.TargetList.dist[sInd],self.OpticalSystem.IWA,self.OpticalSystem.OWA)
 
         # determine if planets are bright enough
         if np.any(observationPossible):
             observationPossible, dMag = self.check_brightness(observationPossible, self.SimulatedUniverse.r[pInds], self.SimulatedUniverse.Rp[pInds], self.SimulatedUniverse.p[pInds], self.OpticalSystem.dMagLim)
 
         # set integration time to max integration time as a default
-        t_int = self.TargetList.maxintTime[s_ind]
+        t_int = self.OpticalSystem.calc_maxintTime[sInd]
             
         # determine integration time and update observationPossible
         if np.any(observationPossible):
             # find irradiance
-            Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[s_ind]+dMag)/2.5)
+            Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[sInd]+dMag)/2.5)
             # find true integration time
-            t_trueint = self.OpticalSystem.calc_intTime(self.TargetList, s_ind, dMag, \
-                    self.SimulatedUniverse.get_current_WA(pInds),  self.SimulatedUniverse.r[pInds])
+            t_trueint = self.OpticalSystem.calc_intTime(self.TargetList, sInd, \
+                    self.SimulatedUniverse.I[pInds], dMag, \
+                    self.SimulatedUniverse.get_current_WA(pInds))
             # update observationPossible
             observationPossible = np.logical_and(observationPossible, t_trueint <= self.OpticalSystem.intCutoff) 
 
@@ -481,13 +482,13 @@ class SurveySimulation(object):
         # and update integration time
         if np.any(observationPossible):
             try:
-                t_int, observationPossible = self.check_visible_end(observationPossible, t_int, t_trueint, s_ind, pInds, False)
+                t_int, observationPossible = self.check_visible_end(observationPossible, t_int, t_trueint, sInd, pInds, False)
             except ValueError:
                 observationPossible = False
                 
         if self.OpticalSystem.haveOcculter:
             # find disturbance forces on occulter
-            dF_lateral, dF_axial = self.Observatory.distForces(self.TimeKeeping, self.TargetList, s_ind)    
+            dF_lateral, dF_axial = self.Observatory.distForces(self.TimeKeeping, self.TargetList, sInd)    
             # store these values
             DRM['dF_lateral'] = dF_lateral.to(u.N).value
             DRM['dF_axial'] = dF_axial.to(u.N).value
@@ -500,7 +501,7 @@ class SurveySimulation(object):
             
         return observationPossible, t_int, DRM, s, dMag, Ip
         
-    def observation_characterization(self, observationPossible, pInds, s_ind, spectra, s, Ip, DRM, FA, t_int):
+    def observation_characterization(self, observationPossible, pInds, sInd, spectra, s, Ip, DRM, FA, t_int):
         """Finds if characterizations are possible and relevant information
         
         Args:
@@ -509,7 +510,7 @@ class SurveySimulation(object):
                 each planet is possible
             pInds (ndarray):
                 1D numpy ndarray of planet indices
-            s_ind (int):
+            sInd (int):
                 target star index
             spectra (ndarray):
                 numpy ndarray of values indicating if planet spectra has been
@@ -538,10 +539,10 @@ class SurveySimulation(object):
             if np.any(spectra[pInds[observationPossible],0] == 0):
                 # perform first characterization
                 # find throughput and contrast
-                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.arcsec))
-                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.arcsec))
-                # find characterization time                    
-                t_char = self.find_t_char(throughput, contrast, Ip, FA, s_ind, pInds)
+                throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.arcsec))
+                contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.arcsec))
+                # find characterization time
+                t_char = self.OpticalSystem.calc_charTime(targlist, sInd, I, dMag, WA)
                 # account for 5 bands and one coronagraph
                 t_char = t_char*4
                 # determine which planets will be observable at the end
@@ -551,7 +552,7 @@ class SurveySimulation(object):
                 chargo = False
                         
                 try:
-                    t_char, charPossible, chargo = self.check_visible_end(charPossible, t_char, t_char, s_ind, pInds, True)
+                    t_char, charPossible, chargo = self.check_visible_end(charPossible, t_char, t_char, sInd, pInds, True)
                 except ValueError:
                     chargo = False
                 #chargo = True            
@@ -560,7 +561,7 @@ class SurveySimulation(object):
                     if self.OpticalSystem.haveOcculter:
                         # decrement sc mass
                         # find disturbance forces on occulter
-                        dF_lateral, dF_axial = self.Observatory.distForces(self.TimeKeeping, self.TargetList, s_ind)    
+                        dF_lateral, dF_axial = self.Observatory.distForces(self.TimeKeeping, self.TargetList, sInd)    
                         # decrement mass for station-keeping
                         intMdot, mass_used, deltaV = self.Observatory.mass_dec(dF_lateral, t_int)
                         mass_used_char = t_char*intMdot
@@ -597,7 +598,7 @@ class SurveySimulation(object):
                         else:
                             nld = self.OpticalSystem.IWA.to(u.rad).value*np.sqrt(
                             self.OpticalSystem.pupilArea/self.OpticalSystem.shapeFac)/self.OpticalSystem.lam
-                            lambdaeff = (np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.rad).value)
+                            lambdaeff = (np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.rad).value)
                             lambdaeff = lambdaeff*np.sqrt(self.OpticalSystem.pupilArea/self.OpticalSystem.shapeFac)
                             lambdaeff = lambdaeff/nld
                             charPossible = np.logical_and(charPossible, lambdaeff >= 800.*u.nm)
@@ -682,7 +683,7 @@ class SurveySimulation(object):
     
 
 #####check for messy statements
-    def check_visible_end(self, observationPossible, t_int, t_trueint, s_ind, pInds, t_char_calc):
+    def check_visible_end(self, observationPossible, t_int, t_trueint, sInd, pInds, t_char_calc):
         """Determines if planets are visible at the end of the observation time
         
         This method makes use of the following inherited objects:
@@ -706,7 +707,7 @@ class SurveySimulation(object):
             t_trueint (Quantity):
                 1D numpy ndarray of calculated integration times for planets
                 (units of time)
-            s_ind (int):
+            sInd (int):
                 target star index
             pInds (ndarray):
                 1D numpy ndarray of planet indices
@@ -731,7 +732,7 @@ class SurveySimulation(object):
                 r = self.SimulatedUniverse.r[pInds[i]]
                 v = self.SimulatedUniverse.v[pInds[i]]
                 Mp = self.SimulatedUniverse.Mp[pInds[i]]
-                MsTrue = self.TargetList.MsTrue[s_ind]
+                MsTrue = self.TargetList.MsTrue[sInd]
                 Rp = self.SimulatedUniverse.Rp[pInds[i]]
                 p = self.SimulatedUniverse.p[pInds[i]]
                 if t_char_calc:
@@ -739,14 +740,14 @@ class SurveySimulation(object):
                 else:
                     dt = t_trueint[i] + self.Observatory.settlingTime
 
-                obsRes = self.sys_end_res(dt, s_ind, r, v, Mp, MsTrue, Rp, p)
+                obsRes = self.sys_end_res(dt, sInd, r, v, Mp, MsTrue, Rp, p)
 
                 if obsRes == 1:
                     # planet visible at the end of observation
                     observationPossible[i] = True
                     if not t_char_calc:
                         # update integration time
-                        if t_int == self.TargetList.maxintTime[s_ind]:
+                        if t_int == self.TargetList.maxintTime[sInd]:
                             t_int = t_trueint[i]
                         else:
                             if t_trueint[i] > t_int:
@@ -764,7 +765,7 @@ class SurveySimulation(object):
         else:
             return t_int, observationPossible
         
-    def sys_end_res(self, dt, s_ind, r, v, Mp, MsTrue, Rp, p):
+    def sys_end_res(self, dt, sInd, r, v, Mp, MsTrue, Rp, p):
         """Determines if a planet is visible at the end of the observation time
         
         This method makes use of the following inherited objects:        
@@ -780,7 +781,7 @@ class SurveySimulation(object):
         Args:
             dt (Quantity):
                 propagation time (units of time)
-            s_ind (int):
+            sInd (int):
                 target star index
             r (Quantity):
                 planet position vector as 1D numpy ndarray (units of distance)
@@ -806,7 +807,7 @@ class SurveySimulation(object):
         a = self.Observatory.keepout(self.TimeKeeping.currenttimeAbs+dt, self.TargetList, self.OpticalSystem.telescopeKeepout)
         # if star is not inside keepout zone at end of observation, see if 
         # planet is still observable
-        if self.Observatory.kogood[s_ind]:
+        if self.Observatory.kogood[sInd]:
             # propagate planet to observational period end and find dMag
             rend, vend = self.SimulatedUniverse.prop_system(r, v, Mp, MsTrue, dt)
             # calculate dMagend
@@ -816,7 +817,7 @@ class SurveySimulation(object):
             Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
             dMagend = -2.5*np.log10(Rp.to(u.km).value**2*p) -2.5*np.log10(Phi) + 5.*np.log10(rendmag)
            
-            if dMagend <= self.OpticalSystem.dMagLim and send >= self.TargetList.dist[s_ind]*u.pc*np.tan(self.OpticalSystem.IWA):
+            if dMagend <= self.OpticalSystem.dMagLim and send >= self.TargetList.dist[sInd]*u.pc*np.tan(self.OpticalSystem.IWA):
                 obsRes = 1
             else:
                 obsRes = 0
@@ -825,7 +826,7 @@ class SurveySimulation(object):
             
         return obsRes
 
-    def det_data(self, s, dMag, Ip, DRM, FA, DET, MD, s_ind, pInds, observationPossible, observed):
+    def det_data(self, s, dMag, Ip, DRM, FA, DET, MD, sInd, pInds, observationPossible, observed):
         """Determines detection status
         
         This method updates the arguments s, dMag, Ip, and DRM based on the 
@@ -855,7 +856,7 @@ class SurveySimulation(object):
                 Boolean signifying DETection
             MD (bool):
                 Boolean signifying Missed Detection
-            s_ind (int):
+            sInd (int):
                 index of star in target list
             pInds (ndarray):
                 idices of planets belonging to target star
@@ -881,13 +882,13 @@ class SurveySimulation(object):
             # false alarm
             DRM['det_status'] = -2
             # generate random WA and dMag for detection
-            s = self.TargetList.dist[s_ind]*u.pc*np.tan(self.OpticalSystem.IWA)
+            s = self.TargetList.dist[sInd]*u.pc*np.tan(self.OpticalSystem.IWA)
             if self.PlanetPopulation.scaleOrbits:
-                s += np.random.rand()*(self.PlanetPopulation.arange.max() - self.PlanetPopulation.arange.min())*np.sqrt(self.TargetList.L[s_ind])
+                s += np.random.rand()*(self.PlanetPopulation.arange.max() - self.PlanetPopulation.arange.min())*np.sqrt(self.TargetList.L[sInd])
             else:
                 s += np.random.rand()*(self.PlanetPopulation.arange.max() - self.PlanetPopulation.arange.min())
             dMag = self.OpticalSystem.dMagLim - np.abs(np.random.randn()*0.5)
-            Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[s_ind]+dMag)/2.5)
+            Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[sInd]+dMag)/2.5)
         elif MD:
             # missed detection, set status in DRM
             DRM['det_status'] = -1
@@ -898,74 +899,16 @@ class SurveySimulation(object):
                 # set status in DRM
                 DRM['det_status'] = 1
                 # set WA and Delta Mag of detection in DRM
-                DRM['det_WA'] = np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.marcsec)[0].value
+                DRM['det_WA'] = np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.marcsec)[0].value
                 DRM['det_dMag'] = dMag[0]
             else:
                 DRM['det_status'] = observationPossible.astype(int).tolist()
-                DRM['det_WA'] = np.arctan(s/(self.TargetList.dist[s_ind]*u.pc)).to(u.marcsec).min().value
+                DRM['det_WA'] = np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.marcsec).min().value
                 DRM['det_dMag'] = (dMag[observationPossible]).max()
         
         return s, dMag, Ip, DRM, observed
-        
-    def find_t_char(self, throughput, contrast, Ip, FA, s_ind, pInds):
-        """Finds characterization time
-        
-        This method uses the following inherited class objects:
-            self.OpticalSystem:
-                OpticalSystem class object
-            self.ZodiacalLight:
-                ZodiacalLight class object
-            self.TargetList:
-                TargetList class object
-                
-        Args:
-            throughput (float):
-                scalar value for throughput
-            contrast (float):
-                scalar value for contrast
-            Ip (Quantity):
-                irradiance (units of flux per time)
-            FA (bool):
-                False Alarm boolean
-            s_ind (int):
-                index of current target star in target list
-            pInds (ndarray):
-                indices of planets belonging to target star
-                
-        Returns:
-            t_char (Quantity):
-                characterization time (units of s)
-        
-        """
-        
-        QE = self.OpticalSystem.QE(self.OpticalSystem.specLam)
-        FluxB = 9.5e7/(u.m**2)/u.nm/u.s
-        
-        # planet count
-        cp = QE*self.OpticalSystem.attenuation*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(Ip/(9.5e7/
-        (u.m**2)/u.nm/u.s))*FluxB*throughput*self.OpticalSystem.pupilArea
-        # star count
-        cs = QE*self.OpticalSystem.attenuation*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(
-        self.OpticalSystem.pupilArea)*FluxB*10.**(-self.TargetList.Vmag[s_ind]/2.5)*contrast/2
-        
-        # zodi count
-        if FA:
-            temp = self.ZodiacalLight.fzodi(s_ind, 0., self.TargetList)
-            Z = FluxB*10.**(-23.54/2.5)*(1/u.arcsec**2)*temp*(self.OpticalSystem.specLam/
-            self.OpticalSystem.Rspec)*self.OpticalSystem.pupilArea*(self.OpticalSystem.pixelArea/
-            (self.OpticalSystem.focalLength**2))*u.sr
-        else:
-            Z = FluxB*10.**(-23.54/2.5)*(1/u.arcsec**2)*(
-            self.SimulatedUniverse.fzodicurr[pInds])*(self.OpticalSystem.specLam/self.OpticalSystem.Rspec)*(
-            self.OpticalSystem.pupilArea)*(self.OpticalSystem.pixelArea/(self.OpticalSystem.focalLength**2))*u.sr
-        
-        t_char = (self.OpticalSystem.SNchar/cp*((self.OpticalSystem.Npix*(self.OpticalSystem.readNoise**2/
-        self.OpticalSystem.texp + self.OpticalSystem.darkRate)*(1.+1./self.OpticalSystem.Ndark) + Z) + cp + cs))**2
-        t_char = t_char*u.s
 
-        return t_char
-        
-    def next_target(self, s_ind, targlist, revisit_list, extended_list, DRM):
+    def next_target(self, sInd, targlist, revisit_list, extended_list, DRM):
         """Finds index of next target star
         
         This method chooses the next target star index at random based on which
@@ -979,7 +922,7 @@ class SurveySimulation(object):
                 Observatory class object
         
         Args:
-            s_ind (int):
+            sInd (int):
                 index of current target star
             targlist (TargetList):
                 Target List module
@@ -992,7 +935,7 @@ class SurveySimulation(object):
                 dictionary of simulation results
                 
         Returns:
-            new_s_ind, DRM (int, dict):
+            new_sInd, DRM (int, dict):
                 index of next target star, dictionary of simulation results                
         
         """
@@ -1023,16 +966,16 @@ class SurveySimulation(object):
         # pick a random star from the stars not in keepout zones
         s0 = np.random.random_integers(0, high=len(sinds)-1)
         
-        new_s_ind = sinds[s0]
+        new_sInd = sinds[s0]
         
         if self.OpticalSystem.haveOcculter:
             # add transit time and reduce starshade mass
             ao = self.Observatory.thrust/self.Observatory.scMass
             targetSep = self.Observatory.occulterSep
             # find position vector of previous target star
-            r_old = self.Observatory.starprop(self.TimeKeeping.currenttimeAbs, self.TargetList, s_ind)
+            r_old = self.Observatory.starprop(self.TimeKeeping.currenttimeAbs, self.TargetList, sInd)
             # find position vector of new target star            
-            r_new = self.Observatory.starprop(self.TimeKeeping.currenttimeAbs, self.TargetList, new_s_ind)
+            r_new = self.Observatory.starprop(self.TimeKeeping.currenttimeAbs, self.TargetList, new_sInd)
             # find unit vectors
             u_old = r_old/np.sqrt(np.sum(r_old**2))
             u_new = r_new/np.sqrt(np.sum(r_new**2))
@@ -1057,4 +1000,4 @@ class SurveySimulation(object):
             DRM['slew_mass_used'] = mass_used.to(u.kg).value
             DRM['slew_angle'] = sd     
         
-        return new_s_ind, DRM
+        return new_sInd, DRM

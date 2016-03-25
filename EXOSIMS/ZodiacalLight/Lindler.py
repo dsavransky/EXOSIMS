@@ -1,55 +1,24 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 from astropy import units as u
 
-class ZodiacalLight(object):
-    """Zodiacal Light class template
+class Lindler(ZodiacalLight):
+    """Lindler Zodiacal Light class
     
     This class contains all variables and methods necessary to perform
-    Zodiacal Light Module calculations in exoplanet mission simulation.
-    
+    Zodiacal Light Module calculations in exoplanet mission simulation using
+    the model from Lindler.
+
     Args:
         \*\*specs:
             user specified values
     
-    Attributes:
-        magZ (float):
-            1 zodi brightness in mag per asec2
-        magEZ (float):
-            1 exozodi brightness in mag per asec2
-        varEZ (float):
-            exozodi variation (variance of log-normal distribution)
-        nEZ (float):
-            exozodi level in zodi
-        
     """
-
-    _modtype = 'ZodiacalLight'
-    _outspec = {}
-
-    def __init__(self, magZ=23, magEZ=22, varEZ=0., nEZ=1.5, **specs):
-
-        self.magZ = float(magZ)         # 1 zodi brightness in mag per asec2
-        self.magEZ = float(magEZ)       # 1 exozodi brightness in mag per asec2
-        self.varEZ = float(varEZ)       # exozodi variation (variance of log-normal dist.)
-        self.nEZ = float(nEZ)           # exozodi level in zodi
-
-        for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]
-
-    def __str__(self):
-        """String representation of the Zodiacal Light object
+    
+    def __init__(self, **specs):
         
-        When the command 'print' is used on the Zodiacal Light object, this 
-        method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
-        
-        for att in atts:
-            print '%s: %r' % (att, getattr(self, att))
-        
-        return 'Zodiacal Light class object attributes'
-        
+        ZodiacalLight.__init__(self, **specs)
 
     def fZ(self, targlist, sInd, lam):
         """Returns surface brightness of local zodiacal light
@@ -68,10 +37,12 @@ class ZodiacalLight(object):
                 1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
         """
 
-        fZ = np.array([10**(-0.4*self.magZ)]*len(sInd))
+        # ecliptic latitudes
+        lat = targlist.coords.barycentrictrueecliptic.lat[sInd]
+        fZ = 10**(-0.4*self.magZ) * self.fbeta(lat)
 
         return fZ/u.arcsec**2
-
+        
     def fEZ(self, targlist, sInd, I):
         """Returns surface brightness of exo-zodiacal light
         
@@ -89,13 +60,39 @@ class ZodiacalLight(object):
                 1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)
 
         """
-
+        
+        i = np.where(I.value > 90.)
+        if type(I) == np.ndarray:
+            I[i] = 180. - I[i]
+        # maximum V magnitude
+        MV = targlist.MV
         # assume log-normal distribution of variance
         if self.varEZ != 0:
             mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
             self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInd),))
-            
-        fEZ = np.array([10**(-0.4*self.magEZ)]*len(sInd)) * self.nEZ
-        
+
+        fEZ = 10**(-0.4*self.magEZ) * self.nEZ * 2.*self.fbeta(I)*2.5**(4.78-MV[sInd])
+
         return fEZ/u.arcsec**2
+        
+    def fbeta(self, beta):
+        """Empirically derived variation of zodiacal light with viewing angle
+        
+        This method encodes the empirically derived formula for zodiacal light
+        with viewing angle from Lindler.
+        
+        Args:
+            beta (ndarray):
+                angle in degrees
+                
+        Returns:
+            f (ndarray):
+                zodiacal light in zodi
+        
+        """
+        
+        beta = beta.value
+        f = 2.44 - 0.0403*beta + 0.000269*beta**2
+        
+        return f

@@ -10,10 +10,10 @@ class EarthTwinHabZone1(PlanetPopulation):
     This implementation is intended to enforce this population regardless
     of JSON inputs.
     """
-    def __init__(self,eta=0.1,scaleOrbits=True,**specs):
+    def __init__(self,eta=0.1,**specs):
 
         PlanetPopulation.__init__(self, eta=eta, arange=[0.7, 1.5], erange=[0,0],\
-                Rrange=[1,1],Mprange=[1,1],prange=[0.367,0.367],scaleOrbits=scaleOrbits,
+                Rrange=[1,1],Mprange=[1,1],prange=[0.367,0.367],scaleOrbits=True,
                 **specs)
 
     def gen_sma(self, n):

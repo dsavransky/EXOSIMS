@@ -55,7 +55,7 @@ class PlanetPopulation(object):
     def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
                  wrange=[0.,360.], Orange=[0.,360.], Irange=[0.,180.],\
                  prange=[0.1,0.6], Rrange=[1.,30.], Mprange = [1.,4131.],\
-                 scaleOrbits = False, **specs):
+                 scaleOrbits=False, constrainOrbits=False, **specs):
         
         #do all input checks
         self.arange = self.checkranges(arange,'arange')*u.AU
@@ -70,6 +70,10 @@ class PlanetPopulation(object):
         assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
         self.scaleOrbits = scaleOrbits
+
+        assert isinstance(constrainOrbits,bool), "constrainOrbits must be boolean"
+        # constrain planetary orbital radii to sma range
+        self.constrainOrbits = constrainOrbits
         
         # orbital radius range
         self.rrange = [self.arange[0].value*(1.-self.erange[1]),\
@@ -158,6 +162,37 @@ class PlanetPopulation(object):
         vals = self.erange[0] +(self.erange[1] - self.erange[0])*np.random.uniform(size=n)
         
         return vals
+
+    def gen_eccentricity_from_sma(self,n,a):
+        """Generate eccentricity values constrained by semi-major axis, such that orbital
+        radius always falls within the provided sma range.
+
+        The prototype provides a uniform distribution between the minimum and 
+        maximum allowable values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+
+            a (Quantity):
+                Array of semi-major axis values of length n
+                
+        Returns:
+            e (numpy ndarray)
+
+        """
+        n = self.gen_input_check(n)
+
+        assert len(a) == n, "a input must be of size n."
+
+        elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
+                (self.arange[1]/a).decompose().value - 1)),axis=0)
+
+        vals = self.erange[0] +(elim - self.erange[0])*np.random.uniform(size=n)
+        
+        return vals
+
+
 
     def gen_w(self, n):
         """Generate argument of periapse in degrees

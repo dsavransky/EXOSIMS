@@ -178,7 +178,10 @@ class BrownCompleteness(Completeness):
             self.tcomp = np.hstack((self.tcomp.to(u.day).value, t.to(u.day).value))*u.day
             # store non-observable completeness (rmax < s)
             a = targlist.PlanetPopulation.gen_sma(20000)
-            e = targlist.PlanetPopulation.gen_eccentricity(20000) 
+            if targlist.PlanetPopulation.constrainOrbits:
+                e = targlist.PlanetPopulation.gen_eccentricity_from_sma(len(a),a*u.AU)
+            else:
+                e = targlist.PlanetPopulation.gen_eccentricity(len(a))  
             rmax = a*(1. + e)
             inds = np.where(rmax < s)[0]
             no = len(inds)/20000.
@@ -316,7 +319,10 @@ class BrownCompleteness(Completeness):
             E = M
         else:
             # sample eccentricity            
-            e = self.PlanetPopulation.gen_eccentricity(nplan)   
+            if self.PlanetPopulation.constrainOrbits:
+                e = self.PlanetPopulation.gen_eccentricity_from_sma(nplan,a*u.AU)
+            else:
+                e = self.PlanetPopulation.gen_eccentricity(nplan)   
             # Newton-Raphson to find E
             E = eccanom(M,e)                
             # orbital radius    

@@ -123,7 +123,10 @@ class SimulatedUniverse(object):
         # planet semi-major axis
         self.a = self.PlanetPopulation.gen_sma(self.nPlans)
         # planet eccentricities
-        self.e = self.PlanetPopulation.gen_eccentricity(self.nPlans)
+        if self.PlanetPopulation.constrainOrbits:
+            self.e = self.PlanetPopulation.gen_eccentricity_from_sma(self.nPlans,self.a)
+        else:
+            self.e = self.PlanetPopulation.gen_eccentricity(self.nPlans)
         # planet argument of periapse
         self.w = self.PlanetPopulation.gen_w(self.nPlans)   
         # planet longitude of ascending node

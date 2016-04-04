@@ -4,6 +4,7 @@ from astropy import units as u
 from astropy import constants as const
 from astropy.time import Time
 import os,inspect
+from EXOSIMS.util.eccanom import eccanom
 
 class Observatory(object):
     """Observatory class template
@@ -105,7 +106,12 @@ class Observatory(object):
         # set values derived from quantities above
         # slew flow rate (kg/day)
         self.flowRate = (self.thrust/const.g0/self.slewIsp).to(u.kg/u.day)
-            
+        
+        #define function for calculating obliquity of the ecliptic 
+        #(arg Julian centuries from J2000)
+        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + \
+                5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5) 
+
         # if you have jplephem, load spice file. otherwise, load static ephem.
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
@@ -407,7 +413,7 @@ class Observatory(object):
         M = lM - w
         wp = w - O
         # Find eccentric anomaly
-        E = self.eccanom(M,e)
+        E = eccanom(M,e)
         # Find true anomaly
         nu = np.arctan2(np.sin(E) * np.sqrt(1 - e**2), np.cos(E) - e)
         # Find semiparameter
@@ -417,7 +423,7 @@ class Observatory(object):
         # position vector (km) in ecliptic plane        
         r_planet = np.dot(np.dot(self.rot(-O,3),self.rot(-i,1)),np.dot(self.rot(-wp,3),r_planet))
         # find obliquity of the ecliptic
-        obe = 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + 5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5)       
+        obe = self.obe(TDB)
         # position vector (km) in heliocentric equatorial frame
         r_planet = np.dot(self.rot(np.radians(-obe),1),r_planet)*u.km
         
@@ -584,43 +590,6 @@ class Observatory(object):
         
         return y
         
-    def eccanom(self, M, e):
-        """Finds eccentric anomaly from mean anomaly and eccentricity
-        
-        This method uses algorithm 2 from Vallado to find the eccentric anomaly
-        from mean anomaly and eccentricity.
-        
-        Args:
-            M (float):
-                mean anomaly
-            e (float):
-                eccentricity
-                
-        Returns:
-            E (float):
-                eccentric anomaly
-        
-        """
-
-        pi = np.pi
-        # initial guess        
-        if (-pi < M and M < 0) or (M > pi):
-            E = M - e
-        else:
-            E = M + e
-        # Newton-Raphson setup
-        i = 0
-        err = 1.
-        tol = np.finfo(float).eps*4.1
-        maxi = 200
-        # Newton-Raphson iteration
-        while err > tol and i < maxi:
-            Enew = E + (M - E + e*np.sin(E))/(1. - e*np.cos(E))
-            err = abs(Enew - E)
-            E = Enew
-            i += 1
-                  
-        return E
         
     def rot(self, th, axis):
         """Finds the rotation matrix of angle th about the axis value

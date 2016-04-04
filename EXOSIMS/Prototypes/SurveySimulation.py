@@ -4,7 +4,11 @@ import sys
 import astropy.units as u
 import astropy.constants as const
 import copy
+import logging
 from EXOSIMS.util.get_module import get_module
+
+# the EXOSIMS logger
+Logger = logging.getLogger(__name__)
 
 class SurveySimulation(object):
     """Survey Simulation class template
@@ -81,6 +85,7 @@ class SurveySimulation(object):
             # modules array must be present
             if 'modules' not in specs.keys():
                 raise ValueError("No modules field found in script.")
+
 
         #if any of the modules is a string, assume that they are all strings and we need to initalize
         if isinstance(specs['modules'].itervalues().next(),basestring):
@@ -177,6 +182,7 @@ class SurveySimulation(object):
         
         """
         
+        Logger.info('run_sim beginning')
         # initialize values updated later
         # number of visits to target star
         visited = np.zeros((len(self.TargetList.dist),), dtype=int)
@@ -206,9 +212,9 @@ class SurveySimulation(object):
         sInd = self.initial_target()
         
         # loop until mission is finished
-        while self.TimeKeeping.currenttimeNorm < self.TimeKeeping.missionFinishNorm:
-            print 'Current mission time'
-            print self.TimeKeeping.currenttimeNorm
+        while not self.TimeKeeping.mission_is_over():
+            Logger.info('current time is %r' % self.TimeKeeping.currenttimeNorm)
+            print 'Current mission time: ', self.TimeKeeping.currenttimeNorm
             obsbegin = copy.copy(self.TimeKeeping.currenttimeNorm)
             # dictionary containing results
             DRM = {}
@@ -228,7 +234,7 @@ class SurveySimulation(object):
                         extended_list = np.hstack((extended_list, self.DRM[i]['target_ind']))
                         extended_list = np.unique(extended_list)
             
-##!!!!oflloded to simulated universe
+##!!!!offload to simulated universe
             # find planets belonging to target star
             pInds = np.where(self.SimulatedUniverse.planInds == sInd)[0]
             
@@ -240,17 +246,16 @@ class SurveySimulation(object):
             t_int += self.Observatory.settlingTime
             # store detection integration time
             DRM['det_int_time'] = t_int.to(u.day).value
+
+            # patch negative t_int
+            if t_int < 0:
+                Logger.warning('correcting negative t_int to arbitrary value')
+                t_int = (1.0+np.random.rand()) * u.day
             
-#!!!!!!!offload to timekeeping
-            # if integration time goes beyond observation duration, set quantities
-            if self.TimeKeeping.currenttimeNorm + t_int > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
-                # integration time is beyond observation duration
+            if not self.TimeKeeping.allocate_time(t_int):
+                # time too large: skip it
                 observationPossible = False
-                dt = self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration + 1.*u.day - self.TimeKeeping.currenttimeNorm
-                self.TimeKeeping.update_times(dt)
-            else:
-                # integration time is okay
-                self.TimeKeeping.update_times(t_int)
+                allocate_time(1.0*u.day)
 
             # determine detection, missed detection, false alarm booleans
             FA, DET, MD, NULL = self.PostProcessing.det_occur(observationPossible)
@@ -306,11 +311,7 @@ class SurveySimulation(object):
             ### more methods inside timekeeping
             obsend = copy.copy(self.TimeKeeping.currenttimeNorm)
             # find next available time for planet-finding
-            nexttime = self.TimeKeeping.duty_cycle(self.TimeKeeping.currenttimeNorm)
-          
-            dt = nexttime - self.TimeKeeping.currenttimeNorm
-
-            self.TimeKeeping.update_times(dt)
+            nexttime = self.TimeKeeping.currenttimeNorm
             
             # update completeness values
             self.TargetList.comp0 = self.Completeness.completeness_update(sInd, self.TargetList, obsbegin, obsend, nexttime)
@@ -324,14 +325,16 @@ class SurveySimulation(object):
             # with occulter if spacecraft fuel is depleted, exit loop
             if self.OpticalSystem.haveOcculter:
                 if self.Observatory.scMass < self.Observatory.dryMass:
-                    print 'Total fuel mass excedeed at %r' % self.TimeKeeping.currenttimeNorm                    
+                    print 'Total fuel mass exceeded at %r' % self.TimeKeeping.currenttimeNorm                    
                     break
-#            break
+
 #            if visited[sInd] == 3:
 #                self.TimeKeeping.currenttimeNorm = 100*u.year
 #            if self.TimeKeeping.currenttimeNorm > 100*u.day:
 #                self.TimeKeeping.currenttimeNorm = 100*u.year                       
         
+        Logger.info('run_sim finishing OK')
+        print 'Survey simulation: finishing OK'
         return 'Simulation results in .DRM'
 
 
@@ -363,33 +366,24 @@ class SurveySimulation(object):
         
         Returns:
             sInd (int):
-                index of initial target star
-        
+                index of initial target star, or None
         """
         
-        sinds = np.array([])
-        dt = 1.*u.day
-        while sinds.size == 0:
+        while not self.TimeKeeping.mission_is_over():
             a = self.Observatory.keepout(self.TimeKeeping.currenttimeAbs, self.TargetList, self.OpticalSystem.telescopeKeepout)
-            # find Observatoryervable targets at current mission time            
+            # find observable targets at current mission time            
             sinds = np.where(self.Observatory.kogood)[0]
-            # if no observable targets, update mission time by one day and 
-            # check that resulting time is okay with duty cycle
+            # if no observable targets, advance mission time by a nominal dt, try again
             if sinds.size == 0:
-                self.TimeKeeping.update_times(dt)
-                if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
-                    nexttime = self.TimeKeeping.duty_cycle(self.TimeKeeping.currenttimeNorm)
-                    dt0 = nexttime - self.TimeKeeping.currenttimeNorm
-                    self.TimeKeeping.update_times(dt0)
-                
-            # if the current mission time is greater than the mission lifetime
-            # break this loop
-            if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife:
-                break
+                self.TimeKeeping.allocate_time(1.0*u.day)
+            else:
+                break # found target(s)
         
-        if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife:
-            print 'No targets available'
-            
+        if self.TimeKeeping.mission_is_over() or sinds.size == 0:
+            Logger.info('No more targets available')
+            return None
+
+        # pick one
         s0 = self.TargetList.comp0[sinds].argmax()
         sInd = sinds[s0]
         
@@ -425,7 +419,6 @@ class SurveySimulation(object):
         """
         
         # dMag and Ip placeholders
-# replace by actual dMmag
         dMag = self.OpticalSystem.dMagLim - np.abs(np.random.randn(1)*0.5)
         Ip = (9.5e7/(u.m**2)/u.nm/u.s)*10.**(-(self.TargetList.Vmag[sInd]+dMag)/2.5) 
         # apparent separation placeholders
@@ -465,7 +458,9 @@ class SurveySimulation(object):
             observationPossible, dMag = self.check_brightness(observationPossible, self.SimulatedUniverse.r[pInds], self.SimulatedUniverse.Rp[pInds], self.SimulatedUniverse.p[pInds], self.OpticalSystem.dMagLim)
 
         # set integration time to max integration time as a default
-        t_int = self.OpticalSystem.calc_maxintTime[sInd]
+        # FIXME (turmon 3/30): altered below line, which appears to be an error
+        # t_int = self.OpticalSystem.calc_maxintTime[sInd]
+        t_int = self.OpticalSystem.calc_maxintTime(self.TargetList)[sInd]
             
         # determine integration time and update observationPossible
         if np.any(observationPossible):
@@ -541,8 +536,20 @@ class SurveySimulation(object):
                 # find throughput and contrast
                 throughput = self.OpticalSystem.throughput(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.arcsec))
                 contrast = self.OpticalSystem.contrast(self.OpticalSystem.specLam, np.arctan(s/(self.TargetList.dist[sInd]*u.pc)).to(u.arcsec))
-                # find characterization time
-                t_char = self.OpticalSystem.calc_charTime(targlist, sInd, I, dMag, WA)
+                # find characterization time                    
+                # [FIXME] Rough idea may be as follows:
+                #   t_char = self.OpticalSystem.calc_charTime(throughput, contrast, Ip, FA, sInd, pInds)
+                # Patch: following lines per Christian, 3/15/2016
+                dMag = self.OpticalSystem.dMagLim - np.abs(np.random.randn(1)*0.5)
+                t_char = self.OpticalSystem.calc_charTime(self.TargetList, sInd,
+                                                          self.SimulatedUniverse.I[pInds], dMag,
+                                                          self.SimulatedUniverse.get_current_WA(pInds))
+                # patch negative t_char
+                if np.any(t_char < 0.0):
+                    Logger.warning('correcting negative t_char to arb. value')
+                    t_char_value = (4.0+2*np.random.rand()) * u.day
+                    t_char[t_char < 0.0] = t_char_value
+
                 # account for 5 bands and one coronagraph
                 t_char = t_char*4
                 # determine which planets will be observable at the end
@@ -555,7 +562,7 @@ class SurveySimulation(object):
                     t_char, charPossible, chargo = self.check_visible_end(charPossible, t_char, t_char, sInd, pInds, True)
                 except ValueError:
                     chargo = False
-                #chargo = True            
+
                 if chargo:
                     # encode relevant first characterization data
                     if self.OpticalSystem.haveOcculter:
@@ -575,15 +582,10 @@ class SurveySimulation(object):
                         DRM['char_1_time'] = t_char.to(u.day).value
                 
                     # if integration time goes beyond observation duration, set quantities
-                    if self.TimeKeeping.currenttimeNorm + t_char.max() > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
-                        # integration time is beyond observation duration
+                    # Before, for some reason, an extra 1.0d was added to time if characterization failed. Removed.
+                    if not self.TimeKeeping.allocate_time(t_char.max()):
                         charPossible = False
-                        dt = self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration + 1.*u.day - self.TimeKeeping.currenttimeNorm
-                        self.TimeKeeping.update_times(dt)
-                    else:        
-                        # update mission time
-                        self.TimeKeeping.update_times(t_char.max())
-                        
+                            
                     # if this was a false alarm, it has been noted, update FA
                     if FA:
                         FA = False
@@ -907,7 +909,7 @@ class SurveySimulation(object):
                 DRM['det_dMag'] = (dMag[observationPossible]).max()
         
         return s, dMag, Ip, DRM, observed
-
+        
     def next_target(self, sInd, targlist, revisit_list, extended_list, DRM):
         """Finds index of next target star
         
@@ -936,36 +938,27 @@ class SurveySimulation(object):
                 
         Returns:
             new_sInd, DRM (int, dict):
-                index of next target star, dictionary of simulation results                
+                index of next target star, dictionary of simulation results
+                new_sInd is None if no target could be found              
         
         """
         
-        sinds = np.array([])
-        dt = 1.*u.day
-        while sinds.size == 0:
+        while not self.TimeKeeping.mission_is_over():
             a = self.Observatory.keepout(self.TimeKeeping.currenttimeAbs, self.TargetList, self.OpticalSystem.telescopeKeepout)
             # find observable targets at current mission time            
             sinds = np.where(self.Observatory.kogood)[0]
-            # if no observable targets, update mission time by one day and 
-            # check that resulting time is okay with duty cycle
+            # if no observable targets, advance mission time by a nominal dt, try again
             if sinds.size == 0:
-                self.TimeKeeping.update_times(dt)
-                if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
-                    nexttime = self.TimeKeeping.duty_cycle(self.TimeKeeping.currenttimeNorm)
-                    dt0 = nexttime - self.TimeKeeping.currenttimeNorm
-                    self.TimeKeeping.update_times(dt0)
-                
-            # if the current mission time is greater than the mission lifetime
-            # break this loop
-            if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife:
-                break
+                self.TimeKeeping.allocate_time(1.0*u.day)
+            else:
+                break # found target(s)
         
-        if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.missionLife:
-            print 'No targets available'
-        
+        if self.TimeKeeping.mission_is_over() or sinds.size == 0:
+            Logger.info('No more targets available')
+            return None, DRM
+
         # pick a random star from the stars not in keepout zones
         s0 = np.random.random_integers(0, high=len(sinds)-1)
-        
         new_sInd = sinds[s0]
         
         if self.OpticalSystem.haveOcculter:
@@ -986,14 +979,7 @@ class SurveySimulation(object):
             slew_time = np.sqrt(slew_dist/np.abs(ao)/(self.Observatory.defburnPortion/2. - self.Observatory.defburnPortion**2/4.))
             mass_used = slew_time*self.Observatory.defburnPortion*self.Observatory.flowRate
 
-###again will offload to timekeeping
-            # update times
-            self.TimeKeeping.update_times(slew_time)
-            
-            if self.TimeKeeping.currenttimeNorm > self.TimeKeeping.nexttimeAvail + self.TimeKeeping.duration:
-                nexttime = self.TimeKeeping.duty_cycle(self.TimeKeeping.currenttimeNorm)
-                dt = nexttime - self.TimeKeeping.currenttimeNorm
-                self.TimeKeeping.update_times(dt)
+            self.TimeKeeping.allocate_time(slew_time)
             
             DRM['slew_time'] = slew_time.to(u.day).value
             DRM['slew_dV'] = (ao*slew_time*self.Observatory.defburnPortion).to(u.m/u.s).value
@@ -1001,3 +987,4 @@ class SurveySimulation(object):
             DRM['slew_angle'] = sd     
         
         return new_sInd, DRM
+    

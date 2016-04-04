@@ -1,4 +1,6 @@
 import sys, json, inspect
+import logging
+import tempfile
 from EXOSIMS.util.get_module import get_module
 import random as py_random
 import numpy as np
@@ -62,7 +64,8 @@ class MissionSim(object):
                 script = open(scriptfile).read()
                 specs_from_file = json.loads(script)
             except ValueError:
-                print "%s improperly formatted."%scriptfile
+                print "Error: Input file `%s' improperly formatted."%scriptfile
+                raise
             except:
                 print "Unexpected error:", sys.exc_info()[0]
                 raise
@@ -74,6 +77,12 @@ class MissionSim(object):
 
         if 'modules' not in specs.keys():
             raise ValueError("No modules field found in script.")
+
+        # set up log file, if it was desired
+        self.start_logging(specs)
+        # in this module, use the logger like this:
+        # logger = logging.getLogger(__name__)
+        # logger.info('__init__ started logging.')
 
         # set up numpy random number seed at top
         self.random_seed_initialize(specs)
@@ -120,6 +129,66 @@ class MissionSim(object):
         #make all objects accessible from the top level
         for modName in specs['modules'].keys():
             setattr(self, modName, specs['modules'][modName])
+
+    def start_logging(self, specs):
+        r"""Set up logging object so other modules can use logging.info(), logging.warning, etc.
+
+        Two entries in the specs dictionary are used:
+        logfile: if not present, logging is turned off; if supplied, but empty, a
+            temporary file is generated; otherwise, the named file is opened for writing.
+        loglevel: if present, the given level is used, else the logging level is INFO.
+            Valid levels are: CRITICAL, ERROR, WARNING, INFO, DEBUG (case is ignored).
+
+        Args:
+            specs: dictionary
+
+        Returns:
+            logfile: string
+                The name of the log file, or None if there was none, in case the tempfile needs to be recorded.
+        """
+        # get the logfile name
+        if 'logfile' not in specs:
+            return None # this leaves the default logger in place, so logger.warn will appear on stderr
+        logfile = specs['logfile']
+        if not logfile:
+            (dummy,logfile) = tempfile.mkstemp(suffix='.log', prefix='EXOSIMS.', dir='/tmp', text=True)
+        else:
+            # ensure we can write it
+            try:
+                f = open(logfile, 'w')
+                f.close()
+            except (IOError, OSError) as e:
+                print '%s: Failed to open logfile "%s"' % (__file__, logfile)
+                return None
+        # get the logging level
+        if 'loglevel' in specs:
+            loglevel = specs['loglevel'].upper()
+        else:
+            loglevel = 'INFO'
+        # convert string to a logging.* level
+        numeric_level = getattr(logging, loglevel)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % loglevel)
+
+        # set up the top-level logger
+        root_logger = logging.getLogger(__name__.split('.')[0])
+        root_logger.setLevel(numeric_level)
+        # do not propagate EXOSIMS messages to higher loggers in this case
+        root_logger.propagate = False
+        # create a handler that outputs to the named file
+        handler = logging.FileHandler(logfile, mode='w')
+        handler.setLevel(numeric_level)
+        # logging format
+        formatter = logging.Formatter('%(levelname)s: %(filename)s(%(lineno)s): %(funcName)s: %(message)s')
+        handler.setFormatter(formatter)
+        # add the handler to the logger
+        root_logger.addHandler(handler)
+
+        # use the logger
+        print '%s: Beginning logging to "%s" at level %s' % (os.path.basename(__file__), logfile, loglevel)
+        logger = logging.getLogger(__name__)
+        logger.info('Starting log.')
+        return logfile
 
     def random_seed_initialize(self, specs):
         r"""Initialize random number seed for simulation repeatability.

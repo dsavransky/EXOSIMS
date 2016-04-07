@@ -26,7 +26,7 @@
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="next" title="EXOSIMS.Completeness package" href="EXOSIMS.Completeness.html" />
-    <link rel="prev" title="Documentation Guide" href="docs.html" />
+    <link rel="prev" title="Survey Ensemble Parallelization" href="parallel.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -54,13 +54,15 @@
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.Observatory.html">EXOSIMS.Observatory package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.Observatory.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory.WFIRSTObservatory">EXOSIMS.Observatory.WFIRSTObservatory module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory.WFIRSTObservatoryL2">EXOSIMS.Observatory.WFIRSTObservatoryL2 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.OpticalSystem.html">EXOSIMS.OpticalSystem package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem.OptSys_Kasdin">EXOSIMS.OpticalSystem.OptSys_Kasdin module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem.OptSys_Nemati">EXOSIMS.OpticalSystem.OptSys_Nemati module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem.KasdinBraems">EXOSIMS.OpticalSystem.KasdinBraems module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem.Nemati">EXOSIMS.OpticalSystem.Nemati module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem">EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.OpticalSystem.html#module-EXOSIMS.OpticalSystem">Module contents</a></li>
 </ul>
 </li>
@@ -73,7 +75,9 @@
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html">EXOSIMS.PlanetPopulation package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1">EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2">EXOSIMS.PlanetPopulation.EarthTwinHabZone2 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.KeplerLike1">EXOSIMS.PlanetPopulation.KeplerLike1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.KnownRVPlanets">EXOSIMS.PlanetPopulation.KnownRVPlanets module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation">Module contents</a></li>
 </ul>
 </li>
@@ -99,6 +103,7 @@
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html">EXOSIMS.SimulatedUniverse package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse.KeplerLikeUniverse">EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse">EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html#module-EXOSIMS.SimulatedUniverse">Module contents</a></li>
 </ul>
 </li>
@@ -113,20 +118,32 @@
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html">EXOSIMS.SurveyEnsemble package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#module-EXOSIMS.SurveyEnsemble.IPClusterEnsemble">EXOSIMS.SurveyEnsemble.IPClusterEnsemble module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#module-EXOSIMS.SurveyEnsemble">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="EXOSIMS.TargetList.html">EXOSIMS.TargetList package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.TargetList.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.TargetList.html#module-EXOSIMS.TargetList.KnownRVPlanetsTargetList">EXOSIMS.TargetList.KnownRVPlanetsTargetList module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.TargetList.html#module-EXOSIMS.TargetList">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html">EXOSIMS.ZodiacalLight package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#module-EXOSIMS.ZodiacalLight.LindlerZodiacalLight">EXOSIMS.ZodiacalLight.LindlerZodiacalLight module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#module-EXOSIMS.ZodiacalLight.StarkZodiacalLight">EXOSIMS.ZodiacalLight.StarkZodiacalLight module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#module-EXOSIMS.ZodiacalLight.Lindler">EXOSIMS.ZodiacalLight.Lindler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#module-EXOSIMS.ZodiacalLight.Stark">EXOSIMS.ZodiacalLight.Stark module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html#module-EXOSIMS.ZodiacalLight">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.util.html">EXOSIMS.util package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.calc_Blam">EXOSIMS.util.calc_Blam module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.deltaMag">EXOSIMS.util.deltaMag module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.eccanom">EXOSIMS.util.eccanom module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.keplerSTM">EXOSIMS.util.keplerSTM module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.run_one">EXOSIMS.util.run_one module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util">Module contents</a></li>
 </ul>
@@ -157,92 +174,73 @@ to carry out a mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.SimulatedUniverse">
 <code class="descname">SimulatedUniverse</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SimulatedUniverse</em></p>
-<p>SimulatedUniverse class object</p>
+<dd><p><em>SimulatedUniverse</em> &#8211; SimulatedUniverse class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.Observatory">
 <code class="descname">Observatory</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.Observatory" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Observatory</em></p>
-<p>Observatory class object</p>
+<dd><p><em>Observatory</em> &#8211; Observatory class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.TimeKeeping">
 <code class="descname">TimeKeeping</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.TimeKeeping" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TimeKeeping</em></p>
-<p>TimeKeeping class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.MissionSim.MissionSim.PostProcessing">
-<code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PostProcessing" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PostProcessing</em></p>
-<p>PostProcessing class object</p>
+<dd><p><em>TimeKeeping</em> &#8211; TimeKeeping class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.TargetList">
 <code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.TargetList" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TargetList</em></p>
-<p>TargetList class object</p>
+<dd><p><em>TargetList</em> &#8211; TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysicalModel</em></p>
-<p>PlanetPhysicalModel class object</p>
+<dd><p><em>PlanetPhysicalModel</em> &#8211; PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.OpticalSystem">
 <code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.OpticalSystem" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSystem</em></p>
-<p>OpticalSystem class object</p>
+<dd><p><em>OpticalSystem</em> &#8211; OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.PlanetPopulation">
 <code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPopulation</em></p>
-<p>PlanetPopulation class object</p>
+<dd><p><em>PlanetPopulation</em> &#8211; PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.ZodiacalLight">
 <code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ZodiacalLight</em></p>
-<p>ZodiacalLight class object</p>
+<dd><p><em>ZodiacalLight</em> &#8211; ZodiacalLight class object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.MissionSim.MissionSim.PostProcessing">
+<code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>PostProcessing</em> &#8211; PostProcessing class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.Completeness">
 <code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.Completeness" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Completeness</em></p>
-<p>Completeness class object</p>
+<dd><p><em>Completeness</em> &#8211; Completeness class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.BackgroundSources">
 <code class="descname">BackgroundSources</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.BackgroundSources" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>BackgroundSources</em></p>
-<p>Background Source class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">ZodiacalLight</code></dt>
-<dd><p><em>ZodiacalLight</em></p>
-<p>Zodiacal light class object</p>
+<dd><p><em>BackgroundSources</em> &#8211; Background Source class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.SurveyEnsemble">
 <code class="descname">SurveyEnsemble</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.SurveyEnsemble" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SurveyEnsemble</em></p>
-<p>Survey Ensemble class object</p>
+<dd><p><em>SurveyEnsemble</em> &#8211; Survey Ensemble class object</p>
 </dd></dl>
 
 <dl class="method">
@@ -259,6 +257,36 @@ and optionally write out to JSON file on disk.</p>
 <p>Algorithm: Get a large but printable integer from the system generator, which is seeded
 automatically, and use this number to seed the numpy generator.  Otherwise, if a seed was
 given explicitly, use it instead.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.MissionSim.MissionSim.start_logging">
+<code class="descname">start_logging</code><span class="sig-paren">(</span><em>specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.start_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.start_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set up logging object so other modules can use logging.info(), logging.warning, etc.</p>
+<p>Two entries in the specs dictionary are used:
+logfile: if not present, logging is turned off; if supplied, but empty, a</p>
+<blockquote>
+<div>temporary file is generated; otherwise, the named file is opened for writing.</div></blockquote>
+<dl class="docutils">
+<dt>loglevel: if present, the given level is used, else the logging level is INFO.</dt>
+<dd>Valid levels are: CRITICAL, ERROR, WARNING, INFO, DEBUG (case is ignored).</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>specs</strong> &#8211; dictionary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>string</dt>
+<dd>The name of the log file, or None if there was none, in case the tempfile needs to be recorded.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">logfile</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -289,7 +317,7 @@ given explicitly, use it instead.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="docs.html" title="previous chapter">Documentation Guide</a></li>
+      <li>Previous: <a href="parallel.html" title="previous chapter">Survey Ensemble Parallelization</a></li>
       <li>Next: <a href="EXOSIMS.Completeness.html" title="next chapter">EXOSIMS.Completeness package</a></li>
   </ul></li>
 </ul>
@@ -309,9 +337,6 @@ given explicitly, use it instead.</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -322,7 +347,7 @@ given explicitly, use it instead.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

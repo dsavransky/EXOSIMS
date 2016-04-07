@@ -65,80 +65,64 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp">
 <code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>minimum completeness level for detection</p>
+<dd><p><em>float</em> &#8211; minimum completeness level for detection</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets">
 <code class="descname">Nplanets</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em></p>
-<p>number of planets for initial completeness Monte Carlo simulation</p>
+<dd><p><em>float</em> &#8211; number of planets for initial completeness Monte Carlo simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC">
 <code class="descname">EVPOC</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>interp2d</em></p>
-<p>scipy interp2d object to find initial completeness values</p>
+<dd><p><em>interp2d</em> &#8211; scipy interp2d object to find initial completeness values</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds">
 <code class="descname">obsinds</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
-<p>1D numpy ndarray containing target list star indices of stars
+<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing target list star indices of stars
 which have been observed during simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime">
 <code class="descname">initialobstime</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>1D numpy ndarray with units of time attached containing the
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray with units of time attached containing the
 initial observation time of each star in obsinds</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated">
 <code class="descname">accumulated</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
-<p>accumulated completeness value for observed stars in obsinds</p>
+<dd><p><em>ndarray</em> &#8211; accumulated completeness value for observed stars in obsinds</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp">
 <code class="descname">tcomp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em></p>
-<p>1D numpy ndarray with units of day containing time to compare</p>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray with units of day containing time to compare</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non">
 <code class="descname">non</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em></p>
-<p>1D numpy ndarray containing completeness value for planets which
+<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing completeness value for planets which
 are not observable at any time</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.__str__">
-<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.__str__" title="Permalink to this definition">¶</a></dt>
-<dd><p>String representation of Completeness object</p>
-<p>When the command &#8216;print&#8217; is used on the Completeness object, this
-method will return the values contained in the object</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update">
-<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>s_ind</em>, <em>targlist</em>, <em>obsbegin</em>, <em>obsend</em>, <em>nexttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>sInd</em>, <em>targlist</em>, <em>obsbegin</em>, <em>obsend</em>, <em>nexttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates completeness value for stars previously observed</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>s_ind</strong> (<em>int</em>) &#8211; index of star just observed</li>
+<li><strong>sInd</strong> (<em>int</em>) &#8211; index of star just observed</li>
 <li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
 <li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
 <li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
@@ -146,8 +130,7 @@ method will return the values contained in the object</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>comp0</strong> &#8211;
-1D numpy ndarray of completeness values for each star in the
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>comp0</strong> &#8211;     1D numpy ndarray of completeness values for each star in the
 target list</p>
 </td>
 </tr>
@@ -178,8 +161,7 @@ the 2D completeness values needed for interpolation.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>C</strong> &#8211;
-2D numpy ndarray of completeness values</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>C</strong> &#8211;     2D numpy ndarray of completeness values</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -199,8 +181,7 @@ the 2D completeness values needed for interpolation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>int</em>) &#8211; number of planets</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s, dMag, a</strong> &#8211;
-planet separations (in AU), difference in brightness</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s, dMag, a</strong> &#8211;     planet separations (in AU), difference in brightness</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity, ndarray, Quantity</td>
 </tr>
@@ -224,8 +205,7 @@ planet separations (in AU), difference in brightness</td>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>h</strong> &#8211;
-2D numpy ndarray containing completeness histogram</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>h</strong> &#8211;     2D numpy ndarray containing completeness histogram</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -244,22 +224,9 @@ planet separations (in AU), difference in brightness</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; <p>TargetList class object which, in addition to TargetList class
-object attributes, has available:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>targlist.OpticalSystem:</dt>
-<dd>OpticalSystem class object</dd>
-<dt>targlist.rules:</dt>
-<dd>Rules class object</dd>
-<dt>targlist.ZodiacalLight:</dt>
-<dd>ZodiacalLight class object</dd>
-</dl>
-</div></blockquote>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;
-1D numpy array of completeness values for each target star</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;     1D numpy array of completeness values for each target star</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -316,9 +283,6 @@ object attributes, has available:</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -329,7 +293,7 @@ object attributes, has available:</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

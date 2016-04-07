@@ -44,39 +44,11 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-EXOSIMS.util.calc_Blam">
-<span id="exosims-util-calc-blam-module"></span><h2>EXOSIMS.util.calc_Blam module<a class="headerlink" href="#module-EXOSIMS.util.calc_Blam" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="EXOSIMS.util.calc_Blam.calc_Blam">
-<code class="descclassname">EXOSIMS.util.calc_Blam.</code><code class="descname">calc_Blam</code><span class="sig-paren">(</span><em>lam</em>, <em>temp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/calc_Blam.html#calc_Blam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.calc_Blam.calc_Blam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the spectral radiance of a body at absolute temperature T
-using Planck&#8217;s law Blambda(lambda,T) in CGS units</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>lam</strong> &#8211; wavelength in nm</li>
-<li><strong>temp</strong> &#8211; temperature in Kelvin</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">spectral radiance in erg cm^-3 s^-1 steradian^-1 (CGS units)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Blam</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</div>
 <div class="section" id="module-EXOSIMS.util.deltaMag">
 <span id="exosims-util-deltamag-module"></span><h2>EXOSIMS.util.deltaMag module<a class="headerlink" href="#module-EXOSIMS.util.deltaMag" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="EXOSIMS.util.deltaMag.deltaMag">
-<code class="descclassname">EXOSIMS.util.deltaMag.</code><code class="descname">deltaMag</code><span class="sig-paren">(</span><em>p</em>, <em>R</em>, <em>r</em>, <em>Phi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/deltaMag.html#deltaMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.deltaMag.deltaMag" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">EXOSIMS.util.deltaMag.</code><code class="descname">deltaMag</code><span class="sig-paren">(</span><em>p</em>, <em>Rp</em>, <em>d</em>, <em>Phi</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/deltaMag.html#deltaMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.deltaMag.deltaMag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates delta magnitudes for a set of planets, based on their albedo,
 radius, and position with respect to host star.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -85,8 +57,8 @@ radius, and position with respect to host star.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>p</strong> &#8211; (1D numpy ndarray) planet albedo</li>
-<li><strong>R</strong> &#8211; (astropy Quantity) planet radius, default astropy units of km</li>
-<li><strong>r</strong> &#8211; (astropy Quantity) planet-star distance, default astropy units of AU</li>
+<li><strong>Rp</strong> &#8211; (astropy Quantity) planet radius, default astropy units of km</li>
+<li><strong>d</strong> &#8211; (astropy Quantity) planet-star distance, default astropy units of AU</li>
 <li><strong>Phi</strong> &#8211; (1D numpy ndarray) Phase function value</li>
 </ul>
 </td>
@@ -121,8 +93,7 @@ an array, but otherwise must match the size of M.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;
-eccentric anomaly</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>E</strong> &#8211;     eccentric anomaly</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float or ndarray</p>
@@ -152,8 +123,7 @@ Equivalently the module type (i.e., Observatory)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desiredmodule</strong> &#8211;
-desired module</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desiredmodule</strong> &#8211;     desired module</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">object</p>
@@ -229,6 +199,14 @@ and continued fraction to solve the Kepler equation.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.util.run_one">
+<span id="exosims-util-run-one-module"></span><h2>EXOSIMS.util.run_one module<a class="headerlink" href="#module-EXOSIMS.util.run_one" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.run_one.run_one">
+<code class="descclassname">EXOSIMS.util.run_one.</code><code class="descname">run_one</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/run_one.html#run_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.run_one.run_one" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util.statsFun">
 <span id="exosims-util-statsfun-module"></span><h2>EXOSIMS.util.statsFun module<a class="headerlink" href="#module-EXOSIMS.util.statsFun" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -267,11 +245,11 @@ this value.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.util.calc_Blam">EXOSIMS.util.calc_Blam module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.deltaMag">EXOSIMS.util.deltaMag module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.eccanom">EXOSIMS.util.eccanom module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.keplerSTM">EXOSIMS.util.keplerSTM module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.run_one">EXOSIMS.util.run_one module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util">Module contents</a></li>
 </ul>
@@ -302,9 +280,6 @@ this value.</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -315,7 +290,7 @@ this value.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

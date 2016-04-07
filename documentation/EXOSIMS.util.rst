@@ -4,6 +4,22 @@ EXOSIMS.util package
 Submodules
 ----------
 
+EXOSIMS.util.deltaMag module
+----------------------------
+
+.. automodule:: EXOSIMS.util.deltaMag
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.eccanom module
+---------------------------
+
+.. automodule:: EXOSIMS.util.eccanom
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.get_module module
 ------------------------------
 
@@ -16,6 +32,14 @@ EXOSIMS.util.keplerSTM module
 -----------------------------
 
 .. automodule:: EXOSIMS.util.keplerSTM
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.run_one module
+---------------------------
+
+.. automodule:: EXOSIMS.util.run_one
     :members:
     :undoc-members:
     :show-inheritance:

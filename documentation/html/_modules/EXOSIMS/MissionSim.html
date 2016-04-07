@@ -39,7 +39,9 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.MissionSim</h1><div class="highlight"><pre>
-<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">inspect</span>
+<span></span><span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">py_random</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
@@ -63,8 +65,6 @@
 <span class="sd">            Observatory class object</span>
 <span class="sd">        TimeKeeping (TimeKeeping):</span>
 <span class="sd">            TimeKeeping class object</span>
-<span class="sd">        PostProcessing (PostProcessing):</span>
-<span class="sd">            PostProcessing class object</span>
 <span class="sd">        TargetList (TargetList):</span>
 <span class="sd">            TargetList class object</span>
 <span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel):</span>
@@ -75,12 +75,12 @@
 <span class="sd">            PlanetPopulation class object</span>
 <span class="sd">        ZodiacalLight (ZodiacalLight):</span>
 <span class="sd">            ZodiacalLight class object</span>
+<span class="sd">        PostProcessing (PostProcessing):</span>
+<span class="sd">            PostProcessing class object</span>
 <span class="sd">        Completeness (Completeness):</span>
 <span class="sd">            Completeness class object</span>
 <span class="sd">        BackgroundSources (BackgroundSources):</span>
 <span class="sd">            Background Source class object</span>
-<span class="sd">        ZodiacalLight (ZodiacalLight):</span>
-<span class="sd">            Zodiacal light class object</span>
 <span class="sd">        SurveyEnsemble (SurveyEnsemble):</span>
 <span class="sd">            Survey Ensemble class object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -105,7 +105,8 @@
                 <span class="n">script</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
                 <span class="n">specs_from_file</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> improperly formatted.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
+                <span class="k">print</span> <span class="s2">&quot;Error: Input file `</span><span class="si">%s</span><span class="s2">&#39; improperly formatted.&quot;</span><span class="o">%</span><span class="n">scriptfile</span>
+                <span class="k">raise</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s2">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">raise</span>
@@ -118,51 +119,114 @@
         <span class="k">if</span> <span class="s1">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
 
+        <span class="c1"># set up log file, if it was desired</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_logging</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+        <span class="c1"># in this module, use the logger like this:</span>
+        <span class="c1"># logger = logging.getLogger(__name__)</span>
+        <span class="c1"># logger.info(&#39;__init__ started logging.&#39;)</span>
+
         <span class="c1"># set up numpy random number seed at top</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_seed_initialize</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+
+        <span class="c1">#create the ensemble object first, before any specs are updated</span>
+        <span class="n">SurveyEns</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">],</span> <span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">)</span>
+        <span class="n">sens</span> <span class="o">=</span> <span class="n">SurveyEns</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
         <span class="c1">#preserve star catalog name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">]</span>
 
-        <span class="c1">#initialize top level</span>
+        <span class="c1">#initialize top level, import modules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="c1"># import simulated universe class</span>
-        <span class="n">SimUni</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">],</span> <span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SimUni</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span>\
+                <span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">],</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Observatory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span>\
+                <span class="p">[</span><span class="s1">&#39;Observatory&#39;</span><span class="p">],</span><span class="s1">&#39;Observatory&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span>\
+                <span class="p">[</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">],</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-        <span class="c1"># import observatory class</span>
-        <span class="n">Obs</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;Observatory&#39;</span><span class="p">],</span> <span class="s1">&#39;Observatory&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Observatory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Obs</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-
-        <span class="c1"># import timekeeping class</span>
-        <span class="n">TK</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">],</span> <span class="s1">&#39;TimeKeeping&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;TimeKeeping&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TK</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-
-        <span class="c1">#collect sub-initializations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c1"># optical system object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="c1"># planet population object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c1"># zodiacal light object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="c1">#Background sources object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Completeness&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">Completeness</span> <span class="c1"># completeness object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="c1"># planet physical model object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="c1"># postprocessing model object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;TargetList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">TargetList</span> <span class="c1"># target list object</span>
+        <span class="c1"># collect sub-initializations</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SimulatedUniverse&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">BackgroundSources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Completeness&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PostProcessing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;TargetList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">TargetList</span>
         
-        <span class="c1">#grab sim and ensemble classes  </span>
+        <span class="c1"># replace modules dict with instantiated objects </span>
         <span class="n">SurveySim</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveySimulation&#39;</span><span class="p">],</span> <span class="s1">&#39;SurveySimulation&#39;</span><span class="p">)</span>
-        <span class="n">SurveyEns</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">],</span> <span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">)</span>
-
-        <span class="c1">#replace modules dict with instantiated objects </span>
         <span class="n">inputMods</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">)</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span>
 
-        <span class="c1">#generate sim and ensemble objects</span>
+        <span class="c1"># generate sim object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SurveySimulation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SurveySim</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SurveyEns</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sens</span>
 
-        <span class="c1">#make all objects accessible from the top level</span>
+        <span class="c1"># make all objects accessible from the top level</span>
         <span class="k">for</span> <span class="n">modName</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modName</span><span class="p">,</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">modName</span><span class="p">])</span>
+
+<div class="viewcode-block" id="MissionSim.start_logging"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.start_logging">[docs]</a>    <span class="k">def</span> <span class="nf">start_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
+        <span class="sd">r&quot;&quot;&quot;Set up logging object so other modules can use logging.info(), logging.warning, etc.</span>
+
+<span class="sd">        Two entries in the specs dictionary are used:</span>
+<span class="sd">        logfile: if not present, logging is turned off; if supplied, but empty, a</span>
+<span class="sd">            temporary file is generated; otherwise, the named file is opened for writing.</span>
+<span class="sd">        loglevel: if present, the given level is used, else the logging level is INFO.</span>
+<span class="sd">            Valid levels are: CRITICAL, ERROR, WARNING, INFO, DEBUG (case is ignored).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            specs: dictionary</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            logfile: string</span>
+<span class="sd">                The name of the log file, or None if there was none, in case the tempfile needs to be recorded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the logfile name</span>
+        <span class="k">if</span> <span class="s1">&#39;logfile&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span> <span class="c1"># this leaves the default logger in place, so logger.warn will appear on stderr</span>
+        <span class="n">logfile</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;logfile&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">logfile</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">dummy</span><span class="p">,</span><span class="n">logfile</span><span class="p">)</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.log&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;EXOSIMS.&#39;</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;/tmp&#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># ensure we can write it</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">logfile</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: Failed to open logfile &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">__file__</span><span class="p">,</span> <span class="n">logfile</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">None</span>
+        <span class="c1"># get the logging level</span>
+        <span class="k">if</span> <span class="s1">&#39;loglevel&#39;</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="n">loglevel</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;loglevel&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loglevel</span> <span class="o">=</span> <span class="s1">&#39;INFO&#39;</span>
+        <span class="c1"># convert string to a logging.* level</span>
+        <span class="n">numeric_level</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">numeric_level</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid log level: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">loglevel</span><span class="p">)</span>
+
+        <span class="c1"># set up the top-level logger</span>
+        <span class="n">root_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">numeric_level</span><span class="p">)</span>
+        <span class="c1"># do not propagate EXOSIMS messages to higher loggers in this case</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="c1"># create a handler that outputs to the named file</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">logfile</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">numeric_level</span><span class="p">)</span>
+        <span class="c1"># logging format</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(filename)s</span><span class="s1">(</span><span class="si">%(lineno)s</span><span class="s1">): </span><span class="si">%(funcName)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="c1"># add the handler to the logger</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+        <span class="c1"># use the logger</span>
+        <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: Beginning logging to &quot;</span><span class="si">%s</span><span class="s1">&quot; at level </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">__file__</span><span class="p">),</span> <span class="n">logfile</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">)</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Starting log.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logfile</span></div>
 
 <div class="viewcode-block" id="MissionSim.random_seed_initialize"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.random_seed_initialize">[docs]</a>    <span class="k">def</span> <span class="nf">random_seed_initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Initialize random number seed for simulation repeatability.</span>
@@ -235,9 +299,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -248,7 +309,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

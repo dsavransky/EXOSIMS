@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 from astropy.time import Time
 import os,inspect

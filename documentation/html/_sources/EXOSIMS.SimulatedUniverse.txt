@@ -12,6 +12,14 @@ EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

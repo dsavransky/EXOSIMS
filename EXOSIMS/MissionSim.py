@@ -87,46 +87,43 @@ class MissionSim(object):
         # set up numpy random number seed at top
         self.random_seed_initialize(specs)
 
+        #create the ensemble object first, before any specs are updated
+        SurveyEns = get_module(specs['modules']['SurveyEnsemble'], 'SurveyEnsemble')
+        sens = SurveyEns(**specs)
+
         #preserve star catalog name
         self.StarCatalog = specs['modules']['StarCatalog']
 
-        #initialize top level
+        #initialize top level, import modules
         self.modules = {}
-        # import simulated universe class
-        SimUni = get_module(specs['modules']['SimulatedUniverse'], 'SimulatedUniverse')
-        self.modules['SimulatedUniverse'] = SimUni(**specs)
+        self.modules['SimulatedUniverse'] = get_module(specs['modules']\
+                ['SimulatedUniverse'],'SimulatedUniverse')(**specs)
+        self.modules['Observatory'] = get_module(specs['modules']\
+                ['Observatory'],'Observatory')(**specs)
+        self.modules['TimeKeeping'] = get_module(specs['modules']\
+                ['TimeKeeping'],'TimeKeeping')(**specs)
 
-        # import observatory class
-        Obs = get_module(specs['modules']['Observatory'], 'Observatory')
-        self.modules['Observatory'] = Obs(**specs)
-
-        # import timekeeping class
-        TK = get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')
-        self.modules['TimeKeeping'] = TK(**specs)
-
-        #collect sub-initializations
-        self.modules['OpticalSystem'] = self.modules['SimulatedUniverse'].OpticalSystem # optical system object
-        self.modules['PlanetPopulation'] = self.modules['SimulatedUniverse'].PlanetPopulation # planet population object
-        self.modules['ZodiacalLight'] = self.modules['SimulatedUniverse'].ZodiacalLight # zodiacal light object
-        self.modules['BackgroundSources'] = self.modules['SimulatedUniverse'].BackgroundSources #Background sources object
-        self.modules['Completeness'] = self.modules['SimulatedUniverse'].Completeness # completeness object
-        self.modules['PlanetPhysicalModel'] = self.modules['SimulatedUniverse'].PlanetPhysicalModel # planet physical model object
-        self.modules['PostProcessing'] = self.modules['SimulatedUniverse'].PostProcessing # postprocessing model object
-        self.modules['TargetList'] = self.modules['SimulatedUniverse'].TargetList # target list object
+        # collect sub-initializations
+        SU = self.modules['SimulatedUniverse']
+        self.modules['OpticalSystem'] = SU.OpticalSystem
+        self.modules['PlanetPopulation'] = SU.PlanetPopulation
+        self.modules['ZodiacalLight'] = SU.ZodiacalLight
+        self.modules['BackgroundSources'] = SU.BackgroundSources
+        self.modules['Completeness'] = SU.Completeness
+        self.modules['PlanetPhysicalModel'] = SU.PlanetPhysicalModel
+        self.modules['PostProcessing'] = SU.PostProcessing
+        self.modules['TargetList'] = SU.TargetList
         
-        #grab sim and ensemble classes  
+        # replace modules dict with instantiated objects 
         SurveySim = get_module(specs['modules']['SurveySimulation'], 'SurveySimulation')
-        SurveyEns = get_module(specs['modules']['SurveyEnsemble'], 'SurveyEnsemble')
-
-        #replace modules dict with instantiated objects 
         inputMods = specs.pop('modules')
         specs['modules'] = self.modules
 
-        #generate sim and ensemble objects
+        # generate sim object
         self.modules['SurveySimulation'] = SurveySim(**specs)
-        self.modules['SurveyEnsemble'] = SurveyEns(**specs)
+        self.modules['SurveyEnsemble'] = sens
 
-        #make all objects accessible from the top level
+        # make all objects accessible from the top level
         for modName in specs['modules'].keys():
             setattr(self, modName, specs['modules'][modName])
 

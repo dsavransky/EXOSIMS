@@ -45,16 +45,16 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-EXOSIMS.OpticalSystem.OptSys_Kasdin">
-<span id="exosims-opticalsystem-optsys-kasdin-module"></span><h2>EXOSIMS.OpticalSystem.OptSys_Kasdin module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.OptSys_Kasdin" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.OpticalSystem.KasdinBraems">
+<span id="exosims-opticalsystem-kasdinbraems-module"></span><h2>EXOSIMS.OpticalSystem.KasdinBraems module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.KasdinBraems" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin">
-<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.OptSys_Kasdin.</code><code class="descname">OptSys_Kasdin</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems">
+<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.KasdinBraems.</code><code class="descname">KasdinBraems</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.OpticalSystem.OpticalSystem</span></code></a></p>
-<p>WFIRST Optical System class</p>
-<p>This class contains all variables and methods specific to the WFIRST
-optical system needed to perform Optical System Module calculations
-in exoplanet mission simulation.</p>
+<p>KasdinBraems Optical System class</p>
+<p>This class contains all variables and methods necessary to perform
+Optical System Module calculations in exoplanet mission simulation using
+the model from Kasdin &amp; Braems 2006.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -64,28 +64,89 @@ in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_charTime">
-<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_charTime" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Kasdin.html#OptSys_Kasdin.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin.calc_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds integration time for a specific target system</p>
-<p>This method is called from a method in the SurveySimulation class
-object.</p>
+<dt id="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.Cp_Cb">
+<code class="descname">Cp_Cb</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em>, <em>inst</em>, <em>syst</em>, <em>Npix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems.Cp_Cb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.Cp_Cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates electron count rates for planet signal and background noise.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>targlist</strong> &#8211; TargetList class object</li>
-<li><strong>starInd</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
-<li><strong>dMagPlan</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
+<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
+<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
 and their host star</li>
 <li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>inst</strong> &#8211; Selected scienceInstrument</li>
+<li><strong>syst</strong> &#8211; Selected starlightSuppressionSystem</li>
+<li><strong>Npix</strong> &#8211; Number of noise pixels</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>1D numpy array of planet signal electron count rate (units of s^-1)
+C_b:</p>
+<blockquote>
+<div><p>1D numpy array of background noise electron count rate (units of s^-1)</p>
+</div></blockquote>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">C_p</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_charTime">
+<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_charTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds characterization time for a specific target system,
+based on Nemati 2014 (SPIE).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>targlist</strong> &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+with the length of the number of planets of interest.</li>
 <li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
+<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
+and their host star</li>
+<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;     1D numpy ndarray of characterization times (default units of day)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds integration time for a specific target system,
+based on Kasdin and Braems 2006.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>targlist</strong> &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+with the length of the number of planets of interest.</li>
+<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
+<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
+and their host star</li>
+<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
 </ul>
 </td>
 </tr>
@@ -103,16 +164,16 @@ units of day)</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-EXOSIMS.OpticalSystem.OptSys_Nemati">
-<span id="exosims-opticalsystem-optsys-nemati-module"></span><h2>EXOSIMS.OpticalSystem.OptSys_Nemati module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.OptSys_Nemati" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.OpticalSystem.Nemati">
+<span id="exosims-opticalsystem-nemati-module"></span><h2>EXOSIMS.OpticalSystem.Nemati module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.Nemati" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati">
-<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.OptSys_Nemati.</code><code class="descname">OptSys_Nemati</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Nemati.html#OptSys_Nemati"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin" title="EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.OpticalSystem.OptSys_Kasdin.OptSys_Kasdin</span></code></a></p>
-<p>WFIRST Optical System class</p>
-<p>This class contains all variables and methods specific to the WFIRST
-optical system needed to perform Optical System Module calculations
-in exoplanet mission simulation.</p>
+<dt id="EXOSIMS.OpticalSystem.Nemati.Nemati">
+<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.Nemati.</code><code class="descname">Nemati</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems" title="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems</span></code></a></p>
+<p>Nemati Optical System class</p>
+<p>This class contains all variables and methods necessary to perform
+Optical System Module calculations in exoplanet mission simulation using
+the model from Nemati 2014.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -122,23 +183,22 @@ in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>starInd</em>, <em>dMagPlan</em>, <em>WA</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/OptSys_Nemati.html#OptSys_Nemati.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.OptSys_Nemati.OptSys_Nemati.calc_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds integration time for a specific target system</p>
-<p>This method is called from a method in the SurveySimulation class
-object.</p>
+<dt id="EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime">
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds integration time for a specific target system,
+based on Nemati 2014 (SPIE).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>targlist</strong> &#8211; TargetList class object</li>
-<li><strong>starInd</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
-<li><strong>dMagPlan</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
+<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
+<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
 and their host star</li>
 <li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
 </ul>
 </td>
 </tr>
@@ -153,6 +213,27 @@ units of day)</p>
 </table>
 </dd></dl>
 
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem">
+<span id="exosims-opticalsystem-wfirstopticalsystem-module"></span><h2>EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem">
+<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.</code><code class="descname">WFIRSTOpticalSystem</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/WFIRSTOpticalSystem.html#WFIRSTOpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems" title="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems</span></code></a></p>
+<p>WFIRST OpticalSystem class</p>
+<p>This class contains all variables and methods specific to the WFIRST
+optical system needed to perform OpticalSystem Definition Module calculations
+in exoplanet mission simulation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -171,8 +252,9 @@ units of day)</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.OpticalSystem package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.OptSys_Kasdin">EXOSIMS.OpticalSystem.OptSys_Kasdin module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.OptSys_Nemati">EXOSIMS.OpticalSystem.OptSys_Nemati module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.KasdinBraems">EXOSIMS.OpticalSystem.KasdinBraems module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.Nemati">EXOSIMS.OpticalSystem.Nemati module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem">EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem">Module contents</a></li>
 </ul>
 </li>
@@ -203,9 +285,6 @@ units of day)</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -216,7 +295,7 @@ units of day)</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

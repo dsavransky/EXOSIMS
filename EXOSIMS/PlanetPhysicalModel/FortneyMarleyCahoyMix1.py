@@ -1,5 +1,5 @@
 from EXOSIMS.Prototypes.PlanetPhysicalModel import PlanetPhysicalModel
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 import numpy as np
 import scipy.interpolate as interpolate

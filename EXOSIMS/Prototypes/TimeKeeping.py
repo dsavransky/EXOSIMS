@@ -5,6 +5,7 @@ import logging
 import inspect
 from astropy.time import Time
 import astropy.units as u
+import numpy as np
 
 # the EXOSIMS logger
 Logger = logging.getLogger(__name__)
@@ -53,42 +54,54 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
     
-    def __init__(self, missionStart=60634., missionLife=6.,\
-                 extendedLife=0., missionPortion = 1./6., **specs):
+    def __init__(self, missionStart=60634., missionLife=6., \
+                 extendedLife=0., missionPortion = 1/6., **specs):
                 
-        # default values
-        # mission start time (astropy Time object) in mjd
-        self.missionStart = Time(float(missionStart), format='mjd')
+        # illegal value checks
+        assert missionLife >= 0, \
+          "Need missionLife >= 0, got %f" % missionLife
+        assert extendedLife >= 0, \
+          "Need extendedLife >= 0, got %f" % extendedLife
+        # arithmetic on missionPortion fails if it is outside the legal range
+        assert missionPortion > 0 and missionPortion <= 1, \
+          "Require missionPortion in the interval (0,1], got %f" % missionPortion
+
+        # set up state variables
+
+        # mission start time: astropy Time object, in mjd
+        #   tai scale specified because the default, utc, requires accounting for leap
+        #   seconds, causing warnings from astropy.time when time-deltas are added
+        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')
         self._outspec['missionStart'] = float(missionStart)
 
-        # mission lifetime astropy unit object in years
+        # mission lifetime: astropy unit object, in years
         self.missionLife = float(missionLife)*u.year
         self._outspec['missionLife'] = float(missionLife)
 
-        # extended mission time astropy unit object in years
+        # extended mission time: astropy unit object, in years
         self.extendedLife = float(extendedLife)*u.year
         self._outspec['extendedLife'] = float(extendedLife)
 
-        # portion of mission devoted to planet-finding
+        # mission portion: fraction of mission devoted to planet-finding, float
         self.missionPortion = float(missionPortion)
         self._outspec['missionPortion'] = float(missionPortion)
         
-        # duration of planet-finding operations
+        # duration of planet-finding operations: astropy unit object, in days
         self.duration = 14.*u.day
-        # next time available for planet-finding
+        # next time available for planet-finding: astropy unit object, in days
         self.nexttimeAvail = 0.*u.day
                             
         # initialize values updated by functions
-        # current mission time astropy unit object in days
+        #   current mission time: astropy unit object, in days
         self.currenttimeNorm = 0.*u.day
-        # current absolute mission time (astropy Time object) in mjd
+        #   current absolute mission time: astropy Time object, in mjd
         self.currenttimeAbs = self.missionStart
         
         # set values derived from quantities above
-        # mission completion date (astropy Time object) in mjd
+        #   mission completion date: astropy Time object, in mjd
         self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
-        # normalized mission completion date in days
-        self.missionFinishNorm = self.missionLife.to(u.day) + self.extendedLife.to(u.day)
+        #   normalized mission completion date: astropy unit object, in days
+        self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')
         
     
     def __str__(self):
@@ -100,7 +113,7 @@ class TimeKeeping(object):
         atts = self.__dict__.keys()
         for att in atts:
             print '%s: %r' % (att, getattr(self, att))
-        return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to(u.day).value
+        return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to('day').value
         
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing the observation window if needed.
@@ -132,7 +145,7 @@ class TimeKeeping(object):
         provisional_time = self.currenttimeNorm + dt
         window_advance = False
         success = True
-        if dt > self.duration:
+        if np.sum(dt) > self.duration:
             success = False
             description = '!too long'
         elif dt < 0:
@@ -156,7 +169,7 @@ class TimeKeeping(object):
             description = 'ok'
         # Log a message for the time allocation
         message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
-            self.currenttimeNorm.to(u.day).value, dt.to(u.day).value, description, location)
+            self.currenttimeNorm.to('day').value, np.sum(dt).to('day').value, description, location)
         Logger.info(message)
         # if False: print '***', message
         return success

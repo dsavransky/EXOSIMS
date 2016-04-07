@@ -1,6 +1,6 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 
 class KnownRVPlanetsUniverse(SimulatedUniverse):
@@ -33,6 +33,26 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         catalog values for each planet.
         """
 
+        # Map planets to target stars
+        self.planet_to_star()               # generate index of target star for each planet
+        self.nPlans = len(self.plan2star)   # number of planets in universe
+
+        PPop = self.PlanetPopulation
+        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
+        self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
+                else PPop.gen_eccentricity(self.nPlans)     # eccentricity
+        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+        self.I = PPop.gen_I(self.nPlans)                    # inclination
+        self.Rp = PPop.gen_radius(self.nPlans)              # radius
+        self.Mp = PPop.gen_mass(self.nPlans)                # mass
+        self.p = PPop.gen_albedo(self.nPlans)               # albedo
+        self.r, self.v = self.planet_pos_vel()              # initial position
+        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
+        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
+
+        # exo-zodi levels for systems with planets
+        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
+
         # Go through the target list and pick out the planets belonging to those hosts
         starinds = np.array([])
         planinds = np.array([])
@@ -40,41 +60,36 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
             tmp = np.where(self.PlanetPopulation.hostname == name)[0]
             planinds = np.hstack((planinds,tmp))
             starinds = np.hstack((starinds,[j]*len(tmp)))
-            
         planinds = planinds.astype(int)
         starinds = starinds.astype(int)
+        # map planets to stars in standard format
+        self.plan2star = starinds
+        self.sInds = np.unique(self.plan2star)
         self.nPlans = len(planinds)
 
-        # map planets to stars in standard format
-        self.planInds = starinds
-        self.sysInds = np.unique(self.planInds)
-
-
         #populate parameters
-        self.a = self.PlanetPopulation.sma[planinds] +  np.random.normal(size=self.nPlans)*self.PlanetPopulation.smaerr[planinds]
-
-        self.e = self.PlanetPopulation.eccentricity[planinds] + np.random.normal(size=self.nPlans)*self.PlanetPopulation.eccentricityerr[planinds]
+        self.a = PPop.sma[planinds] +  np.random.normal(size=self.nPlans)\
+                *PPop.smaerr[planinds]                      # semi-major axis
+        self.e = PPop.eccentricity[planinds] + np.random.normal(size=self.nPlans)\
+                *PPop.eccentricityerr[planinds]             # eccentricity
         self.e[self.e < 0.] = 0.
         self.e[self.e > 0.9] = 0.9
- 
-        self.I = self.PlanetPopulation.allplanetdata['pl_orbincl'][planinds] + \
-                np.random.normal(size=self.nPlans)*self.PlanetPopulation.allplanetdata['pl_orbinclerr1'][planinds] 
-        self.I[self.I.mask] = self.PlanetPopulation.gen_I(len(np.where(self.I.mask)[0])).to('deg').value
-        self.I = self.I.data*u.deg
-
-        self.w = self.PlanetPopulation.gen_w(self.nPlans) 
-        lper = self.PlanetPopulation.allplanetdata['pl_orblper'][planinds] + \
-                np.random.normal(size=self.nPlans)*self.PlanetPopulation.allplanetdata['pl_orblpererr1'][planinds] 
-
-        self.O = lper.data*u.deg - self.w
-        self.O[np.isnan(self.O)] =  self.PlanetPopulation.gen_O(len(np.where(np.isnan(self.O))[0]))
-
-        self.Mp = self.PlanetPopulation.mass[planinds]
-        self.Rp = self.PlanetPhysicalModel.calc_radius_from_mass(self.Mp)
-        self.p = self.PlanetPhysicalModel.calc_albedo_from_sma(self.a)
+        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        self.O = lper.data*u.deg - self.w                   # longitude of ascending node
+        self.O[np.isnan(self.O)] =  PPop.gen_O(len(np.where(np.isnan(self.O))[0]))
+        self.I = PPop.allplanetdata['pl_orbincl'][planinds] + np.random.normal\
+                (size=self.nPlans)*PPop.allplanetdata['pl_orbinclerr1'][planinds] 
+        self.I[self.I.mask] = PPop.gen_I(len(np.where(self.I.mask)[0])).to('deg').value
+        self.I = self.I.data*u.deg                          # inclination
+        lper = PPop.allplanetdata['pl_orblper'][planinds] + \
+                np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
+        self.Mp = PPop.mass[planinds]                       # mass
+        self.Rp = PPhMod.calc_radius_from_mass(self.Mp)     # radius
+        self.p = PPhMod.calc_albedo_from_sma(self.a)        # albedo
+        self.r, self.v = self.planet_pos_vel()              # initial position
+        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
+        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
         
-        # planet initial positions
-        self.r, self.v = self.planet_pos_vel() 
         # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.planInds,self.I)
+        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
 

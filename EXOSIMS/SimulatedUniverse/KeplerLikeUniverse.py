@@ -1,6 +1,6 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 
 class KeplerLikeUniverse(SimulatedUniverse):
@@ -39,29 +39,25 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.Rp = self.PlanetPopulation.gen_radius_nonorm(self.TargetList.nStars)
         self.nPlans = self.Rp.size
         # Map planets to target stars
-        self.planet_to_star()     
+        self.planet_to_star()
 
-        # planet semi-major axis
-        self.a = self.PlanetPopulation.gen_sma(self.nPlans)
+        PPop = self.PlanetPopulation
+        PPhMod = self.PlanetPhysicalModel
+        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(self.PlanetPhysicalModel.ggdat['radii'])] = 0.02*u.AU
-        # planet eccentricities
-        self.e = self.PlanetPopulation.gen_eccentricity(self.nPlans)
-        # planet argument of periapse
-        self.w = self.PlanetPopulation.gen_w(self.nPlans)   
-        # planet longitude of ascending node
-        self.O = self.PlanetPopulation.gen_O(self.nPlans)
-        # planet inclination
-        self.I = self.PlanetPopulation.gen_I(self.nPlans)
-        # planet masses
-        self.Mp = self.PlanetPhysicalModel.calc_mass_from_radius(self.Rp)
-        # planet albedos
-        self.p = self.PlanetPhysicalModel.calc_albedo_from_sma(self.a)
-        # planet initial positions
-        self.r, self.v = self.planet_pos_vel() 
-        # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.planInds,self.I)
+        self.e = PPop.gen_eccentricity(self.nPlans)         # eccentricity
+        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+        self.I = PPop.gen_I(self.nPlans)                    # inclination
+        self.Mp = PPhMod.calc_mass_from_radius(self.Rp)     # mass
+        self.p = PPhMod.calc_albedo_from_sma(self.a)        # albedo
+        self.r, self.v = self.planet_pos_vel()              # initial position
+        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
+        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
 
+        # exo-zodi levels for systems with planets
+        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
 
     def planet_to_star(self):
         """Assigns index of star in target star list to each planet
@@ -70,16 +66,16 @@ class KeplerLikeUniverse(SimulatedUniverse):
         distribution.
 
         Attributes updated:
-            planInds (ndarray):
+            plan2star (ndarray):
                 1D numpy array containing indices of the target star to which 
                 each planet (each element of the array) belongs
-            sysInds (ndarray):
+            sInds (ndarray):
                 1D numpy array of indices of the subset of the targetlist with
                 planets
         
         """
         
-        self.planInds = np.random.randint(low=0,high=self.TargetList.nStars-1,size=self.nPlans)    
-        self.sysInds = np.unique(self.planInds)
+        self.plan2star = np.random.randint(low=0,high=self.TargetList.nStars-1,size=self.nPlans)
+        self.sInds = np.unique(self.plan2star)
         
-        return 
+        return

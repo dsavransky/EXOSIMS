@@ -18,12 +18,13 @@ Contents
    
    quickstart
    docs
+   parallel
    EXOSIMS
 
 Credits
 --------
 
-EXOSIMS was created by Dmitry Savransky and written by Daniel Garrett, Dmitry Savransky, Christian Delacroix et al.
+EXOSIMS was created by Dmitry Savransky and written by Daniel Garrett, Dmitry Savransky, and Christian Delacroix, with contributions by Rhonda Morgan, Michael Turmon and Patrick Lowrance.
 
 
 Indices and tables

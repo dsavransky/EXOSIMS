@@ -1,5 +1,5 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 import numpy as np
 import os,inspect

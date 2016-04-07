@@ -4,18 +4,18 @@ EXOSIMS.OpticalSystem package
 Submodules
 ----------
 
-EXOSIMS.OpticalSystem.OptSys_Kasdin module
-------------------------------------------
+EXOSIMS.OpticalSystem.KasdinBraems module
+-----------------------------------------
 
-.. automodule:: EXOSIMS.OpticalSystem.OptSys_Kasdin
+.. automodule:: EXOSIMS.OpticalSystem.KasdinBraems
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.OpticalSystem.OptSys_Nemati module
-------------------------------------------
+EXOSIMS.OpticalSystem.Nemati module
+-----------------------------------
 
-.. automodule:: EXOSIMS.OpticalSystem.OptSys_Nemati
+.. automodule:: EXOSIMS.OpticalSystem.Nemati
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,5 +1,5 @@
 from EXOSIMS.Observatory.WFIRSTObservatory import WFIRSTObservatory
-from astropy import units as u
+import astropy.units as u
 from astropy.time import Time
 import numpy as np
 import os, inspect

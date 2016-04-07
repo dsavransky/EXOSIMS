@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from astropy import units as u
+import astropy.units as u
 import numpy as np
 import os.path
 import astropy.io.fits as fits
@@ -208,6 +208,7 @@ class OpticalSystem(object):
         # loop through all starlight suppression systems (must have one defined)
         assert starlightSuppressionSystems, "No starlight suppression systems defined."
         self.starlightSuppressionSystems = starlightSuppressionSystems
+        self.haveOcculter = False
         self._outspec['starlightSuppressionSystems'] = []
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\

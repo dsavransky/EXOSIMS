@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.OpticalSystem.KasdinBraems import KasdinBraems
-from astropy import units as u
+import astropy.units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
@@ -22,14 +22,14 @@ class Nemati(KasdinBraems):
         
         KasdinBraems.__init__(self, **specs)
 
-    def calc_intTime(self, targlist, sInd, I, dMag, WA):
+    def calc_intTime(self, targlist, sInds, I, dMag, WA):
         """Finds integration time for a specific target system,
         based on Nemati 2014 (SPIE).
         
         Args:
             targlist:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:
@@ -54,7 +54,7 @@ class Nemati(KasdinBraems):
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(targlist, sInd, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(targlist, sInds, I, dMag, WA, inst, syst, Npix)
 
         # Nemati14+ method
         PP = targlist.PostProcessing                # post-processing module
@@ -65,4 +65,4 @@ class Nemati(KasdinBraems):
         C_b += C_p*inst['ENF']**2                   # Cb must include the planet
         intTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
         
-        return intTime.to(u.day)
+        return intTime.to('day')

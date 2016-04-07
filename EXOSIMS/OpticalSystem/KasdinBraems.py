@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
-from astropy import units as u
+import astropy.units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
@@ -28,13 +28,13 @@ class KasdinBraems(OpticalSystem):
         self.Spectro = self.scienceInstruments[-1]
         self.SpectroSyst = self.starlightSuppressionSystems[-1]
 
-    def Cp_Cb(self, targlist, sInd, I, dMag, WA, inst, syst, Npix):
+    def Cp_Cb(self, targlist, sInds, I, dMag, WA, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
 
         Args:
             targlist:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:
@@ -65,13 +65,12 @@ class KasdinBraems(OpticalSystem):
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
-        mV = self.starMag(targlist,sInd,lam)        # star visual magnitude
+        mV = self.starMag(targlist,sInds,lam)       # star visual magnitude
         zodi = targlist.ZodiacalLight               # zodiacalLight module
-        fZ = zodi.fZ(targlist,sInd,lam)             # surface brightness of local zodi
-        fEZ = zodi.fEZ(targlist,sInd,I)             # surface brightness of exo-zodi
+        fZ = zodi.fZ(targlist,sInds,lam)            # surface brightness of local zodi
+        fEZ = zodi.fEZ(targlist,sInds,I)            # surface brightness of exo-zodi
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
-        Theta = (X*lam.to(u.m)/self.pupilDiam*u.rad).to(u.arcsec) \
-                                                    # aperture photometry angular radius
+        Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
 
         # electron count rates [ s^-1 ]
@@ -86,14 +85,14 @@ class KasdinBraems(OpticalSystem):
         
         return C_p, C_b
 
-    def calc_intTime(self, targlist, sInd, I, dMag, WA):
+    def calc_intTime(self, targlist, sInds, I, dMag, WA):
         """Finds integration time for a specific target system,
         based on Kasdin and Braems 2006.
         
         Args:
             targlist:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:
@@ -118,7 +117,7 @@ class KasdinBraems(OpticalSystem):
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(targlist, sInd, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(targlist, sInds, I, dMag, WA, inst, syst, Npix)
 
         # Kasdin06+ method
         Pbar = PSF/np.max(PSF)
@@ -136,9 +135,9 @@ class KasdinBraems(OpticalSystem):
         beta = C_p/T
         intTime = 1./beta*(K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2/(Qbar*Ta*Psi)
 
-        return intTime.to(u.day)
+        return intTime.to('day')
 
-    def calc_charTime(self, targlist, sInd, I, dMag, WA):
+    def calc_charTime(self, targlist, sInds, I, dMag, WA):
         """Finds characterization time for a specific target system,
         based on Nemati 2014 (SPIE).
         
@@ -146,7 +145,7 @@ class KasdinBraems(OpticalSystem):
         Args:
             targlist:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:
@@ -170,7 +169,7 @@ class KasdinBraems(OpticalSystem):
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(targlist, sInd, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(targlist, sInds, I, dMag, WA, inst, syst, Npix)
 
         # Nemati14+ method
         PP = targlist.PostProcessing                # post-processing module
@@ -181,4 +180,4 @@ class KasdinBraems(OpticalSystem):
         C_b += C_p*inst['ENF']**2                   # Cb must include the planet
         charTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
 
-        return charTime.to(u.day)
+        return charTime.to('day')

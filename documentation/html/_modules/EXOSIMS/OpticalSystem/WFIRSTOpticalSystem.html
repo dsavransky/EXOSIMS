@@ -39,131 +39,51 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.OpticalSystem.WFIRSTOpticalSystem</h1><div class="highlight"><pre>
-<span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.OpticalSystem</span> <span class="kn">import</span> <span class="n">OpticalSystem</span>
-<span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.OpticalSystem.KasdinBraems</span> <span class="kn">import</span> <span class="n">KasdinBraems</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">st</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">opt</span>
 
-<div class="viewcode-block" id="WFIRSTOpticalSystem"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem">[docs]</a><span class="k">class</span> <span class="nc">WFIRSTOpticalSystem</span><span class="p">(</span><span class="n">OpticalSystem</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;WFIRST Optical System class</span>
+<div class="viewcode-block" id="WFIRSTOpticalSystem"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem">[docs]</a><span class="k">class</span> <span class="nc">WFIRSTOpticalSystem</span><span class="p">(</span><span class="n">KasdinBraems</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;WFIRST OpticalSystem class</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods specific to the WFIRST</span>
-<span class="sd">    optical system needed to perform Optical System Module calculations</span>
+<span class="sd">    optical system needed to perform OpticalSystem Definition Module calculations</span>
 <span class="sd">    in exoplanet mission simulation.</span>
-<span class="sd">    </span>
+<span class="sd">        </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
-<span class="sd">    Attributes:</span>
-<span class="sd">        dAlpha:</span>
-<span class="sd">            pixel size in square arcseconds (astropy Quantity in arcsec**2)</span>
-<span class="sd">        Psi:</span>
-<span class="sd">            instrument specific value &#39;sharpness&#39; derived from PSF</span>
-<span class="sd">        Xi:</span>
-<span class="sd">            instrument specific value derived from PSF</span>
-<span class="sd">        P1:</span>
-<span class="sd">            instrument specific value derived from PSF</span>
-<span class="sd">        alphaBar:</span>
-<span class="sd">            instrument specific value</span>
-<span class="sd">        Ta:</span>
-<span class="sd">            Airy throughput</span>
-<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-                
-        <span class="n">OpticalSystem</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-                    
-        <span class="c1"># set values derived from quantities above</span>
-        <span class="c1"># pixel size in square arcseconds (as**2)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dAlpha</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">shapeFac</span><span class="o">/</span><span class="p">(</span><span class="mf">4.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pupilArea</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">180.</span><span class="o">*</span><span class="mf">3600.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> 
-        <span class="bp">self</span><span class="o">.</span><span class="n">Psi</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1"># instrument specific value &quot;sharpness&quot; derived from PSF</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Xi</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1"># instrument specific value derived from PSF</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">P1</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1"># instrument specific value derived from PSF</span>
-        <span class="c1"># instrument specific value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">alphaBar</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixelArea</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">shapeFac</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">focalLength</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">lam</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span> 
-        <span class="bp">self</span><span class="o">.</span><span class="n">Ta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">throughput</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">shapeFac</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">P1</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">alphaBar</span> <span class="c1"># Airy throughput </span>
         
-<div class="viewcode-block" id="WFIRSTOpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
-<span class="sd">        </span>
-<span class="sd">        This method is called in the __init__ for the TargetList class object.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            targlist:</span>
-<span class="sd">                TargetList class object which also has access to:</span>
-<span class="sd">                    targlist.ZodiacalLight:</span>
-<span class="sd">                        ZodiacalLight class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            maxintTime:</span>
-<span class="sd">                1D numpy array containing maximum integration time for target</span>
-<span class="sd">                list stars (astropy Quantity with units of day)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-                
-        <span class="n">dmags</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span> <span class="c1"># limiting delta magnitude</span>
-        <span class="n">throughput</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">throughput</span> <span class="c1"># throughput at IWA</span>
-        <span class="n">contrast</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">contrast</span> <span class="c1"># contrast at IWA</span>
-        <span class="n">Vmag</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">Vmag</span> <span class="c1"># visual magnitude</span>
-        <span class="n">opt</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="c1"># OpticalSystem module</span>
-        <span class="n">zodi</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="c1"># ZodiacalLight module</span>
+        <span class="n">KasdinBraems</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-        <span class="c1"># exozodi level</span>
-        <span class="n">fzodi</span> <span class="o">=</span> <span class="n">zodi</span><span class="o">.</span><span class="n">fbeta</span><span class="p">(</span><span class="n">zodi</span><span class="o">.</span><span class="n">eclip_lats</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.</span><span class="o">*</span><span class="n">zodi</span><span class="o">.</span><span class="n">exozodi</span><span class="o">*</span><span class="mf">2.44</span><span class="o">*</span><span class="p">(</span><span class="mf">2.5</span><span class="o">**</span><span class="p">(</span><span class="mf">4.78</span><span class="o">-</span><span class="n">targlist</span><span class="o">.</span><span class="n">MV</span><span class="p">))</span>
-        <span class="c1"># band-specific flux for zero-magnitude star        </span>
-        <span class="n">F</span> <span class="o">=</span> <span class="mf">9.57e7</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span> <span class="o">=</span> <span class="bp">None</span>
         
-        <span class="n">Qmin</span> <span class="o">=</span> <span class="p">(</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="n">dmags</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span><span class="o">*</span><span class="n">contrast</span> <span class="o">+</span>
-        <span class="mf">10.</span><span class="o">**</span><span class="p">((</span><span class="n">Vmag</span> <span class="o">+</span> <span class="n">dmags</span> <span class="o">-</span> <span class="mf">23.54</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span><span class="o">*</span><span class="n">fZodiacalLight</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">dAlpha</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span>
-        <span class="mf">10.</span><span class="o">**</span><span class="p">((</span><span class="n">Vmag</span> <span class="o">+</span> <span class="n">dmags</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span><span class="o">*</span>
-        <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">darkRate</span> <span class="o">+</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">readNoise</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">opt</span><span class="o">.</span><span class="n">texp</span><span class="p">))</span><span class="o">/</span>
-        <span class="p">(</span><span class="n">F</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">QE</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">attenuation</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">deltaLambda</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">*</span><span class="n">throughput</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scienceInstruments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;imag&#39;</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span> <span class="o">=</span> <span class="n">inst</span>
+            <span class="k">if</span> <span class="s1">&#39;spec&#39;</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span> <span class="o">=</span> <span class="n">inst</span>
+        <span class="k">for</span> <span class="n">syst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starlightSuppressionSystems</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;hlc&#39;</span> <span class="ow">in</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="n">syst</span>
+            <span class="k">if</span> <span class="s1">&#39;spc&#39;</span> <span class="ow">in</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span> <span class="o">=</span> <span class="n">syst</span>
 
-        <span class="n">Qbar</span> <span class="o">=</span> <span class="n">Qmin</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">P1</span>
-        <span class="c1"># average irradiance in detection band (photons/m**2/nm/s)</span>
-        <span class="n">Ip</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">Vmag</span> <span class="o">+</span> <span class="n">dmags</span><span class="p">)</span><span class="o">/</span><span class="mf">2.5</span><span class="p">)</span>
-        <span class="n">beta</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">QE</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">attenuation</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">deltaLambda</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">*</span><span class="n">Ip</span> <span class="c1"># photons/s</span>
-        <span class="c1"># maximum time in seconds</span>
-        <span class="n">t_max</span> <span class="o">=</span> <span class="p">((</span><span class="n">rules</span><span class="o">.</span><span class="n">K</span> <span class="o">-</span> <span class="n">rules</span><span class="o">.</span><span class="n">gamma</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="n">Qbar</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">Xi</span><span class="o">/</span><span class="n">opt</span><span class="o">.</span><span class="n">Psi</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">Qbar</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">Ta</span><span class="o">*</span><span class="n">opt</span><span class="o">.</span><span class="n">Psi</span><span class="p">))</span><span class="o">/</span><span class="n">beta</span>
-        <span class="c1"># apply observational duty cycle        </span>
-        <span class="n">t_max</span> <span class="o">=</span> <span class="n">t_max</span><span class="o">*</span><span class="n">rules</span><span class="o">.</span><span class="n">dutyCycle</span>
-        
-        <span class="k">return</span> <span class="n">t_max</span></div>
-        
-<div class="viewcode-block" id="WFIRSTOpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">rules</span><span class="p">,</span> <span class="n">universe</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">planInds</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
-<span class="sd">        </span>
-<span class="sd">        This method is called from a method in the SurveySimulation class</span>
-<span class="sd">        object.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            targlist:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            opt:</span>
-<span class="sd">                OpticalSystem class object</span>
-<span class="sd">            rules:</span>
-<span class="sd">                Rules class object</span>
-<span class="sd">            universe:</span>
-<span class="sd">                SimulatedUniverse class object</span>
-<span class="sd">            s_ind:</span>
-<span class="sd">                target star index</span>
-<span class="sd">            planInds:</span>
-<span class="sd">                planet indices linking back to target star</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            intTime:</span>
-<span class="sd">                1D numpy array of integration times (astropy Quantity with </span>
-<span class="sd">                units of day)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># integration time given as 1 day</span>
-        <span class="n">intTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">planInds</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        
-        <span class="k">return</span> <span class="n">intTime</span></div></div>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span><span class="p">,</span> <span class="s2">&quot;No imager defined.&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span><span class="p">,</span> <span class="s2">&quot;No spectrograph defined.&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span><span class="p">,</span> <span class="s2">&quot;No hybrid Lyot coronagraph defined.&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span><span class="p">,</span> <span class="s2">&quot;No shaped pupil coronagraph defined.&quot;</span></div>
+
 </pre></div>
 
           </div>
@@ -187,9 +107,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -200,7 +117,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

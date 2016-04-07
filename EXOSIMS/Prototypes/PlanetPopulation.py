@@ -1,4 +1,4 @@
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 import numpy as np
 import copy
@@ -315,3 +315,21 @@ class PlanetPopulation(object):
         
         return vals
 
+    def calc_Phi(self,r):
+        """Calculate the Lambert phase function from Sobolev 1975.
+
+        Args:
+            r (Quantity):
+                numpy ndarray containing planet position vectors relative to 
+                host stars (units of distance)
+        
+        Returns:
+            Phi (Quantity):
+                numpy ndarray of planet phase function
+        """
+
+        d = np.sqrt(np.sum(r**2, axis=1))
+        beta = np.arccos(r[:,2]/d).value
+        Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
+
+        return Phi

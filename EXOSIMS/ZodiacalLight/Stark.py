@@ -2,7 +2,7 @@
 from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 import os,inspect
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 from scipy.interpolate import interp1d, interp2d
 
@@ -33,14 +33,17 @@ class Stark(ZodiacalLight):
         # solar longitudes and latitudes of targets
         lon = targlist.coords.barycentrictrueecliptic.lon[sInd].value
         lat = targlist.coords.barycentrictrueecliptic.lat[sInd].value
-
+        if type(lon) is float:
+            lon = np.array([lon])
+            lat = np.array([lat])
+            
         # Table 17 in Leinert et al. (1998)
         # Zodiacal light brightness function of solar longitudes (rows) and beta values (columns)
         # Values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm
         path = os.path.split(inspect.getfile(self.__class__))[0]
-        Izod = np.load(os.path.join(path, 'Leinert98_table17.npy')) # u.W/u.m**2/u.sr/u.um
-        beta_vector = np.array([0.,5,10,15,20,25,30,45,60,75]) # u.deg
-        sollong_vector = np.array([0.,5,10,15,20,25,30,35,40,45,60,75,90,105,120,135,150,165,180]) # u.deg
+        Izod = np.load(os.path.join(path, 'Leinert98_table17.npy')) # W/m**2/sr/um
+        beta_vector = np.array([0.,5,10,15,20,25,30,45,60,75]) # deg
+        sollong_vector = np.array([0.,5,10,15,20,25,30,35,40,45,60,75,90,105,120,135,150,165,180]) # deg
         beta_array,sollong_array = np.meshgrid(beta_vector,sollong_vector)
         sollong_indices = lon/5.
         beta_indices = lat/5.
@@ -63,11 +66,11 @@ class Stark(ZodiacalLight):
         #It's better to interpolate w/ a quadratic in log-log space
         x = np.log10(zodi_lam)
         y = np.log10(zodi_Blam)
-        f_corr = 10.**(interp1d(x,y,kind='quadratic')(np.log10(lam.to(u.um).value)))*u.W/u.m**2/u.sr/u.um
-        f_corr = f_corr.to(u.erg/u.s/u.m**2/u.arcsec**2/u.nm)
+        f_corr = 10.**(interp1d(x,y,kind='quadratic')(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        f_corr = f_corr.to('erg/s/m2/arcsec2/nm')
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
-        ephoton = (h*c/lam).to(u.erg)/u.ph      # energy of a photon in erg / ph
+        ephoton = (h*c/lam/u.ph).to('erg/ph')   # energy of a photon in erg / ph
         f_corr /= ephoton                       # ph s-1 m-2 nm-1 arcsec-2
         F0 = targlist.OpticalSystem.F0(lam)     # zero-magnitude star in ph s-1 m-2 nm-1
         f_corr /= F0                            # color correction factor

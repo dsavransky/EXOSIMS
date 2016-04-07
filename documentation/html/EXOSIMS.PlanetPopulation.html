@@ -49,7 +49,7 @@
 <span id="exosims-planetpopulation-earthtwinhabzone1-module"></span><h2>EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1">
-<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.EarthTwinHabZone1.</code><code class="descname">EarthTwinHabZone1</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.EarthTwinHabZone1.</code><code class="descname">EarthTwinHabZone1</code><span class="sig-paren">(</span><em>eta=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation</span></code></a></p>
 <p>Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
 On circular Habitable zone orbits (0.7 to 1.5 AU)</p>
@@ -59,6 +59,38 @@ of JSON inputs.</p>
 <dl class="method">
 <dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.gen_sma">
 <code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.gen_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate semi-major axis values in AU</p>
+<p>The Earth-twin population assumes a uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a (astropy Quantity units AU)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2">
+<span id="exosims-planetpopulation-earthtwinhabzone2-module"></span><h2>EXOSIMS.PlanetPopulation.EarthTwinHabZone2 module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone2.EarthTwinHabZone2">
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.EarthTwinHabZone2.</code><code class="descname">EarthTwinHabZone2</code><span class="sig-paren">(</span><em>eta=0.1, erange=[0.0, 0.9], constrainOrbits=True, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone2.html#EarthTwinHabZone2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone2.EarthTwinHabZone2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation</span></code></a></p>
+<p>Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
+On eccentric habitable zone orbits (0.7 to 1.5 AU).</p>
+<p>This implementation is intended to enforce this population regardless
+of JSON inputs.  The only inputs that will not be disregarded are erange
+and constrainOrbits.</p>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone2.EarthTwinHabZone2.gen_sma">
+<code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone2.html#EarthTwinHabZone2.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone2.EarthTwinHabZone2.gen_sma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate semi-major axis values in AU</p>
 <p>The Earth-twin population assumes a uniform distribution between the minimum and
 maximum values.</p>
@@ -96,8 +128,13 @@ distribution with exponential decay.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numeric</em></p>
-<p>Location (in AU) of semi-major axis decay point.</p>
+<dd><p><em>numeric</em> &#8211; Location (in AU) of semi-major axis decay point.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma">
+<code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numeric</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <p>Notes:
@@ -226,6 +263,83 @@ determined by class attribute smaknee</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.PlanetPopulation.KnownRVPlanets">
+<span id="exosims-planetpopulation-knownrvplanets-module"></span><h2>EXOSIMS.PlanetPopulation.KnownRVPlanets module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.KnownRVPlanets" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets">
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.KnownRVPlanets.</code><code class="descname">KnownRVPlanets</code><span class="sig-paren">(</span><em>smaknee=30.0</em>, <em>esigma=0.25</em>, <em>rvplanetfilepath=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KnownRVPlanets.html#KnownRVPlanets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1" title="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1</span></code></a></p>
+<p>Population consisting only of known RV planets.  Eccentricity and sma
+distributions are taken from the same as in KeplerLike1 (Rayleigh and
+power law with exponential decay, respectively).  Mass is sampled from
+power law and radius is assumed to be calculated from mass via the
+physical model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee">
+<code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numeric</em> &#8211; Location (in AU) of semi-major axis decay point.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma">
+<code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numeric</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath">
+<code class="descname">rvplanetfilepath</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>string</em> &#8211; Full path to RV planet votable file from IPAC. If None,
+assumes default file in PlanetPopulation directory of EXOSIMS.</p>
+</dd></dl>
+
+<p>Notes:</p>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_mass">
+<code class="descname">gen_mass</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KnownRVPlanets.html#KnownRVPlanets.gen_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate planetary mass values in kg</p>
+<p>The mass is determined by sampling the RV mass distribution from
+Cumming et al. 2010</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Mp (astropy Quantity units kg)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_radius">
+<code class="descname">gen_radius</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KnownRVPlanets.html#KnownRVPlanets.gen_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate planetary radius values in km</p>
+<p>Samples the mass distribution and then converts to radius using the physical model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units m)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.PlanetPopulation">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -242,7 +356,9 @@ determined by class attribute smaknee</p>
 <li><a class="reference internal" href="#">EXOSIMS.PlanetPopulation package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1">EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2">EXOSIMS.PlanetPopulation.EarthTwinHabZone2 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.KeplerLike1">EXOSIMS.PlanetPopulation.KeplerLike1 module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.KnownRVPlanets">EXOSIMS.PlanetPopulation.KnownRVPlanets module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation">Module contents</a></li>
 </ul>
 </li>
@@ -273,9 +389,6 @@ determined by class attribute smaknee</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -286,7 +399,7 @@ determined by class attribute smaknee</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

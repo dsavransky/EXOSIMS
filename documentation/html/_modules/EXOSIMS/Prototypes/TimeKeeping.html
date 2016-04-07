@@ -39,15 +39,29 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TimeKeeping</h1><div class="highlight"><pre>
-<span class="c1"># -*- coding: utf-8 -*-</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="c1"># the EXOSIMS logger</span>
+<span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TimeKeeping"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">[docs]</a><span class="k">class</span> <span class="nc">TimeKeeping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Time class template</span>
+    <span class="sd">&quot;&quot;&quot;TimeKeeping class template.</span>
 <span class="sd">    </span>
-<span class="sd">    This class contains all variables and functions necessary to perform </span>
-<span class="sd">    Time Module calculations in exoplanet mission simulation.</span>
+<span class="sd">    This class keeps track of the current mission elapsed time</span>
+<span class="sd">    for exoplanet mission simulation.  It is initialized with a</span>
+<span class="sd">    mission duration, and throughout the simulation, it allocates</span>
+<span class="sd">    temporal intervals for observations.  Eventually, all available</span>
+<span class="sd">    time has been allocated, and the mission is over.</span>
+<span class="sd">    Time is allocated in contiguous windows of size &quot;duration&quot;.  If a</span>
+<span class="sd">    requested interval does not fit in the current window, we move to</span>
+<span class="sd">    the next one.</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
@@ -81,71 +95,162 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TimeKeeping&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">missionLife</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span>\
-                 <span class="n">extendedLife</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">missionPortion</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">6.</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">missionLife</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span> \
+                 <span class="n">extendedLife</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">missionPortion</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mf">6.</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
                 
-        <span class="c1"># default values</span>
-        <span class="c1"># mission start time (astropy Time object) in mjd</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">)</span>
+        <span class="c1"># illegal value checks</span>
+        <span class="k">assert</span> <span class="n">missionLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> \
+          <span class="s2">&quot;Need missionLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">missionLife</span>
+        <span class="k">assert</span> <span class="n">extendedLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> \
+          <span class="s2">&quot;Need extendedLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">extendedLife</span>
+        <span class="c1"># arithmetic on missionPortion fails if it is outside the legal range</span>
+        <span class="k">assert</span> <span class="n">missionPortion</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">missionPortion</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> \
+          <span class="s2">&quot;Require missionPortion in the interval (0,1], got </span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">missionPortion</span>
+
+        <span class="c1"># set up state variables</span>
+
+        <span class="c1"># mission start time: astropy Time object, in mjd</span>
+        <span class="c1">#   tai scale specified because the default, utc, requires accounting for leap</span>
+        <span class="c1">#   seconds, causing warnings from astropy.time when time-deltas are added</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">&#39;tai&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;missionStart&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">)</span>
 
-        <span class="c1"># mission lifetime astropy unit object in years</span>
+        <span class="c1"># mission lifetime: astropy unit object, in years</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;missionLife&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionLife</span><span class="p">)</span>
 
-        <span class="c1"># extended mission time astropy unit object in years</span>
+        <span class="c1"># extended mission time: astropy unit object, in years</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">extendedLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;extendedLife&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">extendedLife</span><span class="p">)</span>
 
-        <span class="c1"># portion of mission devoted to planet-finding</span>
+        <span class="c1"># mission portion: fraction of mission devoted to planet-finding, float</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionPortion</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;missionPortion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionPortion</span><span class="p">)</span>
         
-        <span class="c1"># duration of planet-finding operations</span>
+        <span class="c1"># duration of planet-finding operations: astropy unit object, in days</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="mf">14.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c1"># next time available for planet-finding</span>
+        <span class="c1"># next time available for planet-finding: astropy unit object, in days</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
                             
         <span class="c1"># initialize values updated by functions</span>
-        <span class="c1"># current mission time astropy unit object in days</span>
+        <span class="c1">#   current mission time: astropy unit object, in days</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c1"># current absolute mission time (astropy Time object) in mjd</span>
+        <span class="c1">#   current absolute mission time: astropy Time object, in mjd</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span>
         
         <span class="c1"># set values derived from quantities above</span>
-        <span class="c1"># mission completion date (astropy Time object) in mjd</span>
+        <span class="c1">#   mission completion date: astropy Time object, in mjd</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span>
-        <span class="c1"># normalized mission completion date in days</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+        <span class="c1">#   normalized mission completion date: astropy unit object, in days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
         
     
-<div class="viewcode-block" id="TimeKeeping.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;String representation of the Time Keeping object</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">r&quot;&quot;&quot;String representation of the TimeKeeping object.</span>
 <span class="sd">        </span>
-<span class="sd">        When the command &#39;print&#39; is used on the Time Keeping object, this </span>
-<span class="sd">        method will return the values contained in the object&quot;&quot;&quot;</span>
+<span class="sd">        When the command &#39;print&#39; is used on the TimeKeeping object, this </span>
+<span class="sd">        method prints the values contained in the object.&quot;&quot;&quot;</span>
 
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s1">&#39;TimeKeeping instance at </span><span class="si">%.6f</span><span class="s1"> days&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
-        <span class="k">return</span> <span class="s1">&#39;Time Keeping class object attributes&#39;</span></div>
+<div class="viewcode-block" id="TimeKeeping.allocate_time"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">[docs]</a>    <span class="k">def</span> <span class="nf">allocate_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sd">r&quot;&quot;&quot;Allocate a temporal block of width dt, advancing the observation window if needed.</span>
+<span class="sd">        </span>
+<span class="sd">        Advance the mission time by dt units.  If this requires moving into the next observation</span>
+<span class="sd">        window, do so.</span>
+<span class="sd">        If dt is longer than the observation window length, making a contiguous observation is</span>
+<span class="sd">        not possible, so return False.  If dt &lt; 0, return False.  Otherwise, allocate time and</span>
+<span class="sd">        return True.</span>
+
+<span class="sd">        Caveats:</span>
+<span class="sd">        [1] This does not handle allocations that move beyond the allowed mission time.  This</span>
+<span class="sd">        would be a place for an exception that could be caught in the simulation main loop.</span>
+<span class="sd">        For now, we check for this condition at the top of the simulation loop and not here.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            dt (Quantity):</span>
+<span class="sd">                amount of time requested (units of time)</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            success (Boolean):</span>
+<span class="sd">                True if the requested time fits in the widest window, otherwise False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
+        <span class="c1"># get caller info</span>
+        <span class="n">_</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">line_number</span><span class="p">,</span><span class="n">function_name</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">line_number</span><span class="p">,</span> <span class="n">function_name</span><span class="p">)</span>
+        <span class="c1"># if no issues, we will advance to this time</span>
+        <span class="n">provisional_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+</span> <span class="n">dt</span>
+        <span class="n">window_advance</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!too long&#39;</span>
+        <span class="k">elif</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!negative allocation&#39;</span>
+        <span class="k">elif</span> <span class="n">provisional_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+            <span class="c1"># advance to the next observation window:</span>
+            <span class="c1">#   add &quot;duration&quot; (time for our instrument&#39;s observations)</span>
+            <span class="c1">#   also add a term for other observations based on fraction-available</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span>
+                                   <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+            <span class="c1"># set current time to dt units beyond start of next window</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nexttimeAvail</span> <span class="o">+</span> <span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span>
+            <span class="n">window_advance</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;+window&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># simply advance by dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">=</span> <span class="n">provisional_time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;ok&#39;</span>
+        <span class="c1"># Log a message for the time allocation</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;TK [</span><span class="si">%s</span><span class="s2">]: alloc: </span><span class="si">%.2f</span><span class="s2"> day</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="c1"># if False: print &#39;***&#39;, message</span>
+        <span class="k">return</span> <span class="n">success</span></div>
+
+<div class="viewcode-block" id="TimeKeeping.mission_is_over"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over">[docs]</a>    <span class="k">def</span> <span class="nf">mission_is_over</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">r&quot;&quot;&quot;Is the time allocated for the mission used up?</span>
+
+<span class="sd">        This supplies an abstraction around the test:</span>
+<span class="sd">            (currenttimeNorm &gt; missionFinishNorm)</span>
+<span class="sd">        so that users of the class do not have to perform arithmetic</span>
+<span class="sd">        on class variables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            None</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            is_over (Boolean):</span>
+<span class="sd">                True if the mission time is used up, else False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="TimeKeeping.update_times"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.update_times">[docs]</a>    <span class="k">def</span> <span class="nf">update_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates self.currenttimeNorm and self.currenttimeAbs</span>
+<span class="sd">        </span>
+<span class="sd">        Deprecated.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            dt (Quantity):</span>
 <span class="sd">                time increment (units of time)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
+        <span class="k">if</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;update_times got negative dt: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeNorm</span> <span class="o">+=</span> <span class="n">dt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currenttimeAbs</span> <span class="o">+=</span> <span class="n">dt</span></div>
         
 <div class="viewcode-block" id="TimeKeeping.duty_cycle"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duty_cycle">[docs]</a>    <span class="k">def</span> <span class="nf">duty_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currenttime</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Updates available time and duration for planet-finding</span>
+        <span class="sd">&quot;&quot;&quot;Updates available time and duration for planet-finding.</span>
+<span class="sd">        </span>
+<span class="sd">        Deprecated.</span>
 <span class="sd">        </span>
 <span class="sd">        This method updates the available time for planet-finding activities.</span>
 <span class="sd">        Specific classes may optionally update the duration of planet-finding</span>
@@ -170,7 +275,6 @@
         
         <span class="k">return</span> <span class="n">nexttime</span></div></div>
         
-        
 </pre></div>
 
           </div>
@@ -194,9 +298,6 @@
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -207,7 +308,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

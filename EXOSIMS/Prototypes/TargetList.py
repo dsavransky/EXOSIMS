@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from astropy.coordinates import SkyCoord
-from astropy import units as u
+import astropy.units as u
 from EXOSIMS.util.get_module import get_module
 
 class TargetList(object):
@@ -178,13 +178,13 @@ class TargetList(object):
                 setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
             else:
                 setattr(self, att, getattr(self.StarCatalog, att))
+        self.dist = self.dist*u.pc
         
         # number of target stars
         self.nStars = len(self.Name);
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
-
-        # populate completness values
+        # populate completeness values
         self.comp0 = self.Completeness.target_completeness(self)
         # include completeness now that it is set
         self.catalog_atts.append('comp0')
@@ -354,9 +354,9 @@ class TargetList(object):
         """
         
         if self.PlanetPopulation.scaleOrbits:
-            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist/np.sqrt(self.L))*u.pc)
+            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist/np.sqrt(self.L)))
         else:
-            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist*u.pc))
+            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist))
    
         self.revise_lists(i)
         
@@ -390,7 +390,7 @@ class TargetList(object):
         
         betastar = 1.10472881476178 # radians
         
-        rhats = np.tan(self.OpticalSystem.IWA)*self.dist*u.pc/np.sin(betastar)
+        rhats = np.tan(self.OpticalSystem.IWA)*self.dist/np.sin(betastar)
         
         if self.PlanetPopulation.scaleOrbits:
             rhats = rhats/np.sqrt(self.L)
@@ -400,7 +400,7 @@ class TargetList(object):
         above = np.where(rhats > np.max(self.PlanetPopulation.rrange))
 
         # s and beta arrays
-        ss = np.tan(self.OpticalSystem.IWA)*self.dist*u.pc
+        ss = np.tan(self.OpticalSystem.IWA)*self.dist
         if self.PlanetPopulation.scaleOrbits:
             ss = ss/np.sqrt(self.L)
         
@@ -409,9 +409,9 @@ class TargetList(object):
         # fix out of range values
         ss[below] = np.min(self.PlanetPopulation.rrange)*np.sin(betastar)
         if self.PlanetPopulation.scaleOrbits:
-            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]*u.pc/np.sqrt(self.L[above])/np.max(self.PlanetPopulation.rrange)).decompose())
+            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]/np.sqrt(self.L[above])/np.max(self.PlanetPopulation.rrange)).decompose())
         else:
-            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]*u.pc/np.max(self.PlanetPopulation.rrange)).decompose())                
+            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]/np.max(self.PlanetPopulation.rrange)).decompose())                
         
         # calculate delta mag
         Phis = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
@@ -433,7 +433,7 @@ class TargetList(object):
         
         i = np.where(self.comp0 > self.Completeness.minComp)
 
-        self.revise_lists(i)        
+        self.revise_lists(i)
         
     def revise_lists(self, ind):
         """Replaces Target List catalog attributes with filtered values, 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
-from astropy import units as u
+import astropy.units as u
 
 class Lindler(ZodiacalLight):
     """Lindler Zodiacal Light class
@@ -20,13 +20,13 @@ class Lindler(ZodiacalLight):
         
         ZodiacalLight.__init__(self, **specs)
 
-    def fZ(self, targlist, sInd, lam):
+    def fZ(self, targlist, sInds, lam):
         """Returns surface brightness of local zodiacal light
         
         Args:
             targlist (TargetList):
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             lam:
@@ -38,18 +38,18 @@ class Lindler(ZodiacalLight):
         """
 
         # ecliptic latitudes
-        lat = targlist.coords.barycentrictrueecliptic.lat[sInd]
+        lat = targlist.coords.barycentrictrueecliptic.lat[sInds]
         fZ = 10**(-0.4*self.magZ) * self.fbeta(lat)
 
         return fZ/u.arcsec**2
         
-    def fEZ(self, targlist, sInd, I):
+    def fEZ(self, targlist, sInds, I):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
             targlist (TargetList):
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I (ndarray):
@@ -70,9 +70,9 @@ class Lindler(ZodiacalLight):
         if self.varEZ != 0:
             mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
-            self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInd),))
+            self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInds),))
 
-        fEZ = 10**(-0.4*self.magEZ) * self.nEZ * 2.*self.fbeta(I)*2.5**(4.78-MV[sInd])
+        fEZ = 10**(-0.4*self.magEZ) * self.nEZ * 2.*self.fbeta(I)*2.5**(4.78-MV[sInds])
 
         return fEZ/u.arcsec**2
         

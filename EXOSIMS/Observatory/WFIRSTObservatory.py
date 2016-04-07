@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.Observatory import Observatory
-from astropy import units as u
+import astropy.units as u
 import numpy as np
 
 class WFIRSTObservatory(Observatory):

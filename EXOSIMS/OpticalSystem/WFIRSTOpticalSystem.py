@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.OpticalSystem.KasdinBraems import KasdinBraems
-from astropy import units as u
+import astropy.units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
@@ -22,7 +22,11 @@ class WFIRSTOpticalSystem(KasdinBraems):
         
         KasdinBraems.__init__(self, **specs)
 
-        self.Imager,self.Spectro,self.HLC,self.SPC = None,None,None,None
+        self.Imager = None
+        self.Spectro = None
+        self.ImagerSyst = None
+        self.SpectroSyst = None
+        
         for inst in self.scienceInstruments:
             if 'imag' in inst['type'].lower():
                 self.Imager = inst

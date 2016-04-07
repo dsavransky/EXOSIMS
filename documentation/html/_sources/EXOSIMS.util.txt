@@ -4,14 +4,6 @@ EXOSIMS.util package
 Submodules
 ----------
 
-EXOSIMS.util.calc_Blam module
------------------------------
-
-.. automodule:: EXOSIMS.util.calc_Blam
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.util.deltaMag module
 ----------------------------
 
@@ -40,6 +32,14 @@ EXOSIMS.util.keplerSTM module
 -----------------------------
 
 .. automodule:: EXOSIMS.util.keplerSTM
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.run_one module
+---------------------------
+
+.. automodule:: EXOSIMS.util.run_one
     :members:
     :undoc-members:
     :show-inheritance:

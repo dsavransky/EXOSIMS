@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.PlanetPopulation.KnownRVPlanets &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.PlanetPopulation.KnownRVPlanets</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.KeplerLike1</span> <span class="kn">import</span> <span class="n">KeplerLike1</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="kn">import</span> <span class="n">constants</span> <span class="k">as</span> <span class="n">const</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">astropy.io.votable</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util</span> <span class="kn">import</span> <span class="n">statsFun</span> 
+
+
+
+<div class="viewcode-block" id="KnownRVPlanets"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets">[docs]</a><span class="k">class</span> <span class="nc">KnownRVPlanets</span><span class="p">(</span><span class="n">KeplerLike1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Population consisting only of known RV planets.  Eccentricity and sma </span>
+<span class="sd">    distributions are taken from the same as in KeplerLike1 (Rayleigh and </span>
+<span class="sd">    power law with exponential decay, respectively).  Mass is sampled from </span>
+<span class="sd">    power law and radius is assumed to be calculated from mass via the </span>
+<span class="sd">    physical model.</span>
+
+<span class="sd">    Args: </span>
+<span class="sd">        \*\*specs: </span>
+<span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    Attributes: </span>
+<span class="sd">        smaknee (numeric) </span>
+<span class="sd">            Location (in AU) of semi-major axis decay point.</span>
+<span class="sd">        esigma (numeric)</span>
+<span class="sd">            Sigma value of Rayleigh distribution for eccentricity.</span>
+<span class="sd">        rvplanetfilepath (string)</span>
+<span class="sd">            Full path to RV planet votable file from IPAC. If None,</span>
+<span class="sd">            assumes default file in PlanetPopulation directory of EXOSIMS.</span>
+
+<span class="sd">    Notes:  </span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smaknee</span><span class="o">=</span><span class="mf">30.</span><span class="p">,</span> <span class="n">esigma</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">rvplanetfilepath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+
+        <span class="n">KeplerLike1</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">smaknee</span><span class="o">=</span><span class="n">smaknee</span><span class="p">,</span><span class="n">esigma</span><span class="o">=</span><span class="n">esigma</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+
+               
+        <span class="k">if</span> <span class="n">rvplanetfilepath</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;RVplanets_IPAC_032216.votable&#39;</span>
+            <span class="n">rvplanetfilepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">rvplanetfilepath</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;RV Planet File </span><span class="si">%s</span><span class="s1"> Not Found.&#39;</span><span class="o">%</span><span class="n">rvplanetfilepath</span><span class="p">)</span>
+
+        <span class="c1">#read votable</span>
+        <span class="n">votable</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="n">rvplanetfilepath</span><span class="p">)</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">votable</span><span class="o">.</span><span class="n">get_first_table</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">table</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">array</span>
+
+        <span class="c1">#we need mass info (either true or m\sin(i)) AND</span>
+        <span class="c1">#sma OR (period AND stellar mass)</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="o">~</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_bmassj&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span> <span class="o">&amp;</span> \
+               <span class="p">(</span><span class="o">~</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span> <span class="o">|</span> \
+               <span class="p">(</span><span class="o">~</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbper&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span> <span class="o">&amp;</span>  <span class="o">~</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;st_mass&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">))</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+
+        <span class="c1">#save masses and determine which masses are *sin(I)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_bmasse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masserr</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_bmasseerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msini</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_bmassprov&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="s1">&#39;Msini&#39;</span>
+
+        <span class="c1">#save orbital properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sma</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sma</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;st_mass&#39;</span><span class="p">][</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span> <span class="o">*</span> \
+                 <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbper&#39;</span><span class="p">][</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span><span class="o">/</span> \
+                  <span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smaerr</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmaxerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smaerr</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmaxerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;st_mass&#39;</span><span class="p">][</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmaxerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span> <span class="o">*</span> \
+                 <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbpererr1&#39;</span><span class="p">][</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbsmaxerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span><span class="o">/</span> \
+                  <span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smaerr</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smaerr</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smaerr</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">eccentricity</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbeccen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eccentricity</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbeccen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">gen_eccentricity</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbeccen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eccentricityerr</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbeccenerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eccentricityerr</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbeccenerr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eccentricityerr</span><span class="p">)</span>
+
+        <span class="c1">#self.radius = data[&#39;pl_radj&#39;]*const.R_jup</span>
+
+
+        <span class="c1">#save host names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_hostname&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">filled</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="c1">#save the original data structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allplanetdata</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="c1">#define the mass distribution function (in Jupiter masses)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">massdist</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.3</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KnownRVPlanets.gen_mass"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_mass">[docs]</a>    <span class="k">def</span> <span class="nf">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate planetary mass values in kg</span>
+<span class="sd">        </span>
+<span class="sd">        The mass is determined by sampling the RV mass distribution from</span>
+<span class="sd">        Cumming et al. 2010</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n (numeric):</span>
+<span class="sd">                Number of samples to generate</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Mp (astropy Quantity units kg)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">statsFun</span><span class="o">.</span><span class="n">simpSample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">massdist</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span>\
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>\
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_jup</span></div>
+
+
+<div class="viewcode-block" id="KnownRVPlanets.gen_radius"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.gen_radius">[docs]</a>    <span class="k">def</span> <span class="nf">gen_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate planetary radius values in km</span>
+<span class="sd">        </span>
+<span class="sd">        Samples the mass distribution and then converts to radius using the physical model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n (numeric):</span>
+<span class="sd">                Number of samples to generate</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            R (astropy Quantity units m)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        
+        <span class="n">Mtmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="n">calc_radius_from_mass</span><span class="p">(</span><span class="n">Mtmp</span><span class="p">)</span></div></div>
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

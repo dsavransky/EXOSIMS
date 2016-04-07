@@ -4,10 +4,18 @@ EXOSIMS.SimulatedUniverse package
 Submodules
 ----------
 
-EXOSIMS.SimulatedUniverse.PlanetSim module
-------------------------------------------
+EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module
+---------------------------------------------------
 
-.. automodule:: EXOSIMS.SimulatedUniverse.PlanetSim
+.. automodule:: EXOSIMS.SimulatedUniverse.KeplerLikeUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse
     :members:
     :undoc-members:
     :show-inheritance:

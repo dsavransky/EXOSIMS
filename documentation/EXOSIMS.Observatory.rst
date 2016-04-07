@@ -12,6 +12,14 @@ EXOSIMS.Observatory.WFIRSTObservatory module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.Observatory.WFIRSTObservatoryL2 module
+----------------------------------------------
+
+.. automodule:: EXOSIMS.Observatory.WFIRSTObservatoryL2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

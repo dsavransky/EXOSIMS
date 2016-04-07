@@ -1,5 +1,5 @@
 import numpy as np
-from astropy import units as u
+import astropy.units as u
 from astropy import constants as const
 
 class PlanetPhysicalModel(object):
@@ -88,5 +88,5 @@ class PlanetPhysicalModel(object):
 
         rho = 1000*u.kg/u.m**3.
 
-        return (rho*4*np.pi*R**3./4.).decompose()
+        return (rho*4*np.pi*R**3./3.).decompose()
 

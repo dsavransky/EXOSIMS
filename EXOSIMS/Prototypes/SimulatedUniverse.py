@@ -64,16 +64,9 @@ class SimulatedUniverse(object):
             numpy ndarray containing velocity vector for each planet (default 
             units of km/s)
         I (Quantity):
-            1D numpy ndarray containing inclination in degrees for each planet
+            1D numpy ndarray containing inclination in degrees for each planet            
         p (ndarray):
-<<<<<<< HEAD
-            1D numpy ndarray containing albedo for each planet
-=======
             1D numpy ndarray containing albedo for each planet        
-<<<<<<< Updated upstream
-=======
->>>>>>> origin/master
->>>>>>> Stashed changes
         fEZ (ndarray):
             1D numpy ndarray containing exozodi level for each planet
     
@@ -120,45 +113,6 @@ class SimulatedUniverse(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Simulated Universe class object attributes'
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-
-    def gen_planetary_systems(self,**specs):
-        """
-        Generate the planetary systems for the current simulated universe.
-        This routine populates arrays of the orbital elements and physical 
-        characteristics of all planets, and generates indexes that map from 
-        planet to parent star.
-        """
-
-        TL = self.TargetList
-        PPop = self.PlanetPopulation
-
-        # Map planets to target stars
-        pps = 8 # max number of planets per star
-        self.nPlans = np.sum(np.random.randint(0,pps+1,TL.nStars))
-        self.plan2star = np.random.randint(0,TL.nStars,self.nPlans)
-        self.sInds = np.unique(self.plan2star)
-
-        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccentricity(self.nPlans)     # eccentricity
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.Rp = PPop.gen_radius(self.nPlans)              # radius
-        self.Mp = PPop.gen_mass(self.nPlans)                # mass
-        self.p = PPop.gen_albedo(self.nPlans)               # albedo
-        self.r, self.v = self.planet_pos_vel()              # initial position
-        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
-        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-
-        # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
-
-=======
->>>>>>> Stashed changes
 
     def gen_planetary_systems(self,**specs):
         """
@@ -211,10 +165,6 @@ class SimulatedUniverse(object):
         self.sInds = np.unique(self.plan2star) 
         
         return 
-<<<<<<< Updated upstream
-=======
->>>>>>> origin/master
->>>>>>> Stashed changes
 
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)
@@ -258,7 +208,6 @@ class SimulatedUniverse(object):
         a2 = (a*(np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.cos(I)*np.sin(omega))).to('AU')
         a3 = (a*np.sin(I)*np.sin(omega)).to('AU')
         A = np.vstack((a1,a2,a3)).T.value*u.AU
-<<<<<<< Updated upstream
         
         b1 = (-a*np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(omega) + np.sin(Omega)\
                 *np.cos(I)*np.cos(omega))).to('AU')
@@ -267,16 +216,6 @@ class SimulatedUniverse(object):
         b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(omega)).to('AU')
         B = np.vstack((b1,b2,b3)).T.value*u.AU
         
-=======
-        
-        b1 = (-a*np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(omega) + np.sin(Omega)\
-                *np.cos(I)*np.cos(omega))).to('AU')
-        b2 = (a*np.sqrt(1.-e**2)*(-np.sin(Omega)*np.sin(omega) + np.cos(Omega)\
-                *np.cos(I)*np.cos(omega))).to('AU')
-        b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(omega)).to('AU')
-        B = np.vstack((b1,b2,b3)).T.value*u.AU
-        
->>>>>>> Stashed changes
         Mu = const.G*(self.Mp+self.TargetList.MsTrue[self.plan2star]*const.M_sun)
         
         r1 = np.cos(E) - e
@@ -323,19 +262,11 @@ class SimulatedUniverse(object):
         
         # stack dimensionless positions and velocities
         x0 = np.array([])
-<<<<<<< HEAD
-        for i in xrange(r.shape[0]):
-            x0 = np.hstack((x0, r[i].to('km').value, v[i].to('km/day').value))
-=======
         if r.size == 3:
             x0 = np.hstack((x0, r.to('km').value, v.to('km/day').value))
         else:
             for i in xrange(r.shape[0]):
                 x0 = np.hstack((x0, r[i].to('km').value, v[i].to('km/day').value))
-<<<<<<< Updated upstream
-=======
->>>>>>> origin/master
->>>>>>> Stashed changes
                 
         # calculate vector of gravitational parameter
         mu = (const.G*(Mp + Ms*const.M_sun)).to('km3/day2').value
@@ -350,8 +281,13 @@ class SimulatedUniverse(object):
             
         # split off position and velocity vectors
         x1 = np.array(np.hsplit(prop.x0, 2*len(r)))
-        rind = np.array(range(0,len(x1),2)) # even indices
-        vind = np.array(range(1,len(x1),2)) # odd indices
+        rind, vind = [], []
+        for x in xrange(len(x1)):
+            if x%2 == 0:
+                rind.append(x)
+            else:
+                vind.append(x)
+        rind, vind = np.array(rind), np.array(vind)
         
         # assign new position, velocity, apparent separation, and planet-star distance
         rnew = x1[rind]*u.km
@@ -359,15 +295,7 @@ class SimulatedUniverse(object):
         snew = np.sqrt(np.sum(rnew[:,0:2]**2, axis=1))
         dnew = np.sqrt(np.sum(rnew**2, axis=1))
         
-<<<<<<< Updated upstream
         return rnew, vnew, snew, dnew
-=======
-<<<<<<< HEAD
-        return rnew.to('km'), vnew.to('km/s'), snew.to('km'), dnew.to('km')
-=======
-        return rnew, vnew, snew, dnew
->>>>>>> origin/master
->>>>>>> Stashed changes
         
     def get_current_WA(self,pInds):
         """Calculate the current working angles for planets specified by the 

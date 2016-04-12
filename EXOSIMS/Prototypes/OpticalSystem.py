@@ -379,7 +379,7 @@ class OpticalSystem(object):
         
         return 'Optical System class object attributes'
 
-    def starMag(self,targlist,sInds,lam):
+    def starMag(self,targlist,sInd,lam):
         """Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
         using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
         The expression for flux is accurate to about 7%, in the range of validity 
@@ -388,7 +388,7 @@ class OpticalSystem(object):
         Args:
             targlist:
                 TargetList class object
-            sInds:
+            sInd:
                 (integer ndarray) indices of the stars of interest, 
                 with the length of the number of planets of interest.
             lam:
@@ -400,8 +400,8 @@ class OpticalSystem(object):
 
         """
 
-        Vmag = targlist.Vmag[sInds]
-        BV = targlist.BV[sInds]
+        Vmag = targlist.Vmag[sInd]
+        BV = targlist.BV[sInd]
         if lam.value < 550.:
             b = 2.20
         else:
@@ -428,13 +428,13 @@ class OpticalSystem(object):
         
         """
 
-        sInds = range(targlist.nStars)
+        sInd = range(targlist.nStars)
         I = np.array([0.]*targlist.nStars)*u.deg
-        maxintTime = self.calc_intTime(targlist,sInds,I,self.dMagLim,self.IWA);
+        maxintTime = self.calc_intTime(targlist,sInd,I,self.dMagLim,self.IWA);
         
         return maxintTime
 
-    def calc_intTime(self, targlist, sInds, I, dMag, WA):
+    def calc_intTime(self, targlist, sInd, I, dMag, WA):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -444,7 +444,7 @@ class OpticalSystem(object):
         Args:
             targlist:
                 TargetList class object
-            sInds (integer ndarray):
+            sInd (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             dMag:
@@ -465,7 +465,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_charTime(self, targlist, sInds, I, dMag, WA):
+    def calc_charTime(self, targlist, sInd, I, dMag, WA):
         """Finds characterization time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -475,7 +475,7 @@ class OpticalSystem(object):
         Args:
             targlist:
                 TargetList class object
-            sInds (integer ndarray):
+            sInd (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:

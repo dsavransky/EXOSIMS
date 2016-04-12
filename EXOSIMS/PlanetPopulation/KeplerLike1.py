@@ -1,6 +1,6 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import astropy.units as u
-import astropy.constants as const
+from astropy import constants as const
 import numpy as np
 #from scipy.stats import rv_continuous
 from EXOSIMS.util import statsFun 
@@ -99,7 +99,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
                 
         Returns:
-            R (astropy Quantity units km)
+            R (astropy Quantity units m)
 
         """
 
@@ -115,7 +115,7 @@ class KeplerLike1(PlanetPopulation):
         if len(R) > n:
             R = R[np.random.choice(range(len(R)),size=n,replace=False)]
 
-        return (R*const.R_earth).to('km')
+        return R*const.R_earth
 
     def gen_radius_nonorm(self,n):
         """Generate planetary radius values in km
@@ -129,7 +129,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of targets to generate systems about
 
         Returns:
-            R (astropy Quantity units km)
+            R (astropy Quantity units m)
 
         """
 
@@ -142,7 +142,7 @@ class KeplerLike1(PlanetPopulation):
                     (np.log(self.Rs[j+1])-np.log(self.Rs[j]))*\
                     np.random.uniform(size=nsamp))))
 
-        return (R*const.R_earth).to('km')
+        return R*const.R_earth
 
 
     def gen_eccentricity(self, n):

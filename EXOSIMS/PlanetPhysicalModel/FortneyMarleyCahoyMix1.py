@@ -1,6 +1,6 @@
 from EXOSIMS.Prototypes.PlanetPhysicalModel import PlanetPhysicalModel
 import astropy.units as u
-import astropy.constants as const
+from astropy import constants as const
 import numpy as np
 import scipy.interpolate as interpolate
 import os, inspect

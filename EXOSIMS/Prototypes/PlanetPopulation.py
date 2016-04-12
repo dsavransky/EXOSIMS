@@ -1,12 +1,5 @@
 import astropy.units as u
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-import astropy.constants as const
-=======
->>>>>>> Stashed changes
 from astropy import constants as const
->>>>>>> origin/master
 import numpy as np
 import copy
 import numbers

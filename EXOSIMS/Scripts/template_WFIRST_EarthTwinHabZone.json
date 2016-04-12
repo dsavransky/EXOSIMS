@@ -1,0 +1,48 @@
+{
+  "scienceInstruments": [
+    {
+      "type": "imaging-EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "type": "spectro-CCD",
+      "lam": 660,
+      "BW": 0.18,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 3,
+      "Rs": 70
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "type": "internal-imaging-HLC"
+    },
+    {
+      "type": "internal-spectro-SPC"
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "EarthTwinHabZone2",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "WFIRSTOpticalSystem",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "PlanetPhysicalModel",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": "TimeKeeping",
+    "PostProcessing": "PostProcessing",
+    "Completeness": "BrownCompleteness",
+    "TargetList": "TargetList",
+    "SimulatedUniverse": "SimulatedUniverse",
+    "SurveySimulation": "SurveySimulation",
+    "SurveyEnsemble": "SurveyEnsemble"
+  }
+}
+

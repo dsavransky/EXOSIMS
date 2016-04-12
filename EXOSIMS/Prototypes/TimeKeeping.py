@@ -33,10 +33,10 @@ class TimeKeeping(object):
             mission lifetime (default units of year)
         extendedLife (Quantity):
             extended mission time (default units of year)
-        currenttimeNorm (Quantity):
+        currentTimeNorm (Quantity):
             current mission time normalized to zero at mission start (default
             units of day)
-        currenttimeAbs (Time):
+        currentTimeAbs (Time):
             current absolute mission time (default astropy Time in MJD)
         missionFinishAbs (Time):
             mission finish absolute time (default astropy Time in MJD)
@@ -93,9 +93,18 @@ class TimeKeeping(object):
                             
         # initialize values updated by functions
         #   current mission time: astropy unit object, in days
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+        self.currentTimeNorm = 0.*u.day
+        #   current absolute mission time: astropy Time object, in mjd
+        self.currentTimeAbs = self.missionStart
+=======
+>>>>>>> Stashed changes
         self.currenttimeNorm = 0.*u.day
         #   current absolute mission time: astropy Time object, in mjd
         self.currenttimeAbs = self.missionStart
+>>>>>>> origin/master
         
         # set values derived from quantities above
         #   mission completion date: astropy Time object, in mjd
@@ -113,7 +122,15 @@ class TimeKeeping(object):
         atts = self.__dict__.keys()
         for att in atts:
             print '%s: %r' % (att, getattr(self, att))
+<<<<<<< Updated upstream
         return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to('day').value
+=======
+<<<<<<< HEAD
+        return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
+=======
+        return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to('day').value
+>>>>>>> origin/master
+>>>>>>> Stashed changes
         
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing the observation window if needed.
@@ -142,10 +159,23 @@ class TimeKeeping(object):
         _,filename,line_number,function_name,_,_ = inspect.stack()[1]
         location = '%s:%d(%s)' % (os.path.basename(filename), line_number, function_name)
         # if no issues, we will advance to this time
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+        provisional_time = self.currentTimeNorm + dt
+        window_advance = False
+        success = True
+        if dt > self.duration:
+=======
+>>>>>>> Stashed changes
         provisional_time = self.currenttimeNorm + dt
         window_advance = False
         success = True
         if np.sum(dt) > self.duration:
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
             success = False
             description = '!too long'
         elif dt < 0:
@@ -158,18 +188,43 @@ class TimeKeeping(object):
             self.nexttimeAvail += (self.duration +
                                    ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
             # set current time to dt units beyond start of next window
+<<<<<<< Updated upstream
             self.currenttimeNorm = self.nexttimeAvail + dt
             self.currenttimeAbs = self.missionStart + self.currenttimeNorm
+=======
+<<<<<<< HEAD
+            self.currentTimeNorm = self.nexttimeAvail + dt
+            self.currentTimeAbs = self.missionStart + self.currentTimeNorm
+=======
+            self.currenttimeNorm = self.nexttimeAvail + dt
+            self.currenttimeAbs = self.missionStart + self.currenttimeNorm
+>>>>>>> origin/master
+>>>>>>> Stashed changes
             window_advance = True
             description = '+window'
         else:
             # simply advance by dt
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+            self.currentTimeNorm = provisional_time
+            self.currentTimeAbs += dt
+            description = 'ok'
+        # Log a message for the time allocation
+        message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
+            self.currentTimeNorm.to('day').value, dt.to('day').value, description, location)
+=======
+>>>>>>> Stashed changes
             self.currenttimeNorm = provisional_time
             self.currenttimeAbs += dt
             description = 'ok'
         # Log a message for the time allocation
         message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
             self.currenttimeNorm.to('day').value, np.sum(dt).to('day').value, description, location)
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
         Logger.info(message)
         # if False: print '***', message
         return success
@@ -178,7 +233,15 @@ class TimeKeeping(object):
         r"""Is the time allocated for the mission used up?
 
         This supplies an abstraction around the test:
+<<<<<<< Updated upstream
             (currenttimeNorm > missionFinishNorm)
+=======
+<<<<<<< HEAD
+            (currentTimeNorm > missionFinishNorm)
+=======
+            (currenttimeNorm > missionFinishNorm)
+>>>>>>> origin/master
+>>>>>>> Stashed changes
         so that users of the class do not have to perform arithmetic
         on class variables.
 
@@ -189,10 +252,22 @@ class TimeKeeping(object):
             is_over (Boolean):
                 True if the mission time is used up, else False.
         """
+<<<<<<< Updated upstream
         return (self.currenttimeNorm > self.missionFinishNorm)
+=======
+<<<<<<< HEAD
+        return (self.currentTimeNorm > self.missionFinishNorm)
+=======
+        return (self.currenttimeNorm > self.missionFinishNorm)
+>>>>>>> origin/master
+>>>>>>> Stashed changes
 
     def update_times(self, dt):
-        """Updates self.currenttimeNorm and self.currenttimeAbs
+        """Updates self.currentTimeNorm and self.currentTimeAbs
+        
+        Deprecated.
+        
+        Deprecated.
         
         Deprecated.
         
@@ -202,9 +277,18 @@ class TimeKeeping(object):
         
         """
         if dt < 0:
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+            raise ValueError('update_times got negative dt: %s' % str(dt.to('day')))
+        self.currentTimeNorm += dt
+        self.currentTimeAbs += dt
+=======
+>>>>>>> Stashed changes
             raise ValueError('update_times got negative dt: %s' % str(dt))
         self.currenttimeNorm += dt
         self.currenttimeAbs += dt
+>>>>>>> origin/master
         
     def duty_cycle(self, currenttime):
         """Updates available time and duration for planet-finding.

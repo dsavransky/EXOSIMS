@@ -1,7 +1,14 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+import astropy.constants as const
+=======
+>>>>>>> Stashed changes
 from astropy import constants as const
+>>>>>>> origin/master
 
 class KeplerLikeUniverse(SimulatedUniverse):
     """
@@ -35,14 +42,31 @@ class KeplerLikeUniverse(SimulatedUniverse):
         calculated via the physical model.
         """
 
+        TL = self.TargetList
+        PPop = self.PlanetPopulation
+        PPhMod = self.PlanetPhysicalModel
+
         # Generate distribution of radii first
-        self.Rp = self.PlanetPopulation.gen_radius_nonorm(self.TargetList.nStars)
-        self.nPlans = self.Rp.size
+        self.Rp = PPop.gen_radius_nonorm(TL.nStars)
+
         # Map planets to target stars
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+        self.nPlans = self.Rp.size
+        self.plan2star = np.random.randint(0,TL.nStars,self.nPlans)
+        self.sInds = np.unique(self.plan2star)
+
+=======
+>>>>>>> Stashed changes
         self.planet_to_star()
 
         PPop = self.PlanetPopulation
         PPhMod = self.PlanetPhysicalModel
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(self.PlanetPhysicalModel.ggdat['radii'])] = 0.02*u.AU
@@ -55,8 +79,17 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.r, self.v = self.planet_pos_vel()              # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
+<<<<<<< Updated upstream
 
         # exo-zodi levels for systems with planets
+=======
+
+        # exo-zodi levels for systems with planets
+<<<<<<< HEAD
+        self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
+
+=======
+>>>>>>> Stashed changes
         self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
 
     def planet_to_star(self):
@@ -79,3 +112,7 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.sInds = np.unique(self.plan2star)
         
         return
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes

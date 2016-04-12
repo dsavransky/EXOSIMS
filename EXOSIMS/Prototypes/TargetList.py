@@ -103,32 +103,17 @@ class TargetList(object):
         """
         
         # get desired module names (specific or prototype)
-                    
-        # import StarCatalog class
-        Cat = get_module(specs['modules']['StarCatalog'], 'StarCatalog')
-        self.StarCatalog = Cat(**specs) # star catalog data
+        self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)
+        self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
+        self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
+        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],'BackgroundSources')(**specs)
+        self.PostProcessing = get_module(specs['modules']['PostProcessing'],'PostProcessing')(**specs)
+        self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
 
-        # import OpticalSystem class
-        Opt = get_module(specs['modules']['OpticalSystem'], 'OpticalSystem')
-        self.OpticalSystem = Opt(**specs) # optical system object 
-
-        # import ZodiacalLight class
-        Zodi = get_module(specs['modules']['ZodiacalLight'], 'ZodiacalLight')
-        self.ZodiacalLight = Zodi(**specs) # zodiacal light model object 
-
-        # import BackgroundSources class
-        Back = get_module(specs['modules']['BackgroundSources'], 'BackgroundSources')
-        self.BackgroundSources = Back(**specs) # background sources model object
-
-        # import Completeness class
-        Comp = get_module(specs['modules']['Completeness'], 'Completeness')        
-        self.Completeness = Comp(**specs) # completeness model object 
-        self.PlanetPopulation = self.Completeness.PlanetPopulation # planet population object 
-        self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel #planet physical model object
-
-        # import PostProcessing class
-        PP = get_module(specs['modules']['PostProcessing'], 'PostProcessing')
-        self.PostProcessing = PP(**specs)
+        # bring inherited class objects to top level of Simulated Universe
+        Comp = self.Completeness
+        self.PlanetPopulation = Comp.PlanetPopulation
+        self.PlanetPhysicalModel = Comp.PlanetPhysicalModel
 
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -146,6 +131,28 @@ class TargetList(object):
         self._outspec['nStars'] = self.nStars
         self._outspec['keepStarCatalog'] = keepStarCatalog
 
+<<<<<<< HEAD
+=======
+        # list of possible Star Catalog attributes
+        self.catalog_atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
+                'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
+                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+
+        # now populate and filter the list
+        self.populate_target_list(**specs)
+        self.filter_target_list(**specs)
+
+        # have target list, no need for catalog now
+        if not keepStarCatalog:
+            del self.StarCatalog
+
+        self._outspec['nStars'] = self.nStars
+        self._outspec['keepStarCatalog'] = keepStarCatalog
+
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
     def __str__(self):
         """String representation of the Target List object
         
@@ -186,6 +193,16 @@ class TargetList(object):
         self.nan_filter()
         # populate completeness values
         self.comp0 = self.Completeness.target_completeness(self)
+<<<<<<< HEAD
+        # populate maximum integration time
+        self.maxintTime = self.OpticalSystem.calc_maxintTime(self)
+        # calculate 'true' and 'approximate' stellar masses
+        self.stellar_mass()
+        
+        # include new attributes to the target list catalog attributes
+        self.catalog_atts.append('comp0')
+        self.catalog_atts.append('maxintTime')
+=======
         # include completeness now that it is set
         self.catalog_atts.append('comp0')
         # populate maximum integration time
@@ -195,6 +212,10 @@ class TargetList(object):
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
+<<<<<<< Updated upstream
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
     
     def filter_target_list(self,**specs):
         """ 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 from astropy.time import Time
 import os,inspect
 from EXOSIMS.util.eccanom import eccanom
@@ -254,14 +254,14 @@ class Observatory(object):
         
         return success
     
-    def keepout(self, currenttime, catalog, koangle):
+    def keepout(self, currentTime, catalog, koangle):
         """Finds keepout Boolean values, returns True if successful
         
         This method finds the keepout Boolean values for each target star where
         True is an observable star and stores the 1D numpy array in self.kogood.
         
         Args:
-            currenttime (Time):
+            currentTime (Time):
                 absolute time
             catalog (TargetList or StarCatalog):
                 TargetList or StarCatalog class object
@@ -275,7 +275,7 @@ class Observatory(object):
         """
         
         # update spacecraft orbital position
-        a = self.orbit(currenttime) 
+        a = self.orbit(currentTime) 
         
         self.kogood = np.array([True for row in catalog.Name])
         
@@ -533,13 +533,13 @@ class Observatory(object):
         
         return r_star.to(u.km)
         
-    def cent(self, currenttime):
+    def cent(self, currentTime):
         """Finds time in Julian centuries since J2000 epoch
         
         This quantity is needed for many algorithms from Vallado 2013.
         
         Args:
-            currenttime (Time):
+            currentTime (Time):
                 absolute time
             
         Returns:
@@ -550,7 +550,7 @@ class Observatory(object):
         
         j2000 = Time(2000., format='jyear')
         
-        TDB = (currenttime.jd - j2000.jd)/36525.
+        TDB = (currentTime.jd - j2000.jd)/36525.
         
         return TDB
         
@@ -640,12 +640,12 @@ class Observatory(object):
         occulterSep = self.occulterSep
         
         # get spacecraft position vector
-        self.orbit(time.currenttimeAbs)
+        self.orbit(time.currentTimeAbs)
         r_Ts = self.r_sc
         # sun -> earth position vector
-        r_Es = self.keplerplanet(time.currenttimeAbs, self.Earth)
+        r_Es = self.keplerplanet(time.currentTimeAbs, self.Earth)
         # sun -> target star vector
-        r_ts = self.starprop(time.currenttimeAbs, targlist, s_ind)
+        r_ts = self.starprop(time.currentTimeAbs, targlist, s_ind)
         # Telescope -> target vector and unit vector
         r_tT = r_ts - r_Ts
         u_tT = r_tT/np.sqrt(np.sum(r_tT**2))

@@ -1,6 +1,6 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 import numpy as np
 import os,inspect
 from astropy.io.votable import parse

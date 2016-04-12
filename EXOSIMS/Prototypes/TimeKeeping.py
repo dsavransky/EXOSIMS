@@ -33,10 +33,10 @@ class TimeKeeping(object):
             mission lifetime (default units of year)
         extendedLife (Quantity):
             extended mission time (default units of year)
-        currenttimeNorm (Quantity):
+        currentTimeNorm (Quantity):
             current mission time normalized to zero at mission start (default
             units of day)
-        currenttimeAbs (Time):
+        currentTimeAbs (Time):
             current absolute mission time (default astropy Time in MJD)
         missionFinishAbs (Time):
             mission finish absolute time (default astropy Time in MJD)
@@ -93,9 +93,9 @@ class TimeKeeping(object):
                             
         # initialize values updated by functions
         #   current mission time: astropy unit object, in days
-        self.currenttimeNorm = 0.*u.day
+        self.currentTimeNorm = 0.*u.day
         #   current absolute mission time: astropy Time object, in mjd
-        self.currenttimeAbs = self.missionStart
+        self.currentTimeAbs = self.missionStart
         
         # set values derived from quantities above
         #   mission completion date: astropy Time object, in mjd
@@ -113,7 +113,7 @@ class TimeKeeping(object):
         atts = self.__dict__.keys()
         for att in atts:
             print '%s: %r' % (att, getattr(self, att))
-        return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to('day').value
+        return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
         
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing the observation window if needed.
@@ -142,10 +142,10 @@ class TimeKeeping(object):
         _,filename,line_number,function_name,_,_ = inspect.stack()[1]
         location = '%s:%d(%s)' % (os.path.basename(filename), line_number, function_name)
         # if no issues, we will advance to this time
-        provisional_time = self.currenttimeNorm + dt
+        provisional_time = self.currentTimeNorm + dt
         window_advance = False
         success = True
-        if np.sum(dt) > self.duration:
+        if dt > self.duration:
             success = False
             description = '!too long'
         elif dt < 0:
@@ -158,18 +158,18 @@ class TimeKeeping(object):
             self.nexttimeAvail += (self.duration +
                                    ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
             # set current time to dt units beyond start of next window
-            self.currenttimeNorm = self.nexttimeAvail + dt
-            self.currenttimeAbs = self.missionStart + self.currenttimeNorm
+            self.currentTimeNorm = self.nexttimeAvail + dt
+            self.currentTimeAbs = self.missionStart + self.currentTimeNorm
             window_advance = True
             description = '+window'
         else:
             # simply advance by dt
-            self.currenttimeNorm = provisional_time
-            self.currenttimeAbs += dt
+            self.currentTimeNorm = provisional_time
+            self.currentTimeAbs += dt
             description = 'ok'
         # Log a message for the time allocation
         message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
-            self.currenttimeNorm.to('day').value, np.sum(dt).to('day').value, description, location)
+            self.currentTimeNorm.to('day').value, dt.to('day').value, description, location)
         Logger.info(message)
         # if False: print '***', message
         return success
@@ -178,7 +178,7 @@ class TimeKeeping(object):
         r"""Is the time allocated for the mission used up?
 
         This supplies an abstraction around the test:
-            (currenttimeNorm > missionFinishNorm)
+            (currentTimeNorm > missionFinishNorm)
         so that users of the class do not have to perform arithmetic
         on class variables.
 
@@ -189,10 +189,10 @@ class TimeKeeping(object):
             is_over (Boolean):
                 True if the mission time is used up, else False.
         """
-        return (self.currenttimeNorm > self.missionFinishNorm)
+        return (self.currentTimeNorm > self.missionFinishNorm)
 
     def update_times(self, dt):
-        """Updates self.currenttimeNorm and self.currenttimeAbs
+        """Updates self.currentTimeNorm and self.currentTimeAbs
         
         Deprecated.
         
@@ -202,9 +202,9 @@ class TimeKeeping(object):
         
         """
         if dt < 0:
-            raise ValueError('update_times got negative dt: %s' % str(dt))
-        self.currenttimeNorm += dt
-        self.currenttimeAbs += dt
+            raise ValueError('update_times got negative dt: %s' % str(dt.to('day')))
+        self.currentTimeNorm += dt
+        self.currentTimeAbs += dt
         
     def duty_cycle(self, currenttime):
         """Updates available time and duration for planet-finding.

@@ -1,7 +1,7 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 
 class KnownRVPlanetsUniverse(SimulatedUniverse):
     """
@@ -33,31 +33,15 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         catalog values for each planet.
         """
 
-        # Map planets to target stars
-        self.planet_to_star()               # generate index of target star for each planet
-        self.nPlans = len(self.plan2star)   # number of planets in universe
-
+        TL = self.TargetList
         PPop = self.PlanetPopulation
-        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccentricity(self.nPlans)     # eccentricity
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.Rp = PPop.gen_radius(self.nPlans)              # radius
-        self.Mp = PPop.gen_mass(self.nPlans)                # mass
-        self.p = PPop.gen_albedo(self.nPlans)               # albedo
-        self.r, self.v = self.planet_pos_vel()              # initial position
-        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
-        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-
-        # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
+        PPMod = self.PlanetPhysicalModel
 
         # Go through the target list and pick out the planets belonging to those hosts
         starinds = np.array([])
         planinds = np.array([])
-        for j,name in enumerate(self.TargetList.Name):
-            tmp = np.where(self.PlanetPopulation.hostname == name)[0]
+        for j,name in enumerate(TL.Name):
+            tmp = np.where(PPop.hostname == name)[0]
             planinds = np.hstack((planinds,tmp))
             starinds = np.hstack((starinds,[j]*len(tmp)))
         planinds = planinds.astype(int)
@@ -84,8 +68,8 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         lper = PPop.allplanetdata['pl_orblper'][planinds] + \
                 np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
         self.Mp = PPop.mass[planinds]                       # mass
-        self.Rp = PPhMod.calc_radius_from_mass(self.Mp)     # radius
-        self.p = PPhMod.calc_albedo_from_sma(self.a)        # albedo
+        self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius
+        self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
         self.r, self.v = self.planet_pos_vel()              # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation

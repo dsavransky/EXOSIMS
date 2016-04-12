@@ -71,7 +71,6 @@ class SurveySimulation(object):
         if scriptfile is not None:
             import json
             import os.path
-        
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
 
             try:
@@ -164,12 +163,6 @@ class SurveySimulation(object):
                 OpticalSystem class object
             self.PlanetPopulation:
                 PlanetPopulation class object
-            self.ZodiacalLight:
-                ZodiacalLight class object
-            self.Completeness:
-                Completeness class object
-            self.PlanetPhysicalModel:
-                PlanetPhysicalModel class object
             self.TargetList:
                 TargetList class object
         
@@ -179,12 +172,13 @@ class SurveySimulation(object):
         
         """
         
-        Obs = self.Observatory
         SU = self.SimulatedUniverse
-        TL = self.TargetList
+        Obs = self.Observatory
         TK = self.TimeKeeping
+        PPro = self.PostProcessing
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
+        TL = self.TargetList
         
         Logger.info('run_sim beginning')
         # initialize values updated later
@@ -194,7 +188,7 @@ class SurveySimulation(object):
         revisit_list = np.array([])
         extended_list = np.array([])
         # current time (normalized to zero at mission start) of planet positions
-        planPosTime = np.array([TK.currenttimeNorm.to('day').value]*SU.nPlans)*u.day
+        planPosTime = np.array([TK.currentTimeNorm.to('day').value]*SU.nPlans)*u.day
         # number of planet observations
         observed = np.zeros((SU.nPlans,), dtype=int)
         # set occulter separation if haveOcculter
@@ -202,8 +196,6 @@ class SurveySimulation(object):
             Obs.currentSep = Obs.occulterSep
         
         # initialize run options
-        # perform characterization if doChar = True
-        doChar = self.PostProcessing.SNchar > 0
         # keep track of spectral characterizations, 0 is no characterization
         spectra = np.zeros((SU.nPlans,1), dtype=int)
         # get index of first target star
@@ -211,30 +203,32 @@ class SurveySimulation(object):
         
         # loop until mission is finished
         while not TK.mission_is_over():
-            Logger.info('current time is %r' % TK.currenttimeNorm)
-            print 'Current mission time: ', TK.currenttimeNorm
-            obsbegin = copy.copy(TK.currenttimeNorm)
+            Logger.info('current time is %r' % TK.currentTimeNorm)
+            print 'Current mission time: ', TK.currentTimeNorm
+            obsbegin = copy.copy(TK.currentTimeNorm)
 
             # dictionary containing results
             DRM = {}
             DRM['target_ind'] = sInd                                 # target star index
-            DRM['arrival_time'] = TK.currenttimeNorm.to('day').value # arrival time
+            DRM['arrival_time'] = TK.currentTimeNorm.to('day').value # arrival time
             if OS.haveOcculter:
                 DRM['scMass'] = Obs.scMass.to('kg').value            # spacecraft mass
 
             # get target list star index of detections for extended_list 
-            if TK.currenttimeNorm > TK.missionLife and extended_list.shape[0] == 0:
+            if TK.currentTimeNorm > TK.missionLife and extended_list.shape[0] == 0:
                 for i in xrange(len(self.DRM)):
                     if self.DRM[i]['det'] == 1:
                         extended_list = np.hstack((extended_list, self.DRM[i]['target_ind']))
                         extended_list = np.unique(extended_list)
             
             # filter planet indices
-            pInds = np.where(SU.plan2star == sInd[0])[0]        # belonging to target star
-            WA = SU.get_current_WA(pInds)
-            pInds = pInds[np.logical_and(WA>OS.IWA,WA<OS.OWA)]  # inside [IWA-OWA]
+            psInds = np.where(SU.plan2star == sInd[0])[0]       # belonging to target star
+            WA = SU.get_current_WA(psInds)
+            pInds = psInds[np.logical_and(WA>OS.IWA,WA<OS.OWA)] # inside [IWA-OWA]
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],PPop.calc_Phi(SU.r[pInds]))
             pInds = pInds[dMag < OS.dMagLim]                    # bright enough
+            print 'Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
+                    len(psInds),sInd[0]+1,TL.nStars)
 
             # update visited list for current star
             visited[sInd] += 1
@@ -243,64 +237,56 @@ class SurveySimulation(object):
             t_int += Obs.settlingTime
             # store detection integration time
             DRM['det_int_time'] = t_int.to('day').value
-
-            # patch negative t_int
-            if (t_int<0).any():
-                Logger.warning('correcting negative t_int to arbitrary value')
-                t_int = (1.0+np.random.rand())*u.day
-            
-            if not TK.allocate_time(t_int):
+            if not TK.allocate_time(max(t_int)):
                 # time too large: skip it
                 observationPossible = False
                 TK.allocate_time(1.0*u.day)
+            if pInds.shape[0] != 0:
+                print 'Imaging:', observationPossible
+
 
             # determine detection, missed detection, false alarm booleans
-            FA, DET, MD, NULL = self.PostProcessing.det_occur(observationPossible)
+            FA, DET, MD, NULL = PPro.det_occur(observationPossible)
 
-            # apparent separation placeholders
-            if pInds.size == 0:
-                s = np.array([1.])*u.AU
-            else:
-                s = SU.s[pInds]
             # encode detection status
-            s, DRM, observed = self.det_data(s, DRM, FA, DET, MD, sInd, pInds, \
+            s, DRM, observed = self.det_data(DRM, FA, DET, MD, sInd, pInds, \
                     observationPossible, observed)
             
-            if doChar:
+            # perform characterization if SNchar defined
+            if PPro.SNchar > 0:
                 DRM, FA, spectra = self.observation_characterization(observationPossible, \
-                pInds, sInd, spectra, DRM, FA, t_int)
-             
+                        pInds, sInd, spectra, DRM, FA, t_int)
+            if pInds.shape[0] != 0:
+                print 'Characterization:', observationPossible
+
             # schedule a revisit
-            if pInds.shape[0] and (DET or FA):
+            if pInds.shape[0] != 0 and (DET or FA):
                 # if there are planets, revisit based on planet with minimum separation
                 sp = np.min(s)
                 Mp = SU.Mp[pInds[np.argmin(s)]]
                 mu = const.G*(Mp + TL.MsTrue[sInd]*const.M_sun)
                 T = 2.*np.pi*np.sqrt(sp**3/mu)
-                t_rev = TK.currenttimeNorm + T/2.
+                t_rev = TK.currentTimeNorm + T/2.
             else:
                 # revisit based on average of population semi-major axis and mass
                 sp = SU.s.mean()
                 Mp = SU.Mp.mean()
                 mu = const.G*(Mp + TL.MsTrue[sInd]*const.M_sun)
                 T = 2.*np.pi*np.sqrt(sp**3/mu)
-                t_rev = TK.currenttimeNorm + 0.75*T
+                t_rev = TK.currentTimeNorm + 0.75*T
 
-###fix this!
             # populate revisit list (sInd is converted to float)
+            revisit = np.array([sInd[0], t_rev.to('day').value])
             if revisit_list.size == 0:
-                revisit_list = np.hstack((revisit_list, np.array([sInd[0], t_rev.to('day').value])))
+                revisit_list = np.array([revisit])
             else:
-                revisit_list = np.vstack((revisit_list, np.array([sInd[0], t_rev.to('day').value])))
-           
+                revisit_list = np.vstack((revisit_list, revisit))
 
-            ### more methods inside timekeeping
-            obsend = copy.copy(TK.currenttimeNorm)
-            # find next available time for planet-finding
-            nexttime = TK.currenttimeNorm
-            
             # update completeness values
-            TL.comp0 = self.Completeness.completeness_update(sInd, TL, obsbegin, obsend, nexttime)
+            obsend = copy.copy(TK.currentTimeNorm)
+            nexttime = TK.currentTimeNorm
+            TL.comp0 = self.Completeness.completeness_update(sInd, TL, obsbegin, \
+                    obsend, nexttime)
             
             # acquire a new target star index
             sInd, DRM = self.next_target(sInd, DRM)
@@ -309,15 +295,9 @@ class SurveySimulation(object):
             self.DRM.append(DRM)
             
             # with occulter if spacecraft fuel is depleted, exit loop
-            if OS.haveOcculter:
-                if Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %r' % TK.currenttimeNorm
-                    break
-
-#            if visited[sInd] == 3:
-#                TK.currenttimeNorm = 100*u.year
-#            if TK.currenttimeNorm > 100*u.day:
-#                TK.currenttimeNorm = 100*u.year
+            if OS.haveOcculter and Obs.scMass < Obs.dryMass:
+                print 'Total fuel mass exceeded at %r' % TK.currentTimeNorm
+                break
         
         Logger.info('run_sim finishing OK')
         print 'Survey simulation: finishing OK'
@@ -330,24 +310,12 @@ class SurveySimulation(object):
         """Returns index of initial target star
         
         This method has access to the following:
-            self.SimulatedUniverse:
-                SimulatedUniverse class object
             self.Observatory:
                 Observatoryervatory class object
             self.TimeKeeping:
                 TimeKeeping class object
-            self.PostProcessing:
-                PostProcessing class object
             self.OpticalSystem:
                 OpticalSystem class object
-            self.PlanetPopulation:
-                PlanetPopulation class object
-            self.ZodiacalLight:
-                ZodiacalLight class object
-            self.Completeness:
-                Completenessleteness class object
-            self.PlanetPhysicalModel:
-                PlanetPhysicalModel class object
             self.TargetList:
                 TargetList class object
         
@@ -357,14 +325,13 @@ class SurveySimulation(object):
         """
         
         Obs = self.Observatory
-        SU = self.SimulatedUniverse
-        TL = self.TargetList
         TK = self.TimeKeeping
         OS = self.OpticalSystem
+        TL = self.TargetList
 
         while not TK.mission_is_over():
-            a = Obs.keepout(TK.currenttimeAbs, TL, OS.telescopeKeepout)
-            # find observable targets at current mission time            
+            a = Obs.keepout(TK.currentTimeAbs, TL, OS.telescopeKeepout)
+            # find observable targets at current mission time
             sInds = np.where(Obs.kogood)[0]
             # if no observable targets, advance mission time by a nominal dt, try again
             if sInds.size == 0:
@@ -381,9 +348,7 @@ class SurveySimulation(object):
         sInd = np.array([sInds[s0]])
         
         return sInd
-       
 
-####cleanup all offloaded to opticalsystem
     def observation_detection(self, pInds, sInd, DRM, planPosTime):
         """Finds if planet observations are possible and relevant information
         
@@ -425,22 +390,22 @@ class SurveySimulation(object):
             observationPossible = np.ones((len(pInds),), dtype=bool)
             # if planet position times do not match up with current time
             # propagate the positions to the current time
-            if planPosTime[pInds][0] != TK.currenttimeNorm:
+            if planPosTime[pInds][0] != TK.currentTimeNorm:
                 # propagate planet positions and velocities
                 try:
                     SU.r[pInds], SU.v[pInds],SU.s[pInds],SU.d[pInds] = \
                             SU.prop_system(SU.r[pInds],SU.v[pInds],SU.Mp[pInds],\
-                            TL.MsTrue[SU.plan2star[pInds]],TK.currenttimeNorm \
+                            TL.MsTrue[SU.plan2star[pInds]],TK.currentTimeNorm \
                             - planPosTime[pInds][0])
                     # update planet position times
-                    planPosTime[pInds] = TK.currenttimeNorm
+                    planPosTime[pInds] = TK.currentTimeNorm
                 except ValueError:
                     observationPossible = False
         else:
             observationPossible = False
 
         # set integration time to max integration time as a default
-        t_int = OS.calc_maxintTime(TL)
+        t_int = OS.calc_maxintTime(TL)[sInd]
             
         # determine integration time and update observationPossible
         if np.any(observationPossible):
@@ -471,7 +436,12 @@ class SurveySimulation(object):
             DRM['det_dV'] = deltaV.to('m/s').value
             DRM['det_mass_used'] = mass_used.to('kg').value
             Obs.scMass -= mass_used
-            
+
+            # patch negative t_int
+            if any(t_int < 0):
+                Logger.warning('correcting negative t_int to arbitrary value')
+                t_int = (1.0+np.random.rand())*u.day
+
         return observationPossible, t_int, DRM
         
     def observation_characterization(self, observationPossible, pInds, sInd, spectra, DRM, FA, t_int):
@@ -499,7 +469,7 @@ class SurveySimulation(object):
             DRM, FA, spectra (dict, bool, ndarray):
                 dictionary containing survey simulation results, False Alarm 
                 boolean, numpy ndarray of values indicating if planet spectra 
-                has been captured                
+                has been captured
                 
         """
         
@@ -517,19 +487,16 @@ class SurveySimulation(object):
                 # find characterization time
                 t_char = OS.calc_charTime(TL,sInd,SU.I[pInds],deltaMag(SU.p[pInds],SU.Rp[pInds],\
                         SU.d[pInds],PPop.calc_Phi(SU.r[pInds])),SU.get_current_WA(pInds))
+                # account for 5 bands and one coronagraph
+                t_char *= 4
                 # patch negative t_char
                 if np.any(t_char < 0):
                     Logger.warning('correcting negative t_char to arb. value')
                     t_char_value = (4+2*np.random.rand())*u.day
                     t_char[t_char < 0] = t_char_value
 
-                # account for 5 bands and one coronagraph
-                t_char = t_char*4
-                # determine which planets will be observable at the end
-                # of observation
-                charPossible = observationPossible
-                charPossible = np.logical_and(charPossible, t_char <= OS.intCutoff)
-                chargo = False
+                # determine which planets will be observable at the end of observation
+                charPossible = np.logical_and(observationPossible, t_char <= OS.intCutoff)
 
                 try:
                     t_char, charPossible, chargo = self.check_visible_end(charPossible, \
@@ -554,16 +521,15 @@ class SurveySimulation(object):
                         DRM['char_1_mass_used'] = mass_used_char.to('kg').value
                     else:
                         DRM['char_1_time'] = t_char.to('day').value
-                
+                    
                     # if integration time goes beyond observation duration, set quantities
-                    # Before, for some reason, an extra 1.0d was added to time if characterization failed. Removed.
                     if not TK.allocate_time(t_char.max()):
                         charPossible = False
-                            
+                    
                     # if this was a false alarm, it has been noted, update FA
                     if FA:
                         FA = False
-                        
+                    
                     # if planet is visible at end of characterization,
                     # spectrum is captured
                     if np.any(charPossible):
@@ -572,17 +538,15 @@ class SurveySimulation(object):
                             # encode success
                             DRM['char_1_success'] = 1
                         else:
-                            nld = OS.IWA.to('rad').value / (OS.Spectro['lam']/OS.pupilDiam)
-                            lambdaeff = np.arctan(SU.s[pInds]/(TL.dist[sInd])).value
-                            lambdaeff *= np.sqrt(OS.pupilArea/OS.shapeFac)
-                            lambdaeff /= nld
-                            charPossible = np.logical_and(charPossible, lambdaeff >= 800.*u.nm)
+                            lamEff = np.arctan(SU.s[pInds]/(TL.dist[sInd])) / OS.IWA.to('rad')
+                            lamEff *= OS.Spectro['lam']/OS.pupilDiam*np.sqrt(OS.pupilArea/OS.shapeFac)
+                            charPossible = np.logical_and(charPossible, lamEff >= 800.*u.nm)
                             # encode results
                             if np.any(charPossible):
                                 spectra[pInds[charPossible],0] = 1
                                 DRM['char_1_success'] = 1
                             else:
-                                DRM['char_1_success'] = lambdaeff.max().to('nm').value
+                                DRM['char_1_success'] = lamEff.max().to('nm').value
                        
         return DRM, FA, spectra
 
@@ -595,12 +559,12 @@ class SurveySimulation(object):
                 TargetList class object
             Obs:
                 Observatory class object
-            TK:
-                TimeKeeping class object
             SU:
                 SimulatedUniverse class object
             OS:
                 OpticalSystem class object
+            PPop:
+                PlanetPopulation class object
                 
         Args:
             observationPossible (ndarray):
@@ -629,30 +593,32 @@ class SurveySimulation(object):
         
         """
 
-        
+        TL = self.TargetList
         Obs = self.Observatory
         SU = self.SimulatedUniverse
-        TL = self.TargetList
-        TK = self.TimeKeeping
         OS = self.OpticalSystem
+        PPop = self.PlanetPopulation
         
         # set chargo to False initially
         chargo = False
         
         for i in xrange(len(observationPossible)):
             if observationPossible[i]:
-                r = SU.r[pInds[i]]
-                v = SU.v[pInds[i]]
-                Mp = SU.Mp[pInds[i]]
-                MsTrue = TL.MsTrue[sInd]
-                Rp = SU.Rp[pInds[i]]
-                p = SU.p[pInds[i]]
-                if t_char_calc:
-                    dt = t_int[i]
+                # is planet visible at the end of the observation time?
+                if Obs.kogood[sInd]:
+                    # propagate planet to observational period end, and find dMagend
+                    dt = t_int[i] if t_char_calc else t_trueint[i] + Obs.settlingTime
+                    j = pInds[[i]] # must be an array of size 1
+                    rend, vend, send, dend = SU.prop_system(SU.r[j],SU.v[j],\
+                            SU.Mp[j],TL.MsTrue[sInd], dt)
+                    dMagend = deltaMag(SU.p[j],SU.Rp[j],dend,PPop.calc_Phi(rend))
+                    if np.logical_and(dMagend <= OS.dMagLim, (send/TL.dist[sInd])\
+                            .decompose().value >= np.tan(OS.IWA)):
+                        obsRes = 1
+                    else:
+                        obsRes = 0
                 else:
-                    dt = t_trueint[i] + Obs.settlingTime
-
-                obsRes = self.sys_end_res(dt, sInd, r, v, Mp, MsTrue, Rp, p)
+                    obsRes = -1
 
                 if obsRes == 1:
                     # planet visible at the end of observation
@@ -662,8 +628,7 @@ class SurveySimulation(object):
                         if t_int == TL.maxintTime[sInd]:
                             t_int = t_trueint[i]
                         else:
-                            if t_trueint[i] > t_int:
-                                t_int = t_trueint[i]
+                            t_int = max(t_trueint[i],t_int)
                 
                 if obsRes != -1:
                     if t_char_calc:
@@ -678,71 +643,8 @@ class SurveySimulation(object):
             return t_int, observationPossible
 
 
-    def sys_end_res(self, dt, sInd, r, v, Mp, MsTrue, Rp, p):
-        """Determines if a planet is visible at the end of the observation time
-        
-        This method makes use of the following inherited objects:
-            Obs:
-                Observatory class object
-            TK:
-                TimeKeeping class object
-            TL:
-                TargetList class object
-            OS:
-                OpticalSystem class object
-                
-        Args:
-            dt (Quantity):
-                propagation time (units of time)
-            sInd (int):
-                target star index
-            r (Quantity):
-                planet position vector as 1D numpy ndarray (units of distance)
-            v (Quantity):
-                planet velocity vector as 1D numpy ndarray (units of velocity)
-            Mp (Quantity):
-                planetary mass (units of mass)
-            MsTrue (float):
-                stellar mass (in M_sun)
-            Rp (Quantity):
-                planet radius (units of distance)
-            p (ndarray):
-                planet albedo
-                
-        Returns:
-            obsRes (int):
-                -1 if star is inside the keepout zone, 0 if planet is not 
-                visible, or 1 if planet is visible
-        
-        """
-        
-        Obs = self.Observatory
-        SU = self.SimulatedUniverse
-        TL = self.TargetList
-        TK = self.TimeKeeping
-        OS = self.OpticalSystem
 
-        # update keepout to end of observation time
-        a = Obs.keepout(TK.currenttimeAbs+dt, TL, OS.telescopeKeepout)
-        # if star is not inside keepout zone at end of observation, see if 
-        # planet is still observable
-        if Obs.kogood[sInd]:
-            # propagate planet to observational period end and find dMagend
-            rend, vend, send, dend = SU.prop_system(r, v, Mp, MsTrue, dt)
-            beta = np.arccos(rend[2]/dend).value
-            Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
-            dMagend = -2.5*np.log10((p*(Rp/dend)**2*Phi).decompose().value)
-
-            if np.logical_and(dMagend <= OS.dMagLim, send >= TL.dist[sInd].to('km')*np.tan(OS.IWA)):
-                obsRes = 1
-            else:
-                obsRes = 0
-        else:
-            obsRes = -1
-            
-        return obsRes
-
-    def det_data(self, s, DRM, FA, DET, MD, sInd, pInds, observationPossible, observed):
+    def det_data(self, DRM, FA, DET, MD, sInd, pInds, observationPossible, observed):
         """Determines detection status
         
         This method encodes detection status (FA, DET, MD) values in the DRM 
@@ -757,8 +659,6 @@ class SurveySimulation(object):
                 PlanetPopulation class object
         
         Args:
-            s (Quantity):
-                apparent separation (units of distance)
             DRM (dict):
                 dictionary containing simulation results
             FA (bool):
@@ -787,40 +687,27 @@ class SurveySimulation(object):
         
         """
         
-        Obs = self.Observatory
         SU = self.SimulatedUniverse
         TL = self.TargetList
-        TK = self.TimeKeeping
-        OS = self.OpticalSystem
+        PPop = self.PlanetPopulation
 
         # default DRM detection status to null detection
         DRM['det_status'] = 0
-        
-        if FA:
-            # false alarm
+        # apparent separation placeholders
+        s = SU.s[pInds] if pInds.size else np.array([1.])*u.AU
+
+        if FA: # false alarm
             DRM['det_status'] = -2
-            if self.PlanetPopulation.scaleOrbits:
-                s += np.random.rand()*(self.PlanetPopulation.arange.max() - \
-                        self.PlanetPopulation.arange.min())*np.sqrt(TL.L[sInd])
-            else:
-                s += np.random.rand()*(self.PlanetPopulation.arange.max() - \
-                        self.PlanetPopulation.arange.min())
-        elif MD:
-            # missed detection, set status in DRM
+            ds = np.random.rand()*(PPop.arange.max() - PPop.arange.min())
+            s += ds*np.sqrt(TL.L[sInd]) if PPop.scaleOrbits else ds
+        elif MD: # missed detection
             DRM['det_status'] = -1
-        elif DET:
-            # encode detection
+        elif DET: # detection
             observed[pInds[observationPossible]] += 1
-            if pInds.shape[0] == 1:
-                # set status in DRM
-                DRM['det_status'] = 1
-                # set WA and Delta Mag of detection in DRM
-                DRM['det_WA'] = np.arctan(s/(TL.dist[sInd])).to('mas')[0].value
-                DRM['det_dMag'] = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.r[pInds])[0]
-            else:
-                DRM['det_status'] = observationPossible.astype(int).tolist()
-                DRM['det_WA'] = np.arctan(s/(TL.dist[sInd])).to('mas').min().value
-                DRM['det_dMag'] = (dMag[observationPossible]).max()
+            DRM['det_status'] = observationPossible.astype(int).tolist()
+            DRM['det_WA'] = np.arctan(s/TL.dist[sInd]).min().to('mas').value
+            DRM['det_dMag'] = deltaMag(SU.p[pInds], SU.Rp[pInds], SU.d[pInds], \
+                    PPop.calc_Phi(SU.r[pInds])).max()
         
         return s, DRM, observed
         
@@ -846,7 +733,7 @@ class SurveySimulation(object):
         Returns:
             new_sInd, DRM (int, dict):
                 index of next target star, dictionary of simulation results
-                new_sInd is None if no target could be found              
+                new_sInd is None if no target could be found
         
         """
         
@@ -856,7 +743,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
 
         while not TK.mission_is_over():
-            a = Obs.keepout(TK.currenttimeAbs, TL, OS.telescopeKeepout)
+            a = Obs.keepout(TK.currentTimeAbs, TL, OS.telescopeKeepout)
             # find observable targets at current mission time
             sinds = np.where(Obs.kogood)[0]
             # if no observable targets, advance mission time by a nominal dt, try again
@@ -870,7 +757,7 @@ class SurveySimulation(object):
             return None, DRM
 
         # pick a random star from the stars not in keepout zones
-        s0 = np.random.random_integers(0, high=len(sinds)-1)
+        s0 = np.random.random_integers(len(sinds))-1
         new_sInd = np.array([sinds[s0]])
         
         if OS.haveOcculter:
@@ -878,9 +765,9 @@ class SurveySimulation(object):
             ao = Obs.thrust/Obs.scMass
             targetSep = Obs.occulterSep
             # find position vector of previous target star
-            r_old = Obs.starprop(TK.currenttimeAbs, TL, sInd)
+            r_old = Obs.starprop(TK.currentTimeAbs, TL, sInd)
             # find position vector of new target star
-            r_new = Obs.starprop(TK.currenttimeAbs, TL, new_sInd)
+            r_new = Obs.starprop(TK.currentTimeAbs, TL, new_sInd)
             # find unit vectors
             u_old = r_old/np.sqrt(np.sum(r_old**2))
             u_new = r_new/np.sqrt(np.sum(r_new**2))

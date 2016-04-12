@@ -3,7 +3,7 @@ from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 import os,inspect
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 from scipy.interpolate import interp1d, interp2d
 
 class Stark(ZodiacalLight):

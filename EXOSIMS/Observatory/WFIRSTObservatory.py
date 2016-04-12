@@ -49,7 +49,7 @@ class WFIRSTObservatory(Observatory):
         
         # Find spacecraft position vector with respect to sun (heliocentric equatorial)
         self.r_sc = r_earth + r_scearth
-        
+
         b = np.isfinite(self.r_sc) # finds if all values are finite floats
         success = all(b) # returns True if all values of self.r_sc are finite
         

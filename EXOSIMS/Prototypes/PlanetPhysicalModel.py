@@ -1,6 +1,6 @@
 import numpy as np
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 
 class PlanetPhysicalModel(object):
     """Planet Physical Model class template

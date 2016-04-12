@@ -1,6 +1,6 @@
 from EXOSIMS.Prototypes.TargetList import TargetList
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 import numpy as np
 from astropy.coordinates import SkyCoord
 

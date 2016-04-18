@@ -126,10 +126,10 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
 
         # Map planets to target stars
-        pps = 8 # max number of planets per star
-        self.nPlans = np.sum(np.random.randint(0,pps+1,TL.nStars))
-        self.plan2star = np.random.randint(0,TL.nStars,self.nPlans)
+        probs = np.random.uniform(TL.nStars)
+        self.plan2star = np.where(probs > self.eta)[0]
         self.sInds = np.unique(self.plan2star)
+        self.nPlans = len(self.plan2star)
 
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \

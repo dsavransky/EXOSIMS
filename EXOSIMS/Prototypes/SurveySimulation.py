@@ -53,7 +53,7 @@ class SurveySimulation(object):
     _modtype = 'SurveySimulation'
     _outspec = {}
     
-    def __init__(self,scriptfile=None,**specs):
+    def __init__(self,scriptfile=None,logLevel=None,**specs):
         """Initializes Survey Simulation with default values
         
         Input: 
@@ -66,6 +66,18 @@ class SurveySimulation(object):
                 string values, in which case the objects will be instantiated,
                 or object references.
         """
+
+        # toggle the logging level: INFO, DEBUG, WARNING, ERROR, CRITICAL
+        if logLevel.upper() == 'INFO':
+            logging.basicConfig(level=logging.INFO)
+        elif logLevel.upper() == 'DEBUG':
+            logging.basicConfig(level=logging.DEBUG)
+        elif logLevel.upper() == 'WARNING':
+            logging.basicConfig(level=logging.WARNING)
+        elif logLevel.upper() == 'ERROR':
+            logging.basicConfig(level=logging.ERROR)
+        elif logLevel.upper() == 'CRITICAL':
+            logging.basicConfig(level=logging.CRITICAL)
 
         # if a script file is provided read it in
         if scriptfile is not None:
@@ -227,8 +239,8 @@ class SurveySimulation(object):
             pInds = psInds[np.logical_and(WA>OS.IWA,WA<OS.OWA)] # inside [IWA-OWA]
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],PPop.calc_Phi(SU.r[pInds]))
             pInds = pInds[dMag < OS.dMagLim]                    # bright enough
-            print 'Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
-                    len(psInds),sInd[0]+1,TL.nStars)
+            Logger.info('Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
+                    len(psInds),sInd[0]+1,TL.nStars))
 
             # update visited list for current star
             visited[sInd] += 1
@@ -242,7 +254,7 @@ class SurveySimulation(object):
                 observationPossible = False
                 TK.allocate_time(1.0*u.day)
             if pInds.shape[0] != 0:
-                print 'Imaging:', observationPossible
+                Logger.info('Imaging: %s', observationPossible)
 
 
             # determine detection, missed detection, false alarm booleans
@@ -257,7 +269,7 @@ class SurveySimulation(object):
                 DRM, FA, spectra = self.observation_characterization(observationPossible, \
                         pInds, sInd, spectra, DRM, FA, t_int)
             if pInds.shape[0] != 0:
-                print 'Characterization:', observationPossible
+                Logger.info('Characterization: %s', observationPossible)
 
             # schedule a revisit
             if pInds.shape[0] != 0 and (DET or FA):

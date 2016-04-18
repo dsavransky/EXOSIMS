@@ -313,6 +313,12 @@ class OpticalSystem(object):
             else:
                 syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']): P
 
+            #default IWA/OWA if not specified or calculated
+            if not(syst.get('IWA')):
+                syst['IWA'] = IWA if IWA else 0.
+            if not(syst.get('OWA')):
+                syst['OWA'] = OWA if OWA else np.Inf
+
             # Loading system specifications
             syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA

@@ -356,7 +356,7 @@ class BrownCompleteness(Completeness):
         # sample albedo, planetary radius, phase function
         p = self.PlanetPopulation.gen_albedo(nplan)
         Rp = self.PlanetPopulation.gen_radius(nplan)
-        Phi = self.PlanetPopulation.calc_phi(r)
+        Phi = self.PlanetPopulation.calc_Phi(r)
 
         # calculate dMag & apparent separation
         dMag = deltaMag(p,Rp,d,Phi)

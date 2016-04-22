@@ -113,7 +113,7 @@ class WFIRSTObservatory(Observatory):
         for i in xrange(len(catalog.Name)):
             for j in xrange(len(u_bright)):
                 angle = np.arccos(np.dot(u_targ[i], u_bright[j]))
-                if angle < np.radians(koangle):
+                if angle < np.radians(koangle).value:
                     self.kogood[i] = False
                     break
         

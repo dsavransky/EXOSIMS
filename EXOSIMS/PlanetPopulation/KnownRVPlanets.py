@@ -16,6 +16,18 @@ class KnownRVPlanets(KeplerLike1):
     power law and radius is assumed to be calculated from mass via the 
     physical model.
 
+    The data file read in by this class also provides all of the information
+    about the target stars, and so no StarCatalog object is needed (only the
+    KnownRvPlanetsTargetList implementation).
+
+    To download a new copy of the data file:
+    1. Navigate to the IPAC exoplanet archive at http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=planets
+    2. Type 'radial' (minus quotes) in the 'Discovery Method' search box and
+    hit enter.
+    3. In the 'Download Table' menu select 'VOTable Format', 'Download all 
+    Columns' and 'Download Currently Filtered Rows'.
+    4. In the 'Download Table' menu  click 'Download Table'.
+
     Args: 
         \*\*specs: 
             user specified values

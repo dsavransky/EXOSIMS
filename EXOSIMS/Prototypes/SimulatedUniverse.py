@@ -100,7 +100,6 @@ class SimulatedUniverse(object):
 
         self.gen_planetary_systems(**specs)
 
-
     def __str__(self):
         """String representation of Simulated Universe object
         
@@ -126,7 +125,7 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
 
         # Map planets to target stars
-        probs = np.random.uniform(TL.nStars)
+        probs = np.random.uniform(size=TL.nStars)
         self.plan2star = np.where(probs > self.eta)[0]
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
@@ -280,12 +279,12 @@ class SimulatedUniverse(object):
                 Numpy ndarray containing integer indices of the planets of interest
         
         Returns:
-            wa (Quantity):
+            WA (Quantity):
                 numpy ndarray of working angles (units of arcsecons)
         """
 
         starDists = self.TargetList.dist[self.plan2star[pInds]] # distance to star
-        wa = (self.s[pInds]/starDists*u.rad).to('arcsec')
+        WA = np.arctan(self.s[pInds]/starDists).to('arcsec')
 
-        return wa
+        return WA
 

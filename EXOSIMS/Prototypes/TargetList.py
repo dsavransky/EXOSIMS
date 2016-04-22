@@ -3,6 +3,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.deltaMag import deltaMag
 
 class TargetList(object):
     """Target List class template
@@ -123,11 +124,13 @@ class TargetList(object):
         # now populate and filter the list
         self.populate_target_list(**specs)
         self.filter_target_list(**specs)
+        assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
 
         # have target list, no need for catalog now
         if not keepStarCatalog:
             del self.StarCatalog
 
+        # populate outspec
         self._outspec['nStars'] = self.nStars
         self._outspec['keepStarCatalog'] = keepStarCatalog
 
@@ -143,7 +146,6 @@ class TargetList(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Target List class object attributes'
-                
 
     def populate_target_list(self, **specs):
         """ 
@@ -210,11 +212,8 @@ class TargetList(object):
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
 
-
     def nan_filter(self):
         """Populates Target List and filters out values which are nan
-        
-        Args:
         
         """
         
@@ -223,89 +222,66 @@ class TargetList(object):
             if getattr(self, att).shape[0] == 0:
                 pass
             elif type(getattr(self, att)[0]) == str:
-                i = np.where(getattr(self, att) != float('nan'))
+                # FIXME: intent here unclear: 
+                #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
+                i = np.where(getattr(self, att) != float('nan'))[0]
                 self.revise_lists(i)
-            elif type(getattr(self, att)[0]) != np.unicode_ and type(getattr(self, att)[0]) != np.bool_:
+            # exclude non-numerical types
+            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
                 if att == 'coords':
-                    i1 = np.where(~np.isnan(self.coords.ra.value))
-                    i2 = np.where(~np.isnan(self.coords.dec.value))
-                    if (i1[0]==i2[0]).all():
-                        i = i1
-                    elif i1[0] < i2[0]:
-                        i = i1
-                    else:
-                        i = i2
+                    i1 = np.where(~np.isnan(self.coords.ra.to('deg').value))[0]
+                    i2 = np.where(~np.isnan(self.coords.dec.to('deg').value))[0]
+                    i = np.intersect1d(i1,i2)
                 else:
-                    i = np.where(~np.isnan(getattr(self, att)))
-
+                    i = np.where(~np.isnan(getattr(self, att)))[0]
                 self.revise_lists(i)
                 
     def binary_filter(self):
         """Removes stars which have attribute Binary_Cut == True
         
-        Args:
-        
         """
         
-        # indices from Target List to keep
-        i = np.where(self.Binary_Cut == False)
+        i = np.where(self.Binary_Cut == False)[0]
         
         self.revise_lists(i)
         
     def life_expectancy_filter(self):
         """Removes stars from Target List which have BV < 0.3
         
-        Args:
-        
         """
         
-        # indices from Target List to keep
-        i = np.where(self.BV > 0.3)
+        i = np.where(self.BV > 0.3)[0]
         
         self.revise_lists(i)
         
     def main_sequence_filter(self):
         """Removes stars from Target List which are not main sequence
         
-        Args:
-        
         """
         
         # indices from Target List to keep
-        i1 = np.where(np.logical_and(self.BV < 0.74, self.MV < (6*self.BV + 1.8)))
-        i2 = np.where(np.logical_and(self.BV >= 0.74, np.logical_and(self.BV < 1.37, self.MV < (4.3*self.BV+3.05))))
-        i3 = np.where(np.logical_and(self.BV >= 1.37, self.MV < (18*self.BV - 15.7)))
-        i4 = np.where(np.logical_and(self.BV < 0.87, self.MV > (-8*(self.BV-1.35)**2+7.01)))
-        i5 = np.where(np.logical_and(self.BV >= 0.87, np.logical_and(self.BV < 1.45, self.MV < (5*self.BV+0.81))))
-        i6 = np.where(np.logical_and(self.BV >= 1.45, self.MV > (18*self.BV-18.04)))
+        i1 = np.where((self.BV < 0.74) * (self.MV < 6*self.BV+1.8))[0]
+        i2 = np.where((self.BV >= 0.74) * (self.BV < 1.37) * (self.MV < 4.3*self.BV+3.05))[0]
+        i3 = np.where((self.BV >= 1.37) * (self.MV < 18*self.BV-15.7))[0]
+        i4 = np.where((self.BV < 0.87) * (self.MV > -8*(self.BV-1.35)**2+7.01))[0]
+        i5 = np.where((self.BV >= 0.87) * (self.BV < 1.45) * (self.MV < 5*self.BV+0.81))[0]
+        i6 = np.where((self.BV >= 1.45) * (self.MV > 18*self.BV-18.04))[0]
         
-        ia = np.append(i1, i2)
-        ia = np.append(ia, i3)
-        ia = np.unique(ia)
-        
-        ib = np.append(i4, i5)
-        ib = np.append(ib, i6)
-        ib = np.unique(ib)
-        
-        i = np.intersect1d(ia,ib)
+        ia = np.append(np.append(i1, i2), i3)
+        ib = np.append(np.append(i4, i5), i6)
+        i = np.intersect1d(np.unique(ia),np.unique(ib))
        
         self.revise_lists(i)
         
     def fgk_filter(self):
         """Includes only F, G, K spectral type stars in Target List
         
-        Args:
-
-        
         """
         
-        # indices from target list to keep
-        iF = np.where(np.core.defchararray.startswith(self.Spec, 'F'))
-        iG = np.where(np.core.defchararray.startswith(self.Spec, 'G'))
-        iK = np.where(np.core.defchararray.startswith(self.Spec, 'K'))
-        
-        i = np.append(iF, iG)
-        i = np.append(i, iK)
+        iF = np.where(np.core.defchararray.startswith(self.Spec, 'F'))[0]
+        iG = np.where(np.core.defchararray.startswith(self.Spec, 'G'))[0]
+        iK = np.where(np.core.defchararray.startswith(self.Spec, 'K'))[0]
+        i = np.append(np.append(iF, iG), iK)
         i = np.unique(i)
         
         self.revise_lists(i)
@@ -319,8 +295,7 @@ class TargetList(object):
         
         """
         
-        # indices from Target List to keep
-        i = np.where(self.Vmag < Vmagcrit)
+        i = np.where(self.Vmag < Vmagcrit)[0]
         
         self.revise_lists(i)
 
@@ -337,85 +312,60 @@ class TargetList(object):
         
         """
         
-        if self.PlanetPopulation.scaleOrbits:
-            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist/np.sqrt(self.L)))
-        else:
-            i = np.where(np.max(self.PlanetPopulation.rrange) > (np.tan(self.OpticalSystem.IWA)*self.dist))
-   
+        OS = self.OpticalSystem
+        PPop = self.PlanetPopulation
+        
+        ss = np.tan(OS.IWA)*self.dist
+        if PPop.scaleOrbits:
+            ss = ss/np.sqrt(self.L)
+        i = np.where(np.max(PPop.rrange) > ss)[0]
+        
         self.revise_lists(i)
         
     def int_cutoff_filter(self):
         """Includes stars if calculated integration time is less than cutoff
         
-        This method uses the following inherited class object:
-            self.rules:
-                Rules class object
-        
-        Args:
-        
         """
         
-        i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)
-
+        i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)[0]
+        
         self.revise_lists(i)
         
     def max_dmag_filter(self):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
-        This method uses the following inherited class objects:
-            self.PlanetPopulation:
-                PlanetPopulation class object
-            self.OpticalSystem:
-                OpticalSystem class object
-                
-        Args:
-                
         """
         
-        betastar = 1.10472881476178 # radians
+        OS = self.OpticalSystem
+        PPop = self.PlanetPopulation
         
-        rhats = np.tan(self.OpticalSystem.IWA)*self.dist/np.sin(betastar)
-        
-        if self.PlanetPopulation.scaleOrbits:
-            rhats = rhats/np.sqrt(self.L)
-        
-        # out of range rhats
-        below = np.where(rhats < np.min(self.PlanetPopulation.rrange))
-        above = np.where(rhats > np.max(self.PlanetPopulation.rrange))
-
         # s and beta arrays
-        ss = np.tan(self.OpticalSystem.IWA)*self.dist
-        if self.PlanetPopulation.scaleOrbits:
+        ss = np.tan(OS.IWA)*self.dist
+        if PPop.scaleOrbits:
             ss = ss/np.sqrt(self.L)
-        
-        betas = np.zeros((len(ss))) + betastar
+        betas = np.array([1.10472881476178]*len(ss)) # radians
         
         # fix out of range values
-        ss[below] = np.min(self.PlanetPopulation.rrange)*np.sin(betastar)
-        if self.PlanetPopulation.scaleOrbits:
-            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]/np.sqrt(self.L[above])/np.max(self.PlanetPopulation.rrange)).decompose())
-        else:
-            betas[above] = np.arcsin((np.tan(self.OpticalSystem.IWA)*self.dist[above]/np.max(self.PlanetPopulation.rrange)).decompose())                
+        below = np.where(ss/np.sin(betas) < np.min(PPop.rrange))[0]
+        above = np.where(ss/np.sin(betas) > np.max(PPop.rrange))[0]
+        ss[below] = np.sin(betas[below])*np.min(PPop.rrange)
+        betas[above] = np.arcsin(ss[above]/np.max(PPop.rrange))
         
         # calculate delta mag
-        Phis = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
-        t1 = np.max(self.PlanetPopulation.Rrange).to(u.AU).value**2*np.max(self.PlanetPopulation.prange)      
-        i = np.where(-2.5*np.log10(t1*Phis*np.sin(betas)**2/ss.to(u.AU).value**2) < self.OpticalSystem.dMagLim)
+        p = np.max(PPop.prange)
+        Rp = np.max(PPop.Rrange)
+        d = ss/np.sin(betas)
+        Phi = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
+        i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
         
         self.revise_lists(i)
         
     def completeness_filter(self):
         """Includes stars if completeness is larger than the minimum value
         
-        This method uses the following inherited class object:
-            self.Completeness:
-                Completeness class object
-                
-        Args:
-        
         """
         
-        i = np.where(self.comp0 > self.Completeness.minComp)
+        i = np.where(self.comp0 > self.Completeness.minComp)[0]
 
         self.revise_lists(i)
         
@@ -431,12 +381,14 @@ class TargetList(object):
         
         for att in self.catalog_atts:
             if att == 'coords':
-                self.coords = SkyCoord(ra=self.coords.ra[ind].value, dec=self.coords.dec[ind].value, unit='deg')
+                ra = self.coords.ra[ind].to('deg').value
+                dec = self.coords.dec[ind].to('deg').value
+                self.coords = SkyCoord(ra=ra, dec=dec, unit='deg')
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[ind])
         
-        self.nStars = len(ind[0])
+        self.nStars = len(ind)
         
     def stellar_mass(self):
         """Populates target list with 'true' and 'approximate' stellar masses
@@ -455,4 +407,3 @@ class TargetList(object):
         # if additional filters are desired, need self.catalog_atts fully populated
         self.catalog_atts.append('MsEst')
         self.catalog_atts.append('MsTrue')
-        

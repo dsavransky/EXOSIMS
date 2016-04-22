@@ -133,7 +133,7 @@ class OpticalSystem(object):
             attenuation=0.57,intCutoff=50,Npix=14.3,Ndark=10,scienceInstruments=None,\
             lam=500,BW=0.2,pitch=13e-6,focal=240,idark=9e-5,texp=1e3,sread=3,CIC=0.0013,\
             ENF=1,Gem=1,Rs=70,QE=0.9,starlightSuppressionSystems=None,throughput=1e-2,\
-            contrast=1e-9,PSF=[[1,1,1],[1,1,1],[1,1,1]],samp=10,ohTime=1,imagTimeMult=1,\
+            contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,imagTimeMult=1,\
             charTimeMult=1,IWA=None,OWA=None,dMagLim=None,**specs):
 
         #load all values with defaults
@@ -311,7 +311,7 @@ class OpticalSystem(object):
                 if tmp.header.get('SAMPLING') is not None:
                     syst['samp'] = tmp.header.get('SAMPLING')
             else:
-                syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']): P
+                syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']).astype(float): P
 
             #default IWA/OWA if not specified or calculated
             if not(syst.get('IWA')):
@@ -372,6 +372,12 @@ class OpticalSystem(object):
                 att = self.__dict__[key]
                 self._outspec[key] = att.value if isinstance(att,u.Quantity) else att
 
+        # default detectors and imagers
+        self.Imager = self.scienceInstruments[0]
+        self.ImagerSyst = self.starlightSuppressionSystems[0]
+        self.Spectro = self.scienceInstruments[-1]
+        self.SpectroSyst = self.starlightSuppressionSystems[-1]
+
     def __str__(self):
         """String representation of the Optical System object
         
@@ -416,6 +422,63 @@ class OpticalSystem(object):
 
         return mag
 
+    def Cp_Cb(self, targlist, sInds, I, dMag, WA, inst, syst, Npix):
+        """ Calculates electron count rates for planet signal and background noise.
+
+        Args:
+            targlist:
+                TargetList class object
+            sInds (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
+            dMag:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            inst:
+                Selected scienceInstrument
+            syst:
+                Selected starlightSuppressionSystem
+            Npix:
+                Number of noise pixels
+
+        Returns:
+            C_p:
+                1D numpy array of planet signal electron count rate (units of s^-1)
+            C_b:
+                1D numpy array of background noise electron count rate (units of s^-1)
+        
+        """
+        
+        lam = inst['lam']                           # central wavelength
+        deltaLam = inst['deltaLam']                 # bandwidth
+        QE = inst['QE'](lam)                        # quantum efficiency
+        Q = syst['contrast'](lam, WA)               # contrast
+        T = syst['throughput'](lam, WA) / inst['Ns'] \
+                * self.attenuation**2               # throughput
+        mV = self.starMag(targlist,sInds,lam)       # star visual magnitude
+        zodi = targlist.ZodiacalLight               # zodiacalLight module
+        fZ = zodi.fZ(targlist,sInds,lam)            # surface brightness of local zodi
+        fEZ = zodi.fEZ(targlist,sInds,I)            # surface brightness of exo-zodi
+        X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
+        Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
+        Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
+
+        # electron count rates [ s^-1 ]
+        C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
+        C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
+        C_s = C_F0*10.**(-0.4*mV)*Q                 # residual suppressed starlight (coro)
+        C_z = C_F0*(fZ+fEZ)*Omega                   # zodiacal light = local + exo
+        C_id = Npix*inst['idark']                   # dark current
+        C_cc = Npix*inst['CIC']/inst['texp']        # clock-induced-charge
+        C_sr = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
+        C_b = inst['ENF']**2*(C_s + C_z + C_id + C_cc) + C_sr   # total noise budget
+        
+        return C_p, C_b
+
     def calc_maxintTime(self, targlist):
         """Finds maximum integration time for target systems 
         
@@ -453,13 +516,13 @@ class OpticalSystem(object):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
         
         Returns:
             intTime (Quantity):
@@ -467,7 +530,7 @@ class OpticalSystem(object):
         
         """
         
-        intTime = np.array([1.]*targlist.nStars)*u.day
+        intTime = np.array([1.]*len(I))*u.day
         
         return intTime
 
@@ -498,6 +561,6 @@ class OpticalSystem(object):
         
         """
         
-        charTime = np.array([1.]*targlist.nStars)*u.day
+        charTime = np.array([1.]*len(sInds))*u.day
         
         return charTime

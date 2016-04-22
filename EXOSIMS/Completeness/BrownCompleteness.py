@@ -349,17 +349,17 @@ class BrownCompleteness(Completeness):
         b3 = np.cos(omega)*np.sin(I)
         B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
 
-        # planet position, and planet-star distance
+        # planet position, planet-star distance, apparent separation
         r = (A*r1 + B*r2)*u.AU
         d = np.sqrt(np.sum(r**2, axis=1))
+        s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
 
         # sample albedo, planetary radius, phase function
         p = self.PlanetPopulation.gen_albedo(nplan)
         Rp = self.PlanetPopulation.gen_radius(nplan)
-        Phi = self.PlanetPopulation.calc_Phi(r)
+        Phi = self.PlanetPopulation.calc_Phi(np.arcsin(s/d))
 
-        # calculate dMag & apparent separation
+        # calculate dMag
         dMag = deltaMag(p,Rp,d,Phi)
-        s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
 
         return s, dMag

@@ -260,12 +260,12 @@ class TargetList(object):
         """
         
         # indices from Target List to keep
-        i1 = np.where((self.BV < 0.74) * (self.MV < 6*self.BV+1.8))[0]
-        i2 = np.where((self.BV >= 0.74) * (self.BV < 1.37) * (self.MV < 4.3*self.BV+3.05))[0]
-        i3 = np.where((self.BV >= 1.37) * (self.MV < 18*self.BV-15.7))[0]
-        i4 = np.where((self.BV < 0.87) * (self.MV > -8*(self.BV-1.35)**2+7.01))[0]
-        i5 = np.where((self.BV >= 0.87) * (self.BV < 1.45) * (self.MV < 5*self.BV+0.81))[0]
-        i6 = np.where((self.BV >= 1.45) * (self.MV > 18*self.BV-18.04))[0]
+        i1 = np.where((self.BV < 0.74) & (self.MV < 6*self.BV+1.8))[0]
+        i2 = np.where((self.BV >= 0.74) & (self.BV < 1.37) & (self.MV < 4.3*self.BV+3.05))[0]
+        i3 = np.where((self.BV >= 1.37) & (self.MV < 18*self.BV-15.7))[0]
+        i4 = np.where((self.BV < 0.87) & (self.MV > -8*(self.BV-1.35)**2+7.01))[0]
+        i5 = np.where((self.BV >= 0.87) & (self.BV < 1.45) & (self.MV < 5*self.BV+0.81))[0]
+        i6 = np.where((self.BV >= 1.45) & (self.MV > 18*self.BV-18.04))[0]
         
         ia = np.append(np.append(i1, i2), i3)
         ib = np.append(np.append(i4, i5), i6)
@@ -340,22 +340,22 @@ class TargetList(object):
         PPop = self.PlanetPopulation
         
         # s and beta arrays
-        ss = np.tan(OS.IWA)*self.dist
+        s = np.tan(OS.IWA)*self.dist
         if PPop.scaleOrbits:
-            ss = ss/np.sqrt(self.L)
-        betas = np.array([1.10472881476178]*len(ss)) # radians
+            s /= np.sqrt(self.L)
+        beta = np.array([1.10472881476178]*len(s))*u.rad
         
         # fix out of range values
-        below = np.where(ss/np.sin(betas) < np.min(PPop.rrange))[0]
-        above = np.where(ss/np.sin(betas) > np.max(PPop.rrange))[0]
-        ss[below] = np.sin(betas[below])*np.min(PPop.rrange)
-        betas[above] = np.arcsin(ss[above]/np.max(PPop.rrange))
+        below = np.where(s/np.sin(beta) < np.min(PPop.rrange))[0]
+        above = np.where(s/np.sin(beta) > np.max(PPop.rrange))[0]
+        s[below] = np.sin(beta[below])*np.min(PPop.rrange)
+        beta[above] = np.arcsin(s[above]/np.max(PPop.rrange))
         
         # calculate delta mag
         p = np.max(PPop.prange)
         Rp = np.max(PPop.Rrange)
-        d = ss/np.sin(betas)
-        Phi = (np.sin(betas)+(np.pi - betas)*np.cos(betas))/np.pi
+        d = s/np.sin(beta)
+        Phi = PPop.calc_Phi(beta)
         i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
         
         self.revise_lists(i)

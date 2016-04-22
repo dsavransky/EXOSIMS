@@ -210,7 +210,7 @@ class SurveySimulation(object):
         # keep track of spectral characterizations, 0 is no characterization
         spectra = np.zeros((SU.nPlans,1), dtype=int)
         # get index of first target star
-        sInd,_ = self.get_target()
+        sInd,_ = self.next_target()
         
         # loop until mission is finished
         while not TK.mission_is_over():
@@ -237,7 +237,8 @@ class SurveySimulation(object):
             nPlans = len(pInds)
             WA = SU.get_current_WA(pInds)
             pInds = pInds[(WA>OS.IWA) * (WA<OS.OWA)]            # inside [IWA-OWA]
-            dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],PPop.calc_Phi(SU.r[pInds]))
+            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
             pInds = pInds[dMag < OS.dMagLim]                    # bright enough
             Logger.info('Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
                     nPlans,sInd+1,TL.nStars))
@@ -300,7 +301,7 @@ class SurveySimulation(object):
                     obsend, nexttime)
             
             # acquire a new target star index
-            sInd, DRM = self.get_target(sInd, DRM)
+            sInd, DRM = self.next_target(sInd, DRM)
             
             # append result values to self.DRM
             self.DRM.append(DRM)
@@ -314,7 +315,7 @@ class SurveySimulation(object):
         print 'Survey simulation: finishing OK'
         return 'Simulation results in .DRM'
 
-    def get_target(self, sInd=None, DRM={}):
+    def next_target(self, sInd=None, DRM={}):
         """Finds index of next target star
         
         This method chooses the next target star index at random based on which
@@ -344,7 +345,7 @@ class SurveySimulation(object):
             # find keepout Boolean values (kogood)
             Obs.keepout(TK.currentTimeAbs, TL, OS.telescopeKeepout)
             # if observable targets, pick one, else allocate time and try again
-            if any(Obs.kogood):
+            if np.any(Obs.kogood):
                 if sInd == None:
                     new_sInd = np.argmax(TL.comp0*Obs.kogood)
                 else:
@@ -439,9 +440,11 @@ class SurveySimulation(object):
         # determine true integration time and update observationPossible
         if np.any(observationPossible):
             sInds = np.array([sInd]*len(pInds))
-            t_trueint = OS.calc_intTime(TL,sInds,SU.I[pInds],deltaMag(SU.p[pInds],SU.Rp[pInds],\
-                    SU.d[pInds],PPop.calc_Phi(SU.r[pInds])),SU.get_current_WA(pInds))
-            observationPossible *= (t_trueint <= OS.intCutoff)
+            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
+            WA = SU.get_current_WA(pInds)
+            t_trueint = OS.calc_intTime(TL,sInds,SU.I[pInds],dMag,WA)
+            observationPossible &= (t_trueint <= OS.intCutoff)
 
         # determine if planets are observable at the end of observation
         # and update integration time
@@ -466,7 +469,7 @@ class SurveySimulation(object):
             Obs.scMass -= mass_used
 
             # patch negative t_int
-            if any(t_int < 0):
+            if np.any(t_int < 0):
                 Logger.warning('correcting negative t_int to arbitrary value')
                 t_int = (1.0+np.random.rand())*u.day
 
@@ -514,8 +517,10 @@ class SurveySimulation(object):
                 # perform first characterization
                 # find characterization time
                 sInds = np.array([sInd]*len(pInds))
-                t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],deltaMag(SU.p[pInds],SU.Rp[pInds],\
-                        SU.d[pInds],PPop.calc_Phi(SU.r[pInds])),SU.get_current_WA(pInds))
+                Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+                dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
+                WA = SU.get_current_WA(pInds)
+                t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],dMag,WA)
                 # account for 5 bands and one coronagraph
                 t_char *= 4
                 # patch negative t_char
@@ -627,7 +632,8 @@ class SurveySimulation(object):
                     j = pInds[[i]] # must be an array of size 1
                     rend, vend, send, dend = SU.prop_system(SU.r[j],SU.v[j],\
                             SU.Mp[j],TL.MsTrue[sInd], dt)
-                    dMagend = deltaMag(SU.p[j],SU.Rp[j],dend,PPop.calc_Phi(rend))[0]
+                    Phi = PPop.calc_Phi(np.arcsin(send/dend))
+                    dMagend = deltaMag(SU.p[j],SU.Rp[j],dend,Phi)[0]
                     WAend = np.arctan(send/TL.dist[sInd])[0]
                     if (dMagend <= OS.dMagLim) * (WAend >= OS.IWA):
                         obsRes = 1
@@ -711,7 +717,7 @@ class SurveySimulation(object):
             observed[pInds[observationPossible]] += 1
             DRM['det_status'] = observationPossible.astype(int).tolist()
             DRM['det_WA'] = np.arctan(s/TL.dist[sInd]).min().to('mas').value
-            DRM['det_dMag'] = deltaMag(SU.p[pInds], SU.Rp[pInds], SU.d[pInds], \
-                    PPop.calc_Phi(SU.r[pInds])).max()
+            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            DRM['det_dMag'] = deltaMag(SU.p[pInds], SU.Rp[pInds], SU.d[pInds],Phi).max()
         
         return s, DRM, observed

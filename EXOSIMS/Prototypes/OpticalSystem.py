@@ -239,6 +239,7 @@ class OpticalSystem(object):
                         "throughput data shape."
                 WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
                 T = dat[1] if dat.shape[0] == 2 else dat[:,1]
+                assert np.all(T>=0), "Throughput must be positive."
                 Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic',\
                         fill_value=np.nan, bounds_error=False)
                 syst['throughput'] = lambda lam, WA: Tinterp(WA)
@@ -264,6 +265,7 @@ class OpticalSystem(object):
                 syst['OWA'] = min(np.max(WA),syst.get('OWA',WA_max))
 
             elif isinstance(syst['throughput'],numbers.Number):
+                assert syst['throughput']>0, "Throughput must be positive."
                 syst['throughput'] = lambda lam, WA, T=float(syst['throughput']): T
 
             #check for contrast
@@ -276,6 +278,7 @@ class OpticalSystem(object):
                         "contrast data shape."
                 WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
                 C = dat[1] if dat.shape[0] == 2 else dat[:,1]
+                assert np.all(C>=0), "Contrast must be positive."
                 Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic',\
                         fill_value=np.nan, bounds_error=False)
                 syst['contrast'] = lambda lam, WA: Cinterp(WA)
@@ -296,6 +299,7 @@ class OpticalSystem(object):
                     syst['dMagLim'] = -2.5*np.log10(Cmin)
 
             elif isinstance(syst['contrast'],numbers.Number):
+                assert syst['contrast']>0, "Contrast must be positive."
                 if not syst.has_key('dMagLim'):
                     syst['dMagLim'] = -2.5*np.log10(float(syst['contrast']))
                 syst['contrast'] = lambda lam, WA, C=float(syst['contrast']): C
@@ -305,12 +309,15 @@ class OpticalSystem(object):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth),\
                         "%s is not a valid file."%pth
-                tmp = fits.open(pth)[0]
-                assert len(tmp.data.shape) == 2, "Wrong PSF data shape."
-                syst['PSF'] = lambda lam, WA, P=tmp.data: P
-                if tmp.header.get('SAMPLING') is not None:
-                    syst['samp'] = tmp.header.get('SAMPLING')
+                hdr = fits.open(pth)[0].header
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2, "Wrong PSF data shape."
+                assert np.any(dat), "PSF must be != 0"
+                syst['PSF'] = lambda lam, WA, P=dat: P
+                if hdr.get('SAMPLING') is not None:
+                    syst['samp'] = hdr.get('SAMPLING')
             else:
+                assert np.any(syst['PSF']), "PSF must be != 0"
                 syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']).astype(float): P
 
             #default IWA/OWA if not specified or calculated
@@ -391,7 +398,7 @@ class OpticalSystem(object):
         
         return 'Optical System class object attributes'
 
-    def starMag(self,targlist,sInds,lam):
+    def starMag(self, targlist, sInds, lam):
         """Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
         using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
         The expression for flux is accurate to about 7%, in the range of validity 
@@ -561,6 +568,6 @@ class OpticalSystem(object):
         
         """
         
-        charTime = np.array([1.]*len(sInds))*u.day
+        charTime = np.array([1.]*len(I))*u.day
         
         return charTime

@@ -43,7 +43,9 @@ class KeplerLike1(PlanetPopulation):
 
     def __init__(self, smaknee=30., esigma=0.25, **specs):
 
-        PlanetPopulation.__init__(self, Rrange=[1,22.6], prange=[0.083,0.882], **specs)
+        specs['Rrange'] = [1,22.6]
+        specs['prange'] = [0.083,0.882]
+        PlanetPopulation.__init__(self, **specs)
 
         assert (smaknee >= self.arange[0].to('AU').value) and \
                (smaknee <= self.arange[1].to('AU').value), \

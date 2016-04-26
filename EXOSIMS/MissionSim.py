@@ -44,7 +44,9 @@ class MissionSim(object):
             Survey Ensemble class object
     """
 
-
+    _modtype = 'MissionSim'
+    _outspec = {}
+    
     def __init__(self,scriptfile=None,**specs):
         """Initializes all modules
 

@@ -87,7 +87,8 @@ class TimeKeeping(object):
 
         # populate outspec
         for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]
+            att = self.__dict__[key]
+            self._outspec[key] = att.value if isinstance(att,u.Quantity) else att
 
     def __str__(self):
         r"""String representation of the TimeKeeping object.

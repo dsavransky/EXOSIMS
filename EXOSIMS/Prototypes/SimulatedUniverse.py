@@ -80,14 +80,14 @@ class SimulatedUniverse(object):
         #check inputs
         assert isinstance(eta,numbers.Number) and (eta > 0),\
                 "eta must be a positive number."
-
+        
         #global occurrence rate defined as expected number of planets per 
         #star in a given universe
         self.eta = eta
-
+        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],'TargetList')(**specs)
-
+        
         # bring inherited class objects to top level of Simulated Universe
         TL = self.TargetList
         self.OpticalSystem = TL.OpticalSystem 
@@ -97,7 +97,7 @@ class SimulatedUniverse(object):
         self.BackgroundSources = TL.BackgroundSources
         self.Completeness = TL.Completeness 
         self.PostProcessing = TL.PostProcessing
-
+        
         self.gen_planetary_systems(**specs)
 
     def __str__(self):
@@ -105,10 +105,8 @@ class SimulatedUniverse(object):
         
         When the command 'print' is used on the Simulated Universe object, 
         this method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Simulated Universe class object attributes'
@@ -120,16 +118,16 @@ class SimulatedUniverse(object):
         characteristics of all planets, and generates indexes that map from 
         planet to parent star.
         """
-
+        
         TL = self.TargetList
         PPop = self.PlanetPopulation
-
+        
         # Map planets to target stars
         probs = np.random.uniform(size=TL.nStars)
         self.plan2star = np.where(probs > self.eta)[0]
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
-
+        
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
                 else PPop.gen_eccentricity(self.nPlans)     # eccentricity
@@ -142,10 +140,9 @@ class SimulatedUniverse(object):
         self.r, self.v = self.planet_pos_vel()              # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-
+        
         # exo-zodi levels for systems with planets
         self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
-
 
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)
@@ -180,11 +177,11 @@ class SimulatedUniverse(object):
         I = self.I.to('rad').value
         a = self.a
         e = self.e
-
+        
         #generate random mean anomlay and calculate eccentric anomaly
         M = np.random.uniform(high=2.*np.pi,size=self.nPlans)
         E = eccanom(M,e)
-
+        
         a1 = (a*(np.cos(Omega)*np.cos(omega) - np.sin(Omega)*np.cos(I)*np.sin(omega))).to('AU')
         a2 = (a*(np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.cos(I)*np.sin(omega))).to('AU')
         a3 = (a*np.sin(I)*np.sin(omega)).to('AU')
@@ -212,7 +209,7 @@ class SimulatedUniverse(object):
         v = v1*(-A*r2 + B*v2)
         
         return r.to('km'), v.to('km/s')
-        
+
     def prop_system(self, r, v, Mp, Ms, dt):
         """Propagates planet state vectors (position and velocity) 
         
@@ -269,11 +266,11 @@ class SimulatedUniverse(object):
         dnew = np.sqrt(np.sum(rnew**2, axis=1))
         
         return rnew.to('km'), vnew.to('km/s'), snew.to('km'), dnew.to('km')
-        
+
     def get_current_WA(self,pInds):
         """Calculate the current working angles for planets specified by the 
         given indices.
-
+        
         Args:
             pInds (integer ndarray):
                 Numpy ndarray containing integer indices of the planets of interest
@@ -282,9 +279,9 @@ class SimulatedUniverse(object):
             WA (Quantity):
                 numpy ndarray of working angles (units of arcsecons)
         """
-
+        
         starDists = self.TargetList.dist[self.plan2star[pInds]] # distance to star
         WA = np.arctan(self.s[pInds]/starDists).to('arcsec')
-
+        
         return WA
 

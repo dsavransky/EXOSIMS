@@ -48,7 +48,7 @@ class Observatory(object):
 
     _modtype = 'Observatory'
     _outspec = {}
-     
+
     def __init__(self, settlingTime=1., thrust=450., slewIsp=4160.,\
                  scMass=6000., dryMass=3400., coMass=5800., skIsp=220.,\
                  defburnPortion=0.05, spkpath=None, forceStaticEphem=False,\
@@ -73,7 +73,7 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion)
 
         # occulter-telescope distance (km)
-        self.occulterSep = 55000.*u.km                
+        self.occulterSep = 55000.*u.km
 
         #if jplephem is available, we'll use that for propagating solar system bodies
         #otherwise, use static ephemeris
@@ -87,14 +87,12 @@ class Observatory(object):
         else:
             self.havejplephem = False
             print "Using static solar system ephemeris."
-
-        #record all values populated so far to outspec
-        for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],u.Quantity):
-                self._outspec[key] = self.__dict__[key].value
-            else:
-                self._outspec[key] = self.__dict__[key]
-                   
+        
+        # populate outspec
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+        
         # initialize values updated by functions
         # observatory keepout booleans
         self.kogood = np.array([]) 
@@ -221,13 +219,11 @@ class Observatory(object):
         When the command 'print' is used on the Observatory object, this method
         will print the attribute values contained in the object"""
         
-        atts = self.__dict__.keys()
-        
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Observatory class object attributes'
-        
+
     def orbit(self, time):
         """Finds observatory orbit position vector, returns True if successful
         
@@ -702,7 +698,7 @@ class Observatory(object):
         deltaV = (dF_lateral/self.scMass*t_int).to(u.km/u.s)
         
         return intMdot, mass_used, deltaV
-   
+
     class SolarEph:
         """Solar system ephemerides class 
         
@@ -773,8 +769,7 @@ class Observatory(object):
             When the command 'print' is used on the SolarEph object, this 
             method will print the attribute values contained in the object"""
             
-            atts = self.__dict__.keys()
-            for att in atts:
+            for att in self.__dict__.keys():
                 print '%s: %r' % (att, getattr(self, att))
             
             return 'SolarEph class object attributes'

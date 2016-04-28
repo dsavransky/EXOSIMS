@@ -28,34 +28,33 @@ class ZodiacalLight(object):
     _outspec = {}
 
     def __init__(self, magZ=23, magEZ=22, varEZ=0., nEZ=1.5, **specs):
-
+        
         self.magZ = float(magZ)         # 1 zodi brightness in mag per asec2
         self.magEZ = float(magEZ)       # 1 exozodi brightness in mag per asec2
         self.varEZ = float(varEZ)       # exozodi variation (variance of log-normal dist.)
         self.nEZ = float(nEZ)           # exozodi level in zodi
-
-        for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]
+        
+        # populate outspec
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Zodiacal Light object
         
         When the command 'print' is used on the Zodiacal Light object, this 
         method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Zodiacal Light class object attributes'
-        
 
-    def fZ(self, targlist, sInds, lam):
+    def fZ(self, TL, sInds, lam):
         """Returns surface brightness of local zodiacal light
         
         Args:
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -67,16 +66,20 @@ class ZodiacalLight(object):
             fZ (ndarray):
                 1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
         """
+        
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        fZ = np.array([10**(-0.4*self.magZ)]*len(sInds))/u.arcsec**2
+        
+        return fZ
 
-        fZ = np.array([10**(-0.4*self.magZ)]*len(sInds))
-
-        return fZ/u.arcsec**2
-
-    def fEZ(self, targlist, sInds, I):
+    def fEZ(self, TL, sInds, I):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -87,15 +90,19 @@ class ZodiacalLight(object):
         Returns:
             fEZ (ndarray):
                 1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)
-
+        
         """
-
+        
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
         # assume log-normal distribution of variance
         if self.varEZ != 0:
             mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
             self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInds),))
             
-        fEZ = np.array([10**(-0.4*self.magEZ)]*len(sInds)) * self.nEZ
-
-        return fEZ/u.arcsec**2
+        fEZ = np.array([10**(-0.4*self.magEZ)]*len(sInds))*self.nEZ/u.arcsec**2
+        
+        return fEZ

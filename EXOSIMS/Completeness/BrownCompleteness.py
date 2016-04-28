@@ -93,22 +93,7 @@ class BrownCompleteness(Completeness):
         self.tcomp = np.array([])*u.day
         # non-observable completeness value
         self.non = np.array([])
-    
-    def __str__(self):
-        """String representation of Completeness object
-        
-        When the command 'print' is used on the Completeness object, this 
-        method will return the values contained in the object
-        
-        """
 
-        atts = self.__dict__.keys()
-        
-        for att in atts:
-            print '%s: %r' % (att, getattr(self, att))
-        
-        return 'Completeness class object attributes'
-        
     def target_completeness(self, targlist):
         """Generates completeness values for target stars
         

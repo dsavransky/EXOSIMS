@@ -55,17 +55,17 @@ class TimeKeeping(object):
 
     _modtype = 'TimeKeeping'
     _outspec = {}
-    
+
     def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
                   missionPortion = 1/6., duration = 14, dtAlloc = 1, **specs):
-
+        
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
         assert extendedLife >= 0, "Need extendedLife >= 0, got %f"%extendedLife
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
           "Require missionPortion in the interval ]0,1], got %f"%missionPortion
-
+        
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
         # seconds, causing warnings from astropy.time when time-deltas are added
@@ -75,32 +75,32 @@ class TimeKeeping(object):
         self.missionPortion = float(missionPortion)
         self.duration = float(duration)*u.day
         self.dtAlloc = float(dtAlloc)*u.day
-
+        
         # set values derived from quantities above
         self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
         self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')
-
+        
         # initialize values updated by functions
         self.nextTimeAvail = 0*u.day
         self.currentTimeNorm = 0.*u.day
         self.currentTimeAbs = self.missionStart
-
+        
         # populate outspec
-        for key in self.__dict__.keys():
-            att = self.__dict__[key]
-            self._outspec[key] = att.value if isinstance(att,u.Quantity) else att
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
 
     def __str__(self):
         r"""String representation of the TimeKeeping object.
         
         When the command 'print' is used on the TimeKeeping object, this 
         method prints the values contained in the object."""
-
-        atts = self.__dict__.keys()
-        for att in atts:
-            print '%s: %r' % (att, getattr(self, att))
-        return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
         
+        for att in self.__dict__.keys():
+            print '%s: %r' % (att, getattr(self, att))
+        
+        return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
+
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing the observation window if needed.
         
@@ -109,7 +109,7 @@ class TimeKeeping(object):
         If dt is longer than the observation window length, making a contiguous observation is
         not possible, so return False.  If dt < 0, return False.  Otherwise, allocate time and
         return True.
-
+        
         Caveats:
         [1] This does not handle allocations that move beyond the allowed mission time.  This
         would be a place for an exception that could be caught in the simulation main loop.
@@ -157,18 +157,20 @@ class TimeKeeping(object):
         message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
             self.currentTimeNorm.to('day').value, dt.to('day').value, description, location)
         Logger.info(message)
+        
         return success
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?
-
+        
         This supplies an abstraction around the test:
             (currentTimeNorm > missionFinishNorm)
         so that users of the class do not have to perform arithmetic
         on class variables.
-
+        
         Returns:
             is_over (Boolean):
                 True if the mission time is used up, else False.
         """
+        
         return (self.currentTimeNorm > self.missionFinishNorm)

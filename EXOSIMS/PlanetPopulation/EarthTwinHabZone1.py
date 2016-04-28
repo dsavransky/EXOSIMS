@@ -10,11 +10,17 @@ class EarthTwinHabZone1(PlanetPopulation):
     This implementation is intended to enforce this population regardless
     of JSON inputs.
     """
-    def __init__(self,eta=0.1,**specs):
 
-        PlanetPopulation.__init__(self, eta=eta, arange=[0.7, 1.5], erange=[0,0],\
-                Rrange=[1,1],Mprange=[1,1],prange=[0.367,0.367],scaleOrbits=True,
-                **specs)
+    def __init__(self,eta=0.1,**specs):
+        
+        specs['eta'] = eta
+        specs['arange'] = [0.7, 1.5]
+        specs['erange'] = [0,0]
+        specs['Rrange'] = [1,1]
+        specs['Mprange'] = [1,1]
+        specs['prange'] = [0.367,0.367]
+        specs['scaleOrbits'] = True
+        PlanetPopulation.__init__(**specs)
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU

@@ -22,12 +22,12 @@ class KasdinBraems(Nemati):
         
         Nemati.__init__(self, **specs)
 
-    def calc_intTime(self, targlist, sInds, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, I, dMag, WA):
         """Finds integration time for a specific target system,
         based on Kasdin and Braems 2006.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -50,19 +50,23 @@ class KasdinBraems(Nemati):
         inst = self.Imager
         syst = self.ImagerSyst
         lam = inst['lam']
-
+        
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(targlist, sInds, I, dMag, WA, inst, syst, Npix)
-
+        C_p, C_b = self.Cp_Cb(TL, sInds, I, dMag, WA, inst, syst, Npix)
+        
         # Kasdin06+ method
         Pbar = PSF/np.max(PSF)
         P1 = np.sum(Pbar)
         Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
         Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3
         Qbar = C_p/C_b*P1
-        PP = targlist.PostProcessing                # post-processing module
+        PP = TL.PostProcessing                      # post-processing module
         K = st.norm.ppf(1-PP.FAP)                   # false alarm threshold
         gamma = st.norm.ppf(1-PP.MDP)               # missed detection threshold
         deltaAlphaBar = ((inst['pitch']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
@@ -71,5 +75,5 @@ class KasdinBraems(Nemati):
         Ta = T*self.shapeFac*deltaAlphaBar*P1       # Airy throughput 
         beta = C_p/T
         intTime = 1./beta*(K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2/(Qbar*Ta*Psi)
-
+        
         return intTime.to('day')

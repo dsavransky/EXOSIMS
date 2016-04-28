@@ -50,7 +50,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.plan2star = starinds
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(planinds)
-
+        
         #populate parameters
         self.a = PPop.sma[planinds] +  np.random.normal(size=self.nPlans)\
                 *PPop.smaerr[planinds]                      # semi-major axis
@@ -59,14 +59,14 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.e[self.e < 0.] = 0.
         self.e[self.e > 0.9] = 0.9
         self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        lper = PPop.allplanetdata['pl_orblper'][planinds] + \
+                np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
         self.O = lper.data*u.deg - self.w                   # longitude of ascending node
         self.O[np.isnan(self.O)] =  PPop.gen_O(len(np.where(np.isnan(self.O))[0]))
         self.I = PPop.allplanetdata['pl_orbincl'][planinds] + np.random.normal\
                 (size=self.nPlans)*PPop.allplanetdata['pl_orbinclerr1'][planinds] 
         self.I[self.I.mask] = PPop.gen_I(len(np.where(self.I.mask)[0])).to('deg').value
         self.I = self.I.data*u.deg                          # inclination
-        lper = PPop.allplanetdata['pl_orblper'][planinds] + \
-                np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
         self.Mp = PPop.mass[planinds]                       # mass
         self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
@@ -75,5 +75,5 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
         
         # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
+        self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
 

@@ -51,7 +51,7 @@ class SurveySimulation(object):
 
     _modtype = 'SurveySimulation'
     _outspec = {}
-    
+
     def __init__(self,scriptfile=None,logLevel='ERROR',**specs):
         """Initializes Survey Simulation with default values
         
@@ -65,7 +65,7 @@ class SurveySimulation(object):
                 string values, in which case the objects will be instantiated,
                 or object references.
         """
-
+        
         # toggle the logging level: INFO, DEBUG, WARNING, ERROR, CRITICAL
         if logLevel.upper() == 'INFO':
             logging.basicConfig(level=logging.INFO)
@@ -77,13 +77,13 @@ class SurveySimulation(object):
             logging.basicConfig(level=logging.ERROR)
         elif logLevel.upper() == 'CRITICAL':
             logging.basicConfig(level=logging.CRITICAL)
-
+        
         # if a script file is provided read it in
         if scriptfile is not None:
             import json
             import os.path
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
-
+            
             try:
                 script = open(scriptfile).read()
                 specs = json.loads(script)
@@ -92,14 +92,14 @@ class SurveySimulation(object):
             except:
                 print "Unexpected error:", sys.exc_info()[0]
                 raise
-
+            
             # modules array must be present
             if 'modules' not in specs.keys():
                 raise ValueError("No modules field found in script.")
-
+        
         #if any of the modules is a string, assume that they are all strings and we need to initalize
         if isinstance(specs['modules'].itervalues().next(),basestring):
-
+            
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules'] \
                     ['SimulatedUniverse'],'SimulatedUniverse')(**specs)
@@ -107,7 +107,7 @@ class SurveySimulation(object):
                     ['Observatory'],'Observatory')(**specs)
             self.TimeKeeping = get_module(specs['modules'] \
                     ['TimeKeeping'],'TimeKeeping')(**specs)
-
+            
             # bring inherited class objects to top level of Survey Simulation
             SU = self.SimulatedUniverse
             self.OpticalSystem = SU.OpticalSystem
@@ -130,34 +130,32 @@ class SurveySimulation(object):
                           'Completeness',
                           'PlanetPhysicalModel',
                           'TargetList']
-
+            
             #ensure that you have the minimal set
             for modName in neededObjMods:
                 if modName not in specs['modules'].keys():
                     raise ValueError("%s module not provided."%modName)
-
+            
             for modName in specs['modules'].keys():
                 assert (specs['modules'][modName]._modtype == modName), \
                 "Provided instance of %s has incorrect modtype."%modName
-
+                
                 setattr(self, modName, specs['modules'][modName])
-
+        
         # list of simulation results, each item is a dictionary
         self.DRM = []
-    
+
     def __str__(self):
         """String representation of the Survey Simulation object
         
         When the command 'print' is used on the Survey Simulation object, this 
         method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Survey Simulation class object attributes'
-        
+
     def run_sim(self):
         """Performs the survey simulation 
         
@@ -242,7 +240,7 @@ class SurveySimulation(object):
             pInds = pInds[dMag < OS.dMagLim]                    # bright enough
             Logger.info('Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
                     nPlans,sInd+1,TL.nStars))
-
+            
             # update visited list for current star
             visited[sInd] += 1
             # find out if observations are possible and get relevant data
@@ -256,21 +254,21 @@ class SurveySimulation(object):
                 TK.allocate_time(TK.dtAlloc)
             if pInds.shape[0] != 0:
                 Logger.info('Imaging: %s', observationPossible)
-
+            
             # determine detection, missed detection, false alarm booleans
             FA, DET, MD, NULL = PPro.det_occur(observationPossible)
-
+            
             # encode detection status
             s, DRM, observed = self.det_data(DRM, FA, DET, MD, sInd, pInds, \
                     observationPossible, observed)
-
+            
             # perform characterization if SNchar defined
             if PPro.SNchar > 0:
                 DRM, FA, spectra = self.observation_characterization(observationPossible, \
                         pInds, sInd, spectra, DRM, FA, t_int)
             if pInds.shape[0] != 0:
                 Logger.info('Characterization: %s', observationPossible)
-
+            
             # schedule a revisit
             if pInds.shape[0] != 0 and (DET or FA):
                 # if there are planets, revisit based on planet with minimum separation
@@ -286,14 +284,14 @@ class SurveySimulation(object):
                 mu = const.G*(Mp + TL.MsTrue[sInd]*const.M_sun)
                 T = 2.*np.pi*np.sqrt(sp**3/mu)
                 t_rev = TK.currentTimeNorm + 0.75*T
-
+            
             # populate revisit list (sInd is converted to float)
             revisit = np.array([sInd, t_rev.to('day').value])
             if revisit_list.size == 0:
                 revisit_list = np.array([revisit])
             else:
                 revisit_list = np.vstack((revisit_list, revisit))
-
+            
             # update completeness values
             obsend = TK.currentTimeNorm.to('day')
             nexttime = TK.currentTimeNorm
@@ -340,7 +338,7 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         TL = self.TargetList
         OS = self.OpticalSystem
-
+        
         while not TK.mission_is_over():
             # find keepout Boolean values (kogood)
             Obs.keepout(TK.currentTimeAbs, TL, OS.telescopeKeepout)
@@ -356,7 +354,7 @@ class SurveySimulation(object):
         else:
             Logger.info('No more targets available')
             return None, DRM
-
+        
         if OS.haveOcculter and sInd != None:
             # add transit time and reduce starshade mass
             ao = Obs.thrust/Obs.scMass
@@ -374,14 +372,14 @@ class SurveySimulation(object):
             slew_dist = 2.*targetSep*np.sin(sd/2.)
             slew_time = np.sqrt(slew_dist/np.abs(ao)/(Obs.defburnPortion/2. - Obs.defburnPortion**2/4.))
             mass_used = slew_time*Obs.defburnPortion*Obs.flowRate
-
+            
             TK.allocate_time(slew_time)
             
             DRM['slew_time'] = slew_time.to('day').value
             DRM['slew_dV'] = (ao*slew_time*Obs.defburnPortion).to('m/s').value
             DRM['slew_mass_used'] = mass_used.to('kg').value
             DRM['slew_angle'] = sd
-
+        
         return new_sInd, DRM
 
     def observation_detection(self, pInds, sInd, DRM, planPosTime):
@@ -417,7 +415,7 @@ class SurveySimulation(object):
         TL = self.TargetList
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
-
+        
         # initialize with True if planets are present at the target star 
         observationPossible = np.ones(len(pInds),bool) if len(pInds) else False
         # propagate the system if a planet position time do not match up with current time
@@ -433,10 +431,10 @@ class SurveySimulation(object):
                     planPosTime[pInd] += dt
                 except ValueError:
                     observationPossible[i] = False
-
+        
         # set integration time to max integration time as a default
         t_int = OS.calc_maxintTime(TL)[sInd]
-
+        
         # determine true integration time and update observationPossible
         if np.any(observationPossible):
             sInds = np.array([sInd]*len(pInds))
@@ -445,7 +443,7 @@ class SurveySimulation(object):
             WA = SU.get_current_WA(pInds)
             t_trueint = OS.calc_intTime(TL,sInds,SU.I[pInds],dMag,WA)
             observationPossible &= (t_trueint <= OS.intCutoff)
-
+        
         # determine if planets are observable at the end of observation
         # and update integration time
         if np.any(observationPossible):
@@ -454,7 +452,7 @@ class SurveySimulation(object):
                         t_int, t_trueint, sInd, pInds, False)
             except ValueError:
                 observationPossible = False
-                
+        
         if OS.haveOcculter:
             # find disturbance forces on occulter
             dF_lateral, dF_axial = Obs.distForces(TK, TL, sInd)
@@ -467,14 +465,14 @@ class SurveySimulation(object):
             DRM['det_dV'] = deltaV.to('m/s').value
             DRM['det_mass_used'] = mass_used.to('kg').value
             Obs.scMass -= mass_used
-
+            
             # patch negative t_int
             if np.any(t_int < 0):
                 Logger.warning('correcting negative t_int to arbitrary value')
                 t_int = (1.0+np.random.rand())*u.day
-
-        return observationPossible, t_int, DRM
         
+        return observationPossible, t_int, DRM
+
     def observation_characterization(self, observationPossible, pInds, sInd, spectra, DRM, FA, t_int):
         """Finds if characterizations are possible and relevant information
         
@@ -510,7 +508,7 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
-
+        
         # check if characterization has been done
         if pInds.shape[0] != 0:
             if np.any(spectra[pInds[observationPossible],0] == 0):
@@ -528,16 +526,16 @@ class SurveySimulation(object):
                     Logger.warning('correcting negative t_char to arb. value')
                     t_char_value = (4+2*np.random.rand())*u.day
                     t_char[t_char < 0] = t_char_value
-
+                
                 # determine which planets will be observable at the end of observation
                 charPossible = observationPossible * (t_char <= OS.intCutoff)
-
+                
                 try:
                     t_char, charPossible, chargo = self.check_visible_end(charPossible, \
                             t_char, t_char, sInd, pInds, True)
                 except ValueError:
                     chargo = False
-
+                
                 if chargo:
                     # encode relevant first characterization data
                     if OS.haveOcculter:
@@ -581,9 +579,8 @@ class SurveySimulation(object):
                                 DRM['char_1_success'] = 1
                             else:
                                 DRM['char_1_success'] = lamEff.max().to('nm').value
-                       
+        
         return DRM, FA, spectra
-
 
     def check_visible_end(self, observationPossible, t_int, t_trueint, sInd, pInds, t_char_calc):
         """Determines if planets are visible at the end of the observation time
@@ -614,7 +611,7 @@ class SurveySimulation(object):
                 characterization data (t_char_calc = True only)
         
         """
-
+        
         TL = self.TargetList
         Obs = self.Observatory
         SU = self.SimulatedUniverse
@@ -647,7 +644,7 @@ class SurveySimulation(object):
                     obsRes = -1
                     if t_char_calc:
                         chargo = True
-
+        
         if t_char_calc:
             if np.any(observationPossible):
                 t_int = np.max(t_int[observationPossible])
@@ -660,7 +657,7 @@ class SurveySimulation(object):
         
         This method encodes detection status (FA, DET, MD) values in the DRM 
         dictionary.
-
+        
         This method accesses the following inherited class objects:
             OS:
                 OpticalSystem class object
@@ -701,12 +698,12 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TL = self.TargetList
         PPop = self.PlanetPopulation
-
+        
         # default DRM detection status to null detection
         DRM['det_status'] = 0
         # apparent separation placeholders
         s = SU.s[pInds] if pInds.size else np.array([1.])*u.AU
-
+        
         if FA: # false alarm
             DRM['det_status'] = -2
             ds = np.random.rand()*(PPop.arange.max() - PPop.arange.min())

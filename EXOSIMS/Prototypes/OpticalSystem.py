@@ -374,10 +374,11 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental dMagLim.")
 
         # populate outspec with all OpticalSystem scalar attributes
-        for key in self.__dict__.keys():
-            if key not in ['F0','scienceInstruments','starlightSuppressionSystems']:
-                att = self.__dict__[key]
-                self._outspec[key] = att.value if isinstance(att,u.Quantity) else att
+        for att in self.__dict__.keys():
+            if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
+                    'Imager','ImagerSyst','Spectro','SpectroSyst']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
 
         # default detectors and imagers
         self.Imager = self.scienceInstruments[0]
@@ -391,21 +392,19 @@ class OpticalSystem(object):
         When the command 'print' is used on the Optical System object, this 
         method will print the attribute values contained in the object"""
         
-        atts = self.__dict__.keys()
-        
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Optical System class object attributes'
 
-    def starMag(self, targlist, sInds, lam):
+    def starMag(self, TL, sInds, lam):
         """Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
         using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
         The expression for flux is accurate to about 7%, in the range of validity 
         400 nm < λ < 1000 nm (Traub et al. 2016).
 
         Args:
-            targlist:
+            TL:
                 TargetList class object
             sInds:
                 (integer ndarray) indices of the stars of interest, 
@@ -416,11 +415,15 @@ class OpticalSystem(object):
         Returns:
             mag:
                 Star visual magnitudes with B-V color
-
+        
         """
-
-        Vmag = targlist.Vmag[sInds]
-        BV = targlist.BV[sInds]
+        
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        Vmag = TL.Vmag[sInds]
+        BV = TL.BV[sInds]
         if lam.value < 550.:
             b = 2.20
         else:
@@ -429,11 +432,11 @@ class OpticalSystem(object):
 
         return mag
 
-    def Cp_Cb(self, targlist, sInds, I, dMag, WA, inst, syst, Npix):
+    def Cp_Cb(self, TL, sInds, I, dMag, WA, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
 
         Args:
-            targlist:
+            TL:
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -460,20 +463,24 @@ class OpticalSystem(object):
         
         """
         
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
         lam = inst['lam']                           # central wavelength
         deltaLam = inst['deltaLam']                 # bandwidth
         QE = inst['QE'](lam)                        # quantum efficiency
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
-        mV = self.starMag(targlist,sInds,lam)       # star visual magnitude
-        zodi = targlist.ZodiacalLight               # zodiacalLight module
-        fZ = zodi.fZ(targlist,sInds,lam)            # surface brightness of local zodi
-        fEZ = zodi.fEZ(targlist,sInds,I)            # surface brightness of exo-zodi
+        mV = self.starMag(TL,sInds,lam)             # star visual magnitude
+        zodi = TL.ZodiacalLight                     # zodiacalLight module
+        fZ = zodi.fZ(TL,sInds,lam)                  # surface brightness of local zodi
+        fEZ = zodi.fEZ(TL,sInds,I)                  # surface brightness of exo-zodi
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
         Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
-
+        
         # electron count rates [ s^-1 ]
         C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
         C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
@@ -486,7 +493,7 @@ class OpticalSystem(object):
         
         return C_p, C_b
 
-    def calc_maxintTime(self, targlist):
+    def calc_maxintTime(self, TL):
         """Finds maximum integration time for target systems 
         
         This method is called in the __init__ method of the TargetList class
@@ -494,7 +501,7 @@ class OpticalSystem(object):
         the planet inclination is set to 0.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
         
         Returns:
@@ -503,14 +510,16 @@ class OpticalSystem(object):
                 list stars (astropy Quantity with units of day)
         
         """
-
-        sInds = range(targlist.nStars)
-        I = np.array([0.]*targlist.nStars)*u.deg
-        maxintTime = self.calc_intTime(targlist,sInds,I,self.dMagLim,self.IWA);
+        
+        sInds = np.array(range(TL.nStars))
+        I = np.array([0.]*TL.nStars)*u.deg
+        dMag = np.array([self.dMagLim]*TL.nStars)
+        WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
+        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA);
         
         return maxintTime
 
-    def calc_intTime(self, targlist, sInds, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, I, dMag, WA):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -518,7 +527,7 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -537,11 +546,15 @@ class OpticalSystem(object):
         
         """
         
-        intTime = np.array([1.]*len(I))*u.day
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        intTime = np.array([1.]*len(sInds))*u.day
         
         return intTime
 
-    def calc_charTime(self, targlist, sInds, I, dMag, WA):
+    def calc_charTime(self, TL, sInds, I, dMag, WA):
         """Finds characterization time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -549,7 +562,7 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -568,6 +581,10 @@ class OpticalSystem(object):
         
         """
         
-        charTime = np.array([1.]*len(I))*u.day
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        charTime = np.array([1.]*len(sInds))*u.day
         
         return charTime

@@ -63,14 +63,16 @@ class KnownRVPlanetsTargetList(TargetList):
 
         for key in self.atts_mapping.keys():
             setattr(self, key, tmp[self.atts_mapping[key]].data)
+        self.dist = self.dist*u.pc
    
         self.BC =  -2.5*self.L - 26.832 - self.Vmag
         self.L = 10.**self.L
-        self.MV = self.Vmag  - 5*(np.log10(self.dist) - 1)
+        self.MV = self.Vmag  - 5*(np.log10(self.dist.value) - 1)
 
         self.coords = SkyCoord(ra=tmp['ra'].data, dec=tmp['dec'].data, unit='deg')
 
         self.nStars = len(tmp)
+        assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
         self.Binary_Cut = np.zeros(self.nStars,dtype=bool)
 
         # populate completness values

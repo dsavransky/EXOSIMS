@@ -124,7 +124,6 @@ class TargetList(object):
         # now populate and filter the list
         self.populate_target_list(**specs)
         self.filter_target_list(**specs)
-        assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
         
         # have target list, no need for catalog now
         if not keepStarCatalog:
@@ -377,6 +376,7 @@ class TargetList(object):
                     setattr(self, att, getattr(self, att)[ind])
         
         self.nStars = len(ind)
+        assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
 
     def stellar_mass(self):
         """Populates target list with 'true' and 'approximate' stellar masses

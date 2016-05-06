@@ -11,7 +11,7 @@ class EarthTwinHabZone2(PlanetPopulation):
     and constrainOrbits.
     """
 
-    def __init__(self,eta=0.1,erange=[0.,0.9],constrainOrbits=True,**specs):
+    def __init__(self, eta=0.1, erange=[0.,0.9], constrainOrbits=True, **specs):
         
         specs['eta'] = eta
         specs['arange'] = [0.7, 1.5]
@@ -21,7 +21,7 @@ class EarthTwinHabZone2(PlanetPopulation):
         specs['prange'] = [0.367,0.367]
         specs['scaleOrbits'] = True
         specs['constrainOrbits'] = constrainOrbits
-        PlanetPopulation.__init__(**specs)
+        PlanetPopulation.__init__(self, **specs)
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -37,7 +37,6 @@ class EarthTwinHabZone2(PlanetPopulation):
             a (astropy Quantity units AU)
         
         """
-        
         n = self.gen_input_check(n)
         v = self.arange.value
         vals = np.random.uniform(low=v[0],high=v[1],size=n)

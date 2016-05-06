@@ -143,7 +143,7 @@ class KeplerLike1(PlanetPopulation):
         
         return (R*const.R_earth).to('km')
 
-    def gen_eccentricity(self, n):
+    def gen_eccen(self, n):
         """Generate eccentricity values
         
         Rayleigh distribution, as in Kipping et. al (2013)

@@ -50,11 +50,11 @@ class KnownRVPlanets(KeplerLike1):
         specs['esigma'] = esigma
         KeplerLike1.__init__(self, **specs)
         
+        #default file is IPAC_032216
         if rvplanetfilepath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'RVplanets_IPAC_032216.votable'
+            filename = 'RVplanets_ipac_032216.votable'
             rvplanetfilepath = os.path.join(classpath, filename)
-        
         if not os.path.exists(rvplanetfilepath):
             raise IOError('RV Planet File %s Not Found.'%rvplanetfilepath)
         
@@ -65,11 +65,10 @@ class KnownRVPlanets(KeplerLike1):
         data = table.array
         
         #we need mass info (either true or m\sin(i)) AND
-        #sma OR (period AND stellar mass)
+        #(sma OR (period AND stellar mass))
         keep = ~data['pl_bmassj'].mask & \
                (~data['pl_orbsmax'].mask | \
-               (~data['pl_orbper'].mask &  ~data['st_mass'].mask))
-        
+               (~data['pl_orbper'].mask & ~data['st_mass'].mask))
         data = data[keep]
         
         #save masses and determine which masses are *sin(I)
@@ -77,24 +76,30 @@ class KnownRVPlanets(KeplerLike1):
         self.masserr = data['pl_bmasseerr1'].data*const.M_earth
         self.msini = data['pl_bmassprov'].data == 'Msini'
         
-        #save orbital properties
+        #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
-        self.sma[data['pl_orbsmax'].mask] = \
-                ((const.G*data['st_mass'][data['pl_orbsmax'].mask]*const.M_sun * \
-                 (data['pl_orbper'][data['pl_orbsmax'].mask]*u.d)**2./ \
-                  (4*np.pi**2))**(1./3.)).decompose().to('AU')
+        mask = data['pl_orbsmax'].mask
+        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        T = data['pl_orbper'].data[mask]*u.d
+        self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
+        assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
+        #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
-        self.smaerr[data['pl_orbsmaxerr1'].mask] = \
-                ((const.G*data['st_mass'][data['pl_orbsmaxerr1'].mask]*const.M_sun * \
-                 (data['pl_orbpererr1'][data['pl_orbsmaxerr1'].mask]*u.d)**2./ \
-                  (4*np.pi**2))**(1./3.)).decompose().to('AU')
+        mask = data['pl_orbsmaxerr1'].mask
+        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        T = data['pl_orbpererr1'].data[mask]*u.d
+        self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
         
-        self.eccentricity = data['pl_orbeccen'].data
-        self.eccentricity[data['pl_orbeccen'].mask] = \
-                self.gen_eccentricity(len(np.where(data['pl_orbeccen'].mask)[0]))
-        self.eccentricityerr = data['pl_orbeccenerr1'].data
-        self.eccentricityerr[data['pl_orbeccenerr1'].mask] = np.nanmean(self.eccentricityerr)
+        #save eccentricities
+        self.eccen = data['pl_orbeccen'].data
+        mask = data['pl_orbeccen'].mask
+        self.eccen[mask] = self.gen_eccen(len(np.where(mask)[0]))
+        assert np.all(~np.isnan(self.eccen)), 'eccen has nan value(s)'
+        #eccen errors
+        self.eccenerr = data['pl_orbeccenerr1'].data
+        mask = data['pl_orbeccenerr1'].mask
+        self.eccenerr[mask | np.isnan(self.eccenerr)] = np.nanmean(self.eccenerr)
         
         #self.radius = data['pl_radj']*const.R_jup
         
@@ -122,10 +127,10 @@ class KnownRVPlanets(KeplerLike1):
         
         """
         n = self.gen_input_check(n)
+        Mmin = (self.Mprange[0]/const.M_jup).decompose().value
+        Mmax = (self.Mprange[1]/const.M_jup).decompose().value
         
-        return statsFun.simpSample(self.massdist, n,\
-                (self.Mprange[0]/const.M_jup).decompose().value,\
-                (self.Mprange[1]/const.M_jup).decompose().value)*const.M_jup
+        return statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
 
     def gen_radius(self,n):
         """Generate planetary radius values in km
@@ -140,9 +145,7 @@ class KnownRVPlanets(KeplerLike1):
             R (astropy Quantity units m)
         
         """
-        
         n = self.gen_input_check(n)
-        
         Mtmp = self.gen_mass(n)
         
         return self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)

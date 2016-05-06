@@ -89,10 +89,10 @@ class PlanetPopulation(object):
                 self._outspec[att] /= const.R_earth.value
         
         # import PlanetPhysicalModel
-        PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
-        self.PlanetPhysicalModel = PlanPhys(**specs)
+        self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'], \
+                'PlanetPhysicalModel')(**specs)
 
-    def checkranges(self,var,name):
+    def checkranges(self, var, name):
         """Helper function provides asserts on all 2 element lists of ranges
         """
         assert len(var) == 2, "%s must have two elements,"%name
@@ -112,7 +112,7 @@ class PlanetPopulation(object):
         
         return 'Planet Population class object attributes'
 
-    def gen_input_check(self,n):
+    def gen_input_check(self, n):
         """"
         Helper function checks that input is integer, casts to int, is >= 0
         """
@@ -142,7 +142,7 @@ class PlanetPopulation(object):
         
         return vals*self.arange.unit
 
-    def gen_eccentricity(self, n):
+    def gen_eccen(self, n):
         """Generate eccentricity values
         
         The prototype provides a uniform distribution between the minimum and 
@@ -161,7 +161,7 @@ class PlanetPopulation(object):
         
         return vals
 
-    def gen_eccentricity_from_sma(self,n,a):
+    def gen_eccen_from_sma(self, n, a):
         """Generate eccentricity values constrained by semi-major axis, such that orbital
         radius always falls within the provided sma range.
         
@@ -180,7 +180,6 @@ class PlanetPopulation(object):
         
         """
         n = self.gen_input_check(n)
-        
         assert len(a) == n, "a input must be of size n."
         
         elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
@@ -321,7 +320,6 @@ class PlanetPopulation(object):
             Phi (Quantity):
                 numpy ndarray of planet phase function
         """
-        
         Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
         
         return Phi

@@ -253,7 +253,7 @@ class SurveySimulation(object):
                 observationPossible = False
                 TK.allocate_time(TK.dtAlloc)
             if pInds.shape[0] != 0:
-                Logger.info('Imaging: %s', observationPossible)
+                Logger.info('Imaging possible: %s', observationPossible)
             
             # determine detection, missed detection, false alarm booleans
             FA, DET, MD, NULL = PPro.det_occur(observationPossible)
@@ -267,7 +267,7 @@ class SurveySimulation(object):
                 DRM, FA, spectra = self.observation_characterization(observationPossible, \
                         pInds, sInd, spectra, DRM, FA, t_int)
             if pInds.shape[0] != 0:
-                Logger.info('Characterization: %s', observationPossible)
+                Logger.info('Characterization possible: %s', observationPossible)
             
             # schedule a revisit
             if pInds.shape[0] != 0 and (DET or FA):
@@ -433,7 +433,7 @@ class SurveySimulation(object):
                     observationPossible[i] = False
         
         # set integration time to max integration time as a default
-        t_int = OS.calc_maxintTime(TL)[sInd]
+        t_int = TL.maxintTime[sInd]
         
         # determine true integration time and update observationPossible
         if np.any(observationPossible):
@@ -511,74 +511,75 @@ class SurveySimulation(object):
         
         # check if characterization has been done
         if pInds.shape[0] != 0:
-            if np.any(spectra[pInds[observationPossible],0] == 0):
-                # perform first characterization
-                # find characterization time
-                sInds = np.array([sInd]*len(pInds))
-                Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
-                dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
-                WA = SU.get_current_WA(pInds)
-                t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],dMag,WA)
-                # account for 5 bands and one coronagraph
-                t_char *= 4
-                # patch negative t_char
-                if np.any(t_char < 0):
-                    Logger.warning('correcting negative t_char to arb. value')
-                    t_char_value = (4+2*np.random.rand())*u.day
-                    t_char[t_char < 0] = t_char_value
-                
-                # determine which planets will be observable at the end of observation
-                charPossible = observationPossible * (t_char <= OS.intCutoff)
-                
-                try:
-                    t_char, charPossible, chargo = self.check_visible_end(charPossible, \
-                            t_char, t_char, sInd, pInds, True)
-                except ValueError:
-                    chargo = False
-                
-                if chargo:
-                    # encode relevant first characterization data
-                    if OS.haveOcculter:
-                        # decrement sc mass
-                        # find disturbance forces on occulter
-                        dF_lateral, dF_axial = Obs.distForces(TK, TL, sInd)
-                        # decrement mass for station-keeping
-                        intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
-                        mass_used_char = t_char*intMdot
-                        deltaV_char = dF_lateral/Obs.scMass*t_char
-                        Obs.scMass -= mass_used_char
-                        # encode information in DRM
-                        DRM['char_1_time'] = t_char.to('day').value
-                        DRM['char_1_dV'] = deltaV_char.to('m/s').value
-                        DRM['char_1_mass_used'] = mass_used_char.to('kg').value
-                    else:
-                        DRM['char_1_time'] = t_char.to('day').value
+            if np.any(observationPossible):
+                if np.any(spectra[pInds[observationPossible],0] == 0):
+                    # perform first characterization
+                    # find characterization time
+                    sInds = np.array([sInd]*len(pInds))
+                    Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+                    dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
+                    WA = SU.get_current_WA(pInds)
+                    t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],dMag,WA)
+                    # account for 5 bands and one coronagraph
+                    t_char *= 4
+                    # patch negative t_char
+                    if np.any(t_char < 0):
+                        Logger.warning('correcting negative t_char to arb. value')
+                        t_char_value = (4+2*np.random.rand())*u.day
+                        t_char[t_char < 0] = t_char_value
                     
-                    # if integration time goes beyond observation duration, set quantities
-                    if not TK.allocate_time(t_char.max()):
-                        charPossible = False
+                    # determine which planets will be observable at the end of observation
+                    charPossible = observationPossible & (t_char <= OS.intCutoff)
                     
-                    # if this was a false alarm, it has been noted, update FA
-                    if FA:
-                        FA = False
+                    try:
+                        t_char, charPossible, chargo = self.check_visible_end(charPossible, \
+                                t_char, t_char, sInd, pInds, True)
+                    except ValueError:
+                        chargo = False
                     
-                    # if planet is visible at end of characterization,
-                    # spectrum is captured
-                    if np.any(charPossible):
+                    if chargo:
+                        # encode relevant first characterization data
                         if OS.haveOcculter:
-                            spectra[pInds[charPossible],0] = 1
-                            # encode success
-                            DRM['char_1_success'] = 1
+                            # decrement sc mass
+                            # find disturbance forces on occulter
+                            dF_lateral, dF_axial = Obs.distForces(TK, TL, sInd)
+                            # decrement mass for station-keeping
+                            intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
+                            mass_used_char = t_char*intMdot
+                            deltaV_char = dF_lateral/Obs.scMass*t_char
+                            Obs.scMass -= mass_used_char
+                            # encode information in DRM
+                            DRM['char_1_time'] = t_char.to('day').value
+                            DRM['char_1_dV'] = deltaV_char.to('m/s').value
+                            DRM['char_1_mass_used'] = mass_used_char.to('kg').value
                         else:
-                            lamEff = np.arctan(SU.s[pInds]/(TL.dist[sInd])) / OS.IWA.to('rad')
-                            lamEff *= OS.Spectro['lam']/OS.pupilDiam*np.sqrt(OS.pupilArea/OS.shapeFac)
-                            charPossible = np.logical_and(charPossible, lamEff >= 800.*u.nm)
-                            # encode results
-                            if np.any(charPossible):
+                            DRM['char_1_time'] = t_char.to('day').value
+                        
+                        # if integration time goes beyond observation duration, set quantities
+                        if not TK.allocate_time(t_char.max()):
+                            charPossible = False
+                        
+                        # if this was a false alarm, it has been noted, update FA
+                        if FA:
+                            FA = False
+                        
+                        # if planet is visible at end of characterization,
+                        # spectrum is captured
+                        if np.any(charPossible):
+                            if OS.haveOcculter:
                                 spectra[pInds[charPossible],0] = 1
+                                # encode success
                                 DRM['char_1_success'] = 1
                             else:
-                                DRM['char_1_success'] = lamEff.max().to('nm').value
+                                lamEff = np.arctan(SU.s[pInds]/(TL.dist[sInd])) / OS.IWA.to('rad')
+                                lamEff *= OS.Spectro['lam']/OS.pupilDiam*np.sqrt(OS.pupilArea/OS.shapeFac)
+                                charPossible = np.logical_and(charPossible, lamEff >= 800.*u.nm)
+                                # encode results
+                                if np.any(charPossible):
+                                    spectra[pInds[charPossible],0] = 1
+                                    DRM['char_1_success'] = 1
+                                else:
+                                    DRM['char_1_success'] = lamEff.max().to('nm').value
         
         return DRM, FA, spectra
 

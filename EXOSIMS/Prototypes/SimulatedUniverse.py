@@ -129,8 +129,8 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccentricity(self.nPlans)     # eccentricity
+        self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
+                else PPop.gen_eccen(self.nPlans)     # eccentricity
         self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
         self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
         self.I = PPop.gen_I(self.nPlans)                    # inclination
@@ -177,6 +177,8 @@ class SimulatedUniverse(object):
         I = self.I.to('rad').value
         a = self.a
         e = self.e
+        Mp = self.Mp
+        Ms = self.TargetList.MsTrue[self.plan2star]
         
         #generate random mean anomlay and calculate eccentric anomaly
         M = np.random.uniform(high=2.*np.pi,size=self.nPlans)
@@ -194,15 +196,14 @@ class SimulatedUniverse(object):
         b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(omega)).to('AU')
         B = np.vstack((b1,b2,b3)).T.value*u.AU
         
-        Mu = const.G*(self.Mp+self.TargetList.MsTrue[self.plan2star]*const.M_sun)
-        
         r1 = np.cos(E) - e
-        r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
+        r1 = np.array([r1]*3).T
         r2 = np.sin(E)
-        r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
+        r2 = np.array([r2]*3).T
         r = A*r1 + B*r2
         
-        v1 = (np.sqrt(Mu/a**3)/(1. - e*np.cos(E))).to('/s').value
+        mu = const.G*(Mp + Ms*const.M_sun)
+        v1 = (np.sqrt(mu/a**3)/(1. - e*np.cos(E))).to('/s').value
         v1 = np.hstack((v1.reshape(len(v1),1), v1.reshape(len(v1),1), v1.reshape(len(v1),1)))/u.s
         v2 = np.cos(E)
         v2 = np.hstack((v2.reshape(len(v2),1), v2.reshape(len(v2),1), v2.reshape(len(v2),1)))

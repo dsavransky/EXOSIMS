@@ -9,8 +9,6 @@ try:
 except:
     import pickle
 
-
-
 class WFIRSTObservatoryL2(WFIRSTObservatory):
     """ WFIRST Observatory at L2 implementation. 
     Only difference between this and the WFIRSTObservatory implementation
@@ -27,10 +25,10 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         
         #Run prototype constructor __init__ 
         WFIRSTObservatory.__init__(self,**specs)
-
+        
         #set own missionStart value
         self.missionStart = Time(float(missionStart), format='mjd')
-
+        
         #find and load halo orbit datat        
         #data is al in heliocentric ecliptic coords.  time is 2\pi = 1 sidreal year
         if orbit_datapath is None:
@@ -40,7 +38,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         if not os.path.exists(orbit_datapath):
             raise Exception("Orbit data file not found.")
         halo = pickle.load( open( orbit_datapath, "rb" ) )
-
+        
         #unpack orbit properties
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year
         self.L2_dist = halo['x_lpoint'][0][0]*u.AU
@@ -50,7 +48,6 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         #create interpolant (years & AU units)
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
                 self.orbit_pos.value.T,kind='cubic')
-
 
     def orbit(self, time):
         """Finds WFIRST L2 Halo orbit position vector
@@ -73,16 +70,16 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         #find time from mission start and interpolated position
         deltime = (time - self.missionStart).to(u.year)
         cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value)
-
+        
         #add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi
         cpos += np.array([np.cos(th),np.sin(th),0])*self.L2_dist.to(u.AU).value
-
+        
         #finally, rotate into equatorial plane
         obe = self.obe(self.cent(time))
         cpos = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to(u.km)
-
+        
         self.r_sc = cpos
-
+        
         return np.all(np.isfinite(self.r_sc))
 

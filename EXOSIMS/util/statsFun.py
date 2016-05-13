@@ -27,7 +27,7 @@ def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
     numIter = 0
     maxIter = 1000
     
-    nSamp = np.max([2*numTest,int(1e6)])
+    nSamp = max(2*numTest, 1000*1000)
     while n < numTest and numIter < maxIter:
         xd = np.random.random(nSamp) * (xMax - xMin) + xMin
         yd = np.random.random(nSamp) * M
@@ -48,7 +48,7 @@ def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
 
 def calcM(f,xMin,xMax):
     #first do a coarse grid to get ic
-    dx = np.linspace(xMin,xMax,int(1e6))
+    dx = np.linspace(xMin, xMax, 1000*1000)
     ic = np.argmax(f(dx))
     
     #now optimize

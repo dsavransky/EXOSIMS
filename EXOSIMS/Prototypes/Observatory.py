@@ -71,10 +71,10 @@ class Observatory(object):
         self.skIsp = float(skIsp)*u.s 
         # default burn portion
         self.defburnPortion = float(defburnPortion)
-
+        
         # occulter-telescope distance (km)
         self.occulterSep = 55000.*u.km
-
+        
         #if jplephem is available, we'll use that for propagating solar system bodies
         #otherwise, use static ephemeris
         if not forceStaticEphem:
@@ -103,13 +103,13 @@ class Observatory(object):
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
-        self.flowRate = (self.thrust/const.g0/self.slewIsp).to(u.kg/u.day)
+        self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
         
         #define function for calculating obliquity of the ecliptic 
         #(arg Julian centuries from J2000)
         self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + \
                 5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5) 
-
+        
         # if you have jplephem, load spice file. otherwise, load static ephem.
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
@@ -201,7 +201,7 @@ class Observatory(object):
             Plutow = [224.06676, -0.03673611]
             PlutolM = [238.92881, 145.2078]
             Pluto = self.SolarEph(Plutoa, Plutoe, Plutoi, PlutoO, Plutow, PlutolM)
-
+            
             #store all as dictionary:
             self.planets = {'Mercury': Mercury,
                             'Venus': Venus,
@@ -249,7 +249,7 @@ class Observatory(object):
         success = all(b) # returns True if all values of self.r_sc are finite
         
         return success
-    
+
     def keepout(self, currentTime, catalog, koangle):
         """Finds keepout Boolean values, returns True if successful
         
@@ -289,7 +289,7 @@ class Observatory(object):
         
         This passes all arguments to one of spk_body or keplerplanet, depending
         on the value of self.havejplephem.
-
+        
         Args:
             time (Time):
                 absolute time
@@ -302,14 +302,12 @@ class Observatory(object):
                 (units of km)
         
         """
-
+        
         if self.havejplephem:
             return self.spk_body(time,bodyname)
         else:
             return self.keplerplanet(time,bodyname)
 
-
-        
     def spk_body(self, time, bodyname):
         """Finds position vector for solar system objects
         
@@ -345,7 +343,7 @@ class Observatory(object):
         
         assert bodies.has_key(bodyname),\
                  "%s is not a recognized body name."%(bodyname)
-
+        
         if bodies[bodyname] == 199:
             r_body = (self.kernel[0,1].compute(time.jd) + \
                     self.kernel[1,199].compute(time.jd) - \
@@ -391,10 +389,10 @@ class Observatory(object):
         if bodyname == 'Moon':
             r_Earth = self.keplerplanet(time, 'Earth')
             return r_Earth + self.moon_earth(time)
-
+        
         assert self.planets.has_key(bodyname),\
                 "%s is not a recognized body name."%(bodyname)
-
+        
         planet = self.planets[bodyname] 
         # find Julian centuries from J2000
         TDB = self.cent(time)
@@ -409,22 +407,22 @@ class Observatory(object):
         M = lM - w
         wp = w - O
         # Find eccentric anomaly
-        E = eccanom(M,e)
+        E = eccanom(M,e)[0]
         # Find true anomaly
         nu = np.arctan2(np.sin(E) * np.sqrt(1 - e**2), np.cos(E) - e)
         # Find semiparameter
         p = a*(1 - e**2)
         # position vector (km) in orbital plane
         r_planet = np.array([(p*np.cos(nu)/(1 + e*np.cos(nu))), (p*np.sin(nu))/(1 + e*np.cos(nu)), 0.])
-        # position vector (km) in ecliptic plane        
+        # position vector (km) in ecliptic plane
         r_planet = np.dot(np.dot(self.rot(-O,3),self.rot(-i,1)),np.dot(self.rot(-wp,3),r_planet))
         # find obliquity of the ecliptic
         obe = self.obe(TDB)
         # position vector (km) in heliocentric equatorial frame
         r_planet = np.dot(self.rot(np.radians(-obe),1),r_planet)*u.km
         
-        return r_planet   
-    
+        return r_planet
+
     def moon_earth(self, time):
         """Finds geocentric equatorial position vector (km) for Earth's moon
         
@@ -470,7 +468,7 @@ class Observatory(object):
             np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)])*u.km
         
         return r_moon
-        
+
     def starprop(self, time, catalog, i):
         """Finds target star position vector (km) for current time (MJD)
         
@@ -481,7 +479,7 @@ class Observatory(object):
                 TargetList or StarCatalog class object
             i (int): 
                 index for star catalog information
-
+        
         Returns:
             r_star (Quantity): star position vector in heliocentric equatorial 
                 frame in 1D numpy ndarray (units of km)
@@ -512,7 +510,7 @@ class Observatory(object):
         VE = (mua/parx)*AUyr
         VN = (mud/parx)*AUyr
         VR = vr*kms
-
+        
         # conversion to heliocentric equatorial frame
         p = np.array([-np.sin(a), np.cos(a), 0.])
         q = np.array([-np.cos(a)*np.sin(d), -np.sin(a)*np.sin(d), np.cos(d)])
@@ -520,15 +518,15 @@ class Observatory(object):
         
         # total velocity vector
         V = p*VE + q*VN + r*VR
-
+        
         # initial position at J2000 epoch
         r0 = (r/parx)*1000.*u.pc
         
         # position
         r_star = r0 + V*(time.mjd - j2000.mjd)*u.d
         
-        return r_star.to(u.km)
-        
+        return r_star.to('km')
+
     def cent(self, currentTime):
         """Finds time in Julian centuries since J2000 epoch
         
@@ -549,7 +547,7 @@ class Observatory(object):
         TDB = (currentTime.jd - j2000.jd)/36525.
         
         return TDB
-        
+
     def propeph(self, x, TDB):
         """Propagates ephemeride to current time and returns this value
         
@@ -585,8 +583,7 @@ class Observatory(object):
         y = x[0] + x[1]*TDB + x[2]*(TDB**2) + x[3]*(TDB**3)
         
         return y
-        
-        
+
     def rot(self, th, axis):
         """Finds the rotation matrix of angle th about the axis value
         
@@ -614,7 +611,7 @@ class Observatory(object):
             return np.array([[np.cos(th), np.sin(th), 0.],
                        [-np.sin(th), np.cos(th), 0.],
                        [0., 0., 1.]])
-        
+
     def distForces(self, time, targlist, s_ind):
         """Finds lateral and axial disturbance forces on an occulter 
         
@@ -650,28 +647,28 @@ class Observatory(object):
         # Earth-Moon barycenter -> spacecraft vectors
         r_TE = r_Ts - r_Es
         r_OE = r_Os - r_Es
-
-        # force on occulter
-        F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to(u.N)
-        mEMB = const.M_sun/328900.56
-        F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to(u.N)
-
-        F_O = F_sO + F_EO
-
-        # force on telescope
-        F_sT = (-const.G*const.M_sun*self.coMass*r_Ts/np.sqrt(np.sum(r_Ts**2))**3).to(u.N)
-        F_ET = (-const.G*mEMB*self.coMass*r_TE/np.sqrt(np.sum(r_TE**2))**3).to(u.N)
-        F_T = F_sT + F_ET
-
-        # differential force
-        dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to(u.N)
         
-        dF_axial = np.dot(dF.to(u.N), u_tT)*u.N
+        # force on occulter
+        F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to('N')
+        mEMB = const.M_sun/328900.56
+        F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to('N')
+        
+        F_O = F_sO + F_EO
+        
+        # force on telescope
+        F_sT = (-const.G*const.M_sun*self.coMass*r_Ts/np.sqrt(np.sum(r_Ts**2))**3).to('N')
+        F_ET = (-const.G*mEMB*self.coMass*r_TE/np.sqrt(np.sum(r_TE**2))**3).to('N')
+        F_T = F_sT + F_ET
+        
+        # differential force
+        dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to('N')
+        
+        dF_axial = np.dot(dF.to('N'), u_tT)*u.N
         dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_tT)**2))
         dF_axial = np.abs(dF_axial)
         
         return dF_lateral, dF_axial
-        
+
     def mass_dec(self, dF_lateral, t_int):
         """Returns mass_used and deltaV 
         
@@ -693,9 +690,9 @@ class Observatory(object):
                         
         """
         
-        intMdot = (1./np.cos(np.radians(45.))*np.cos(np.radians(5.))*dF_lateral/const.g0/self.skIsp).to(u.kg/u.s)
-        mass_used = (intMdot*t_int).to(u.kg)
-        deltaV = (dF_lateral/self.scMass*t_int).to(u.km/u.s)
+        intMdot = (1./np.cos(np.radians(45.))*np.cos(np.radians(5.))*dF_lateral/const.g0/self.skIsp).to('kg/s')
+        mass_used = (intMdot*t_int).to('kg')
+        deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
         
         return intMdot, mass_used, deltaV
 
@@ -741,13 +738,13 @@ class Observatory(object):
         Each of these lists has a maximum of 4 elements. The values in 
         these lists are used to propagate the solar system planetary 
         ephemerides for a specific solar system planet."""
-        
+
         def __init__(self, a, e, i, O, w, lM):
             
             # attach units of AU
             self.a = a*u.AU 
             # change to km
-            self.a = self.a.to(u.km) 
+            self.a = self.a.to('km') 
             # strip dimensions
             self.a = self.a.value 
             if not isinstance(self.a, float):
@@ -762,7 +759,7 @@ class Observatory(object):
             self.w = w 
             # store list of mean longitude values (degrees)
             self.lM = lM
-        
+
         def __str__(self):
             """String representation of the SolarEph object
             

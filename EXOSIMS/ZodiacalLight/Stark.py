@@ -48,7 +48,7 @@ class Stark(ZodiacalLight):
         # create data point coordinates
         lon_pts = np.array([0.,5,10,15,20,25,30,35,40,45,60,75,90,105,120,135,150,165,180]) # deg
         lat_pts = np.array([0.,5,10,15,20,25,30,45,60,75,90]) # deg
-        x_pts,y_pts = np.meshgrid(lon_pts,lat_pts)
+        y_pts,x_pts = np.meshgrid(lat_pts,lon_pts)
         points = np.array(zip(np.concatenate(x_pts),np.concatenate(y_pts)))
         # create data values, normalized by (90,0) value
         z = Izod/Izod[12,0]
@@ -59,23 +59,18 @@ class Stark(ZodiacalLight):
         # wavelength dependence, from Table 19 in Leinert et al 1998
         # interpolated w/ a quadratic in log-log space
         zodi_lam = np.array([0.2,0.3,0.4,0.5,0.7,0.9,1.0,1.2,2.2,3.5,4.8,12,25,60,100,140]) # um
-        zodi_Blam = np.array([2.5e-8,5.3e-7,2.2e-6,2.6e-6,2.0e-6,1.3e-6,1.2e-6,8.1e-7,1.7e-7,\
-                5.2e-8,1.2e-7,7.5e-7,3.2e-7,1.8e-8,3.2e-9,6.9e-10]) # W/m**2/sr/um
+        zodi_Blam = np.array([2.5e-8,5.3e-7,2.2e-6,2.6e-6,2.0e-6,1.3e-6,1.2e-6,8.1e-7,\
+                1.7e-7,5.2e-8,1.2e-7,7.5e-7,3.2e-7,1.8e-8,3.2e-9,6.9e-10]) # W/m2/sr/um
         x = np.log10(zodi_lam)
         y = np.log10(zodi_Blam)
         f_corr = 10.**(interp1d(x,y,kind='quadratic')(np.log10(lam.to('um').value)))\
                 *u.W/u.m**2/u.sr/u.um
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
-        ephoton = h*c/lam/u.ph                  # energy of a photon in erg / ph
-        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph s-1 m-2 nm-1)
+        ephoton = h*c/lam/u.ph                  # energy of a photon
+        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
         f_corr /= (ephoton * F0)                # color correction factor
         
         fZ = fbeta * f_corr.to('1/arcsec2')
-        if np.any(np.isnan(fZ)):
-            k = np.where(np.isnan(fbeta))[0]
-            print 0, fbeta.size, lon.size, lat.size
-            print 1, lon[k],lat[k]
-            print 2, k, np.any(np.isnan(fbeta))
         
         return fZ

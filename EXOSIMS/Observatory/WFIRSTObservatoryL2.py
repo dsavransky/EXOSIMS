@@ -68,16 +68,16 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         """
         
         #find time from mission start and interpolated position
-        deltime = (time - self.missionStart).to(u.year)
+        deltime = (time - self.missionStart).to('year')
         cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value)
         
         #add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi
-        cpos += np.array([np.cos(th),np.sin(th),0])*self.L2_dist.to(u.AU).value
+        cpos += np.array([np.cos(th),np.sin(th),0])*self.L2_dist.to('AU').value
         
         #finally, rotate into equatorial plane
         obe = self.obe(self.cent(time))
-        cpos = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to(u.km)
+        cpos = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to('km')
         
         self.r_sc = cpos
         

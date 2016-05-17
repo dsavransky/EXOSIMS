@@ -40,7 +40,7 @@ class TargetList(object):
         Spec (ndarray):
             1D numpy ndarray of spectral types
         parx (ndarray):
-            1D numpy ndarray of parallax in milliarcseconds
+            1D numpy ndarray of parallax (in milliarcseconds)
         Umag (ndarray):
             1D numpy ndarray of U magnitude
         Bmag (ndarray):
@@ -58,7 +58,7 @@ class TargetList(object):
         Kmag (ndarray):
             1D numpy ndarray of K magnitude
         dist (ndarray):
-            1D numpy ndarray of distance in parsecs to star
+            1D numpy ndarray of distance to star (in parsecs)
         BV (ndarray):
             1D numpy ndarray of B-V Johnson magnitude
         MV (ndarray):
@@ -71,13 +71,11 @@ class TargetList(object):
             numpy ndarray of astropy SkyCoord objects containing right ascension
             and declination in degrees
         pmra (ndarray):
-            1D numpy ndarray of proper motion in right ascension in
-            milliarcseconds/year
+            1D numpy ndarray of proper motion in right ascension (in mas/year)
         pmdec (ndarray):
-            1D numpy ndarray of proper motion in declination in 
-            milliarcseconds/year
+            1D numpy ndarray of proper motion in declination (in mas/year)
         rv (ndarray):
-            1D numpy ndarray of radial velocity in km/s
+            1D numpy ndarray of radial velocity (in km/s)
         Binary_Cut (ndarray):
             1D numpy ndarray of booleans where True is a star with a companion 
             closer than 10 arcsec
@@ -162,7 +160,12 @@ class TargetList(object):
                 setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
             else:
                 setattr(self, att, getattr(self.StarCatalog, att))
+        # astropy units
+        self.parx = self.parx*u.mas
         self.dist = self.dist*u.pc
+        self.pmra = self.pmra*u.mas/u.yr
+        self.pmdec = self.pmdec*u.mas/u.yr
+        self.rv = self.rv*u.km/u.s
         
         # number of target stars
         self.nStars = len(self.Name);

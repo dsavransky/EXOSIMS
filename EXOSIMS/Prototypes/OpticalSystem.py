@@ -199,11 +199,11 @@ class OpticalSystem(object):
                     inst['QE'] = lambda lam, QE=float(inst['QE']): QE/u.photon
             
             #populate detector specifications to outspec
-            for key in inst.keys():
-                if key not in ['QE']:
-                    att = inst[key]
-                    self._outspec['scienceInstruments'][ninst][key] = att.value \
-                            if isinstance(att,u.Quantity) else att
+            for att in inst.keys():
+                if att not in ['QE']:
+                    dat = inst[att]
+                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
+                            if isinstance(dat,u.Quantity) else dat
         
         # loop through all starlight suppression systems (must have one defined)
         assert starlightSuppressionSystems, "No starlight suppression systems defined."
@@ -337,11 +337,11 @@ class OpticalSystem(object):
             syst['charTimeMult'] = float(syst.get('charTimeMult',charTimeMult))
             
             #populate system specifications to outspec
-            for key in syst.keys():
-                if key not in ['throughput','contrast','PSF']:
-                    att = syst[key]
-                    self._outspec['starlightSuppressionSystems'][nsyst][key] \
-                            = att.value if isinstance(att,u.Quantity) else att
+            for att in syst.keys():
+                if att not in ['throughput','contrast','PSF']:
+                    dat = syst[att]
+                    self._outspec['starlightSuppressionSystems'][nsyst][att] \
+                            = dat.value if isinstance(dat,u.Quantity) else dat
         
         # populate fundamental IWA, OWA, and dMagLim as required
         IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
@@ -418,6 +418,7 @@ class OpticalSystem(object):
         
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
@@ -463,6 +464,7 @@ class OpticalSystem(object):
         
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
@@ -511,11 +513,15 @@ class OpticalSystem(object):
         
         """
         
+        # generate sInds for the whole TargetList
         sInds = np.array(range(TL.nStars))
-        I = np.array([0.]*TL.nStars)*u.deg
+        
+        # set default max integration time to I = 0, dMag = dMagLim, WA = IWA
+        I = np.zeros(TL.nStars)*u.deg
         dMag = np.array([self.dMagLim]*TL.nStars)
         WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
-        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA);
+        
+        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA)
         
         return maxintTime
 
@@ -546,11 +552,12 @@ class OpticalSystem(object):
         
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
-        intTime = np.array([1.]*len(sInds))*u.day
+        intTime = np.ones(len(sInds))*u.day
         
         return intTime
 
@@ -581,10 +588,11 @@ class OpticalSystem(object):
         
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
-        charTime = np.array([1.]*len(sInds))*u.day
+        charTime = np.ones(len(sInds))*u.day
         
         return charTime

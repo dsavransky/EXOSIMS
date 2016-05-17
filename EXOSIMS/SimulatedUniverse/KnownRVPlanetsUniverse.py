@@ -55,6 +55,9 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         #populate parameters
         self.a = PPop.sma[planinds] +  np.random.normal(size=self.nPlans)\
                 *PPop.smaerr[planinds]                      # semi-major axis
+        # ensure sampling did not make it negative
+        self.a[self.a <= 0] = PPop.sma[planinds][self.a <= 0]
+
         self.e = PPop.eccen[planinds] + np.random.normal(size=self.nPlans)\
                 *PPop.eccenerr[planinds]                    # eccentricity
         self.e[self.e < 0.] = 0.

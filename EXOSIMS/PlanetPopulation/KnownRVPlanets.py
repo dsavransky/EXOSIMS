@@ -53,7 +53,8 @@ class KnownRVPlanets(KeplerLike1):
         #default file is IPAC_032216
         if rvplanetfilepath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'RVplanets_ipac_032216.votable'
+            # filename = 'RVplanets_ipac_032216.votable'
+            filename = 'RVplanets_ipac_2016-05-15.votable'
             rvplanetfilepath = os.path.join(classpath, filename)
         if not os.path.exists(rvplanetfilepath):
             raise IOError('RV Planet File %s Not Found.'%rvplanetfilepath)

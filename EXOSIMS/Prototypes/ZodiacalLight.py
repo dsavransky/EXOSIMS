@@ -27,12 +27,14 @@ class ZodiacalLight(object):
     _modtype = 'ZodiacalLight'
     _outspec = {}
 
-    def __init__(self, magZ=23, magEZ=22, varEZ=0., nEZ=1.5, **specs):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, nEZ=1.5, **specs):
         
         self.magZ = float(magZ)         # 1 zodi brightness in mag per asec2
         self.magEZ = float(magEZ)       # 1 exozodi brightness in mag per asec2
         self.varEZ = float(varEZ)       # exozodi variation (variance of log-normal dist.)
         self.nEZ = float(nEZ)           # exozodi level in zodi
+        
+        assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -67,11 +69,13 @@ class ZodiacalLight(object):
                 1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
-        fZ = np.array([10**(-0.4*self.magZ)]*len(sInds))/u.arcsec**2
+        nZ = np.ones(len(sInds))
+        fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2
         
         return fZ
 
@@ -93,16 +97,19 @@ class ZodiacalLight(object):
         
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
         # assume log-normal distribution of variance
-        if self.varEZ != 0:
+        if self.varEZ == 0:
+            nEZ = np.array([self.nEZ]*len(sInds))
+        else:
             mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
-            self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInds),))
-            
-        fEZ = np.array([10**(-0.4*self.magEZ)]*len(sInds))*self.nEZ/u.arcsec**2
+            nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
+        
+        fEZ = nEZ*10**(-0.4*self.magEZ)/u.arcsec**2
         
         return fEZ

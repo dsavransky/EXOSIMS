@@ -100,7 +100,7 @@ class WFIRSTObservatory(Observatory):
                     self.solarSystem_body_position(time, 'Moon')] # moon
         u_bright = r_bright # initialize list of unit vectors
         
-        # Find position and unit vectors for bright objects wrt spacecraft    
+        # Find position and unit vectors for bright objects wrt spacecraft
         for x in xrange(len(r_bright)):
             r_bright[x] -= self.r_sc # position vector wrt spacecraft
             u_bright[x] = r_bright[x]/np.linalg.norm(r_bright[x]) # unit vector

@@ -68,8 +68,17 @@ class KnownRVPlanetsTargetList(TargetList):
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
         
         for att in self.atts_mapping.keys():
-            setattr(self, att, tmp[self.atts_mapping[att]].data)
+            ma = tmp[self.atts_mapping[att]]
+            if type(ma.fill_value) == np.float64:
+                setattr(self, att, ma.filled(np.nanmedian(ma)))
+            else:
+                setattr(self, att, ma.data)
+        # astropy units
+        self.parx = self.parx*u.mas
         self.dist = self.dist*u.pc
+        self.pmra = self.pmra*u.mas/u.yr
+        self.pmdec = self.pmdec*u.mas/u.yr
+        self.rv = self.rv*u.km/u.s
         
         self.BC =  -2.5*self.L - 26.832 - self.Vmag
         self.L = 10.**self.L

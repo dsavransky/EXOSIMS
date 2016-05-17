@@ -250,7 +250,7 @@ class Observatory(object):
         
         return success
 
-    def keepout(self, currentTime, catalog, koangle):
+    def keepout(self, currentTime, TL, koangle):
         """Finds keepout Boolean values, returns True if successful
         
         This method finds the keepout Boolean values for each target star where
@@ -259,7 +259,7 @@ class Observatory(object):
         Args:
             currentTime (Time):
                 absolute time
-            catalog (TargetList or StarCatalog):
+            TL (TargetList or StarCatalog):
                 TargetList or StarCatalog class object
             koangle (float):
                 telescope keepout angle in degrees
@@ -273,11 +273,11 @@ class Observatory(object):
         # update spacecraft orbital position
         a = self.orbit(currentTime) 
         
-        self.kogood = np.array([True for row in catalog.Name])
+        self.kogood = np.array([True for row in TL.Name])
         
         # check to make sure all elements in self.kogood are Boolean
         b = [isinstance(element, np.bool_) for element in self.kogood]
-        c = [a, b]        
+        c = [a, b]
         # return True if orbital position is successful and all elements of 
         # self.kogood are Boolean
         success = all(c) 
@@ -469,15 +469,15 @@ class Observatory(object):
         
         return r_moon
 
-    def starprop(self, time, catalog, i):
+    def starprop(self, currentTime, TL, sInd):
         """Finds target star position vector (km) for current time (MJD)
         
         Args:
-            time (Time): 
+            currentTime (Time): 
                 absolute time
-            catalog (TargetList or StarCatalog): 
+            TL (TargetList or StarCatalog): 
                 TargetList or StarCatalog class object
-            i (int): 
+            sInd (int): 
                 index for star catalog information
         
         Returns:
@@ -486,44 +486,27 @@ class Observatory(object):
             
         """
         
-        # right ascension value
-        a = catalog.coords.ra[i]  
-        # declination value
-        d = catalog.coords.dec[i] 
-        # right ascension proper motion (mas/yr)
-        mua = catalog.pmra[i] 
-        # declination proper motion (mas/yr)
-        mud = catalog.pmdec[i] 
-        # radial velocity (km/s)
-        vr = catalog.rv[i] 
-        # parallax (mas)
-        parx = catalog.parx[i] 
-        
-        # helpful units
-        # AU/yr in units
-        AUyr = (1.*u.AU)/(1.*u.yr) 
-        # km/s in units
-        kms = (1.*u.km)/(1.*u.s) 
-        j2000 = Time(2000., format='jyear')
-        
-        # proper motion magnitudes
-        VE = (mua/parx)*AUyr
-        VN = (mud/parx)*AUyr
-        VR = vr*kms
+        # right ascension and declination
+        ra = TL.coords.ra[sInd]
+        dec = TL.coords.dec[sInd]
         
         # conversion to heliocentric equatorial frame
-        p = np.array([-np.sin(a), np.cos(a), 0.])
-        q = np.array([-np.cos(a)*np.sin(d), -np.sin(a)*np.sin(d), np.cos(d)])
-        r = np.array([np.cos(a)*np.cos(d), np.sin(a)*np.cos(d), np.sin(d)])
+        p = np.array([-np.sin(ra), np.cos(ra), 0.])
+        q = np.array([-np.cos(ra)*np.sin(dec), -np.sin(ra)*np.sin(dec), np.cos(dec)])
+        r = np.array([np.cos(ra)*np.cos(dec), np.sin(ra)*np.cos(dec), np.sin(dec)])
         
         # total velocity vector
+        VE = TL.pmra[sInd]/TL.parx[sInd]*u.AU   # right ascension (proper motion = mas/yr)
+        VN = TL.pmdec[sInd]/TL.parx[sInd]*u.AU  # declination (proper motion = mas/yr)
+        VR = TL.rv[sInd]                        # radial velocity (km/s)
         V = p*VE + q*VN + r*VR
         
         # initial position at J2000 epoch
-        r0 = (r/parx)*1000.*u.pc
+        r0 = r*TL.parx[sInd].to('pc',equivalencies=u.parallax())
         
         # position
-        r_star = r0 + V*(time.mjd - j2000.mjd)*u.d
+        j2000 = Time(2000., format='jyear')
+        r_star = r0 + V*(currentTime.mjd - j2000.mjd)*u.yr
         
         return r_star.to('km')
 
@@ -543,7 +526,6 @@ class Observatory(object):
         """
         
         j2000 = Time(2000., format='jyear')
-        
         TDB = (currentTime.jd - j2000.jd)/36525.
         
         return TDB
@@ -612,15 +594,15 @@ class Observatory(object):
                        [-np.sin(th), np.cos(th), 0.],
                        [0., 0., 1.]])
 
-    def distForces(self, time, targlist, s_ind):
+    def distForces(self, TK, TL, sInd):
         """Finds lateral and axial disturbance forces on an occulter 
         
         Args:
-            time (TimeKeeping):
+            TK (TimeKeeping):
                 TimeKeeping class object
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList class object
-            s_ind (int):
+            sInd (int):
                 index of target star
                 
         Returns:
@@ -633,12 +615,12 @@ class Observatory(object):
         occulterSep = self.occulterSep
         
         # get spacecraft position vector
-        self.orbit(time.currentTimeAbs)
+        self.orbit(TK.currentTimeAbs)
         r_Ts = self.r_sc
         # sun -> earth position vector
-        r_Es = self.keplerplanet(time.currentTimeAbs, self.Earth)
+        r_Es = self.keplerplanet(TK.currentTimeAbs, self.Earth)
         # sun -> target star vector
-        r_ts = self.starprop(time.currentTimeAbs, targlist, s_ind)
+        r_ts = self.starprop(TK.currentTimeAbs, TL, sInd)
         # Telescope -> target vector and unit vector
         r_tT = r_ts - r_Ts
         u_tT = r_tT/np.sqrt(np.sum(r_tT**2))
@@ -687,7 +669,7 @@ class Observatory(object):
                 mass used in station-keeping (units of mass), 
                 change in velocity required for station-keeping (velocity units 
                 like km/s)
-                        
+                
         """
         
         intMdot = (1./np.cos(np.radians(45.))*np.cos(np.radians(5.))*dF_lateral/const.g0/self.skIsp).to('kg/s')

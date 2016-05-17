@@ -21,7 +21,7 @@ class WFIRSTOpticalSystem(KasdinBraems):
     def __init__(self, **specs):
         
         KasdinBraems.__init__(self, **specs)
-
+        
         self.Imager = None
         self.Spectro = None
         self.ImagerSyst = None
@@ -37,9 +37,8 @@ class WFIRSTOpticalSystem(KasdinBraems):
                 self.ImagerSyst = syst
             if 'spc' in syst['type'].lower():
                 self.SpectroSyst = syst
-
+        
         assert self.Imager, "No imager defined."
         assert self.Spectro, "No spectrograph defined."
         assert self.ImagerSyst, "No hybrid Lyot coronagraph defined."
         assert self.SpectroSyst, "No shaped pupil coronagraph defined."
-

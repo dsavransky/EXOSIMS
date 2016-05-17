@@ -51,6 +51,7 @@ class Nemati(OpticalSystem):
         syst = self.ImagerSyst
         lam = inst['lam']
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
@@ -100,6 +101,7 @@ class Nemati(OpticalSystem):
         syst = self.SpectroSyst
         lam = inst['lam']
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])

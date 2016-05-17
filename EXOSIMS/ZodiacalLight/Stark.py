@@ -30,6 +30,7 @@ class Stark(ZodiacalLight):
                 1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
         """
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])

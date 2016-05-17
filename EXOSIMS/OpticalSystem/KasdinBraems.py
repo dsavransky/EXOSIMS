@@ -51,6 +51,7 @@ class KasdinBraems(Nemati):
         syst = self.ImagerSyst
         lam = inst['lam']
         
+        # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])

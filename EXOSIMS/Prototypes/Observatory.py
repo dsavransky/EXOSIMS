@@ -618,7 +618,7 @@ class Observatory(object):
         self.orbit(TK.currentTimeAbs)
         r_Ts = self.r_sc
         # sun -> earth position vector
-        r_Es = self.keplerplanet(TK.currentTimeAbs, self.Earth)
+        r_Es = self.solarSystem_body_position(TK.currentTimeAbs, 'Earth')
         # sun -> target star vector
         r_ts = self.starprop(TK.currentTimeAbs, TL, sInd)
         # Telescope -> target vector and unit vector

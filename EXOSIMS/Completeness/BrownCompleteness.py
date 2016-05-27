@@ -93,22 +93,7 @@ class BrownCompleteness(Completeness):
         self.tcomp = np.array([])*u.day
         # non-observable completeness value
         self.non = np.array([])
-    
-    def __str__(self):
-        """String representation of Completeness object
-        
-        When the command 'print' is used on the Completeness object, this 
-        method will return the values contained in the object
-        
-        """
 
-        atts = self.__dict__.keys()
-        
-        for att in atts:
-            print '%s: %r' % (att, getattr(self, att))
-        
-        return 'Completeness class object attributes'
-        
     def target_completeness(self, targlist):
         """Generates completeness values for target stars
         
@@ -179,9 +164,9 @@ class BrownCompleteness(Completeness):
             # store non-observable completeness (rmax < s)
             a = targlist.PlanetPopulation.gen_sma(20000)
             if targlist.PlanetPopulation.constrainOrbits:
-                e = targlist.PlanetPopulation.gen_eccentricity_from_sma(len(a),a*u.AU)
+                e = targlist.PlanetPopulation.gen_eccen_from_sma(len(a),a*u.AU)
             else:
-                e = targlist.PlanetPopulation.gen_eccentricity(len(a))
+                e = targlist.PlanetPopulation.gen_eccen(len(a))
             rmax = a*(1. + e)
             inds = np.where(rmax < s)[0]
             no = len(inds)/20000.
@@ -321,9 +306,9 @@ class BrownCompleteness(Completeness):
         else:
             # sample eccentricity
             if self.PlanetPopulation.constrainOrbits:
-                e = self.PlanetPopulation.gen_eccentricity_from_sma(nplan,a*u.AU)
+                e = self.PlanetPopulation.gen_eccen_from_sma(nplan,a*u.AU)
             else:
-                e = self.PlanetPopulation.gen_eccentricity(nplan)   
+                e = self.PlanetPopulation.gen_eccen(nplan)   
             # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
@@ -349,17 +334,17 @@ class BrownCompleteness(Completeness):
         b3 = np.cos(omega)*np.sin(I)
         B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
 
-        # planet position, and planet-star distance
+        # planet position, planet-star distance, apparent separation
         r = (A*r1 + B*r2)*u.AU
         d = np.sqrt(np.sum(r**2, axis=1))
+        s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
 
         # sample albedo, planetary radius, phase function
         p = self.PlanetPopulation.gen_albedo(nplan)
         Rp = self.PlanetPopulation.gen_radius(nplan)
-        Phi = self.PlanetPopulation.calc_phi(r)
+        Phi = self.PlanetPopulation.calc_Phi(np.arcsin(s/d))
 
-        # calculate dMag & apparent separation
+        # calculate dMag
         dMag = deltaMag(p,Rp,d,Phi)
-        s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
 
         return s, dMag

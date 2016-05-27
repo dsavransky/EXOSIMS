@@ -53,7 +53,7 @@ class OpticalSystem(object):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
             All starlight suppression system attributes (variable)
-
+    
     Common Science Instrument Attributes:
         type:
             Instrument type (e.g. imaging, spectro)
@@ -133,9 +133,9 @@ class OpticalSystem(object):
             attenuation=0.57,intCutoff=50,Npix=14.3,Ndark=10,scienceInstruments=None,\
             lam=500,BW=0.2,pitch=13e-6,focal=240,idark=9e-5,texp=1e3,sread=3,CIC=0.0013,\
             ENF=1,Gem=1,Rs=70,QE=0.9,starlightSuppressionSystems=None,throughput=1e-2,\
-            contrast=1e-9,PSF=[[1,1,1],[1,1,1],[1,1,1]],samp=10,ohTime=1,imagTimeMult=1,\
+            contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,imagTimeMult=1,\
             charTimeMult=1,IWA=None,OWA=None,dMagLim=None,**specs):
-
+        
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
@@ -148,11 +148,11 @@ class OpticalSystem(object):
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Npix = float(Npix)                 # number of noise pixels
         self.Ndark = float(Ndark)               # number of dark frames used
-
+        
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
         self.F0 = lambda lam: 1e4*10**(4.01-(1e-3*lam.value-0.55)/0.77)*u.ph/u.s/u.m**2/u.nm 
-
+        
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science isntrument defined."
         self.scienceInstruments = scienceInstruments
@@ -164,7 +164,7 @@ class OpticalSystem(object):
             #populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE',QE)
             self._outspec['scienceInstruments'].append(inst.copy())
-
+            
             # When provided, always use bandwidth (nm) instead of bandwidth fraction.
             inst['lam'] = float(inst.get('lam',lam))*u.nm       # central wavelength (nm)
             inst['deltaLam'] = float(inst.get('deltaLam',inst['lam'].value\
@@ -173,7 +173,7 @@ class OpticalSystem(object):
             # Default lam and BW updated with values from first instrument
             if ninst == 0:
                 lam, BW = inst.get('lam').value, inst.get('BW')
-
+            
             # Loading detector specifications
             inst['pitch'] = float(inst.get('pitch',pitch))*u.m  # pixel pitch
             inst['focal'] = float(inst.get('focal',focal))*u.m  # focal length
@@ -186,7 +186,7 @@ class OpticalSystem(object):
             inst['Rs'] = float(inst.get('Rs',Rs))               # spectral resolving power
             inst['Ns'] = float(inst['Rs']*inst['BW']) if 'spec' in inst['type'] \
                     .lower() else 1.            # number of spectral elements in each band
-
+            
             # quantum efficiency
             if inst.has_key('QE'):
                 if isinstance(inst['QE'],basestring):
@@ -197,14 +197,14 @@ class OpticalSystem(object):
                     #inst['QE'] = lambda or interp
                 elif isinstance(inst['QE'],numbers.Number):
                     inst['QE'] = lambda lam, QE=float(inst['QE']): QE/u.photon
-
+            
             #populate detector specifications to outspec
-            for key in inst.keys():
-                if key not in ['QE']:
-                    att = inst[key]
-                    self._outspec['scienceInstruments'][ninst][key] = att.value \
-                            if isinstance(att,u.Quantity) else att
-
+            for att in inst.keys():
+                if att not in ['QE']:
+                    dat = inst[att]
+                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
+                            if isinstance(dat,u.Quantity) else dat
+        
         # loop through all starlight suppression systems (must have one defined)
         assert starlightSuppressionSystems, "No starlight suppression systems defined."
         self.starlightSuppressionSystems = starlightSuppressionSystems
@@ -220,15 +220,15 @@ class OpticalSystem(object):
             syst['contrast'] = syst.get('contrast',contrast)
             syst['PSF'] = syst.get('PSF',PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
-
+            
             #set an occulter, for an external or hybrid system
             if syst['type'].lower() in ('external', 'hybrid'):
                 self.haveOcculter = True
-
+            
             #handle inf OWA
             if syst.get('OWA') == 0:
                 syst['OWA'] = np.Inf
-
+            
             #check for throughput
             if isinstance(syst['throughput'],basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['throughput']))
@@ -239,10 +239,11 @@ class OpticalSystem(object):
                         "throughput data shape."
                 WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
                 T = dat[1] if dat.shape[0] == 2 else dat[:,1]
+                assert np.all(T>=0), "Throughput must be positive."
                 Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic',\
                         fill_value=np.nan, bounds_error=False)
                 syst['throughput'] = lambda lam, WA: Tinterp(WA)
-
+                
                 # Calculate max throughput
                 Tmax = scipy.optimize.minimize(lambda x:-syst['throughput'](lam,x),\
                         WA[np.argmax(T)],bounds=((np.min(WA),np.max(WA)),) )
@@ -253,7 +254,7 @@ class OpticalSystem(object):
                             "interpolant for starlight suppression system "\
                             "#%d"%(nsyst+1)
                     Tmax = np.Tmax(T)
-
+                
                 # Calculate IWA and OWA, defined as angular separations
                 # corresponding to 50% of maximum throughput
                 WA_min = scipy.optimize.fsolve(lambda x:syst['throughput']\
@@ -262,10 +263,11 @@ class OpticalSystem(object):
                         (lam,np.max(WA)-x)-Tmax/2.,0.)[0];
                 syst['IWA'] = max(np.min(WA),syst.get('IWA',WA_min))
                 syst['OWA'] = min(np.max(WA),syst.get('OWA',WA_max))
-
+            
             elif isinstance(syst['throughput'],numbers.Number):
+                assert syst['throughput']>0, "Throughput must be positive."
                 syst['throughput'] = lambda lam, WA, T=float(syst['throughput']): T
-
+            
             #check for contrast
             if isinstance(syst['contrast'],basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['contrast']))
@@ -276,10 +278,11 @@ class OpticalSystem(object):
                         "contrast data shape."
                 WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
                 C = dat[1] if dat.shape[0] == 2 else dat[:,1]
+                assert np.all(C>=0), "Contrast must be positive."
                 Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic',\
                         fill_value=np.nan, bounds_error=False)
                 syst['contrast'] = lambda lam, WA: Cinterp(WA)
-
+                
                 # Constraining IWA and OWA
                 syst['IWA'] = max(np.min(WA),syst.get('IWA',np.min(WA)))
                 syst['OWA'] = min(np.max(WA),syst.get('OWA',np.max(WA)))
@@ -294,25 +297,35 @@ class OpticalSystem(object):
                                 "#%d"%(nsyst+1)
                         Cmin = np.min(C)
                     syst['dMagLim'] = -2.5*np.log10(Cmin)
-
+            
             elif isinstance(syst['contrast'],numbers.Number):
+                assert syst['contrast']>0, "Contrast must be positive."
                 if not syst.has_key('dMagLim'):
                     syst['dMagLim'] = -2.5*np.log10(float(syst['contrast']))
                 syst['contrast'] = lambda lam, WA, C=float(syst['contrast']): C
-
+            
             #check for PSF
             if isinstance(syst['PSF'],basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth),\
                         "%s is not a valid file."%pth
-                tmp = fits.open(pth)[0]
-                assert len(tmp.data.shape) == 2, "Wrong PSF data shape."
-                syst['PSF'] = lambda lam, WA, P=tmp.data: P
-                if tmp.header.get('SAMPLING') is not None:
-                    syst['samp'] = tmp.header.get('SAMPLING')
+                hdr = fits.open(pth)[0].header
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2, "Wrong PSF data shape."
+                assert np.any(dat), "PSF must be != 0"
+                syst['PSF'] = lambda lam, WA, P=dat: P
+                if hdr.get('SAMPLING') is not None:
+                    syst['samp'] = hdr.get('SAMPLING')
             else:
-                syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']): P
-
+                assert np.any(syst['PSF']), "PSF must be != 0"
+                syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']).astype(float): P
+            
+            #default IWA/OWA if not specified or calculated
+            if not(syst.get('IWA')):
+                syst['IWA'] = IWA if IWA else 0.
+            if not(syst.get('OWA')):
+                syst['OWA'] = OWA if OWA else np.Inf
+            
             # Loading system specifications
             syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
@@ -322,14 +335,14 @@ class OpticalSystem(object):
             # imaging and characterization time multipliers
             syst['imagTimeMult'] = float(syst.get('imagTimeMult',imagTimeMult))
             syst['charTimeMult'] = float(syst.get('charTimeMult',charTimeMult))
-
+            
             #populate system specifications to outspec
-            for key in syst.keys():
-                if key not in ['throughput','contrast','PSF']:
-                    att = syst[key]
-                    self._outspec['starlightSuppressionSystems'][nsyst][key] \
-                            = att.value if isinstance(att,u.Quantity) else att
-
+            for att in syst.keys():
+                if att not in ['throughput','contrast','PSF']:
+                    dat = syst[att]
+                    self._outspec['starlightSuppressionSystems'][nsyst][att] \
+                            = dat.value if isinstance(dat,u.Quantity) else dat
+        
         # populate fundamental IWA, OWA, and dMagLim as required
         IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
                 if x.get('IWA') is not None]
@@ -339,7 +352,7 @@ class OpticalSystem(object):
             self.IWA = min(IWAs)
         else:
             raise ValueError("Could not determine fundamental IWA.")
-
+        
         OWAs = [x.get('OWA') for x in self.starlightSuppressionSystems \
                 if x.get('OWA') is not None]
         if OWA is not None:
@@ -348,9 +361,9 @@ class OpticalSystem(object):
             self.OWA = max(OWAs)
         else:
             raise ValueError("Could not determine fundamental OWA.")
-
+        
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
-
+        
         dMagLims = [x.get('dMagLim') for x in self.starlightSuppressionSystems \
                 if x.get('dMagLim') is not None]
         if dMagLim is not None:
@@ -359,12 +372,19 @@ class OpticalSystem(object):
             self.dMagLim = max(dMagLims)
         else:
             raise ValueError("Could not determine fundamental dMagLim.")
-
+        
         # populate outspec with all OpticalSystem scalar attributes
-        for key in self.__dict__.keys():
-            if key not in ['F0','scienceInstruments','starlightSuppressionSystems']:
-                att = self.__dict__[key]
-                self._outspec[key] = att.value if isinstance(att,u.Quantity) else att
+        for att in self.__dict__.keys():
+            if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
+                    'Imager','ImagerSyst','Spectro','SpectroSyst']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+        
+        # default detectors and imagers
+        self.Imager = self.scienceInstruments[0]
+        self.ImagerSyst = self.starlightSuppressionSystems[0]
+        self.Spectro = self.scienceInstruments[-1]
+        self.SpectroSyst = self.starlightSuppressionSystems[-1]
 
     def __str__(self):
         """String representation of the Optical System object
@@ -372,23 +392,21 @@ class OpticalSystem(object):
         When the command 'print' is used on the Optical System object, this 
         method will print the attribute values contained in the object"""
         
-        atts = self.__dict__.keys()
-        
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Optical System class object attributes'
 
-    def starMag(self,targlist,sInd,lam):
+    def starMag(self, TL, sInds, lam):
         """Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
         using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
         The expression for flux is accurate to about 7%, in the range of validity 
         400 nm < λ < 1000 nm (Traub et al. 2016).
-
+        
         Args:
-            targlist:
+            TL:
                 TargetList class object
-            sInd:
+            sInds:
                 (integer ndarray) indices of the stars of interest, 
                 with the length of the number of planets of interest.
             lam:
@@ -397,20 +415,87 @@ class OpticalSystem(object):
         Returns:
             mag:
                 Star visual magnitudes with B-V color
-
+        
         """
-
-        Vmag = targlist.Vmag[sInd]
-        BV = targlist.BV[sInd]
+        
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        Vmag = TL.Vmag[sInds]
+        BV = TL.BV[sInds]
         if lam.value < 550.:
             b = 2.20
         else:
             b = 1.54
         mag = Vmag + b*BV*(1000./lam.value - 1.818)
-
+        
         return mag
 
-    def calc_maxintTime(self, targlist):
+    def Cp_Cb(self, TL, sInds, I, dMag, WA, inst, syst, Npix):
+        """ Calculates electron count rates for planet signal and background noise.
+        
+        Args:
+            TL:
+                TargetList class object
+            sInds (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
+            dMag:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            inst:
+                Selected scienceInstrument
+            syst:
+                Selected starlightSuppressionSystem
+            Npix:
+                Number of noise pixels
+        
+        Returns:
+            C_p:
+                1D numpy array of planet signal electron count rate (units of s^-1)
+            C_b:
+                1D numpy array of background noise electron count rate (units of s^-1)
+        
+        """
+        
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        lam = inst['lam']                           # central wavelength
+        deltaLam = inst['deltaLam']                 # bandwidth
+        QE = inst['QE'](lam)                        # quantum efficiency
+        Q = syst['contrast'](lam, WA)               # contrast
+        T = syst['throughput'](lam, WA) / inst['Ns'] \
+                * self.attenuation**2               # throughput
+        mV = self.starMag(TL,sInds,lam)             # star visual magnitude
+        zodi = TL.ZodiacalLight                     # zodiacalLight module
+        fZ = zodi.fZ(TL,sInds,lam)                  # surface brightness of local zodi
+        fEZ = zodi.fEZ(TL,sInds,I)                  # surface brightness of exo-zodi
+        X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
+        Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
+        Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
+        
+        # electron count rates [ s^-1 ]
+        C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
+        C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
+        C_s = C_F0*10.**(-0.4*mV)*Q                 # residual suppressed starlight (coro)
+        C_z = C_F0*(fZ+fEZ)*Omega                   # zodiacal light = local + exo
+        C_id = Npix*inst['idark']                   # dark current
+        C_cc = Npix*inst['CIC']/inst['texp']        # clock-induced-charge
+        C_sr = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
+        C_b = inst['ENF']**2*(C_s + C_z + C_id + C_cc) + C_sr   # total noise budget
+        
+        return C_p, C_b
+
+    def calc_maxintTime(self, TL):
         """Finds maximum integration time for target systems 
         
         This method is called in the __init__ method of the TargetList class
@@ -418,7 +503,7 @@ class OpticalSystem(object):
         the planet inclination is set to 0.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
         
         Returns:
@@ -427,14 +512,20 @@ class OpticalSystem(object):
                 list stars (astropy Quantity with units of day)
         
         """
-
-        sInd = range(targlist.nStars)
-        I = np.array([0.]*targlist.nStars)*u.deg
-        maxintTime = self.calc_intTime(targlist,sInd,I,self.dMagLim,self.IWA);
+        
+        # generate sInds for the whole TargetList
+        sInds = np.array(range(TL.nStars))
+        
+        # set default max integration time to I = 0, dMag = dMagLim, WA = IWA
+        I = np.zeros(TL.nStars)*u.deg
+        dMag = np.array([self.dMagLim]*TL.nStars)
+        WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
+        
+        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA)
         
         return maxintTime
 
-    def calc_intTime(self, targlist, sInd, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, I, dMag, WA):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -442,18 +533,18 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
+            I:
+                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
         
         Returns:
             intTime (Quantity):
@@ -461,11 +552,16 @@ class OpticalSystem(object):
         
         """
         
-        intTime = np.array([1.]*targlist.nStars)*u.day
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        intTime = np.ones(len(sInds))*u.day
         
         return intTime
 
-    def calc_charTime(self, targlist, sInd, I, dMag, WA):
+    def calc_charTime(self, TL, sInds, I, dMag, WA):
         """Finds characterization time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -473,9 +569,9 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            targlist:
+            TL:
                 TargetList class object
-            sInd (integer ndarray):
+            sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
             I:
@@ -492,6 +588,11 @@ class OpticalSystem(object):
         
         """
         
-        charTime = np.array([1.]*targlist.nStars)*u.day
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        charTime = np.ones(len(sInds))*u.day
         
         return charTime

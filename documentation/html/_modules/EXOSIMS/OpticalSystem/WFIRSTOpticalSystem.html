@@ -62,7 +62,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="n">KasdinBraems</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="bp">None</span>
@@ -78,12 +78,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="n">syst</span>
             <span class="k">if</span> <span class="s1">&#39;spc&#39;</span> <span class="ow">in</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span> <span class="o">=</span> <span class="n">syst</span>
-
+        
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span><span class="p">,</span> <span class="s2">&quot;No imager defined.&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span><span class="p">,</span> <span class="s2">&quot;No spectrograph defined.&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span><span class="p">,</span> <span class="s2">&quot;No hybrid Lyot coronagraph defined.&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span><span class="p">,</span> <span class="s2">&quot;No shaped pupil coronagraph defined.&quot;</span></div>
-
 </pre></div>
 
           </div>
@@ -117,7 +116,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

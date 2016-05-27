@@ -73,7 +73,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;minComp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;Nplanets&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nplanets</span>
 
-    
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Completeness object</span>
 <span class="sd">        </span>
@@ -81,14 +80,12 @@
 <span class="sd">        method will return the values contained in the object</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Completeness class object attributes&#39;</span>
-        
+
 <div class="viewcode-block" id="Completeness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
 <span class="sd">        </span>
@@ -107,7 +104,7 @@
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">targlist</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="n">comp0</span></div>
-        
+
 <div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s_ind</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>
 <span class="sd">        </span>
@@ -166,7 +163,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

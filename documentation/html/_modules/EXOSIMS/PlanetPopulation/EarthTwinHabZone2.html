@@ -46,18 +46,24 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)</span>
 <span class="sd">    On eccentric habitable zone orbits (0.7 to 1.5 AU).</span>
-<span class="sd"> </span>
+<span class="sd">    </span>
 <span class="sd">    This implementation is intended to enforce this population regardless</span>
 <span class="sd">    of JSON inputs.  The only inputs that will not be disregarded are erange</span>
 <span class="sd">    and constrainOrbits.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">eta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">erange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],</span><span class="n">constrainOrbits</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
 
-        <span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span> <span class="n">arange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">],</span> <span class="n">erange</span><span class="o">=</span><span class="n">erange</span><span class="p">,</span>\
-                <span class="n">Rrange</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">Mprange</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">prange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.367</span><span class="p">,</span><span class="mf">0.367</span><span class="p">],</span><span class="n">scaleOrbits</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                <span class="n">constrainOrbits</span><span class="o">=</span><span class="n">constrainOrbits</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">erange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.9</span><span class="p">],</span> <span class="n">constrainOrbits</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;arange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;erange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">erange</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Rrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Mprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;prange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.367</span><span class="p">,</span><span class="mf">0.367</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;scaleOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;constrainOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrainOrbits</span>
+        <span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-    
 <div class="viewcode-block" id="EarthTwinHabZone2.gen_sma"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.EarthTwinHabZone2.EarthTwinHabZone2.gen_sma">[docs]</a>    <span class="k">def</span> <span class="nf">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate semi-major axis values in AU</span>
 <span class="sd">        </span>
@@ -67,18 +73,16 @@
 <span class="sd">        Args:</span>
 <span class="sd">            n (numeric):</span>
 <span class="sd">                Number of samples to generate</span>
-<span class="sd">                </span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            a (astropy Quantity units AU)</span>
-
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">value</span>
         <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">high</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">vals</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span></div></div>
-
         
+        <span class="k">return</span> <span class="n">vals</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span></div></div>
 </pre></div>
 
           </div>
@@ -112,7 +116,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

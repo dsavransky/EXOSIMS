@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installing and Configuring EXOSIMS &mdash; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="next" title="Documentation Guide" href="docs.html" />
+    <link rel="prev" title="Quick Start Guide" href="quickstart.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installing-and-configuring-exosims">
+<h1>Installing and Configuring EXOSIMS<a class="headerlink" href="#installing-and-configuring-exosims" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="environment-and-package-dependencies">
+<h2>Environment and Package Dependencies<a class="headerlink" href="#environment-and-package-dependencies" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">EXOSIMS</span></code> requires Python 2.7.x and the following packages:</p>
+<ul class="simple">
+<li>astropy</li>
+<li>numpy</li>
+<li>scipy</li>
+<li>matplotlib (for visualization of results only)</li>
+</ul>
+<div class="section" id="optional-packages">
+<h3>Optional Packages<a class="headerlink" href="#optional-packages" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>cPickle is used preferentially, but pickle will be loaded if cPickle is not installed</li>
+<li>jplephem is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  It can be installed through pip or from source.  An SPK ephemeris file is needed - the default one can be downloaded from <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp</a> and should be placed in the Observatory subdirectory of EXOSIMS.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="path-setup">
+<h2>Path Setup<a class="headerlink" href="#path-setup" title="Permalink to this headline">¶</a></h2>
+<p>EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to their particular module subfolders, and so the entire EXOSIMS folder tree must be user writeable.  The directory containing the <code class="docutils literal"><span class="pre">EXOSIMS</span></code> directory (i.e., <code class="docutils literal"><span class="pre">../EXOSIMS</span></code>) must be in your Python path.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installing and Configuring EXOSIMS</a><ul>
+<li><a class="reference internal" href="#environment-and-package-dependencies">Environment and Package Dependencies</a><ul>
+<li><a class="reference internal" href="#optional-packages">Optional Packages</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#path-setup">Path Setup</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="quickstart.html" title="previous chapter">Quick Start Guide</a></li>
+      <li>Next: <a href="docs.html" title="next chapter">Documentation Guide</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/install.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/install.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,5 +1,5 @@
 import astropy.units as u
-from astropy import constants as const
+import astropy.constants as const
 import numpy as np
 import copy
 import numbers
@@ -51,7 +51,7 @@ class PlanetPopulation(object):
 
     _modtype = 'PlanetPopulation'
     _outspec = {}
-    
+
     def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
                  wrange=[0.,360.], Orange=[0.,360.], Irange=[0.,180.],\
                  prange=[0.1,0.6], Rrange=[1.,30.], Mprange = [1.,4131.],\
@@ -66,11 +66,11 @@ class PlanetPopulation(object):
         self.prange = self.checkranges(prange,'prange')
         self.Rrange = self.checkranges(Rrange,'Rrange')*const.R_earth
         self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
-
+        
         assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
         self.scaleOrbits = scaleOrbits
-
+        
         assert isinstance(constrainOrbits,bool), "constrainOrbits must be boolean"
         # constrain planetary orbital radii to sma range
         self.constrainOrbits = constrainOrbits
@@ -78,29 +78,28 @@ class PlanetPopulation(object):
         # orbital radius range
         self.rrange = [self.arange[0].value*(1.-self.erange[1]),\
                 self.arange[1].value*(1.+self.erange[1])]*u.AU
-
-        #populate all atributes to outspec
-        for key in self.__dict__.keys():
-            att = self.__dict__[key]
-            self._outspec[key] = copy.copy(att.value) if isinstance(att,u.Quantity) else att
-            if key == 'Mprange':
-                self._outspec[key] /= const.M_earth.value
-            elif key == 'Rrange':
-                self._outspec[key] /= const.R_earth.value
-
+        
+        #populate all attributes to outspec
+        for att in self.__dict__.keys():
+            dat = copy.copy(self.__dict__[att])
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+            if att == 'Mprange':
+                self._outspec[att] /= const.M_earth.value
+            elif att == 'Rrange':
+                self._outspec[att] /= const.R_earth.value
+        
         # import PlanetPhysicalModel
-        PlanPhys = get_module(specs['modules']['PlanetPhysicalModel'], 'PlanetPhysicalModel')
-        self.PlanetPhysicalModel = PlanPhys(**specs)
-    
-    def checkranges(self,var,name):
+        self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'], \
+                'PlanetPhysicalModel')(**specs)
+
+    def checkranges(self, var, name):
         """Helper function provides asserts on all 2 element lists of ranges
         """
         assert len(var) == 2, "%s must have two elements,"%name
         assert var[0] <= var[1],\
             "The second element of %s must be greater or equal to the first."%name
-
+        
         return [float(v) for v in var]
-
 
     def __str__(self):
         """String representation of the Planet Population object
@@ -108,21 +107,20 @@ class PlanetPopulation(object):
         When the command 'print' is used on the Planet Population object, this 
         method will print the attribute values contained in the object"""
         
-        atts = self.__dict__.keys()
-        
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Planet Population class object attributes'
-    
-    def gen_input_check(self,n):
+
+    def gen_input_check(self, n):
         """"
-        Helper function checks that input is integer and casts to int
+        Helper function checks that input is integer, casts to int, is >= 0
         """
         assert isinstance(n,numbers.Number) and float(n).is_integer(),\
             "Input must be an integer value."
-        return int(n)
+        assert n >= 0, "Input must be nonnegative"
         
+        return int(n)
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -136,7 +134,7 @@ class PlanetPopulation(object):
                 
         Returns:
             a (astropy Quantity units AU)
-
+        
         """
         n = self.gen_input_check(n)
         v = self.arange.value
@@ -144,9 +142,9 @@ class PlanetPopulation(object):
         
         return vals*self.arange.unit
 
-    def gen_eccentricity(self, n):
+    def gen_eccen(self, n):
         """Generate eccentricity values
-
+        
         The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
@@ -156,47 +154,44 @@ class PlanetPopulation(object):
                 
         Returns:
             e (numpy ndarray)
-
+        
         """
         n = self.gen_input_check(n)
         vals = self.erange[0] +(self.erange[1] - self.erange[0])*np.random.uniform(size=n)
         
         return vals
 
-    def gen_eccentricity_from_sma(self,n,a):
+    def gen_eccen_from_sma(self, n, a):
         """Generate eccentricity values constrained by semi-major axis, such that orbital
         radius always falls within the provided sma range.
-
+        
         The prototype provides a uniform distribution between the minimum and 
         maximum allowable values.
         
         Args:
             n (numeric):
                 Number of samples to generate
-
+        
             a (Quantity):
                 Array of semi-major axis values of length n
                 
         Returns:
             e (numpy ndarray)
-
+        
         """
         n = self.gen_input_check(n)
-
         assert len(a) == n, "a input must be of size n."
-
+        
         elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
                 (self.arange[1]/a).decompose().value - 1)),axis=0)
-
+        
         vals = self.erange[0] +(elim - self.erange[0])*np.random.uniform(size=n)
         
         return vals
 
-
-
     def gen_w(self, n):
         """Generate argument of periapse in degrees
-
+        
         The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
@@ -206,7 +201,7 @@ class PlanetPopulation(object):
                 
         Returns:
             w (astropy Quantity units degrees)
-
+        
         """
         n = self.gen_input_check(n)
         v = self.wrange.value
@@ -216,7 +211,7 @@ class PlanetPopulation(object):
 
     def gen_O(self, n):
         """Generate longitude of the ascending node in degrees
-
+        
         The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
@@ -226,7 +221,7 @@ class PlanetPopulation(object):
                 
         Returns:
             O (astropy Quantity units degrees)
-
+        
         """
         n = self.gen_input_check(n)
         v = self.Orange.value
@@ -246,14 +241,13 @@ class PlanetPopulation(object):
                 
         Returns:
             R (astropy Quantity units m)
-
+        
         """
         n = self.gen_input_check(n)
         v = self.Rrange.value
         vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
         return vals*self.Rrange.unit
-   
 
     def gen_mass(self, n):
         """Generate planetary mass values in kg
@@ -267,17 +261,17 @@ class PlanetPopulation(object):
                 
         Returns:
             Mp (astropy Quantity units kg)
-
+        
         """
         n = self.gen_input_check(n)
         v = self.Mprange.value
         vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
         return vals*self.Mprange.unit
-   
+
     def gen_albedo(self, n):
         """Generate geometric albedo values
-
+        
         The prototype provides a uniform distribution between the minimum and 
         maximum values.
         
@@ -287,17 +281,16 @@ class PlanetPopulation(object):
                 
         Returns:
             p (numpy ndarray)
-
+        
         """
         n = self.gen_input_check(n)
         vals = self.prange[0] +(self.prange[1] - self.prange[0])*np.random.uniform(size=n)
         
         return vals
 
-
     def gen_I(self, n):
         """Generate inclination in degrees
-
+        
         The prototype provides a sinusoidal distribution between the minimum and 
         maximum values.
         
@@ -307,7 +300,7 @@ class PlanetPopulation(object):
                 
         Returns:
             I (astropy Quantity units degrees)
-
+        
         """
         n = self.gen_input_check(n)
         v = np.sort(np.cos(self.Irange))
@@ -315,21 +308,18 @@ class PlanetPopulation(object):
         
         return vals
 
-    def calc_Phi(self,r):
+    def calc_Phi(self,beta):
         """Calculate the Lambert phase function from Sobolev 1975.
-
-        Args:
-            r (Quantity):
-                numpy ndarray containing planet position vectors relative to 
-                host stars (units of distance)
         
+        Args:
+            beta (Quantity):
+                numpy ndarray containing planet phase angles (radians) at which the 
+                phase function is to be calculated.
+                
         Returns:
             Phi (Quantity):
                 numpy ndarray of planet phase function
         """
-
-        d = np.sqrt(np.sum(r**2, axis=1))
-        beta = np.arccos(r[:,2]/d).value
-        Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
-
+        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        
         return Phi

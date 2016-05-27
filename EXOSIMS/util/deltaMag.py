@@ -21,6 +21,6 @@ def deltaMag(p,Rp,d,Phi):
 
     """
 
-    dMag = -2.5*np.log10((p*(Rp/d)**2*Phi).value)
+    dMag = -2.5*np.log10(p*(Rp/d)**2*Phi)
 
     return dMag

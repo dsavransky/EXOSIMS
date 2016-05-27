@@ -171,8 +171,8 @@ and then calculating the albedo from the physical model.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_eccentricity">
-<code class="descname">gen_eccentricity</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.gen_eccentricity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_eccentricity" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_eccen">
+<code class="descname">gen_eccen</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.gen_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_eccen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate eccentricity values</p>
 <p>Rayleigh distribution, as in Kipping et. al (2013)</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -217,7 +217,7 @@ with fixed occurrence rates.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units m)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units km)</td>
 </tr>
 </tbody>
 </table>
@@ -236,7 +236,7 @@ occurrence rates of all planets.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of targets to generate systems about</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units m)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (astropy Quantity units km)</td>
 </tr>
 </tbody>
 </table>
@@ -274,6 +274,16 @@ distributions are taken from the same as in KeplerLike1 (Rayleigh and
 power law with exponential decay, respectively).  Mass is sampled from
 power law and radius is assumed to be calculated from mass via the
 physical model.</p>
+<p>The data file read in by this class also provides all of the information
+about the target stars, and so no StarCatalog object is needed (only the
+KnownRvPlanetsTargetList implementation).</p>
+<p>To download a new copy of the data file:
+1. Navigate to the IPAC exoplanet archive at <a class="reference external" href="http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&amp;config=planets">http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&amp;config=planets</a>
+2. Type &#8216;radial&#8217; (minus quotes) in the &#8216;Discovery Method&#8217; search box and
+hit enter.
+3. In the &#8216;Download Table&#8217; menu select &#8216;VOTable Format&#8217;, &#8216;Download all
+Columns&#8217; and &#8216;Download Currently Filtered Rows&#8217;.
+4. In the &#8216;Download Table&#8217; menu  click &#8216;Download Table&#8217;.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -399,7 +409,7 @@ Cumming et al. 2010</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

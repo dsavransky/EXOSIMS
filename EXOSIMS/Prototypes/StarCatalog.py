@@ -62,7 +62,7 @@ class StarCatalog(object):
 
     _modtype = 'StarCatalog'
     _outspec = {}
-    
+
     def __init__(self,ntargs=0,**specs):
         
         self.Name = np.zeros(ntargs) # list of star names
@@ -88,17 +88,14 @@ class StarCatalog(object):
         self.pmdec = np.zeros(ntargs) # list of proper motion in declination in milliarcseconds/year
         self.rv = np.zeros(ntargs) # list of radial velocity in kilometers/second
         self.Binary_Cut = np.zeros(ntargs,dtype=bool) # boolean list where True is companion closer than 10 arcsec
-                
-        
+
     def __str__(self):
         """String representation of the StarCatalog object
         
         When the command 'print' is used on the StarCatalog object, this method
         will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Star Catalog class object attributes'

@@ -40,7 +40,6 @@
             
   <h1>Source code for EXOSIMS.util.eccanom</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
 
 <div class="viewcode-block" id="eccanom"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.eccanom.eccanom">[docs]</a><span class="k">def</span> <span class="nf">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">e</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Finds eccentric anomaly from mean anomaly and eccentricity</span>
@@ -61,51 +60,36 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">M</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)),</span>\
-            <span class="s2">&quot;M must be a number or array.&quot;</span>
-    
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)),</span>\
-            <span class="s2">&quot;e must be a number or array.&quot;</span>
-    
-    <span class="n">retscalar</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
+    <span class="c1"># make sure M and e are of the correct format.</span>
+    <span class="c1"># if 1 value provided for e, array must match size of M</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
         <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">M</span><span class="p">])</span>
-        <span class="n">retscalar</span> <span class="o">=</span> <span class="bp">True</span>
-
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">e</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
         <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">))</span>
-
+    
     <span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;Incompatible inputs.&quot;</span>
-
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">e</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">retscalar</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">M</span>
-
-
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">((</span><span class="n">e</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">e</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">)),</span> <span class="s2">&quot;e defined outside [0,1[&quot;</span>
+    
     <span class="c1">#initial values for E</span>
     <span class="n">E</span> <span class="o">=</span> <span class="n">M</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">e</span><span class="p">)</span>
-    <span class="n">inds</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">e</span><span class="p">)</span><span class="o">/</span><span class="n">e</span><span class="p">)</span>
-    <span class="n">E</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span><span class="o">/</span><span class="n">e</span><span class="p">[</span><span class="n">inds</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
-
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">e</span><span class="o">*</span><span class="n">E</span><span class="o">**</span><span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">E</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="o">*</span><span class="n">M</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">/</span><span class="n">e</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+    
     <span class="c1"># Newton-Raphson setup</span>
     <span class="n">tolerance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="o">*</span><span class="mf">4.01</span>
     <span class="n">numIter</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">maxIter</span> <span class="o">=</span> <span class="mi">200</span>
     <span class="n">err</span> <span class="o">=</span> <span class="mf">1.</span>
     <span class="k">while</span> <span class="n">err</span> <span class="o">&gt;</span> <span class="n">tolerance</span> <span class="ow">and</span> <span class="n">numIter</span> <span class="o">&lt;</span> <span class="n">maxIter</span><span class="p">:</span>
-
         <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">-</span> <span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="n">E</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="p">(</span><span class="n">E</span> <span class="o">-</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">))))</span>
         <span class="n">numIter</span> <span class="o">+=</span> <span class="mi">1</span>
     
     <span class="k">if</span> <span class="n">numIter</span> <span class="o">==</span> <span class="n">maxIter</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to converge.&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">retscalar</span><span class="p">:</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;eccanom failed to converge.&quot;</span><span class="p">)</span>
+    
     <span class="k">return</span> <span class="n">E</span></div>
 
 </pre></div>
@@ -141,7 +125,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

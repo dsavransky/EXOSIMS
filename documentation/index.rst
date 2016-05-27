@@ -17,6 +17,7 @@ Contents
    :maxdepth: 4
    
    quickstart
+   install
    docs
    parallel
    EXOSIMS

@@ -76,26 +76,6 @@ planet to parent star.</p>
 calculated via the physical model.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.planet_to_star">
-<code class="descname">planet_to_star</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/KeplerLikeUniverse.html#KeplerLikeUniverse.planet_to_star"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.planet_to_star" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns index of star in target star list to each planet</p>
-<p>This assumes that self.nPlans will have already been set by sampling the radius
-distribution.</p>
-<dl class="docutils">
-<dt>Attributes updated:</dt>
-<dd><dl class="first last docutils">
-<dt>plan2star (ndarray):</dt>
-<dd>1D numpy array containing indices of the target star to which
-each planet (each element of the array) belongs</dd>
-<dt>sInds (ndarray):</dt>
-<dd>1D numpy array of indices of the subset of the targetlist with
-planets</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -188,7 +168,7 @@ catalog values for each planet.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -43,7 +43,6 @@
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
 
-
 <div class="viewcode-block" id="BackgroundSources"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.BackgroundSources.BackgroundSources">[docs]</a><span class="k">class</span> <span class="nc">BackgroundSources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;BackgroundSources class prototype</span>
 <span class="sd">    </span>
@@ -61,7 +60,6 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s2">&quot;BackgroundSources&quot;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="c1">#currently nothing to do here</span>
         <span class="k">return</span>
@@ -69,45 +67,41 @@
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Background Sources module</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Background Sources class object attributes&#39;</span>
 
 <div class="viewcode-block" id="BackgroundSources.dNbackground"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.BackgroundSources.BackgroundSources.dNbackground">[docs]</a>    <span class="k">def</span> <span class="nf">dNbackground</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">intDepths</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns background source number densities</span>
-<span class="sd">               </span>
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            coords (array-like of SkyCoord):</span>
 <span class="sd">                numpy ndarray or list of astropy SkyCoord objects representing</span>
 <span class="sd">                the coordinates of one or more targets</span>
-<span class="sd">            intDepths (array-like of Floats)</span>
+<span class="sd">            intDepths (array-like of Floats):</span>
 <span class="sd">                numpy ndarray or list of floating point values representing </span>
-<span class="sd">                absolute magnitudes of the dark hole for each target.  </span>
+<span class="sd">                absolute magnitudes of the dark hole for each target.</span>
 <span class="sd">                Must be of same length as coords.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dN (ndarray):</span>
 <span class="sd">                Number density of background sources in number per square </span>
-<span class="sd">                arcminute.  Same length as inputs.</span>
+<span class="sd">                arcminute. Same length as inputs.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">intDepths</span><span class="p">,(</span><span class="nb">tuple</span><span class="p">,</span><span class="nb">list</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)),</span> \
                 <span class="s2">&quot;intDepths is not array-like.&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span><span class="n">SkyCoord</span><span class="p">):</span>
             <span class="k">assert</span> <span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;coords is not array-like.&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,(</span><span class="nb">tuple</span><span class="p">,</span><span class="nb">list</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)),</span> \
-                    <span class="s2">&quot;intDepths is not array-like.&quot;</span>
-
+                    <span class="s2">&quot;coords is not array-like.&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">intDepths</span><span class="p">),</span> <span class="s2">&quot;Input size mismatch.&quot;</span>
         
         <span class="n">dN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">intDepths</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">dN</span></div></div>
         
+        <span class="k">return</span> <span class="n">dN</span></div></div>
 </pre></div>
 
           </div>
@@ -141,7 +135,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

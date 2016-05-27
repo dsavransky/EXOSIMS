@@ -9,7 +9,7 @@ class WFIRSTObservatory(Observatory):
     This class contains all variables and methods specific to the WFIRST
     observatory needed to perform Observatory Definition Module calculations
     in exoplanet mission simulation."""
-    
+
     def orbit(self, time):
         """Finds WFIRST geosynchronous circular orbit position vector
         
@@ -54,7 +54,7 @@ class WFIRSTObservatory(Observatory):
         success = all(b) # returns True if all values of self.r_sc are finite
         
         return success
-        
+
     def keepout(self, time, catalog, koangle):
         """Finds keepout Boolean values, returns True if successful
         
@@ -85,7 +85,7 @@ class WFIRSTObservatory(Observatory):
             r_targ[x] = self.starprop(time, catalog, x) # position vector wrt sun
             r_targ[x] -= self.r_sc # position vector wrt spacecraft
             u_targ[x] = r_targ[x]/np.linalg.norm(r_targ[x]) # unit vector wrt spacecraft
-
+        
         # list of bright object position vectors wrt sun
         r_bright = [-self.r_sc, # sun
                     self.solarSystem_body_position(time, 'Mercury'), # Mercury
@@ -99,8 +99,8 @@ class WFIRSTObservatory(Observatory):
                     self.solarSystem_body_position(time, 'Pluto'), # Pluto
                     self.solarSystem_body_position(time, 'Moon')] # moon
         u_bright = r_bright # initialize list of unit vectors
-
-        # Find position and unit vectors for bright objects wrt spacecraft    
+        
+        # Find position and unit vectors for bright objects wrt spacecraft
         for x in xrange(len(r_bright)):
             r_bright[x] -= self.r_sc # position vector wrt spacecraft
             u_bright[x] = r_bright[x]/np.linalg.norm(r_bright[x]) # unit vector
@@ -113,7 +113,7 @@ class WFIRSTObservatory(Observatory):
         for i in xrange(len(catalog.Name)):
             for j in xrange(len(u_bright)):
                 angle = np.arccos(np.dot(u_targ[i], u_bright[j]))
-                if angle < np.radians(koangle):
+                if angle < np.radians(koangle).value:
                     self.kogood[i] = False
                     break
         

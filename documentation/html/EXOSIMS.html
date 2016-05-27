@@ -113,7 +113,6 @@
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog.EXOCATXLS">EXOSIMS.StarCatalog.EXOCATXLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog.SIMBAD300Catalog">EXOSIMS.StarCatalog.SIMBAD300Catalog module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog.SIMBADCatalog">EXOSIMS.StarCatalog.SIMBADCatalog module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog.SIMBADRVCatalog">EXOSIMS.StarCatalog.SIMBADRVCatalog module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog.ToyCat1">EXOSIMS.StarCatalog.ToyCat1 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.StarCatalog.html#module-EXOSIMS.StarCatalog">Module contents</a></li>
 </ul>
@@ -291,6 +290,17 @@ logfile: if not present, logging is turned off; if supplied, but empty, a</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="EXOSIMS.MissionSim.array_encoder">
+<code class="descclassname">EXOSIMS.MissionSim.</code><code class="descname">array_encoder</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#array_encoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.array_encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes numpy arrays, astropy Time&#8217;s, and astropy Quantity&#8217;s, into JSON.</p>
+<p>Called from json.dump for types that it does not already know how to represent,
+like astropy Quantity&#8217;s, numpy arrays, etc.  The json.dump() method encodes types
+like integers, strings, and lists itself, so this code does not see these types.
+Likewise, this routine can and does return such objects, which is OK as long as
+they unpack recursively into types for which encoding is known.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS" title="Permalink to this headline">¶</a></h2>
@@ -347,7 +357,7 @@ logfile: if not present, logging is turned off; if supplied, but empty, a</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -64,9 +64,9 @@ class SimulatedUniverse(object):
             numpy ndarray containing velocity vector for each planet (default 
             units of km/s)
         I (Quantity):
-            1D numpy ndarray containing inclination in degrees for each planet            
+            1D numpy ndarray containing inclination in degrees for each planet
         p (ndarray):
-            1D numpy ndarray containing albedo for each planet        
+            1D numpy ndarray containing albedo for each planet
         fEZ (ndarray):
             1D numpy ndarray containing exozodi level for each planet
     
@@ -80,14 +80,14 @@ class SimulatedUniverse(object):
         #check inputs
         assert isinstance(eta,numbers.Number) and (eta > 0),\
                 "eta must be a positive number."
-
+        
         #global occurrence rate defined as expected number of planets per 
         #star in a given universe
         self.eta = eta
-
+        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],'TargetList')(**specs)
-
+        
         # bring inherited class objects to top level of Simulated Universe
         TL = self.TargetList
         self.OpticalSystem = TL.OpticalSystem 
@@ -97,19 +97,16 @@ class SimulatedUniverse(object):
         self.BackgroundSources = TL.BackgroundSources
         self.Completeness = TL.Completeness 
         self.PostProcessing = TL.PostProcessing
-
+        
         self.gen_planetary_systems(**specs)
-
 
     def __str__(self):
         """String representation of Simulated Universe object
         
         When the command 'print' is used on the Simulated Universe object, 
         this method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Simulated Universe class object attributes'
@@ -121,15 +118,19 @@ class SimulatedUniverse(object):
         characteristics of all planets, and generates indexes that map from 
         planet to parent star.
         """
-
-        # Map planets to target stars
-        self.planet_to_star()               # generate index of target star for each planet
-        self.nPlans = len(self.plan2star)   # number of planets in universe
-
+        
+        TL = self.TargetList
         PPop = self.PlanetPopulation
+        
+        # Map planets to target stars
+        probs = np.random.uniform(size=TL.nStars)
+        self.plan2star = np.where(probs > self.eta)[0]
+        self.sInds = np.unique(self.plan2star)
+        self.nPlans = len(self.plan2star)
+        
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccentricity_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccentricity(self.nPlans)     # eccentricity
+        self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
+                else PPop.gen_eccen(self.nPlans)     # eccentricity
         self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
         self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
         self.I = PPop.gen_I(self.nPlans)                    # inclination
@@ -139,32 +140,9 @@ class SimulatedUniverse(object):
         self.r, self.v = self.planet_pos_vel()              # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-
+        
         # exo-zodi levels for systems with planets
         self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
-
-    def planet_to_star(self):
-        """Assigns index of star in target star list to each planet
-        
-        The prototype implementation uses the global occurrence rate as the 
-        probability of each target star having one planet (thus limiting the 
-        universe to single planet systems).
-
-        Attributes updated:
-            plan2star (ndarray):
-                1D numpy array containing indices of the target star to which 
-                each planet (each element of the array) belongs
-            sInds (ndarray):
-                1D numpy array of indices of the subset of the targetlist with
-                planets
-        
-        """
-        
-        probs = np.random.uniform(size=self.TargetList.nStars)
-        self.plan2star = np.where(probs > self.eta)[0]
-        self.sInds = np.unique(self.plan2star) 
-        
-        return 
 
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)
@@ -199,11 +177,13 @@ class SimulatedUniverse(object):
         I = self.I.to('rad').value
         a = self.a
         e = self.e
-
+        Mp = self.Mp
+        Ms = self.TargetList.MsTrue[self.plan2star]
+        
         #generate random mean anomlay and calculate eccentric anomaly
         M = np.random.uniform(high=2.*np.pi,size=self.nPlans)
         E = eccanom(M,e)
-
+        
         a1 = (a*(np.cos(Omega)*np.cos(omega) - np.sin(Omega)*np.cos(I)*np.sin(omega))).to('AU')
         a2 = (a*(np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.cos(I)*np.sin(omega))).to('AU')
         a3 = (a*np.sin(I)*np.sin(omega)).to('AU')
@@ -216,22 +196,21 @@ class SimulatedUniverse(object):
         b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(omega)).to('AU')
         B = np.vstack((b1,b2,b3)).T.value*u.AU
         
-        Mu = const.G*(self.Mp+self.TargetList.MsTrue[self.plan2star]*const.M_sun)
-        
         r1 = np.cos(E) - e
-        r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
+        r1 = np.array([r1]*3).T
         r2 = np.sin(E)
-        r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
+        r2 = np.array([r2]*3).T
         r = A*r1 + B*r2
         
-        v1 = (np.sqrt(Mu/a**3)/(1. - e*np.cos(E))).to('/s').value
+        mu = const.G*(Mp + Ms*const.M_sun)
+        v1 = (np.sqrt(mu/a**3)/(1. - e*np.cos(E))).to('/s').value
         v1 = np.hstack((v1.reshape(len(v1),1), v1.reshape(len(v1),1), v1.reshape(len(v1),1)))/u.s
         v2 = np.cos(E)
         v2 = np.hstack((v2.reshape(len(v2),1), v2.reshape(len(v2),1), v2.reshape(len(v2),1)))
         v = v1*(-A*r2 + B*v2)
         
         return r.to('km'), v.to('km/s')
-        
+
     def prop_system(self, r, v, Mp, Ms, dt):
         """Propagates planet state vectors (position and velocity) 
         
@@ -262,11 +241,8 @@ class SimulatedUniverse(object):
         
         # stack dimensionless positions and velocities
         x0 = np.array([])
-        if r.size == 3:
-            x0 = np.hstack((x0, r.to('km').value, v.to('km/day').value))
-        else:
-            for i in xrange(r.shape[0]):
-                x0 = np.hstack((x0, r[i].to('km').value, v[i].to('km/day').value))
+        for i in xrange(r.shape[0]):
+            x0 = np.hstack((x0, r[i].to('km').value, v[i].to('km/day').value))
                 
         # calculate vector of gravitational parameter
         mu = (const.G*(Mp + Ms*const.M_sun)).to('km3/day2').value
@@ -281,13 +257,8 @@ class SimulatedUniverse(object):
             
         # split off position and velocity vectors
         x1 = np.array(np.hsplit(prop.x0, 2*len(r)))
-        rind, vind = [], []
-        for x in xrange(len(x1)):
-            if x%2 == 0:
-                rind.append(x)
-            else:
-                vind.append(x)
-        rind, vind = np.array(rind), np.array(vind)
+        rind = np.array(range(0,len(x1),2)) # even indices
+        vind = np.array(range(1,len(x1),2)) # odd indices
         
         # assign new position, velocity, apparent separation, and planet-star distance
         rnew = x1[rind]*u.km
@@ -295,23 +266,23 @@ class SimulatedUniverse(object):
         snew = np.sqrt(np.sum(rnew[:,0:2]**2, axis=1))
         dnew = np.sqrt(np.sum(rnew**2, axis=1))
         
-        return rnew, vnew, snew, dnew
-        
+        return rnew.to('km'), vnew.to('km/s'), snew.to('km'), dnew.to('km')
+
     def get_current_WA(self,pInds):
         """Calculate the current working angles for planets specified by the 
         given indices.
-
+        
         Args:
             pInds (integer ndarray):
                 Numpy ndarray containing integer indices of the planets of interest
         
         Returns:
-            wa (Quantity):
+            WA (Quantity):
                 numpy ndarray of working angles (units of arcsecons)
         """
-
+        
         starDists = self.TargetList.dist[self.plan2star[pInds]] # distance to star
-        wa = (self.s[pInds]/starDists*u.rad).to('arcsec')
-
-        return wa
+        WA = np.arctan(self.s[pInds]/starDists).to('arcsec')
+        
+        return WA
 

@@ -68,35 +68,36 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;ZodiacalLight&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magZ</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">magEZ</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">varEZ</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">nEZ</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magZ</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">magEZ</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">varEZ</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nEZ</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">magZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magZ</span><span class="p">)</span>         <span class="c1"># 1 zodi brightness in mag per asec2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magEZ</span><span class="p">)</span>       <span class="c1"># 1 exozodi brightness in mag per asec2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">varEZ</span><span class="p">)</span>       <span class="c1"># exozodi variation (variance of log-normal dist.)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nEZ</span><span class="p">)</span>           <span class="c1"># exozodi level in zodi</span>
-
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Exozodi variation must be &gt;= 0&quot;</span>
+        
+        <span class="c1"># populate outspec</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Zodiacal Light object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Zodiacal Light object, this </span>
 <span class="sd">        method will return the values contained in the object&quot;&quot;&quot;</span>
-
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Zodiacal Light class object attributes&#39;</span>
-        
 
-<div class="viewcode-block" id="ZodiacalLight.fZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+<div class="viewcode-block" id="ZodiacalLight.fZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist (TargetList):</span>
+<span class="sd">            TL (TargetList):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
@@ -108,16 +109,22 @@
 <span class="sd">            fZ (ndarray):</span>
 <span class="sd">                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
+        <span class="n">nZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">nZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="k">return</span> <span class="n">fZ</span></div>
 
-        <span class="n">fZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">fZ</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span></div>
-
-<div class="viewcode-block" id="ZodiacalLight.fEZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ">[docs]</a>    <span class="k">def</span> <span class="nf">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
+<div class="viewcode-block" id="ZodiacalLight.fEZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ">[docs]</a>    <span class="k">def</span> <span class="nf">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of exo-zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist (TargetList):</span>
+<span class="sd">            TL (TargetList):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
@@ -128,18 +135,25 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            fEZ (ndarray):</span>
 <span class="sd">                1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)</span>
-
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
         <span class="c1"># assume log-normal distribution of variance</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),))</span>
-            
-        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span>
-
-        <span class="k">return</span> <span class="n">fEZ</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span></div></div>
+            <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
+        
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="k">return</span> <span class="n">fEZ</span></div></div>
 </pre></div>
 
           </div>
@@ -173,7 +187,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

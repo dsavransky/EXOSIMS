@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import astropy.units as u
 
 class PostProcessing(object):
     """Post Processing class template
@@ -29,31 +30,30 @@ class PostProcessing(object):
     _outspec = {}
 
     def __init__(self,FAP=3e-5,MDP=1e-3,ppFact=1.0,SNimag=5.,SNchar=11.,**specs):
-
+        
         #load all values with defaults
         self.FAP = float(FAP)
         self.MDP = float(MDP)
         self.ppFact = float(ppFact)
         self.SNimag = float(SNimag)             # SNR for imaging/detection
         self.SNchar = float(SNchar)             # SNR for characterization
-
+        
         # populate outspec
-        for key in self.__dict__.keys():
-            self._outspec[key] = self.__dict__[key]
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
 
     def __str__(self):
         """String representation of Post Processing object
         
         When the command 'print' is used on the Post Processing object, 
         this method will return the values contained in the object"""
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Post Processing class object attributes'
-        
+
     def det_occur(self, observationPossible):
         """Determines if a detection has occurred and returns booleans 
         

@@ -65,14 +65,14 @@ the model from Lindler.</p>
 </table>
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ">
-<code class="descname">fEZ</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fEZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of exo-zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
 <li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
@@ -91,14 +91,14 @@ with the length of the number of planets of interest.</li>
 
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
 <li><strong>lam</strong> &#8211; Central wavelength (default units of nm)</li>
@@ -142,7 +142,7 @@ with viewing angle from Lindler.</p>
 <span id="exosims-zodiacallight-stark-module"></span><h2>EXOSIMS.ZodiacalLight.Stark module<a class="headerlink" href="#module-EXOSIMS.ZodiacalLight.Stark" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.ZodiacalLight.Stark.Stark">
-<em class="property">class </em><code class="descclassname">EXOSIMS.ZodiacalLight.Stark.</code><code class="descname">Stark</code><span class="sig-paren">(</span><em>magZ=23</em>, <em>magEZ=22</em>, <em>varEZ=0.0</em>, <em>nEZ=1.5</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.ZodiacalLight.Stark.</code><code class="descname">Stark</code><span class="sig-paren">(</span><em>magZ=23</em>, <em>magEZ=22</em>, <em>varEZ=0</em>, <em>nEZ=1.5</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight</span></code></a></p>
 <p>Stark Zodiacal Light class</p>
 <p>This class contains all variables and methods necessary to perform
@@ -150,15 +150,15 @@ Zodiacal Light Module calculations in exoplanet mission simulation using
 the model from Stark et al. 2014.</p>
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.Stark.Stark.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>targlist</em>, <em>sInd</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>sInd</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
+<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
 <li><strong>lam</strong> &#8211; Central wavelength (default units of nm)</li>
 </ul>
@@ -234,7 +234,7 @@ with the length of the number of planets of interest.</li>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

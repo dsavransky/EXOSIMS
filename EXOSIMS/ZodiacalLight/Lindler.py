@@ -9,22 +9,22 @@ class Lindler(ZodiacalLight):
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Lindler.
-
+    
     Args:
         \*\*specs:
             user specified values
     
     """
-    
+
     def __init__(self, **specs):
         
         ZodiacalLight.__init__(self, **specs)
 
-    def fZ(self, targlist, sInds, lam):
+    def fZ(self, TL, sInds, lam):
         """Returns surface brightness of local zodiacal light
         
         Args:
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -36,18 +36,25 @@ class Lindler(ZodiacalLight):
             fZ (ndarray):
                 1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
         """
-
-        # ecliptic latitudes
-        lat = targlist.coords.barycentrictrueecliptic.lat[sInds]
-        fZ = 10**(-0.4*self.magZ) * self.fbeta(lat)
-
-        return fZ/u.arcsec**2
         
-    def fEZ(self, targlist, sInds, I):
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        # ecliptic latitudes
+        lat = TL.coords.barycentrictrueecliptic.lat[sInds]
+        nZ = self.fbeta(lat)
+        
+        fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+        
+        return fZ
+
+    def fEZ(self, TL, sInds, I):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
@@ -58,24 +65,33 @@ class Lindler(ZodiacalLight):
         Returns:
             fEZ (ndarray):
                 1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)
-
+        
         """
         
-        i = np.where(I.value > 90.)
-        if type(I) == np.ndarray:
-            I[i] = 180. - I[i]
-        # maximum V magnitude
-        MV = targlist.MV
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
         # assume log-normal distribution of variance
-        if self.varEZ != 0:
+        if self.varEZ == 0:
+            nEZ = np.array([self.nEZ]*len(sInds))
+        else:
             mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
-            self.nEZ = np.random.lognormal(mean=mu, sigma=v, size=(len(sInds),))
-
-        fEZ = 10**(-0.4*self.magEZ) * self.nEZ * 2.*self.fbeta(I)*2.5**(4.78-MV[sInds])
-
-        return fEZ/u.arcsec**2
+            nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
         
+        # supplementary angle for inclination > 90 degrees
+        mask = np.where(I.value > 90)[0]
+        I.value[mask] = 180 - I.value[mask]
+        
+        # maximum V magnitude
+        MV = TL.MV
+        
+        fEZ = nEZ*10**(-0.4*self.magEZ)*2*self.fbeta(I)*2.5**(4.78-MV[sInds])/u.arcsec**2
+        
+        return fEZ
+
     def fbeta(self, beta):
         """Empirically derived variation of zodiacal light with viewing angle
         

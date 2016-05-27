@@ -36,14 +36,6 @@ EXOSIMS.StarCatalog.SIMBADCatalog module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.StarCatalog.SIMBADRVCatalog module
-------------------------------------------
-
-.. automodule:: EXOSIMS.StarCatalog.SIMBADRVCatalog
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.StarCatalog.ToyCat1 module
 ----------------------------------
 

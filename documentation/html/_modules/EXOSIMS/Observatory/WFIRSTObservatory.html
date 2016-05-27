@@ -50,7 +50,7 @@
 <span class="sd">    This class contains all variables and methods specific to the WFIRST</span>
 <span class="sd">    observatory needed to perform Observatory Definition Module calculations</span>
 <span class="sd">    in exoplanet mission simulation.&quot;&quot;&quot;</span>
-    
+
 <div class="viewcode-block" id="WFIRSTObservatory.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds WFIRST geosynchronous circular orbit position vector</span>
 <span class="sd">        </span>
@@ -95,7 +95,7 @@
         <span class="n">success</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c1"># returns True if all values of self.r_sc are finite</span>
         
         <span class="k">return</span> <span class="n">success</span></div>
-        
+
 <div class="viewcode-block" id="WFIRSTObservatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds keepout Boolean values, returns True if successful</span>
 <span class="sd">        </span>
@@ -126,7 +126,7 @@
             <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="c1"># position vector wrt sun</span>
             <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="c1"># position vector wrt spacecraft</span>
             <span class="n">u_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="c1"># unit vector wrt spacecraft</span>
-
+        
         <span class="c1"># list of bright object position vectors wrt sun</span>
         <span class="n">r_bright</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span><span class="p">,</span> <span class="c1"># sun</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="s1">&#39;Mercury&#39;</span><span class="p">),</span> <span class="c1"># Mercury</span>
@@ -140,8 +140,8 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="s1">&#39;Pluto&#39;</span><span class="p">),</span> <span class="c1"># Pluto</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="s1">&#39;Moon&#39;</span><span class="p">)]</span> <span class="c1"># moon</span>
         <span class="n">u_bright</span> <span class="o">=</span> <span class="n">r_bright</span> <span class="c1"># initialize list of unit vectors</span>
-
-        <span class="c1"># Find position and unit vectors for bright objects wrt spacecraft    </span>
+        
+        <span class="c1"># Find position and unit vectors for bright objects wrt spacecraft</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r_bright</span><span class="p">)):</span>
             <span class="n">r_bright</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="c1"># position vector wrt spacecraft</span>
             <span class="n">u_bright</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_bright</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_bright</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="c1"># unit vector</span>
@@ -154,7 +154,7 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">u_bright</span><span class="p">)):</span>
                 <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_targ</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">u_bright</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
-                <span class="k">if</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">koangle</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">koangle</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
                     <span class="k">break</span>
         
@@ -199,7 +199,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -32,7 +32,6 @@ class Completeness(object):
         self._outspec['minComp'] = self.minComp
         self._outspec['Nplanets'] = self.Nplanets
 
-    
     def __str__(self):
         """String representation of Completeness object
         
@@ -40,14 +39,12 @@ class Completeness(object):
         method will return the values contained in the object
         
         """
-
-        atts = self.__dict__.keys()
         
-        for att in atts:
+        for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Completeness class object attributes'
-        
+
     def target_completeness(self, targlist):
         """Generates completeness values for target stars
         
@@ -66,7 +63,7 @@ class Completeness(object):
         comp0 = np.array([0.2]*len(targlist.Name))
         
         return comp0
-        
+
     def completeness_update(self, s_ind, targlist, obsbegin, obsend, nexttime):
         """Updates completeness value for stars previously observed
         

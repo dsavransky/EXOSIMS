@@ -41,6 +41,7 @@
   <h1>Source code for EXOSIMS.Prototypes.PostProcessing</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Post Processing class template</span>
@@ -70,31 +71,30 @@
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">FAP</span><span class="o">=</span><span class="mf">3e-5</span><span class="p">,</span><span class="n">MDP</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">ppFact</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">SNimag</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span><span class="n">SNchar</span><span class="o">=</span><span class="mf">11.</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-
+        
         <span class="c1">#load all values with defaults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FAP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">FAP</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MDP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">MDP</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ppFact</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ppFact</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SNimag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">SNimag</span><span class="p">)</span>             <span class="c1"># SNR for imaging/detection</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SNchar</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">SNchar</span><span class="p">)</span>             <span class="c1"># SNR for characterization</span>
-
+        
         <span class="c1"># populate outspec</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Post Processing object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Post Processing object, </span>
 <span class="sd">        this method will return the values contained in the object&quot;&quot;&quot;</span>
-
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Post Processing class object attributes&#39;</span>
-        
+
 <div class="viewcode-block" id="PostProcessing.det_occur"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">[docs]</a>    <span class="k">def</span> <span class="nf">det_occur</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observationPossible</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Determines if a detection has occurred and returns booleans </span>
 <span class="sd">        </span>
@@ -162,7 +162,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

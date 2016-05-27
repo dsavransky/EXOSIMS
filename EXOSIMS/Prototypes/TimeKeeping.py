@@ -33,88 +33,74 @@ class TimeKeeping(object):
             mission lifetime (default units of year)
         extendedLife (Quantity):
             extended mission time (default units of year)
-        currenttimeNorm (Quantity):
-            current mission time normalized to zero at mission start (default
-            units of day)
-        currenttimeAbs (Time):
-            current absolute mission time (default astropy Time in MJD)
-        missionFinishAbs (Time):
-            mission finish absolute time (default astropy Time in MJD)
-        missionFinishNorm (Quantity):
-            mission finish normalized time (default units of day)
         missionPortion (float):
             portion of mission devoted to planet-finding
         duration (Quantity):
             duration of planet-finding operations (default units of day)
-        nexttimeAvail (Quantity):
+        dtAlloc (Quantity):
+            default allocated temporal block (default units of day)
+        missionFinishAbs (Time):
+            mission finish absolute time (default astropy Time in MJD)
+        missionFinishNorm (Quantity):
+            mission finish normalized time (default units of day)
+        nextTimeAvail (Quantity):
             next time available for planet-finding (default units of day)
+        currentTimeNorm (Quantity):
+            current mission time normalized to zero at mission start (default
+            units of day)
+        currentTimeAbs (Time):
+            current absolute mission time (default astropy Time in MJD)
         
     """
 
     _modtype = 'TimeKeeping'
     _outspec = {}
-    
-    def __init__(self, missionStart=60634., missionLife=6., \
-                 extendedLife=0., missionPortion = 1/6., **specs):
-                
+
+    def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
+                  missionPortion = 1/6., duration = 14, dtAlloc = 1, **specs):
+        
         # illegal value checks
-        assert missionLife >= 0, \
-          "Need missionLife >= 0, got %f" % missionLife
-        assert extendedLife >= 0, \
-          "Need extendedLife >= 0, got %f" % extendedLife
+        assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
+        assert extendedLife >= 0, "Need extendedLife >= 0, got %f"%extendedLife
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
-          "Require missionPortion in the interval (0,1], got %f" % missionPortion
-
-        # set up state variables
-
-        # mission start time: astropy Time object, in mjd
-        #   tai scale specified because the default, utc, requires accounting for leap
-        #   seconds, causing warnings from astropy.time when time-deltas are added
-        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')
-        self._outspec['missionStart'] = float(missionStart)
-
-        # mission lifetime: astropy unit object, in years
-        self.missionLife = float(missionLife)*u.year
-        self._outspec['missionLife'] = float(missionLife)
-
-        # extended mission time: astropy unit object, in years
-        self.extendedLife = float(extendedLife)*u.year
-        self._outspec['extendedLife'] = float(extendedLife)
-
-        # mission portion: fraction of mission devoted to planet-finding, float
-        self.missionPortion = float(missionPortion)
-        self._outspec['missionPortion'] = float(missionPortion)
+          "Require missionPortion in the interval ]0,1], got %f"%missionPortion
         
-        # duration of planet-finding operations: astropy unit object, in days
-        self.duration = 14.*u.day
-        # next time available for planet-finding: astropy unit object, in days
-        self.nexttimeAvail = 0.*u.day
-                            
-        # initialize values updated by functions
-        #   current mission time: astropy unit object, in days
-        self.currenttimeNorm = 0.*u.day
-        #   current absolute mission time: astropy Time object, in mjd
-        self.currenttimeAbs = self.missionStart
+        # set up state variables
+        # tai scale specified because the default, utc, requires accounting for leap
+        # seconds, causing warnings from astropy.time when time-deltas are added
+        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')
+        self.missionLife = float(missionLife)*u.year
+        self.extendedLife = float(extendedLife)*u.year
+        self.missionPortion = float(missionPortion)
+        self.duration = float(duration)*u.day
+        self.dtAlloc = float(dtAlloc)*u.day
         
         # set values derived from quantities above
-        #   mission completion date: astropy Time object, in mjd
         self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
-        #   normalized mission completion date: astropy unit object, in days
         self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')
         
-    
+        # initialize values updated by functions
+        self.nextTimeAvail = 0*u.day
+        self.currentTimeNorm = 0.*u.day
+        self.currentTimeAbs = self.missionStart
+        
+        # populate outspec
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+
     def __str__(self):
         r"""String representation of the TimeKeeping object.
         
         When the command 'print' is used on the TimeKeeping object, this 
         method prints the values contained in the object."""
-
-        atts = self.__dict__.keys()
-        for att in atts:
-            print '%s: %r' % (att, getattr(self, att))
-        return 'TimeKeeping instance at %.6f days' % self.currenttimeNorm.to('day').value
         
+        for att in self.__dict__.keys():
+            print '%s: %r' % (att, getattr(self, att))
+        
+        return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
+
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing the observation window if needed.
         
@@ -123,7 +109,7 @@ class TimeKeeping(object):
         If dt is longer than the observation window length, making a contiguous observation is
         not possible, so return False.  If dt < 0, return False.  Otherwise, allocate time and
         return True.
-
+        
         Caveats:
         [1] This does not handle allocations that move beyond the allowed mission time.  This
         would be a place for an exception that could be caught in the simulation main loop.
@@ -142,95 +128,49 @@ class TimeKeeping(object):
         _,filename,line_number,function_name,_,_ = inspect.stack()[1]
         location = '%s:%d(%s)' % (os.path.basename(filename), line_number, function_name)
         # if no issues, we will advance to this time
-        provisional_time = self.currenttimeNorm + dt
+        provisional_time = self.currentTimeNorm + dt
         window_advance = False
         success = True
-        if np.sum(dt) > self.duration:
+        if dt > self.duration:
             success = False
             description = '!too long'
         elif dt < 0:
             success = False
             description = '!negative allocation'
-        elif provisional_time > self.nexttimeAvail + self.duration:
+        elif provisional_time > self.nextTimeAvail + self.duration:
             # advance to the next observation window:
             #   add "duration" (time for our instrument's observations)
             #   also add a term for other observations based on fraction-available
-            self.nexttimeAvail += (self.duration +
-                                   ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
+            self.nextTimeAvail += (self.duration + \
+                    ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
             # set current time to dt units beyond start of next window
-            self.currenttimeNorm = self.nexttimeAvail + dt
-            self.currenttimeAbs = self.missionStart + self.currenttimeNorm
+            self.currentTimeNorm = self.nextTimeAvail + dt
+            self.currentTimeAbs = self.missionStart + self.currentTimeNorm
             window_advance = True
             description = '+window'
         else:
             # simply advance by dt
-            self.currenttimeNorm = provisional_time
-            self.currenttimeAbs += dt
+            self.currentTimeNorm = provisional_time
+            self.currentTimeAbs += dt
             description = 'ok'
         # Log a message for the time allocation
         message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
-            self.currenttimeNorm.to('day').value, np.sum(dt).to('day').value, description, location)
+            self.currentTimeNorm.to('day').value, dt.to('day').value, description, location)
         Logger.info(message)
-        # if False: print '***', message
+        
         return success
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?
-
+        
         This supplies an abstraction around the test:
-            (currenttimeNorm > missionFinishNorm)
+            (currentTimeNorm > missionFinishNorm)
         so that users of the class do not have to perform arithmetic
         on class variables.
-
-        Args:
-            None
-
+        
         Returns:
             is_over (Boolean):
                 True if the mission time is used up, else False.
         """
-        return (self.currenttimeNorm > self.missionFinishNorm)
-
-    def update_times(self, dt):
-        """Updates self.currenttimeNorm and self.currenttimeAbs
         
-        Deprecated.
-        
-        Args:
-            dt (Quantity):
-                time increment (units of time)
-        
-        """
-        if dt < 0:
-            raise ValueError('update_times got negative dt: %s' % str(dt))
-        self.currenttimeNorm += dt
-        self.currenttimeAbs += dt
-        
-    def duty_cycle(self, currenttime):
-        """Updates available time and duration for planet-finding.
-        
-        Deprecated.
-        
-        This method updates the available time for planet-finding activities.
-        Specific classes may optionally update the duration of planet-finding
-        activities as well. This method defines the input/output expected
-        
-        Args:
-            currenttime (Quantity):
-                current time in mission simulation (units of time)
-                
-        Returns:
-            nexttime (Quantity):
-                next available time for planet-finding (units of time)
-        
-        """
-        
-        if currenttime > self.nexttimeAvail + self.duration:
-            # update the nexttimeAvail attribute
-            self.nexttimeAvail += self.duration + (1. - self.missionPortion)/self.missionPortion*self.duration
-            nexttime = self.nexttimeAvail
-        else:
-            nexttime = currenttime
-        
-        return nexttime
-        
+        return (self.currentTimeNorm > self.missionFinishNorm)

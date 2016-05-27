@@ -40,13 +40,13 @@
             
   <h1>Source code for EXOSIMS.OpticalSystem.Nemati</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.OpticalSystem.KasdinBraems</span> <span class="kn">import</span> <span class="n">KasdinBraems</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.OpticalSystem</span> <span class="kn">import</span> <span class="n">OpticalSystem</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">st</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">opt</span>
 
-<div class="viewcode-block" id="Nemati"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.Nemati.Nemati">[docs]</a><span class="k">class</span> <span class="nc">Nemati</span><span class="p">(</span><span class="n">KasdinBraems</span><span class="p">):</span>
+<div class="viewcode-block" id="Nemati"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.Nemati.Nemati">[docs]</a><span class="k">class</span> <span class="nc">Nemati</span><span class="p">(</span><span class="n">OpticalSystem</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Nemati Optical System class</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
@@ -61,14 +61,14 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="n">KasdinBraems</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="n">OpticalSystem</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Nemati.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">):</span>
+<div class="viewcode-block" id="Nemati.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system,</span>
 <span class="sd">        based on Nemati 2014 (SPIE).</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist:</span>
+<span class="sd">            TL:</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
@@ -87,18 +87,23 @@
 <span class="sd">                units of day)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="n">inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span>
         <span class="n">syst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span>
         <span class="n">lam</span> <span class="o">=</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
-
+        
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
         <span class="c1"># nb of pixels for photometry aperture = 1/sharpness</span>
         <span class="n">PSF</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;PSF&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
         <span class="n">Npix</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">PSF</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">PSF</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">C_p</span><span class="p">,</span> <span class="n">C_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cp_Cb</span><span class="p">(</span><span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">syst</span><span class="p">,</span> <span class="n">Npix</span><span class="p">)</span>
-
+        <span class="n">C_p</span><span class="p">,</span> <span class="n">C_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cp_Cb</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">syst</span><span class="p">,</span> <span class="n">Npix</span><span class="p">)</span>
+        
         <span class="c1"># Nemati14+ method</span>
-        <span class="n">PP</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PostProcessing</span>                <span class="c1"># post-processing module</span>
+        <span class="n">PP</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PostProcessing</span>                      <span class="c1"># post-processing module</span>
         <span class="n">SNR</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">SNchar</span>                             <span class="c1"># SNR threshold for characterization</span>
         <span class="n">ppFact</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">ppFact</span>                          <span class="c1"># post-processing contrast factor</span>
         <span class="n">Q</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;contrast&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
@@ -106,7 +111,57 @@
         <span class="n">C_b</span> <span class="o">+=</span> <span class="n">C_p</span><span class="o">*</span><span class="n">inst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>                   <span class="c1"># Cb must include the planet</span>
         <span class="n">intTime</span> <span class="o">=</span> <span class="n">SNR</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">C_b</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_p</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">SNR</span><span class="o">*</span><span class="n">SpStr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">);</span>
         
-        <span class="k">return</span> <span class="n">intTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">intTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Nemati.calc_charTime"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_charTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_charTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds characterization time for a specific target system,</span>
+<span class="sd">        based on Nemati 2014 (SPIE).</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL:</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
+<span class="sd">                with the length of the number of planets of interest.</span>
+<span class="sd">            I:</span>
+<span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
+<span class="sd">            dMag:</span>
+<span class="sd">                Numpy ndarray containing differences in magnitude between planets </span>
+<span class="sd">                and their host star</span>
+<span class="sd">            WA:</span>
+<span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            charTime (Quantity):</span>
+<span class="sd">                1D numpy ndarray of characterization times (default units of day)</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span>
+        <span class="n">syst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
+        
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
+        <span class="c1"># nb of pixels for photometry aperture = 1/sharpness</span>
+        <span class="n">PSF</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;PSF&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
+        <span class="n">Npix</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">PSF</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">PSF</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">C_p</span><span class="p">,</span> <span class="n">C_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Cp_Cb</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">syst</span><span class="p">,</span> <span class="n">Npix</span><span class="p">)</span>
+        
+        <span class="c1"># Nemati14+ method</span>
+        <span class="n">PP</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PostProcessing</span>                      <span class="c1"># post-processing module</span>
+        <span class="n">SNR</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">SNchar</span>                             <span class="c1"># SNR threshold for characterization</span>
+        <span class="n">ppFact</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">ppFact</span>                          <span class="c1"># post-processing contrast factor</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;contrast&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
+        <span class="n">SpStr</span> <span class="o">=</span> <span class="n">C_p</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dMag</span><span class="p">)</span><span class="o">*</span><span class="n">Q</span><span class="o">*</span><span class="n">ppFact</span>        <span class="c1"># spatial structure to the speckle</span>
+        <span class="n">C_b</span> <span class="o">+=</span> <span class="n">C_p</span><span class="o">*</span><span class="n">inst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>                   <span class="c1"># Cb must include the planet</span>
+        <span class="n">charTime</span> <span class="o">=</span> <span class="n">SNR</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">C_b</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_p</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">SNR</span><span class="o">*</span><span class="n">SpStr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">);</span>
+        
+        <span class="k">return</span> <span class="n">charTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -140,7 +195,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

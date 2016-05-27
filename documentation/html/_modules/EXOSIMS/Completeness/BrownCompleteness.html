@@ -134,22 +134,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">tcomp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="c1"># non-observable completeness value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">non</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-    
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;String representation of Completeness object</span>
-<span class="sd">        </span>
-<span class="sd">        When the command &#39;print&#39; is used on the Completeness object, this </span>
-<span class="sd">        method will return the values contained in the object</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
-        
-        <span class="k">return</span> <span class="s1">&#39;Completeness class object attributes&#39;</span>
-        
 <div class="viewcode-block" id="BrownCompleteness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
 <span class="sd">        </span>
@@ -220,9 +205,9 @@
             <span class="c1"># store non-observable completeness (rmax &lt; s)</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="mi">20000</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">constrainOrbits</span><span class="p">:</span>
-                <span class="n">e</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccentricity_from_sma</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">e</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccentricity</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
             <span class="n">rmax</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">e</span><span class="p">)</span>
             <span class="n">inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rmax</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">no</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span><span class="o">/</span><span class="mf">20000.</span>
@@ -362,9 +347,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># sample eccentricity</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">constrainOrbits</span><span class="p">:</span>
-                <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccentricity_from_sma</span><span class="p">(</span><span class="n">nplan</span><span class="p">,</span><span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="n">nplan</span><span class="p">,</span><span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccentricity</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>   
+                <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>   
             <span class="c1"># Newton-Raphson to find E</span>
             <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
             <span class="c1"># orbital radius</span>
@@ -390,18 +375,18 @@
         <span class="n">b3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
         <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">b1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">b2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b2</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">b3</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b3</span><span class="p">),</span><span class="mi">1</span><span class="p">)))</span>
 
-        <span class="c1"># planet position, and planet-star distance</span>
+        <span class="c1"># planet position, planet-star distance, apparent separation</span>
         <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="n">r1</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">r2</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="c1"># sample albedo, planetary radius, phase function</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
         <span class="n">Rp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
-        <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">calc_phi</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="n">d</span><span class="p">))</span>
 
-        <span class="c1"># calculate dMag &amp; apparent separation</span>
+        <span class="c1"># calculate dMag</span>
         <span class="n">dMag</span> <span class="o">=</span> <span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">Rp</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">Phi</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span></div></div>
 </pre></div>
@@ -437,7 +422,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

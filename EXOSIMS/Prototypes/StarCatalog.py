@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from astropy.coordinates import SkyCoord
 import numpy as np
+import astropy.units as u
+from astropy.coordinates import SkyCoord
 
 class StarCatalog(object):
     """Star Catalog class template
@@ -11,12 +12,8 @@ class StarCatalog(object):
     Attributes:
         Name (ndarray):
             1D numpy ndarray of star names
-        Type (ndarray):
-            1D numpy ndarray of star types
         Spec (ndarray):
-            1D numpy ndarray of spectral types
-        parx (ndarray):
-            1D numpy ndarray of parallax in milliarcseconds
+            1D numpy ndarray of star spectral types
         Umag (ndarray):
             1D numpy ndarray of U magnitude
         Bmag (ndarray):
@@ -33,8 +30,6 @@ class StarCatalog(object):
             1D numpy ndarray of H magnitude
         Kmag (ndarray):
             1D numpy ndarray of K magnitude
-        dist (ndarray):
-            1D numpy ndarray of distance in parsecs to star
         BV (ndarray):
             1D numpy ndarray of B-V Johnson magnitude
         MV (ndarray):
@@ -43,9 +38,13 @@ class StarCatalog(object):
             1D numpy ndarray of bolometric correction
         L (ndarray):
             1D numpy ndarray of stellar luminosity in Solar luminosities
+        dist (ndarray):
+            1D numpy ndarray of distance to star in parsecs
+        parx (ndarray):
+            1D numpy ndarray of parallax in milliarcseconds
         coords (SkyCoord):
             numpy ndarray of astropy SkyCoord objects containing right ascension
-            and declination in degrees
+            and declination in degrees, and distance to star in parsecs
         pmra (ndarray):
             1D numpy ndarray of proper motion in right ascension in
             milliarcseconds/year
@@ -58,17 +57,25 @@ class StarCatalog(object):
             1D numpy ndarray of booleans where True is a star with a companion 
             closer than 10 arcsec
         
-    """ 
+    """
 
     _modtype = 'StarCatalog'
     _outspec = {}
 
     def __init__(self,ntargs=0,**specs):
         
+        # list of astropy attributes
+        self.dist = np.ones(ntargs)*u.pc # distance in parsecs (dist = 1000/parx)
+        self.parx = self.dist.to('mas',equivalencies=u.parallax()) # parallax in milliarcseconds
+        self.coords = SkyCoord(ra=np.zeros(ntargs)*u.deg, dec=np.zeros(ntargs)*u.deg, \
+                distance=self.dist) # right ascension and declination in degrees
+        self.pmra = np.zeros(ntargs)*u.mas/u.yr # proper motion in right ascension in milliarcseconds/year
+        self.pmdec = np.zeros(ntargs)*u.mas/u.yr # proper motion in declination in milliarcseconds/year
+        self.rv = np.zeros(ntargs)*u.km/u.s # radial velocity in kilometers/second
+        
+        # list of non-astropy attributes
         self.Name = np.zeros(ntargs) # list of star names
-        self.Type = np.zeros(ntargs) # list of star types
         self.Spec = np.zeros(ntargs) # list of spectral types
-        self.parx = np.zeros(ntargs) # list of parallax in milliarcseconds
         self.Umag = np.zeros(ntargs) # list of U magnitude
         self.Bmag = np.zeros(ntargs) # list of B magnitude
         self.Vmag = np.zeros(ntargs) # list of V magnitude
@@ -77,16 +84,10 @@ class StarCatalog(object):
         self.Jmag = np.zeros(ntargs) # list of J magnitude
         self.Hmag = np.zeros(ntargs) # list of H magnitude
         self.Kmag = np.zeros(ntargs) # list of K magnitude
-        self.dist = np.zeros(ntargs) # list of distance in parsecs (dist = 1000/parx)
         self.BV = np.zeros(ntargs) # list of B-V Johnson magnitude
         self.MV = np.zeros(ntargs) # list of absolute V magnitude (MV = -5 * log(1000/parx) + 5 - Vmag) 
         self.BC = np.zeros(ntargs) # list of bolometric correction
         self.L = np.zeros(ntargs) # list of stellar luminosity in Solar luminosities
-        # list of astropy SkyCoord objects of right ascension and declination in degrees        
-        self.coords = SkyCoord(ra=np.zeros(ntargs), dec=np.zeros(ntargs), unit='deg')
-        self.pmra = np.zeros(ntargs) # list of proper motion in right ascension in milliarcseconds/year
-        self.pmdec = np.zeros(ntargs) # list of proper motion in declination in milliarcseconds/year
-        self.rv = np.zeros(ntargs) # list of radial velocity in kilometers/second
         self.Binary_Cut = np.zeros(ntargs,dtype=bool) # boolean list where True is companion closer than 10 arcsec
 
     def __str__(self):

@@ -142,7 +142,7 @@ class SimulatedUniverse(object):
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
         
         # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(self.TargetList,self.plan2star,self.I)
+        self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
 
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)

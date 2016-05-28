@@ -433,7 +433,7 @@ class OpticalSystem(object):
         
         return mag
 
-    def Cp_Cb(self, TL, sInds, I, dMag, WA, inst, syst, Npix):
+    def Cp_Cb(self, TL, sInds, dMag, WA, fZ, fEZ, mV, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
         
         Args:
@@ -449,6 +449,12 @@ class OpticalSystem(object):
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            mV:
+                Star visual magnitude with B-V color
             inst:
                 Selected scienceInstrument
             syst:
@@ -475,10 +481,6 @@ class OpticalSystem(object):
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
-        mV = self.starMag(TL,sInds,lam)             # star visual magnitude
-        zodi = TL.ZodiacalLight                     # zodiacalLight module
-        fZ = zodi.fZ(TL,sInds,lam)                  # surface brightness of local zodi
-        fEZ = zodi.fEZ(TL,sInds,I)                  # surface brightness of exo-zodi
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
         Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
@@ -516,16 +518,18 @@ class OpticalSystem(object):
         # generate sInds for the whole TargetList
         sInds = np.array(range(TL.nStars))
         
-        # set default max integration time to I = 0, dMag = dMagLim, WA = IWA
-        I = np.zeros(TL.nStars)*u.deg
+        # set default max integration time to dMag = dMagLim, WA = IWA, fzodi = 0
         dMag = np.array([self.dMagLim]*TL.nStars)
         WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
+        fZ = np.zeros(TL.nStars)/u.arcsec**2
+        fEZ = np.zeros(TL.nStars)/u.arcsec**2
+        mV = TL.mV_imag[sInds]
         
-        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA)
+        maxintTime = self.calc_intTime(TL, sInds, dMag, WA, fZ, fEZ, mV)
         
         return maxintTime
 
-    def calc_intTime(self, TL, sInds, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, dMag, WA, fZ, fEZ, mV):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -538,13 +542,17 @@ class OpticalSystem(object):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            mV:
+                Star visual magnitude with B-V color
         
         Returns:
             intTime (Quantity):
@@ -561,7 +569,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_charTime(self, TL, sInds, I, dMag, WA):
+    def calc_charTime(self, TL, sInds, dMag, WA, fZ, fEZ, mV):
         """Finds characterization time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -574,13 +582,17 @@ class OpticalSystem(object):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            mV:
+                Star visual magnitude with B-V color
         
         Returns:
             charTime (Quantity):

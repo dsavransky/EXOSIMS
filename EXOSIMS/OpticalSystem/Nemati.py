@@ -22,7 +22,7 @@ class Nemati(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, dMag, WA, fZ, fEZ, mV):
         """Finds integration time for a specific target system,
         based on Nemati 2014 (SPIE).
         
@@ -32,13 +32,17 @@ class Nemati(OpticalSystem):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            mV:
+                Star visual magnitude with B-V color
         
         Returns:
             intTime:
@@ -47,19 +51,20 @@ class Nemati(OpticalSystem):
         
         """
         
-        inst = self.Imager
-        syst = self.ImagerSyst
-        lam = inst['lam']
-        
         # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
+        # use the imager to calculate the integration time
+        inst = self.Imager
+        syst = self.ImagerSyst
+        lam = inst['lam']
+        
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fZ, fEZ, mV, inst, syst, Npix)
         
         # Nemati14+ method
         PP = TL.PostProcessing                      # post-processing module
@@ -72,10 +77,9 @@ class Nemati(OpticalSystem):
         
         return intTime.to('day')
 
-    def calc_charTime(self, TL, sInds, I, dMag, WA):
+    def calc_charTime(self, TL, sInds, dMag, WA, fZ, fEZ, mV):
         """Finds characterization time for a specific target system,
         based on Nemati 2014 (SPIE).
-        
         
         Args:
             TL:
@@ -83,13 +87,17 @@ class Nemati(OpticalSystem):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            mV:
+                Star visual magnitude with B-V color
         
         Returns:
             charTime (Quantity):
@@ -97,19 +105,20 @@ class Nemati(OpticalSystem):
         
         """
         
-        inst = self.Spectro
-        syst = self.SpectroSyst
-        lam = inst['lam']
-        
         # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
+        # use the spectro to calculate the characterization time
+        inst = self.Spectro
+        syst = self.SpectroSyst
+        lam = inst['lam']
+        
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fZ, fEZ, mV, inst, syst, Npix)
         
         # Nemati14+ method
         PP = TL.PostProcessing                      # post-processing module

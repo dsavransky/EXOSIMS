@@ -1,36 +1,32 @@
-from EXOSIMS.Prototypes.StarCatalog import StarCatalog
-import os,inspect
-from astropy.io.votable import parse
+# -*- coding: utf-8 -*-
+import os, inspect
 import numpy as np
+import astropy.units as u
+from astropy.io.votable import parse
 from astropy.coordinates import SkyCoord
+from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 
 class EXOCAT1(StarCatalog):
     """
     EXOCAT Catalog class
     
     This class populates the star catalog used in EXOSIMS from
-    Margaret Trunbull's EXOCAT catalog, retrieved from the
+    Margaret Turnbull's EXOCAT catalog, retrieved from the
     NASA Exoplanet Archive as a VOTABLE.
-
+    
     Attributes:
-        stardata (ndarray):
-            All VOTABLE data
-
-    All other attributes as in StarCatalog
-
+        Only StarCatalog prototype attributes are used.
+    
     """
     
     def __init__(self,catalogpath=None,**specs):
         """
         Constructor for EXOCAT1
-
+        
         Args:
             catalogpath (str):
                 Full path to catalog VOTABLE.  Defaults to mission_exocat.votable
-
-        Notes:
-            All votable data is loaded to self.stardata
-
+        
         """
        
         if catalogpath is None:
@@ -40,37 +36,31 @@ class EXOCAT1(StarCatalog):
         
         if not os.path.exists(catalogpath):
             raise IOError('Catalog File %s Not Found.'%catalogpath)
-
+        
         #read votable
         votable = parse(catalogpath)
         table = votable.get_first_table()
         data = table.array
-
         
-        StarCatalog.__init__(self,ntargs=len(data),**specs)
-
-        keyword_table = {'Name':'hip_name',
-                        'Spec':'st_spttype',
-                        'Vmag':'st_vmag', 
-                        'Jmag':'st_j2m', 
-                        'Hmag':'st_h2m',
-                        'dist':'st_dist', 
-                        'BV':'st_bmv',
-                        'L':'st_lbol',
-                        'pmra':'st_pmra',
-                        'pmdec':'st_pmdec'}
-
-                
-        for key in keyword_table.keys():
-            setattr(self,key, data[keyword_table[key]])
-
-        self.Bmag = data['st_bmv'] + self.Vmag
+        StarCatalog.__init__(self, ntargs=len(data), **specs)
+        
+        # list of astropy attributes
+        self.dist = data['st_dist'].data*u.pc
+        self.parx = self.dist.to('mas',equivalencies=u.parallax())
+        self.coords = SkyCoord(ra=data['ra']*u.deg, dec=data['dec']*u.deg, distance=self.dist)
+        self.pmra = data['st_pmra'].data*u.mas/u.yr
+        self.pmdec = data['st_pmdec'].data*u.mas/u.yr
+        
+        # list of non-astropy attributes
+        self.Name = data['hip_name']
+        self.Spec = data['st_spttype']
+        self.Vmag = data['st_vmag']
+        self.Jmag = data['st_j2m']
+        self.Hmag = data['st_h2m']
+        self.BV = data['st_bmv']
+        self.L = data['st_lbol']
+        self.Bmag = self.Vmag + data['st_bmv']
         self.Kmag = self.Vmag - data['st_vmk']
-        self.BC = data['st_mbol'] - self.Vmag
+        self.BC = -self.Vmag + data['st_mbol']
+        self.MV = self.Vmag - 5*(np.log10(self.dist.value) - 1)
         self.Binary_Cut = ~data['wds_sep'].mask
-        self.MV = self.Vmag  - 5*(np.log10(self.dist) - 1)
-        self.coords = SkyCoord(ra=data['ra'], dec=data['dec'], unit='deg')
-        
-        self.stardata = data
-        
-

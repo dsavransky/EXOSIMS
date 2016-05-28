@@ -1,9 +1,9 @@
-from EXOSIMS.Prototypes.TargetList import TargetList
+# -*- coding: utf-8 -*-
+import numpy as np
 import astropy.units as u
 import astropy.constants as const
-import numpy as np
 from astropy.coordinates import SkyCoord
-
+from EXOSIMS.Prototypes.TargetList import TargetList
 
 class KnownRVPlanetsTargetList(TargetList):
     """
@@ -26,7 +26,6 @@ class KnownRVPlanetsTargetList(TargetList):
         #define mapping between attributes we need and the IPAC data
         #table loaded in the Planet Population module
         self.atts_mapping = {'Name':'pl_hostname',
-                             'Type':'st_spstr', 
                              'Spec':'st_spstr',
                              'parx':'st_plx',
                              'Umag':'st_uj',
@@ -49,7 +48,9 @@ class KnownRVPlanetsTargetList(TargetList):
     def populate_target_list(self, **specs):
         
         PPop = self.PlanetPopulation
+        Comp = self.Completeness
         OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
         
         tmp = PPop.allplanetdata[:]
         # filter out targets with planets outside of WA range 
@@ -83,11 +84,16 @@ class KnownRVPlanetsTargetList(TargetList):
         self.BC =  -2.5*self.L - 26.832 - self.Vmag
         self.L = 10.**self.L
         self.MV = self.Vmag  - 5*(np.log10(self.dist.value) - 1)
-        self.coords = SkyCoord(ra=tmp['ra'].data, dec=tmp['dec'].data, unit='deg')
+        self.coords = SkyCoord(ra=tmp['ra']*u.deg, dec=tmp['dec']*u.deg, distance=self.dist)
         self.Binary_Cut = np.zeros(self.nStars,dtype=bool)
         
-        # populate completness values
-        self.comp0 = self.Completeness.target_completeness(self)
+        # populate completeness values
+        self.comp0 = Comp.target_completeness(self)
+        # store wavelength-dependent values
+        self.mV_imag = OS.starMag(self,range(self.nStars),OS.Imager['lam'])
+        self.mV_spec = OS.starMag(self,range(self.nStars),OS.Spectro['lam'])
+        self.fZ_imag = ZL.fZ(self,range(self.nStars),OS.Imager['lam'])
+        self.fZ_spec = ZL.fZ(self,range(self.nStars),OS.Spectro['lam'])
         # populate maximum integration time
         self.maxintTime = OS.calc_maxintTime(self)
         # calculate 'true' and 'approximate' stellar masses
@@ -95,6 +101,10 @@ class KnownRVPlanetsTargetList(TargetList):
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
+        self.catalog_atts.append('mV_imag')
+        self.catalog_atts.append('mV_spec')
+        self.catalog_atts.append('fZ_imag')
+        self.catalog_atts.append('fZ_spec')
         self.catalog_atts.append('maxintTime')
 
     def filter_target_list(self, **specs):

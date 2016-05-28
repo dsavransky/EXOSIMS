@@ -507,14 +507,14 @@ class Observatory(object):
         q = np.array([-np.cos(ra)*np.sin(dec), -np.sin(ra)*np.sin(dec), np.cos(dec)])
         r = np.array([np.cos(ra)*np.cos(dec), np.sin(ra)*np.cos(dec), np.sin(dec)])
         
+        # initial position at J2000 epoch
+        r0 = TL.coords[sInd].icrs.represent_as('cartesian').xyz     # r*TL.dist[sInd]
+        
         # total velocity vector
         VE = TL.pmra[sInd]/TL.parx[sInd]*u.AU   # right ascension (proper motion = mas/yr)
         VN = TL.pmdec[sInd]/TL.parx[sInd]*u.AU  # declination (proper motion = mas/yr)
         VR = TL.rv[sInd]                        # radial velocity (km/s)
         V = p*VE + q*VN + r*VR
-        
-        # initial position at J2000 epoch
-        r0 = r*TL.parx[sInd].to('pc',equivalencies=u.parallax())
         
         # position
         j2000 = Time(2000., format='jyear')

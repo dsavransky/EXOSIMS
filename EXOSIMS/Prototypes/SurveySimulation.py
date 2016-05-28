@@ -441,7 +441,10 @@ class SurveySimulation(object):
             Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
             WA = SU.get_current_WA(pInds)
-            t_trueint = OS.calc_intTime(TL,sInds,SU.I[pInds],dMag,WA)
+            fZ = TL.fZ_imag[sInds]
+            fEZ = SU.fEZ[pInds]
+            mV = TL.mV_imag[sInds]
+            t_trueint = OS.calc_intTime(TL,sInds,dMag,WA,fZ,fEZ,mV)
             observationPossible &= (t_trueint <= OS.intCutoff)
         
         # determine if planets are observable at the end of observation
@@ -519,7 +522,10 @@ class SurveySimulation(object):
                     Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
                     dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
                     WA = SU.get_current_WA(pInds)
-                    t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],dMag,WA)
+                    fZ = TL.fZ_spec[sInds]
+                    fEZ = SU.fEZ[pInds]
+                    mV = TL.mV_spec[sInds]
+                    t_char = OS.calc_charTime(TL,sInds,dMag,WA,fZ,fEZ,mV)
                     # account for 5 bands and one coronagraph
                     t_char *= 4
                     # patch negative t_char

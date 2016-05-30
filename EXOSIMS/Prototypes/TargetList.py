@@ -170,11 +170,6 @@ class TargetList(object):
         self.nan_filter()
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # store wavelength-dependent values
-        self.mV_imag = OS.starMag(self,range(self.nStars),OS.Imager['lam'])
-        self.mV_spec = OS.starMag(self,range(self.nStars),OS.Spectro['lam'])
-        self.fZ_imag = ZL.fZ(self,range(self.nStars),OS.Imager['lam'])
-        self.fZ_spec = ZL.fZ(self,range(self.nStars),OS.Spectro['lam'])
         # populate maximum integration time
         self.maxintTime = OS.calc_maxintTime(self)
         # calculate 'true' and 'approximate' stellar masses
@@ -182,10 +177,6 @@ class TargetList(object):
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('mV_imag')
-        self.catalog_atts.append('mV_spec')
-        self.catalog_atts.append('fZ_imag')
-        self.catalog_atts.append('fZ_spec')
         self.catalog_atts.append('maxintTime')
 
     def filter_target_list(self,**specs):

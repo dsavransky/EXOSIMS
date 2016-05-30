@@ -52,7 +52,7 @@ class ZodiacalLight(object):
         
         return 'Zodiacal Light class object attributes'
 
-    def fZ(self, TL, sInds, lam):
+    def fZ(self, TL, sInds, lam, r_sc):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -63,6 +63,8 @@ class ZodiacalLight(object):
                 with the length of the number of planets of interest.
             lam:
                 Central wavelength (default units of nm)
+            r_sc:
+                Observatory (spacecraft) position vector
         
         Returns:
             fZ (ndarray):

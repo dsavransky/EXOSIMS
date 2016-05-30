@@ -4,7 +4,8 @@ import numpy as np
 import os, inspect
 import astropy.units as u
 import astropy.constants as const
-from scipy.interpolate import interp1d, interp2d, griddata
+from astropy.coordinates import SkyCoord
+from scipy.interpolate import interp1d, griddata
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -13,7 +14,7 @@ class Stark(ZodiacalLight):
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Stark et al. 2014."""
 
-    def fZ(self, TL, sInds, lam):
+    def fZ(self, TL, sInds, lam, r_sc):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -24,6 +25,8 @@ class Stark(ZodiacalLight):
                 with the length of the number of planets of interest.
             lam:
                 Central wavelength (default units of nm)
+            r_sc:
+                Observatory (spacecraft) position vector
         
         Returns:
             fZ (ndarray):
@@ -35,9 +38,22 @@ class Stark(ZodiacalLight):
         if not sInds.shape:
             sInds = np.array([sInds])
         
-        # solar longitudes and latitudes of targets
-        lon = TL.coords.barycentrictrueecliptic.lon[sInds].value
-        lat = TL.coords.barycentrictrueecliptic.lat[sInds].value
+        # observatory coordinates wrt Sun
+        x = r_sc[0]
+        y = r_sc[1]
+        z = r_sc[2]
+        rsc = SkyCoord(x,y,z,representation='cartesian').heliocentrictrueecliptic
+        # longitude of the sun
+        lon0 = rsc.lon.value + 180
+        
+        # target coordinates wrt observatory
+        x = TL.coords[sInds].represent_as('cartesian').x - r_sc[0]
+        y = TL.coords[sInds].represent_as('cartesian').y - r_sc[1]
+        z = TL.coords[sInds].represent_as('cartesian').z - r_sc[2]
+        rt = SkyCoord(x,y,z,representation='cartesian').heliocentrictrueecliptic
+        # longitudes and latitudes of targets
+        lon = rt.lon.value - lon0
+        lat = rt.lat.value
         lon = abs((lon+180)%360-180)
         lat = abs(lat)
         

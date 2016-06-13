@@ -47,7 +47,7 @@ def eccanom(M, e):
         numIter += 1
     
     if numIter == maxIter:
-        raise Exception("eccanom failed to converge.")
+        raise Exception("eccanom failed to converge. Final error of %e"%err)
     
     return E
 

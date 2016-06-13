@@ -12,7 +12,7 @@ from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class BrownCompleteness(Completeness):
     """Completeness class template

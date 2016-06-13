@@ -132,7 +132,13 @@ class Observatory(object):
                     spkpath = os.path.join(classpath, filename)
             self.kernel = SPK.open(spkpath)
         else:
-            # All ephemeride data from Vallado Appendix D.4
+            """All ephemeride data from Vallado Appendix D.4
+            Values are:
+            a     e             i               O                       w                   lM
+            sma   eccentricity  inclination     long. ascending node    long. perihelion    mean longitude
+            AU    N/A           deg             deg                     deg                 deg
+            """
+
             # Store Mercury ephemerides data (ecliptic)
             Mercurya = 0.387098310
             Mercurye = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
@@ -416,8 +422,8 @@ class Observatory(object):
         w = np.radians(self.propeph(planet.w, TDB))
         lM = np.radians(self.propeph(planet.lM, TDB))
         # Find mean anomaly and argument of perigee
-        M = lM - w
-        wp = w - O
+        M = np.mod(lM - w,2*np.pi)
+        wp = np.mod(w - O,2*np.pi)
         # Find eccentric anomaly
         E = eccanom(M,e)[0]
         # Find true anomaly

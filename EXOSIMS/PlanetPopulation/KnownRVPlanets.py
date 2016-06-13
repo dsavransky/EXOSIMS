@@ -50,10 +50,9 @@ class KnownRVPlanets(KeplerLike1):
         specs['esigma'] = esigma
         KeplerLike1.__init__(self, **specs)
         
-        #default file is IPAC_032216
+        #default file is ipac_2016-05-15
         if rvplanetfilepath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            # filename = 'RVplanets_ipac_032216.votable'
             filename = 'RVplanets_ipac_2016-05-15.votable'
             rvplanetfilepath = os.path.join(classpath, filename)
         if not os.path.exists(rvplanetfilepath):
@@ -62,7 +61,6 @@ class KnownRVPlanets(KeplerLike1):
         #read votable
         votable = parse(rvplanetfilepath)
         table = votable.get_first_table()
-        self.table = table
         data = table.array
         
         #we need mass info (either true or m\sin(i)) AND

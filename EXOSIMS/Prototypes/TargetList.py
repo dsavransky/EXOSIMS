@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from astropy.coordinates import SkyCoord
 import astropy.units as u
+from astropy.coordinates import SkyCoord
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.deltaMag import deltaMag
 
@@ -35,10 +35,8 @@ class TargetList(object):
             PostProcessing class object
         Name (ndarray):
             1D numpy ndarray of star names
-        Type (ndarray):
-            1D numpy ndarray of star types
         Spec (ndarray):
-            1D numpy ndarray of spectral types
+            1D numpy ndarray of star spectral types
         parx (ndarray):
             1D numpy ndarray of parallax (in milliarcseconds)
         Umag (ndarray):
@@ -98,13 +96,13 @@ class TargetList(object):
     def __init__(self, keepStarCatalog=False, **specs):
         """
         Initializes target list
-                
+        
         """
         
         # get desired module names (specific or prototype)
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)
-        self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
         self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
+        self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
         self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],'BackgroundSources')(**specs)
         self.PostProcessing = get_module(specs['modules']['PostProcessing'],'PostProcessing')(**specs)
         self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
@@ -115,7 +113,7 @@ class TargetList(object):
         self.PlanetPhysicalModel = Comp.PlanetPhysicalModel
         
         # list of possible Star Catalog attributes
-        self.catalog_atts = ['Name', 'Type', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
+        self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
         
@@ -154,27 +152,26 @@ class TargetList(object):
         
         """
         
+        SC = self.StarCatalog
+        Comp = self.Completeness
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        
         # bring Star Catalog values to top level of Target List
         for att in self.catalog_atts:
-            if type(getattr(self.StarCatalog, att)) == np.ma.core.MaskedArray:
-                setattr(self, att, getattr(self.StarCatalog, att).filled(fill_value=float('nan')))
+            if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                setattr(self, att, getattr(SC, att).filled(fill_value=float('nan')))
             else:
-                setattr(self, att, getattr(self.StarCatalog, att))
-        # astropy units
-        self.parx = self.parx*u.mas
-        self.dist = self.dist*u.pc
-        self.pmra = self.pmra*u.mas/u.yr
-        self.pmdec = self.pmdec*u.mas/u.yr
-        self.rv = self.rv*u.km/u.s
+                setattr(self, att, getattr(SC, att))
         
         # number of target stars
         self.nStars = len(self.Name);
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
         # populate completeness values
-        self.comp0 = self.Completeness.target_completeness(self)
+        self.comp0 = Comp.target_completeness(self)
         # populate maximum integration time
-        self.maxintTime = self.OpticalSystem.calc_maxintTime(self)
+        self.maxintTime = OS.calc_maxintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -371,9 +368,9 @@ class TargetList(object):
         
         for att in self.catalog_atts:
             if att == 'coords':
-                ra = self.coords.ra[ind].to('deg').value
-                dec = self.coords.dec[ind].to('deg').value
-                self.coords = SkyCoord(ra=ra, dec=dec, unit='deg')
+                ra = self.coords.ra[ind].to('deg')
+                dec = self.coords.dec[ind].to('deg')
+                self.coords = SkyCoord(ra, dec, self.dist.to('pc'))
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[ind])

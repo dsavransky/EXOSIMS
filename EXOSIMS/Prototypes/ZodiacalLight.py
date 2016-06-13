@@ -52,7 +52,7 @@ class ZodiacalLight(object):
         
         return 'Zodiacal Light class object attributes'
 
-    def fZ(self, TL, sInds, lam):
+    def fZ(self, TL, sInds, lam, r_sc):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -63,6 +63,8 @@ class ZodiacalLight(object):
                 with the length of the number of planets of interest.
             lam:
                 Central wavelength (default units of nm)
+            r_sc:
+                Observatory (spacecraft) position vector
         
         Returns:
             fZ (ndarray):
@@ -110,6 +112,15 @@ class ZodiacalLight(object):
             v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
             nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
         
-        fEZ = nEZ*10**(-0.4*self.magEZ)/u.arcsec**2
+        # supplementary angle for inclination > 90 degrees
+        mask = np.where(I.value > 90)[0]
+        I.value[mask] = 180 - I.value[mask]
+        beta = I.value
+        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
+        
+        # maximum V magnitude
+        MV = TL.MV[sInds]
+        
+        fEZ = nEZ*10**(-0.4*self.magEZ)*2*fbeta*2.5**(4.78-MV)/u.arcsec**2
         
         return fEZ

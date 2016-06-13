@@ -414,6 +414,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TL = self.TargetList
         OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
         
         # initialize with True if planets are present at the target star 
@@ -441,7 +442,9 @@ class SurveySimulation(object):
             Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
             WA = SU.get_current_WA(pInds)
-            t_trueint = OS.calc_intTime(TL,sInds,SU.I[pInds],dMag,WA)
+            fEZ = SU.fEZ[pInds]
+            fZ = ZL.fZ(TL,sInds,OS.Imager['lam'],Obs.r_sc)
+            t_trueint = OS.calc_intTime(TL,sInds,dMag,WA,fEZ,fZ)
             observationPossible &= (t_trueint <= OS.intCutoff)
         
         # determine if planets are observable at the end of observation
@@ -507,6 +510,7 @@ class SurveySimulation(object):
         TL = self.TargetList
         TK = self.TimeKeeping
         OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
         
         # check if characterization has been done
@@ -519,7 +523,9 @@ class SurveySimulation(object):
                     Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
                     dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
                     WA = SU.get_current_WA(pInds)
-                    t_char = OS.calc_charTime(TL,sInds,SU.I[pInds],dMag,WA)
+                    fEZ = SU.fEZ[pInds]
+                    fZ = ZL.fZ(TL,sInds,OS.Spectro['lam'],Obs.r_sc)
+                    t_char = OS.calc_charTime(TL,sInds,dMag,WA,fZ,fEZ)
                     # account for 5 bands and one coronagraph
                     t_char *= 4
                     # patch negative t_char

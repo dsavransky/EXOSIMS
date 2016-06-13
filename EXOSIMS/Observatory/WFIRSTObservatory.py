@@ -55,7 +55,7 @@ class WFIRSTObservatory(Observatory):
         
         return success
 
-    def keepout(self, time, catalog, koangle):
+    def keepout(self, time, TL, koangle):
         """Finds keepout Boolean values, returns True if successful
         
         This method finds the keepout Boolean values for each target star where
@@ -64,7 +64,7 @@ class WFIRSTObservatory(Observatory):
         Args:
             time (Time):
                 absolute time (astropy Time)
-            catalog (TargetList or StarCatalog):
+            TL (TargetList or StarCatalog):
                 TargetList or StarCatalog class object
             koangle (float):
                 Telescope keepout angle in degrees
@@ -79,10 +79,10 @@ class WFIRSTObservatory(Observatory):
         a = self.orbit(time)
         
         # Find position and unit vectors for list of stars in catalog wrt spacecraft
-        r_targ = [np.zeros((1,3))]*len(catalog.Name) # initialize list of position vectors
+        r_targ = [np.zeros((1,3))]*TL.nStars # initialize list of position vectors
         u_targ = r_targ # initialize list of unit vectors
-        for x in xrange(len(catalog.Name)):
-            r_targ[x] = self.starprop(time, catalog, x) # position vector wrt sun
+        for x in xrange(TL.nStars):
+            r_targ[x] = self.starprop(time, TL, x) # position vector wrt sun
             r_targ[x] -= self.r_sc # position vector wrt spacecraft
             u_targ[x] = r_targ[x]/np.linalg.norm(r_targ[x]) # unit vector wrt spacecraft
         
@@ -109,8 +109,8 @@ class WFIRSTObservatory(Observatory):
         # if bright objects have an angle with the target vector less than 
         # pi/4 they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False
-        self.kogood = np.array([True]*len(catalog.Name))
-        for i in xrange(len(catalog.Name)):
+        self.kogood = np.array([True]*TL.nStars)
+        for i in xrange(TL.nStars):
             for j in xrange(len(u_bright)):
                 angle = np.arccos(np.dot(u_targ[i], u_bright[j]))
                 if angle < np.radians(koangle).value:

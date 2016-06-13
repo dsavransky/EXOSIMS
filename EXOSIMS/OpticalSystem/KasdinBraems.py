@@ -22,7 +22,7 @@ class KasdinBraems(Nemati):
         
         Nemati.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, I, dMag, WA):
+    def calc_intTime(self, TL, sInds, dMag, WA, fEZ, fZ):
         """Finds integration time for a specific target system,
         based on Kasdin and Braems 2006.
         
@@ -32,13 +32,15 @@ class KasdinBraems(Nemati):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
         
         Returns:
             intTime:
@@ -47,19 +49,20 @@ class KasdinBraems(Nemati):
         
         """
         
-        inst = self.Imager
-        syst = self.ImagerSyst
-        lam = inst['lam']
-        
         # check type of sInds
         sInds = np.array(sInds)
         if not sInds.shape:
             sInds = np.array([sInds])
         
+        # use the imager to calculate the integration time
+        inst = self.Imager
+        syst = self.ImagerSyst
+        lam = inst['lam']
+        
         # nb of pixels for photometry aperture = 1/sharpness
         PSF = syst['PSF'](lam, WA)
         Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, I, dMag, WA, inst, syst, Npix)
+        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix)
         
         # Kasdin06+ method
         Pbar = PSF/np.max(PSF)

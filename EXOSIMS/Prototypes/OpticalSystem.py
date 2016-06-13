@@ -425,15 +425,17 @@ class OpticalSystem(object):
         
         Vmag = TL.Vmag[sInds]
         BV = TL.BV[sInds]
-        if lam.value < 550.:
+        
+        lam_um = lam.to('um').value
+        if lam_um < .550:
             b = 2.20
         else:
             b = 1.54
-        mag = Vmag + b*BV*(1000./lam.value - 1.818)
+        mV = Vmag + b*BV*(1/lam_um - 1.818)
         
-        return mag
+        return mV
 
-    def Cp_Cb(self, TL, sInds, I, dMag, WA, inst, syst, Npix):
+    def Cp_Cb(self, TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
         
         Args:
@@ -442,13 +444,15 @@ class OpticalSystem(object):
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
             dMag:
                 Numpy ndarray containing differences in magnitude between planets 
                 and their host star
             WA:
                 Numpy ndarray containing working angles of the planets of interest
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
             inst:
                 Selected scienceInstrument
             syst:
@@ -476,9 +480,6 @@ class OpticalSystem(object):
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
         mV = self.starMag(TL,sInds,lam)             # star visual magnitude
-        zodi = TL.ZodiacalLight                     # zodiacalLight module
-        fZ = zodi.fZ(TL,sInds,lam)                  # surface brightness of local zodi
-        fEZ = zodi.fEZ(TL,sInds,I)                  # surface brightness of exo-zodi
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
         Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
@@ -494,6 +495,82 @@ class OpticalSystem(object):
         C_b = inst['ENF']**2*(C_s + C_z + C_id + C_cc) + C_sr   # total noise budget
         
         return C_p, C_b
+
+    def calc_intTime(self, TL, sInds, dMag, WA, fEZ, fZ):
+        """Finds integration time for a specific target system 
+        
+        This method is called by a method in the SurveySimulation class object.
+        This method defines the data type expected, integration time is 
+        determined by specific OpticalSystem classes.
+        
+        Args:
+            TL:
+                TargetList class object
+            sInds (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            dMag:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+        
+        Returns:
+            intTime (Quantity):
+                1D numpy ndarray of integration times (default units of day)
+        
+        """
+        
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        intTime = np.ones(len(sInds))*u.day
+        
+        return intTime
+
+    def calc_charTime(self, TL, sInds, dMag, WA, fEZ, fZ):
+        """Finds characterization time for a specific target system 
+        
+        This method is called by a method in the SurveySimulation class object.
+        This method defines the data type expected, characterization time is 
+        determined by specific OpticalSystem classes.
+        
+        Args:
+            TL:
+                TargetList class object
+            sInds (integer ndarray):
+                Numpy ndarray containing integer indices of the stars of interest, 
+                with the length of the number of planets of interest.
+            dMag:
+                Numpy ndarray containing differences in magnitude between planets 
+                and their host star
+            WA:
+                Numpy ndarray containing working angles of the planets of interest
+            fEZ:
+                Surface brightness of exo-zodiacal light (in 1/arcsec2)
+            fZ:
+                Surface brightness of local zodiacal light (in 1/arcsec2)
+        
+        Returns:
+            charTime (Quantity):
+                1D numpy ndarray of characterization times (default units of day)
+        
+        """
+        
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        charTime = np.ones(len(sInds))*u.day
+        
+        return charTime
 
     def calc_maxintTime(self, TL):
         """Finds maximum integration time for target systems 
@@ -516,83 +593,12 @@ class OpticalSystem(object):
         # generate sInds for the whole TargetList
         sInds = np.array(range(TL.nStars))
         
-        # set default max integration time to I = 0, dMag = dMagLim, WA = IWA
-        I = np.zeros(TL.nStars)*u.deg
+        # set default max integration time to dMag = dMagLim, WA = IWA, fzodi = 0
         dMag = np.array([self.dMagLim]*TL.nStars)
         WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
+        fEZ = np.zeros(TL.nStars)/u.arcsec**2
+        fZ = np.zeros(TL.nStars)/u.arcsec**2
         
-        maxintTime = self.calc_intTime(TL, sInds, I, dMag, WA)
+        maxintTime = self.calc_intTime(TL, sInds, dMag, WA, fEZ, fZ)
         
         return maxintTime
-
-    def calc_intTime(self, TL, sInds, I, dMag, WA):
-        """Finds integration time for a specific target system 
-        
-        This method is called by a method in the SurveySimulation class object.
-        This method defines the data type expected, integration time is 
-        determined by specific OpticalSystem classes.
-        
-        Args:
-            TL:
-                TargetList class object
-            sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-        
-        Returns:
-            intTime (Quantity):
-                1D numpy ndarray of integration times (default units of day)
-        
-        """
-        
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        intTime = np.ones(len(sInds))*u.day
-        
-        return intTime
-
-    def calc_charTime(self, TL, sInds, I, dMag, WA):
-        """Finds characterization time for a specific target system 
-        
-        This method is called by a method in the SurveySimulation class object.
-        This method defines the data type expected, characterization time is 
-        determined by specific OpticalSystem classes.
-        
-        Args:
-            TL:
-                TargetList class object
-            sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            I:
-                Numpy ndarray containing inclinations of the planets of interest
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-        
-        Returns:
-            charTime (Quantity):
-                1D numpy ndarray of characterization times (default units of day)
-        
-        """
-        
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        charTime = np.ones(len(sInds))*u.day
-        
-        return charTime

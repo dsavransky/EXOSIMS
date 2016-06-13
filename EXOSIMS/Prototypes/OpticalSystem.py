@@ -23,54 +23,67 @@ class OpticalSystem(object):
         obscurFac (float):
             Obscuration factor due to secondary mirror and spiders
         shapeFac (float):
-            shape factor (also known as fill factor) where 
-            :math:`shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea`
-        pupilDiam (Quantity):
-            entrance pupil diameter (default units of m)
-        pupilArea (Quantity):
-            entrance pupil area (default units of m\ :sup:`2`)
-        telescopeKeepout (float):
-            telescope keepout angle in degrees
+            Shape factor of the unobscured pupil area, so that
+            shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea
+        pupilDiam (astropy Quantity):
+            Entrance pupil diameter in units of m
+        pupilArea (astropy Quantity):
+            Entrance pupil area in units of m2
+        telescopeKeepout (astropy Quantity):
+            Telescope keepout angle in units of deg
         attenuation (float):
-            non-coronagraph attenuation (throughput)
-        intCutoff (Quantity):
-            integration cutoff (default units of day)
+            Non-coronagraph attenuation, equal to the throughput of the optical 
+            system without the coronagraph elements
+        intCutoff (astropy Quantity):
+            Maximum allowed integration time in units of day
         Npix (float):
-            number of noise pixels
+            Number of noise pixels
         Ndark (float):
-            number of dark frames used
-        haveOcculter (bool):
-            boolean signifying if the system has an occulter
+            Number of dark frames used
+        haveOcculter (boolean):
+            Boolean signifying if the system has an occulter
         F0 (callable(lam)):
             Spectral flux density
-        IWA (Quantity):
-            Fundamental Inner Working Angle (default units of arcsecond)
-        OWA (Quantity):
-            Fundamental Outer Working Angle (default units of arcsecond)
+        IWA (astropy Quantity):
+            Fundamental Inner Working Angle in units of arcsec
+        OWA (astropy Quantity):
+            Fundamental Outer Working Angle in units of arcsec
         dMagLim (float):
-            Fundamental limiting delta magnitude. 
+            Fundamental limiting delta magnitude
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
+        Imager (dict):
+            Dictionary containing imaging camera attributes.
+            Default to scienceInstruments[0]
+        Spectro (dict):
+            Dictionary containing spectrograph attributes.
+            Default to scienceInstruments[-1]
         starlightSuppressionSystems (list of dicts):
             All starlight suppression system attributes (variable)
+        ImagerSyst (dict):
+            Dictionary containing imaging coronagraph attributes.
+            Default to starlightSuppressionSystems[0]
+        SpectroSyst (dict):
+            Dictionary containing spectroscopy coronagraph attributes.
+            Default to starlightSuppressionSystems[-1]
     
     Common Science Instrument Attributes:
-        type:
+        type (string):
             Instrument type (e.g. imaging, spectro)
-        lam (Quantity):
-            Central wavelength (default units of nm)
-        deltaLam (Quantity):
-            Bandwidth (default units of nm)
+        lam (astropy Quantity):
+            Central wavelength in units of nm
+        deltaLam (astropy Quantity):
+            Bandwidth in units of nm
         BW (float):
             Bandwidth fraction
-        pitch (float):
-            Pixel pitch (default units of m)
-        focal (float):
-            Focal length (default units of m)
-        idark (float):
-            Dark current rate (default units of s^-1)
-        texp (float):
-            Exposure time per frame (default units of s)
+        pitch (astropy Quantity):
+            Pixel pitch in units of m
+        focal (astropy Quantity):
+            Focal length in units of m
+        idark (astropy Quantity):
+            Dark current rate in units of 1/s
+        texp (astropy Quantity):
+            Exposure time per frame in units of s
         sread (float):
             Detector readout noise
         CIC (float):
@@ -86,39 +99,39 @@ class OpticalSystem(object):
         QE (callable(lam)):
             Quantum efficiency (must be callable - can be lambda function, 
             scipy.interpolate.interp2d object, etc.) with input 
-            wavelength (astropy Quantity).  
+            wavelength (astropy Quantity).
      
     Common Starlight Suppression System Attributes:
-        type:
+        type (string):
             System type (e.g. internal, external, hybrid), should also contain the
             type of science instrument it can be used with (e.g. imaging, spectro)
         throughput (callable(lam, WA)):
-            optical system throughput (must be callable - can be lambda,
+            System throughput (must be callable - can be lambda,
             function, scipy.interpolate.interp2d object, etc.) with inputs
             wavelength (astropy Quantity) and angular separation/working angle 
             (astropy Quantity).
         contrast (callable(lam, WA)):
-            optical system contrast curve (must be callable - can be lambda,
+            System contrast curve (must be callable - can be lambda,
             function, scipy.interpolate.interp2d object, etc.) with inputs
             wavelength (astropy Quantity) and angular separation/working angle 
             (astropy Quantity).
-        IWA:
-            Inner working angle
-        OWA:
-            Outer working angle
-        dMagLim:
+        IWA (astropy Quantity):
+            Inner working angle in units of arcsec
+        OWA (astropy Quantity):
+            Outer working angle in units of arcsec
+        dMagLim (float):
             System delta magnitude limit
         PSF (callable(lam, WA)):
-            point spread function - 2D ndarray of values, normalized to 1 at
+            Point spread function - 2D ndarray of values, normalized to 1 at
             the core (must be callable - can be lambda, function,
             scipy.interpolate.interp2d object, etc.) with inputs wavelength
             (astropy Quantity) and angular separation/working angle (astropy 
             Quantity). Note: normalization means that all throughput effects 
             must be contained in the throughput attribute.
-        samp (Quantity):
-            Sampling of PSF in arcsec/pixel (default units of arcsec)
+        samp (astropy Quantity):
+            Sampling of PSF in units of arcsec (per pixel)
         ohTime (astropy Quantity):
-            Overhead time (default units of days)
+            Overhead time in units of days
         imagTimeMult (float):
             Imaging time multiplier
         charTimeMult (float):
@@ -397,74 +410,35 @@ class OpticalSystem(object):
         
         return 'Optical System class object attributes'
 
-    def starMag(self, TL, sInds, lam):
-        """Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
-        using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
-        The expression for flux is accurate to about 7%, in the range of validity 
-        400 nm < λ < 1000 nm (Traub et al. 2016).
-        
-        Args:
-            TL:
-                TargetList class object
-            sInds:
-                (integer ndarray) indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            lam:
-                Wavelength in nm
-        
-        Returns:
-            mag:
-                Star visual magnitudes with B-V color
-        
-        """
-        
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        Vmag = TL.Vmag[sInds]
-        BV = TL.BV[sInds]
-        
-        lam_um = lam.to('um').value
-        if lam_um < .550:
-            b = 2.20
-        else:
-            b = 1.54
-        mV = Vmag + b*BV*(1/lam_um - 1.818)
-        
-        return mV
-
     def Cp_Cb(self, TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix):
         """ Calculates electron count rates for planet signal and background noise.
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-            fEZ:
-                Surface brightness of exo-zodiacal light (in 1/arcsec2)
-            fZ:
-                Surface brightness of local zodiacal light (in 1/arcsec2)
-            inst:
-                Selected scienceInstrument
-            syst:
-                Selected starlightSuppressionSystem
-            Npix:
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            inst (dict):
+                Selected Science Instrument
+            syst (dict):
+                Selected Starlight Suppression System
+            Npix (float):
                 Number of noise pixels
         
         Returns:
-            C_p:
-                1D numpy array of planet signal electron count rate (units of s^-1)
-            C_b:
-                1D numpy array of background noise electron count rate (units of s^-1)
+            C_p (astropy Quantity array):
+                Planet signal electron count rate in units of 1/s
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s
         
         """
         
@@ -479,7 +453,7 @@ class OpticalSystem(object):
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
                 * self.attenuation**2               # throughput
-        mV = self.starMag(TL,sInds,lam)             # star visual magnitude
+        mV = TL.starMag(sInds,lam)                  # star visual magnitude
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
         Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
         Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
@@ -504,24 +478,23 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-            fEZ:
-                Surface brightness of exo-zodiacal light (in 1/arcsec2)
-            fZ:
-                Surface brightness of local zodiacal light (in 1/arcsec2)
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
         
         Returns:
-            intTime (Quantity):
-                1D numpy ndarray of integration times (default units of day)
+            intTime (astropy Quantity array):
+                Integration times in units of day
         
         """
         
@@ -542,24 +515,23 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-            fEZ:
-                Surface brightness of exo-zodiacal light (in 1/arcsec2)
-            fZ:
-                Surface brightness of local zodiacal light (in 1/arcsec2)
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
         
         Returns:
-            charTime (Quantity):
-                1D numpy ndarray of characterization times (default units of day)
+            charTime (astropy Quantity array):
+                Characterization times in units of day
         
         """
         
@@ -580,13 +552,12 @@ class OpticalSystem(object):
         the planet inclination is set to 0.
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
         
         Returns:
-            maxintTime:
-                1D numpy array containing maximum integration time for target
-                list stars (astropy Quantity with units of day)
+            maxintTime (astropy Quantity array):
+                Maximum integration times for target list stars in units of day
         
         """
         

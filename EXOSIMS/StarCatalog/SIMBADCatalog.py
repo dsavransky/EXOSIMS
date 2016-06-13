@@ -5,6 +5,7 @@ import cPickle as pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
+import astropy.units as u
 
 class SIMBADCatalog(StarCatalog):
     """SIMBAD Catalog class
@@ -12,71 +13,45 @@ class SIMBADCatalog(StarCatalog):
     This class provides the functions to populate the star catalog used in 
     EXOSIMS from the SIMBAD star catalog data."""
     
-    def populatepkl(self, filename):
+    def populatepkl(self, pklpath, **specs):
         """Populates the star catalog and returns True if successful
         
         This method populates the star catalog from a pickled dictionary file 
         housed in the StarCatalog directory and returns True if successful.
         
         Args:
-            filename (str):
-                name of the pickled dictionary file with extension .pkl
+            pklpath (string):
+                path to the pickled dictionary file with extension .pkl
         
         Returns:
-            bool (bool):
+            bool (boolean):
                 True if successful, False if not
         
         """
         
-        # pickled dictionary stored in filename must contain at least the first 
-        # key ('Name') defined
-        # 'Name' - list of star names
-        # 'Type' - list of star types
-        # 'Spec' - list of spectral types
-        # 'parx' - list of parallax in milliarcseconds
-        # 'Umag' - list of U magnitude
-        # 'Bmag' - list of B magnitude
-        # 'Vmag' - list of V magnitude
-        # 'Rmag' - list of R magnitude
-        # 'Imag' - list of I magnitude
-        # 'Jmag' - list of J magnitude
-        # 'Hmag' - list of H magnitude
-        # 'Kmag' - list of K magnitude
-        # 'dist' - list of distance in parsecs
-        # 'BV' - list of B-V Johnson magnitude
-        # 'MV' - list of absolute V magnitude
-        # 'BC' - list of bolometric correction
-        # 'L' - list of stellar luminosity in Solar luminosities
-        # 'radeg' - list of right ascension in degrees
-        # 'decdeg' - list of declination in degrees
-        # 'pmra'- list of proper motion in right assension in milliarcseconds/year
-        # 'pmdec' - list of proper motion in declination in milliarcseconds/year
-        # 'rv' - list of radial velocity in kilometers/second
-        # 'Binary_Cut' - boolean list where True is companion closer than 10 arcsec
-        
-        nan = float('nan') # used to fill missing data
-        
-        if os.path.exists(filename):
-            x = pickle.load(open(filename, 'rb'))
+        if os.path.exists(pklpath):
+            x = pickle.load(open(pklpath, 'rb'))
             if 'Name' in x:
-                self.Name = x['Name']
-                # store attributes as list
-                atts = self.__dict__.keys() 
-                for attr in atts:
-                    if attr in x:
-                        if attr != 'radeg' or attr != 'decdeg':
-                            setattr(self, attr, np.array(x[attr]))
-                    else:
-                        if attr != 'coords':
-                            setattr(self, attr, np.array([nan]*len(self.Name)))
-                            print "Warning, %s not in %s list set to 'nan'" % (attr, filename)
-                self.coords = SkyCoord(ra=x['radeg'], dec=x['decdeg'], unit='deg')
+                ntargs = len(x['Name'])
+                StarCatalog.__init__(self, ntargs=ntargs, **specs)
+                
+                for att in x.keys():
+                    # list of astropy attributes
+                    if att in ('dist','parx','pmra','pmdec','rv'):
+                        unit = getattr(self,att).unit
+                        setattr(self, att, np.array(x[att])*unit)
+                    # list of non-astropy attributes
+                    elif att in self.__dict__.keys():
+                        setattr(self, att, np.array(x[att]))
+                # astropy SkyCoord object
+                self.coords = SkyCoord(x['radeg'],x['decdeg'],x['dist'],unit='deg,deg,pc')
+                
                 success = True
             else:
-                print "pickled dictionary file %s must contain key 'Name'" % filename
+                print "pickled dictionary file %s must contain key 'Name'" % pklpath
                 success = False
         else:
-            print 'Star catalog pickled dictionary file %s not in StarCatalog directory' % filename
+            print 'Star catalog pickled dictionary file %s not in StarCatalog directory' % pklpath
             success = False
         
         return success
@@ -89,13 +64,13 @@ class SIMBADCatalog(StarCatalog):
         directory.
         
         Args:
-            matpath (str):
+            matpath (string):
                 path to .mat file
             pklpath (str):
                 pat to .pkl file to be written
         
         Returns:
-            bool (bool):
+            bool (boolean):
                 True if successful, False if not
         
         Stores pickled dictionary file with same name as .mat file (and 

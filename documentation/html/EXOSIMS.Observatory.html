@@ -57,7 +57,7 @@ observatory needed to perform Observatory Definition Module calculations
 in exoplanet mission simulation.</p>
 <dl class="method">
 <dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">
-<code class="descname">keepout</code><span class="sig-paren">(</span><em>time</em>, <em>catalog</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>time</em>, <em>TL</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds keepout Boolean values, returns True if successful</p>
 <p>This method finds the keepout Boolean values for each target star where
 True is an observable star and stores the 1D numpy array in self.kogood.</p>
@@ -67,7 +67,7 @@ True is an observable star and stores the 1D numpy array in self.kogood.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>time</strong> (<em>Time</em>) &#8211; absolute time (astropy Time)</li>
-<li><strong>catalog</strong> (<em>TargetList or StarCatalog</em>) &#8211; TargetList or StarCatalog class object</li>
+<li><strong>TL</strong> (<em>TargetList or StarCatalog</em>) &#8211; TargetList or StarCatalog class object</li>
 <li><strong>koangle</strong> (<em>float</em>) &#8211; Telescope keepout angle in degrees</li>
 </ul>
 </td>

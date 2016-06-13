@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import astropy.units as u
+from EXOSIMS.util.get_module import get_module
 
 class PostProcessing(object):
     """Post Processing class template
@@ -23,6 +24,8 @@ class PostProcessing(object):
             Signal-to-noise ratio threshold for imaging/detection
         SNchar (float):
             Signal-to-noise ratio threshold for characterization
+        BackgroundSources (BackgroundSources):
+            BackgroundSources class object
             
     """
     
@@ -42,6 +45,10 @@ class PostProcessing(object):
         for att in self.__dict__.keys():
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+
+        #instantiate background sources object
+        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],'BackgroundSources')(**specs)
+ 
 
     def __str__(self):
         """String representation of Post Processing object
@@ -69,7 +76,9 @@ class PostProcessing(object):
             FA, DET, MD, NULL (bool, bool, bool, bool):
                 False Alarm boolean, Detection boolean, Missed Detection boolean,
                 Null detection boolean
-        
+       
+        Notes:
+            TODO: Add backgroundsources hook
         """
         
         FA, DET, MD, NULL = False, False, False, False

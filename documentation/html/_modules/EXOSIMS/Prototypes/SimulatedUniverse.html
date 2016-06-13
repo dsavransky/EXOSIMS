@@ -59,57 +59,57 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        TargetList (TargetList):</span>
-<span class="sd">            TargetList class object</span>
-<span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel):</span>
-<span class="sd">            PlanetPhysicalModel class object</span>
-<span class="sd">        OpticalSystem (OpticalSystem):</span>
-<span class="sd">            OpticalSystem class object</span>
-<span class="sd">        PlanetPopulation (PlanetPopulation):</span>
+<span class="sd">        PlanetPopulation (object):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        ZodiacalLight (ZodiacalLight):</span>
+<span class="sd">        PlanetPhysicalModel (object):</span>
+<span class="sd">            PlanetPhysicalModel class object</span>
+<span class="sd">        OpticalSystem (object):</span>
+<span class="sd">            OpticalSystem class object</span>
+<span class="sd">        ZodiacalLight (object):</span>
 <span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        BackgroundSources (BackgroundSources):</span>
+<span class="sd">        BackgroundSources (object):</span>
 <span class="sd">            BackgroundSources class object</span>
-<span class="sd">        PostProcessing (PostProcessing):</span>
+<span class="sd">        PostProcessing (object):</span>
 <span class="sd">            PostProcessing class object</span>
-<span class="sd">        Completeness (Completeness):</span>
+<span class="sd">        Completeness (object):</span>
 <span class="sd">            Completeness class object</span>
-<span class="sd">        nPlans (int):</span>
-<span class="sd">            total number of planets</span>
-<span class="sd">        plan2star (ndarray):</span>
-<span class="sd">            1D numpy ndarray of indices mapping planets to target stars in</span>
-<span class="sd">            TargetList</span>
-<span class="sd">        sInds (ndarray):</span>
-<span class="sd">            indicies of target stars in TargetList with planets</span>
-<span class="sd">        a (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing semi-major axis for each planet </span>
-<span class="sd">            (default units of AU)</span>
-<span class="sd">        e (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing eccentricity for each planet</span>
-<span class="sd">        w (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing argument of perigee in degrees</span>
-<span class="sd">        O (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing right ascension of the ascending node </span>
-<span class="sd">            in degrees</span>
-<span class="sd">        Mp (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing mass for each planet (default units of </span>
-<span class="sd">            kg)</span>
-<span class="sd">        Rp (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing radius for each planet (default units </span>
-<span class="sd">            of km)</span>
-<span class="sd">        r (Quantity):</span>
-<span class="sd">            numpy ndarray containing position vector for each planet (default</span>
-<span class="sd">            units of km)</span>
-<span class="sd">        v (Quantity):</span>
-<span class="sd">            numpy ndarray containing velocity vector for each planet (default </span>
-<span class="sd">            units of km/s)</span>
-<span class="sd">        I (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing inclination in degrees for each planet</span>
-<span class="sd">        p (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing albedo for each planet</span>
-<span class="sd">        fEZ (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing exozodi level for each planet</span>
+<span class="sd">        TargetList (object):</span>
+<span class="sd">            TargetList class object</span>
+<span class="sd">        eta (float)</span>
+<span class="sd">            Global occurrence rate defined as expected number of planets </span>
+<span class="sd">            per star in a given universe</span>
+<span class="sd">        nPlans (integer):</span>
+<span class="sd">            Total number of planets</span>
+<span class="sd">        plan2star (integer ndarray):</span>
+<span class="sd">            Indices mapping planets to target stars in TargetList</span>
+<span class="sd">        sInds (integer ndarray):</span>
+<span class="sd">            Unique indices of stars with planets in TargetList</span>
+<span class="sd">        a (astropy Quantity array):</span>
+<span class="sd">            Planet semi-major axis in units of AU</span>
+<span class="sd">        e (float ndarray):</span>
+<span class="sd">            Planet eccentricity</span>
+<span class="sd">        I (astropy Quantity array):</span>
+<span class="sd">            Planet inclination in units of deg</span>
+<span class="sd">        O (astropy Quantity array):</span>
+<span class="sd">            Planet right ascension of the ascending node in units of deg</span>
+<span class="sd">        w (astropy Quantity array):</span>
+<span class="sd">            Planet argument of perigee in units of deg</span>
+<span class="sd">        r (astropy Quantity nx3 array):</span>
+<span class="sd">            Planet position vector in units of km</span>
+<span class="sd">        v (astropy Quantity nx3 array):</span>
+<span class="sd">            Planet velocity vector in units of km/s</span>
+<span class="sd">        s (astropy Quantity array):</span>
+<span class="sd">            Planet-star apparent separations in units of km</span>
+<span class="sd">        d (astropy Quantity array):</span>
+<span class="sd">            Planet-star distances in units of km</span>
+<span class="sd">        Mp (astropy Quantity array):</span>
+<span class="sd">            Planet mass in units of kg</span>
+<span class="sd">        Rp (astropy Quantity array):</span>
+<span class="sd">            Planet radius in units of km</span>
+<span class="sd">        p (float ndarray):</span>
+<span class="sd">            Planet albedo</span>
+<span class="sd">        fEZ (astropy Quantity array):</span>
+<span class="sd">            Surface brightness of exozodiacal light in units of 1/arcsec2</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -183,58 +183,46 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># apparent separation</span>
         
         <span class="c1"># exo-zodi levels for systems with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimulatedUniverse.planet_pos_vel"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">[docs]</a>    <span class="k">def</span> <span class="nf">planet_pos_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns each planet an initial position (km) and velocity (km/s)</span>
 <span class="sd">        </span>
-<span class="sd">        This defines the data type expected, specific SimulatedUniverse class</span>
-<span class="sd">        objects will populate these values.</span>
-<span class="sd">        </span>
-<span class="sd">        This method has access to the following:</span>
-<span class="sd">            self.a:</span>
-<span class="sd">                planet semi-major axis</span>
-<span class="sd">            self.e:</span>
-<span class="sd">                planet eccentricity</span>
-<span class="sd">            self.Mp:</span>
-<span class="sd">                planet masses</span>
-<span class="sd">            self.I:</span>
-<span class="sd">                planet inclinations in degrees</span>
-<span class="sd">            self.w:</span>
-<span class="sd">                planet argument of perigee in degrees</span>
-<span class="sd">            self.O:</span>
-<span class="sd">                planet right ascension of the ascending node in degrees</span>
+<span class="sd">        This method makes us of the planet orbital elements (a, e, I, O, w, E), </span>
+<span class="sd">        and the planet and star masses.</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            r, v (Quantity, Quantity):</span>
-<span class="sd">                numpy ndarray containing initial position vector of each planet </span>
-<span class="sd">                (units of km), numpy ndarray containing initial velocity vector </span>
-<span class="sd">                of each planet (units of km/s)</span>
-<span class="sd">                </span>
+<span class="sd">            r (astropy Quantity nx3 array):</span>
+<span class="sd">                Initial position vector of each planet in units of km</span>
+<span class="sd">            v (astropy Quantity nx3 array):</span>
+<span class="sd">                Initial velocity vector of each planet in units of km/s</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">Omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span>
-        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span>
+        <span class="c1"># planet orbital elements</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span>                              <span class="c1"># semi-major axis</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span>                              <span class="c1"># eccentricity</span>
+        <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># inclinations</span>
+        <span class="n">Omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>          <span class="c1"># right ascension of the ascending node</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># argument of perigee</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span> <span class="c1"># generate random mean anomaly</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>                        <span class="c1"># eccentric anomaly</span>
+        
+        <span class="c1"># planet and star masses</span>
         <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span>
         <span class="n">Ms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">]</span>
         
-        <span class="c1">#generate random mean anomlay and calculate eccentric anomaly</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
         
-        <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">a3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">a3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
         <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">a3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         
-        <span class="n">b1</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
-                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">b2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">omega</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
-                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">b3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">omega</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
+                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
+                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
+        <span class="n">b3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
         <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">b1</span><span class="p">,</span><span class="n">b2</span><span class="p">,</span><span class="n">b3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         
         <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
@@ -260,23 +248,26 @@
 <span class="sd">        the Kepler state transition matrix.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            r (Quantity):</span>
-<span class="sd">                numpy ndarray containing planet position vectors relative to </span>
-<span class="sd">                host stars (units of distance)</span>
-<span class="sd">            v (Quantity): </span>
-<span class="sd">                numpy ndarray containing planet velocity vectors relative to </span>
-<span class="sd">                host stars (units of velocity)</span>
-<span class="sd">            Mp (Quantity):</span>
-<span class="sd">                1D numpy ndarray containing planet masses (units of mass)</span>
-<span class="sd">            Ms (ndarray):</span>
-<span class="sd">                1D numpy ndarray containing target star mass (in M_sun)</span>
-<span class="sd">            dt (Quantity):</span>
-<span class="sd">                time increment to propagate the system (units of time)</span>
+<span class="sd">            r (astropy Quantity nx3 array):</span>
+<span class="sd">                Initial position vector of each planet in units of km</span>
+<span class="sd">            v (astropy Quantity nx3 array):</span>
+<span class="sd">                Initial velocity vector of each planet in units of km/s</span>
+<span class="sd">            Mp (astropy Quantity array):</span>
+<span class="sd">                Planet masses in units of kg</span>
+<span class="sd">            Ms (float ndarray):</span>
+<span class="sd">                Target star masses in M_sun</span>
+<span class="sd">            dt (astropy Quantity):</span>
+<span class="sd">                Time increment to propagate the system in units of day</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            rnew, vnew (Quantity, Quantity):</span>
-<span class="sd">                numpy ndarray of propagated position vectors (units of km),</span>
-<span class="sd">                numpy ndarray of propagated velocity vectors (units of km/day)</span>
+<span class="sd">            rnew (astropy Quantity nx3 array):</span>
+<span class="sd">                Propagated position vectors in units of km</span>
+<span class="sd">            vnew (astropy Quantity nx3 array):</span>
+<span class="sd">                Propagated velocity vectors in units of km/s</span>
+<span class="sd">            snew (astropy Quantity array):</span>
+<span class="sd">                Propagated apparent separations in units of km</span>
+<span class="sd">            dnew (astropy Quantity array):</span>
+<span class="sd">                Propagated planet-star distances in units of km</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -315,11 +306,12 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            pInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the planets of interest</span>
+<span class="sd">                Integer indices of the planets of interest</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            WA (Quantity):</span>
-<span class="sd">                numpy ndarray of working angles (units of arcsecons)</span>
+<span class="sd">            WA (astropy Quantity array):</span>
+<span class="sd">                Working angles in units of arcsec</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">starDists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">[</span><span class="n">pInds</span><span class="p">]]</span> <span class="c1"># distance to star</span>

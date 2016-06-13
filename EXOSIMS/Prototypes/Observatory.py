@@ -497,28 +497,27 @@ class Observatory(object):
                 frame in 1D numpy ndarray (units of km)
             
         """
-        
+
         # right ascension and declination
         ra = TL.coords.ra[sInd]
         dec = TL.coords.dec[sInd]
         
-        # conversion to heliocentric equatorial frame
-        p = np.array([-np.sin(ra), np.cos(ra), 0.])
-        q = np.array([-np.cos(ra)*np.sin(dec), -np.sin(ra)*np.sin(dec), np.cos(dec)])
-        r = np.array([np.cos(ra)*np.cos(dec), np.sin(ra)*np.cos(dec), np.sin(dec)])
-        
-        # initial position at J2000 epoch
-        r0 = TL.coords[sInd].icrs.represent_as('cartesian').xyz     # r*TL.dist[sInd]
-        
-        # total velocity vector
-        VE = TL.pmra[sInd]/TL.parx[sInd]*u.AU   # right ascension (proper motion = mas/yr)
-        VN = TL.pmdec[sInd]/TL.parx[sInd]*u.AU  # declination (proper motion = mas/yr)
-        VR = TL.rv[sInd]                        # radial velocity (km/s)
-        V = p*VE + q*VN + r*VR
-        
-        # position
+        # set J2000 epoch
         j2000 = Time(2000., format='jyear')
-        r_star = r0 + V*(currentTime.mjd - j2000.mjd)*u.yr
+        
+        # directions
+        p0 = np.array([-np.sin(ra), np.cos(ra), 0.])
+        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
+        r0 = TL.coords[sInd].cartesian.xyz/TL.coords[sInd].distance
+        
+        # proper motion vector
+        mu0 = p0*TL.pmra[sInd] + q0*TL.pmdec[sInd]
+        
+        # space velocity vector
+        v = mu0/TL.parx[sInd]*u.AU + r0*TL.rv[0]
+        
+        # stellar position vector
+        r_star = TL.coords[sInd].cartesian.xyz + v*(currentTime.mjd - j2000.mjd)*u.day
         
         return r_star.to('km')
 

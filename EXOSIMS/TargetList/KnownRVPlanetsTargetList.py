@@ -15,6 +15,7 @@ class KnownRVPlanetsTargetList(TargetList):
             user specified values
             
     Attributes: 
+        See TargetList prototype for attributes.
                 
     
     Notes:  

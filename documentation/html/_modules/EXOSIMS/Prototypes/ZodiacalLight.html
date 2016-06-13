@@ -55,13 +55,13 @@
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        magZ (float):</span>
-<span class="sd">            1 zodi brightness in mag per asec2</span>
+<span class="sd">            1 zodi brightness magnitude (per arcsec2)</span>
 <span class="sd">        magEZ (float):</span>
-<span class="sd">            1 exozodi brightness in mag per asec2</span>
+<span class="sd">            1 exo-zodi brightness magnitude (per arcsec2)</span>
 <span class="sd">        varEZ (float):</span>
-<span class="sd">            exozodi variation (variance of log-normal distribution)</span>
+<span class="sd">            exo-zodiacal light variation (variance of log-normal distribution)</span>
 <span class="sd">        nEZ (float):</span>
-<span class="sd">            exozodi level in zodi</span>
+<span class="sd">            exo-zodiacal light level in zodi</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -70,10 +70,10 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magZ</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">magEZ</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">varEZ</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nEZ</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">magZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magZ</span><span class="p">)</span>         <span class="c1"># 1 zodi brightness in mag per asec2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magEZ</span><span class="p">)</span>       <span class="c1"># 1 exozodi brightness in mag per asec2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">varEZ</span><span class="p">)</span>       <span class="c1"># exozodi variation (variance of log-normal dist.)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nEZ</span><span class="p">)</span>           <span class="c1"># exozodi level in zodi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magZ</span><span class="p">)</span>         <span class="c1"># 1 zodi brightness (per arcsec2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magEZ</span><span class="p">)</span>       <span class="c1"># 1 exo-zodi brightness (per arcsec2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">varEZ</span><span class="p">)</span>       <span class="c1"># exo-zodi variation (variance of log-normal dist)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">nEZ</span><span class="p">)</span>           <span class="c1"># exo-zodi level in zodi</span>
         
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Exozodi variation must be &gt;= 0&quot;</span>
         
@@ -93,21 +93,23 @@
         
         <span class="k">return</span> <span class="s1">&#39;Zodiacal Light class object attributes&#39;</span>
 
-<div class="viewcode-block" id="ZodiacalLight.fZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+<div class="viewcode-block" id="ZodiacalLight.fZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList):</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            lam:</span>
-<span class="sd">                Central wavelength (default units of nm)</span>
+<span class="sd">                Integer indices of the stars of interest, with the length of </span>
+<span class="sd">                the number of planets of interest</span>
+<span class="sd">            lam (astropy Quantity):</span>
+<span class="sd">                Central wavelength in units of nm</span>
+<span class="sd">            r_sc (astropy Quantity 1x3 array):</span>
+<span class="sd">                Observatory (spacecraft) position vector in units of km</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            fZ (ndarray):</span>
-<span class="sd">                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># check type of sInds</span>
@@ -124,17 +126,17 @@
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of exo-zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList):</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
 <span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            I (ndarray):</span>
-<span class="sd">                1D numpy ndarray or scalar value of inclination in degrees</span>
+<span class="sd">            I (astropy Quantity array):</span>
+<span class="sd">                Inclination of the planets of interest in units of deg</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            fEZ (ndarray):</span>
-<span class="sd">                1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -151,7 +153,18 @@
             <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))</span>
             <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         
-        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        <span class="c1"># supplementary angle for inclination &gt; 90 degrees</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">I</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">fbeta</span> <span class="o">=</span> <span class="mf">2.44</span> <span class="o">-</span> <span class="mf">0.0403</span><span class="o">*</span><span class="n">beta</span> <span class="o">+</span> <span class="mf">0.000269</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="c1"># absolute V-band magnitude of the star</span>
+        <span class="n">MV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MV</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># absolute V-band magnitude of the Sun</span>
+        <span class="n">MVsun</span> <span class="o">=</span> <span class="mf">4.83</span>
+        
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="o">*</span><span class="n">fbeta</span> <span class="o">*</span> <span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="p">(</span><span class="n">MV</span><span class="o">-</span><span class="n">MVsun</span><span class="p">))</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
         
         <span class="k">return</span> <span class="n">fEZ</span></div></div>
 </pre></div>

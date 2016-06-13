@@ -307,19 +307,3 @@ class PlanetPopulation(object):
         vals = np.arccos(v[0]+(v[1]-v[0])*np.random.uniform(size=n)).to(self.Irange.unit)
         
         return vals
-
-    def calc_Phi(self,beta):
-        """Calculate the Lambert phase function from Sobolev 1975.
-        
-        Args:
-            beta (Quantity):
-                numpy ndarray containing planet phase angles (radians) at which the 
-                phase function is to be calculated.
-                
-        Returns:
-            Phi (Quantity):
-                numpy ndarray of planet phase function
-        """
-        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
-        
-        return Phi

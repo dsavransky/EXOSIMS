@@ -12,25 +12,16 @@ class Completeness(object):
         \*\*specs: 
             user specified values
     
-    Attributes:
-        minComp (float): 
-            minimum completeness level for inclusion in target list
-        
     """
 
     _modtype = 'Completeness'
     _outspec = {}
     
-    def __init__(self, minComp=0.1, Nplanets=1e8, **specs):
+    def __init__(self, **specs):
         # import PlanetPopulation class
-        Pop = get_module(specs['modules']['PlanetPopulation'], 'PlanetPopulation')
-        self.PlanetPopulation = Pop(**specs) # planet population object class
-        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
-       
-        self.minComp = float(minComp)
-        self.Nplanets = Nplanets # total number of planets for completeness calcs
-        self._outspec['minComp'] = self.minComp
-        self._outspec['Nplanets'] = self.Nplanets
+        Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+        self.PlanetPopulation = Pop # planet population object class
+        self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
 
     def __str__(self):
         """String representation of Completeness object
@@ -45,13 +36,13 @@ class Completeness(object):
         
         return 'Completeness class object attributes'
 
-    def target_completeness(self, targlist):
+    def target_completeness(self, TL):
         """Generates completeness values for target stars
         
         This method is called from TargetList __init__ method.
         
         Args:
-            targlist (TargetList): 
+            TL (TargetList): 
                 TargetList class object
             
         Returns:
@@ -60,17 +51,29 @@ class Completeness(object):
         
         """
         
-        comp0 = np.array([0.2]*len(targlist.Name))
+        comp0 = np.array([0.2]*TL.nStars)
         
         return comp0
+        
+    def gen_update(self, TL):
+        """Generates any information necessary for dynamic completeness 
+        calculations (completeness at successive observations of a star in the
+        target list)
+        
+        Args:
+            TL (TargetList):
+                TargetList module
+        
+        """
+        pass
 
-    def completeness_update(self, s_ind, targlist, obsbegin, obsend, nexttime):
+    def completeness_update(self, sInd, TL, obsbegin, obsend, nexttime):
         """Updates completeness value for stars previously observed
         
         Args:
-            s_ind (int):
+            sInd (int):
                 index of star just observed
-            targlist (TargetList):
+            TL (TargetList):
                 TargetList module
             obsbegin (Quantity):
                 time of observation begin
@@ -86,6 +89,4 @@ class Completeness(object):
         
         """
         # prototype returns the "virgin" completeness value
-        comp0 = targlist.comp0
-        
-        return comp0
+        return TL.comp0

@@ -4,6 +4,22 @@ EXOSIMS.PlanetPhysicalModel package
 Submodules
 ----------
 
+EXOSIMS.PlanetPhysicalModel.Forecaster module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.Forecaster
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.PlanetPhysicalModel.Forecaster_func module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.Forecaster_func
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
 ---------------------------------------------------------
 

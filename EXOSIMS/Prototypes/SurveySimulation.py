@@ -88,9 +88,11 @@ class SurveySimulation(object):
                 script = open(scriptfile).read()
                 specs = json.loads(script)
             except ValueError:
-                print "%s improperly formatted."%scriptfile
+                sys.stderr.write("Error.  Script file `%s' is not valid JSON." % scriptfile)
+                # must re-raise, or the error will be masked 
+                raise
             except:
-                print "Unexpected error:", sys.exc_info()[0]
+                sys.stderr.write("Unexpected error while reading specs file: " + sys.exc_info()[0])
                 raise
             
             # modules array must be present
@@ -134,7 +136,7 @@ class SurveySimulation(object):
             #ensure that you have the minimal set
             for modName in neededObjMods:
                 if modName not in specs['modules'].keys():
-                    raise ValueError("%s module not provided."%modName)
+                    raise ValueError("%s module is required but was not provided." % modName)
             
             for modName in specs['modules'].keys():
                 assert (specs['modules'][modName]._modtype == modName), \
@@ -188,6 +190,7 @@ class SurveySimulation(object):
         PPro = self.PostProcessing
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         Logger.info('run_sim beginning')
         # initialize values updated later
@@ -235,7 +238,7 @@ class SurveySimulation(object):
             nPlans = len(pInds)
             WA = SU.get_current_WA(pInds)
             pInds = pInds[(WA>OS.IWA) * (WA<OS.OWA)]            # inside [IWA-OWA]
-            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            Phi = PPMod.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
             pInds = pInds[dMag < OS.dMagLim]                    # bright enough
             Logger.info('Observing %r/%r planets around star #%r/%r.'%(len(pInds),\
@@ -416,6 +419,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         # initialize with True if planets are present at the target star 
         observationPossible = np.ones(len(pInds),bool) if len(pInds) else False
@@ -439,7 +443,7 @@ class SurveySimulation(object):
         # determine true integration time and update observationPossible
         if np.any(observationPossible):
             sInds = np.array([sInd]*len(pInds))
-            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            Phi = PPMod.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
             dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
             WA = SU.get_current_WA(pInds)
             fEZ = SU.fEZ[pInds]
@@ -512,6 +516,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         # check if characterization has been done
         if pInds.shape[0] != 0:
@@ -520,7 +525,7 @@ class SurveySimulation(object):
                     # perform first characterization
                     # find characterization time
                     sInds = np.array([sInd]*len(pInds))
-                    Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+                    Phi = PPMod.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
                     dMag = deltaMag(SU.p[pInds],SU.Rp[pInds],SU.d[pInds],Phi)
                     WA = SU.get_current_WA(pInds)
                     fEZ = SU.fEZ[pInds]
@@ -624,6 +629,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         # set chargo to False initially
         chargo = False
@@ -636,7 +642,7 @@ class SurveySimulation(object):
                     j = pInds[[i]] # must be an array of size 1
                     rend, vend, send, dend = SU.prop_system(SU.r[j],SU.v[j],\
                             SU.Mp[j],TL.MsTrue[sInd], dt)
-                    Phi = PPop.calc_Phi(np.arcsin(send/dend))
+                    Phi = PPMod.calc_Phi(np.arcsin(send/dend))
                     dMagend = deltaMag(SU.p[j],SU.Rp[j],dend,Phi)[0]
                     WAend = np.arctan(send/TL.dist[sInd])[0]
                     if (dMagend <= OS.dMagLim) * (WAend >= OS.IWA):
@@ -698,13 +704,14 @@ class SurveySimulation(object):
                 apparent separation (units of distance), delta magnitude, 
                 irradiance (units of flux per time), dictionary containing 
                 simulation results, 1D numpy ndarray indicating number of 
-                observations for each planet                
+                observations for each planet
         
         """
         
         SU = self.SimulatedUniverse
         TL = self.TargetList
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         # default DRM detection status to null detection
         DRM['det_status'] = 0
@@ -721,7 +728,7 @@ class SurveySimulation(object):
             observed[pInds[observationPossible]] += 1
             DRM['det_status'] = observationPossible.astype(int).tolist()
             DRM['det_WA'] = np.arctan(s/TL.dist[sInd]).min().to('mas').value
-            Phi = PPop.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
+            Phi = PPMod.calc_Phi(np.arcsin(SU.s[pInds]/SU.d[pInds]))
             DRM['det_dMag'] = deltaMag(SU.p[pInds], SU.Rp[pInds], SU.d[pInds],Phi).max()
         
         return s, DRM, observed

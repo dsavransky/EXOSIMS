@@ -39,42 +39,37 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.StarCatalog.EXOCATXLS</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.StarCatalog</span> <span class="kn">import</span> <span class="n">StarCatalog</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">pandas</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
-<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.StarCatalog</span> <span class="kn">import</span> <span class="n">StarCatalog</span>
 
 <div class="viewcode-block" id="EXOCATXLS"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.EXOCATXLS.EXOCATXLS">[docs]</a><span class="k">class</span> <span class="nc">EXOCATXLS</span><span class="p">(</span><span class="n">StarCatalog</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    EXOCAT Catalog class</span>
 <span class="sd">    </span>
 <span class="sd">    This class populates the star catalog used in EXOSIMS from</span>
-<span class="sd">    Margaret Trunbull&#39;s EXOCAT catalog, provided by Rhonda Morgan </span>
+<span class="sd">    Margaret Turnbull&#39;s EXOCAT catalog, provided by Rhonda Morgan </span>
 <span class="sd">    as an Excel spreasheet.</span>
-
+<span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        stardata (ndarray):</span>
-<span class="sd">            All original spreadsheet data</span>
-
-<span class="sd">    All other attributes as in StarCatalog</span>
-
+<span class="sd">        Only StarCatalog prototype attributes are used.</span>
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">catalogpath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Constructor for EXOCAT1</span>
-
+<span class="sd">        Constructor for EXOCATXLS</span>
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            catalogpath (str):</span>
-<span class="sd">                Full path to catalog spreadsheet file.  </span>
+<span class="sd">            catalogpath (string):</span>
+<span class="sd">                Full path to catalog spreadsheet file, loaded as a pandas dataframe.</span>
 <span class="sd">                Defaults to NSTARS_V1.xlsx in the StarCatalog directory</span>
-
-<span class="sd">        Notes:</span>
-<span class="sd">            All spreadsheet data is loaded to self.stardata as a pandas dataframe</span>
-
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-       
+        
         <span class="k">if</span> <span class="n">catalogpath</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;Nstars_V1.xlsx&#39;</span>
@@ -82,33 +77,30 @@
         
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">catalogpath</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s1">&#39;Catalog File </span><span class="si">%s</span><span class="s1"> Not Found.&#39;</span><span class="o">%</span><span class="n">catalogpath</span><span class="p">)</span>
-
+        
         <span class="c1">#read spreadsheet</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">catalogpath</span><span class="p">,</span><span class="n">na_values</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;___&#39;</span><span class="p">])</span>
+        
         <span class="n">StarCatalog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ntargs</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-
-        <span class="n">keyword_table</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span><span class="s1">&#39;HIP&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;Spec&#39;</span><span class="p">:</span><span class="s1">&#39;SpType&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;Vmag&#39;</span><span class="p">:</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> 
-                        <span class="s1">&#39;dist&#39;</span><span class="p">:</span><span class="s1">&#39;d(pc)&#39;</span><span class="p">,</span> 
-                        <span class="s1">&#39;BV&#39;</span><span class="p">:</span><span class="s1">&#39;B-V&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="s1">&#39;Lbol&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;pmra&#39;</span><span class="p">:</span><span class="s1">&#39;pmRA&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;pmdec&#39;</span><span class="p">:</span><span class="s1">&#39;pmDE&#39;</span><span class="p">}</span>
-             
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyword_table</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">keyword_table</span><span class="p">[</span><span class="n">key</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bmag</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;B-V&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Kmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">-</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;V-K&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sep(&quot;)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="c1">#companions within one arcsec</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Mv&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> 
-        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;RA(ICRS)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DE(ICRS)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;icrs&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">stardata</span> <span class="o">=</span> <span class="n">data</span></div>
+        <span class="c1"># list of astropy attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;d(pc)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mas&#39;</span><span class="p">,</span><span class="n">equivalencies</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">parallax</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;RA(ICRS)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> \
+                <span class="n">dec</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;DE(ICRS)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmra</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pmRA&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pmDE&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span>
         
-
+        <span class="c1"># list of non-astropy attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;HIP&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Spec</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;SpType&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;B-V&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Lbol&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;B-V&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Kmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;V-K&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Mv&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sep(&quot;)&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="c1"># companions within one arcsec</span></div>
 </pre></div>
 
           </div>

@@ -4,14 +4,6 @@ EXOSIMS.ZodiacalLight package
 Submodules
 ----------
 
-EXOSIMS.ZodiacalLight.Lindler module
-------------------------------------
-
-.. automodule:: EXOSIMS.ZodiacalLight.Lindler
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.ZodiacalLight.Stark module
 ----------------------------------
 

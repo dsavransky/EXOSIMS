@@ -96,7 +96,7 @@
         
         <span class="k">return</span> <span class="n">success</span></div>
 
-<div class="viewcode-block" id="WFIRSTObservatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
+<div class="viewcode-block" id="WFIRSTObservatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds keepout Boolean values, returns True if successful</span>
 <span class="sd">        </span>
 <span class="sd">        This method finds the keepout Boolean values for each target star where</span>
@@ -105,7 +105,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            time (Time):</span>
 <span class="sd">                absolute time (astropy Time)</span>
-<span class="sd">            catalog (TargetList or StarCatalog):</span>
+<span class="sd">            TL (TargetList or StarCatalog):</span>
 <span class="sd">                TargetList or StarCatalog class object</span>
 <span class="sd">            koangle (float):</span>
 <span class="sd">                Telescope keepout angle in degrees</span>
@@ -120,10 +120,10 @@
         <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
         
         <span class="c1"># Find position and unit vectors for list of stars in catalog wrt spacecraft</span>
-        <span class="n">r_targ</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="c1"># initialize list of position vectors</span>
+        <span class="n">r_targ</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span> <span class="c1"># initialize list of position vectors</span>
         <span class="n">u_targ</span> <span class="o">=</span> <span class="n">r_targ</span> <span class="c1"># initialize list of unit vectors</span>
-        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
-            <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="c1"># position vector wrt sun</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">):</span>
+            <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="c1"># position vector wrt sun</span>
             <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="c1"># position vector wrt spacecraft</span>
             <span class="n">u_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_targ</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="c1"># unit vector wrt spacecraft</span>
         
@@ -150,8 +150,8 @@
         <span class="c1"># if bright objects have an angle with the target vector less than </span>
         <span class="c1"># pi/4 they are in the field of view and the target star may not be</span>
         <span class="c1"># observed, thus ko associated with this target becomes False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">Name</span><span class="p">)):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">u_bright</span><span class="p">)):</span>
                 <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_targ</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">u_bright</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
                 <span class="k">if</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">koangle</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>

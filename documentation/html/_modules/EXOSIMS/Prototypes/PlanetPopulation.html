@@ -347,23 +347,7 @@
         <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="p">))</span>
         <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Irange</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">vals</span></div>
-
-<div class="viewcode-block" id="PlanetPopulation.calc_Phi"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.calc_Phi">[docs]</a>    <span class="k">def</span> <span class="nf">calc_Phi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">beta</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculate the Lambert phase function from Sobolev 1975.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            beta (Quantity):</span>
-<span class="sd">                numpy ndarray containing planet phase angles (radians) at which the </span>
-<span class="sd">                phase function is to be calculated.</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            Phi (Quantity):</span>
-<span class="sd">                numpy ndarray of planet phase function</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">Phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">beta</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-        
-        <span class="k">return</span> <span class="n">Phi</span></div></div>
+        <span class="k">return</span> <span class="n">vals</span></div></div>
 </pre></div>
 
           </div>

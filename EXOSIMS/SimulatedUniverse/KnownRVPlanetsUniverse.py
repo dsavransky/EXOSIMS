@@ -11,10 +11,6 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
     Args: 
         \*\*specs: 
             user specified values
-            
-    Attributes: 
-    
-    Notes:
         
     """
 

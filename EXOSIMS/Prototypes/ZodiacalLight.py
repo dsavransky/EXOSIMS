@@ -14,13 +14,13 @@ class ZodiacalLight(object):
     
     Attributes:
         magZ (float):
-            1 zodi brightness in mag per asec2
+            1 zodi brightness magnitude (per arcsec2)
         magEZ (float):
-            1 exozodi brightness in mag per asec2
+            1 exo-zodi brightness magnitude (per arcsec2)
         varEZ (float):
-            exozodi variation (variance of log-normal distribution)
+            exo-zodiacal light variation (variance of log-normal distribution)
         nEZ (float):
-            exozodi level in zodi
+            exo-zodiacal light level in zodi
         
     """
 
@@ -29,10 +29,10 @@ class ZodiacalLight(object):
 
     def __init__(self, magZ=23, magEZ=22, varEZ=0, nEZ=1.5, **specs):
         
-        self.magZ = float(magZ)         # 1 zodi brightness in mag per asec2
-        self.magEZ = float(magEZ)       # 1 exozodi brightness in mag per asec2
-        self.varEZ = float(varEZ)       # exozodi variation (variance of log-normal dist.)
-        self.nEZ = float(nEZ)           # exozodi level in zodi
+        self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
+        self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
+        self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
+        self.nEZ = float(nEZ)           # exo-zodi level in zodi
         
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
@@ -56,19 +56,19 @@ class ZodiacalLight(object):
         """Returns surface brightness of local zodiacal light
         
         Args:
-            TL (TargetList):
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            lam:
-                Central wavelength (default units of nm)
-            r_sc:
-                Observatory (spacecraft) position vector
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            lam (astropy Quantity):
+                Central wavelength in units of nm
+            r_sc (astropy Quantity 1x3 array):
+                Observatory (spacecraft) position vector in units of km
         
         Returns:
-            fZ (ndarray):
-                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
+            fZ (astropy Quantity array):
+                Surface brightness of zodiacal light in units of 1/arcsec2
         """
         
         # check type of sInds
@@ -85,17 +85,17 @@ class ZodiacalLight(object):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
-            TL (TargetList):
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
                 Numpy ndarray containing integer indices of the stars of interest, 
                 with the length of the number of planets of interest.
-            I (ndarray):
-                1D numpy ndarray or scalar value of inclination in degrees
+            I (astropy Quantity array):
+                Inclination of the planets of interest in units of deg
         
         Returns:
-            fEZ (ndarray):
-                1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
         
         """
         
@@ -118,9 +118,11 @@ class ZodiacalLight(object):
         beta = I.value
         fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
         
-        # maximum V magnitude
+        # absolute V-band magnitude of the star
         MV = TL.MV[sInds]
+        # absolute V-band magnitude of the Sun
+        MVsun = 4.83
         
-        fEZ = nEZ*10**(-0.4*self.magEZ)*2*fbeta*2.5**(4.78-MV)/u.arcsec**2
+        fEZ = nEZ*10**(-0.4*self.magEZ) * 2*fbeta * 10.**(-0.4*(MV-MVsun))/u.arcsec**2
         
         return fEZ

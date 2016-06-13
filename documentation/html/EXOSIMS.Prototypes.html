@@ -72,19 +72,19 @@ sources for a given target position and dark hole depth.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>coords</strong> (<em>array-like of SkyCoord</em>) &#8211; numpy ndarray or list of astropy SkyCoord objects representing
-the coordinates of one or more targets</li>
-<li><strong>intDepths</strong> (<em>array-like of Floats</em>) &#8211; numpy ndarray or list of floating point values representing
-absolute magnitudes of the dark hole for each target.
+<li><strong>coords</strong> (<em>astropy SkyCoord array</em>) &#8211; SkyCoord object containing right ascension, declination, and
+distance to star of the planets of interest in units of deg, deg and pc</li>
+<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to absolute magnitudes (in the detection
+band) of the dark hole to be produced for each target.
 Must be of same length as coords.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dN</strong> &#8211;     Number density of background sources in number per square
-arcminute. Same length as inputs.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dN</strong> &#8211;     Number densities of background sources for given targets in
+units of 1/arcmin2. Same length as inputs.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -98,7 +98,7 @@ arcminute. Same length as inputs.</p>
 <span id="exosims-prototypes-completeness-module"></span><h2>EXOSIMS.Prototypes.Completeness module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>minComp=0.1</em>, <em>Nplanets=100000000.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Completeness class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -111,23 +111,17 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Completeness.Completeness.minComp">
-<code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.minComp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; minimum completeness level for inclusion in target list</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">
-<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>s_ind</em>, <em>targlist</em>, <em>obsbegin</em>, <em>obsend</em>, <em>nexttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>sInd</em>, <em>TL</em>, <em>obsbegin</em>, <em>obsend</em>, <em>nexttime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates completeness value for stars previously observed</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>s_ind</strong> (<em>int</em>) &#8211; index of star just observed</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
+<li><strong>sInd</strong> (<em>int</em>) &#8211; index of star just observed</li>
+<li><strong>TL</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
 <li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
 <li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
 <li><strong>nexttime</strong> (<em>Quantity</em>) &#8211; time of next observational period</li>
@@ -146,15 +140,31 @@ target list</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.gen_update">
+<code class="descname">gen_update</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.gen_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.gen_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates any information necessary for dynamic completeness
+calculations (completeness at successive observations of a star in the
+target list)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness.target_completeness">
-<code class="descname">target_completeness</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness" title="Permalink to this definition">¶</a></dt>
+<code class="descname">target_completeness</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.target_completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates completeness values for target stars</p>
 <p>This method is called from TargetList __init__ method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;     1D numpy array of completeness values for each target star</td>
 </tr>
@@ -675,56 +685,57 @@ simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.shapeFac">
 <code class="descname">shapeFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.shapeFac" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; shape factor (also known as fill factor) where
-<span class="math">\(shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea\)</span></p>
+<dd><p><em>float</em> &#8211; Shape factor of the unobscured pupil area, so that
+shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilDiam">
 <code class="descname">pupilDiam</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilDiam" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; entrance pupil diameter (default units of m)</p>
+<dd><p><em>astropy Quantity</em> &#8211; Entrance pupil diameter in units of m</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea">
 <code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; entrance pupil area (default units of m<sup>2</sup>)</p>
+<dd><p><em>astropy Quantity</em> &#8211; Entrance pupil area in units of m2</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout">
 <code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; telescope keepout angle in degrees</p>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope keepout angle in units of deg</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation">
 <code class="descname">attenuation</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; non-coronagraph attenuation (throughput)</p>
+<dd><p><em>float</em> &#8211; Non-coronagraph attenuation, equal to the throughput of the optical
+system without the coronagraph elements</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff">
 <code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; integration cutoff (default units of day)</p>
+<dd><p><em>astropy Quantity</em> &#8211; Maximum allowed integration time in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix">
 <code class="descname">Npix</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Npix" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; number of noise pixels</p>
+<dd><p><em>float</em> &#8211; Number of noise pixels</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark">
 <code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; number of dark frames used</p>
+<dd><p><em>float</em> &#8211; Number of dark frames used</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter">
 <code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em> &#8211; boolean signifying if the system has an occulter</p>
+<dd><p><em>boolean</em> &#8211; Boolean signifying if the system has an occulter</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -736,19 +747,19 @@ simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA">
 <code class="descname">IWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.IWA" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; Fundamental Inner Working Angle (default units of arcsecond)</p>
+<dd><p><em>astropy Quantity</em> &#8211; Fundamental Inner Working Angle in units of arcsec</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA">
 <code class="descname">OWA</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.OWA" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; Fundamental Outer Working Angle (default units of arcsecond)</p>
+<dd><p><em>astropy Quantity</em> &#8211; Fundamental Outer Working Angle in units of arcsec</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
 <code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Fundamental limiting delta magnitude.</p>
+<dd><p><em>float</em> &#8211; Fundamental limiting delta magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -758,30 +769,58 @@ simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Imager">
+<code class="descname">Imager</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Imager" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> &#8211; Dictionary containing imaging camera attributes.
+Default to scienceInstruments[0]</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Spectro">
+<code class="descname">Spectro</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Spectro" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> &#8211; Dictionary containing spectrograph attributes.
+Default to scienceInstruments[-1]</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starlightSuppressionSystems">
 <code class="descname">starlightSuppressionSystems</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starlightSuppressionSystems" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>list of dicts</em> &#8211; All starlight suppression system attributes (variable)</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.ImagerSyst">
+<code class="descname">ImagerSyst</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.ImagerSyst" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> &#8211; Dictionary containing imaging coronagraph attributes.
+Default to starlightSuppressionSystems[0]</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SpectroSyst">
+<code class="descname">SpectroSyst</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.SpectroSyst" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>dict</em> &#8211; Dictionary containing spectroscopy coronagraph attributes.
+Default to starlightSuppressionSystems[-1]</p>
+</dd></dl>
+
 <dl class="docutils">
 <dt>Common Science Instrument Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>type:</dt>
+<dt>type (string):</dt>
 <dd>Instrument type (e.g. imaging, spectro)</dd>
-<dt>lam (Quantity):</dt>
-<dd>Central wavelength (default units of nm)</dd>
-<dt>deltaLam (Quantity):</dt>
-<dd>Bandwidth (default units of nm)</dd>
+<dt>lam (astropy Quantity):</dt>
+<dd>Central wavelength in units of nm</dd>
+<dt>deltaLam (astropy Quantity):</dt>
+<dd>Bandwidth in units of nm</dd>
 <dt>BW (float):</dt>
 <dd>Bandwidth fraction</dd>
-<dt>pitch (float):</dt>
-<dd>Pixel pitch (default units of m)</dd>
-<dt>focal (float):</dt>
-<dd>Focal length (default units of m)</dd>
-<dt>idark (float):</dt>
-<dd>Dark current rate (default units of s^-1)</dd>
-<dt>texp (float):</dt>
-<dd>Exposure time per frame (default units of s)</dd>
+<dt>pitch (astropy Quantity):</dt>
+<dd>Pixel pitch in units of m</dd>
+<dt>focal (astropy Quantity):</dt>
+<dd>Focal length in units of m</dd>
+<dt>idark (astropy Quantity):</dt>
+<dd>Dark current rate in units of 1/s</dd>
+<dt>texp (astropy Quantity):</dt>
+<dd>Exposure time per frame in units of s</dd>
 <dt>sread (float):</dt>
 <dd>Detector readout noise</dd>
 <dt>CIC (float):</dt>
@@ -802,36 +841,36 @@ wavelength (astropy Quantity).</dd>
 </dd>
 <dt>Common Starlight Suppression System Attributes:</dt>
 <dd><dl class="first last docutils">
-<dt>type:</dt>
+<dt>type (string):</dt>
 <dd>System type (e.g. internal, external, hybrid), should also contain the
 type of science instrument it can be used with (e.g. imaging, spectro)</dd>
 <dt>throughput (callable(lam, WA)):</dt>
-<dd>optical system throughput (must be callable - can be lambda,
+<dd>System throughput (must be callable - can be lambda,
 function, scipy.interpolate.interp2d object, etc.) with inputs
 wavelength (astropy Quantity) and angular separation/working angle
 (astropy Quantity).</dd>
 <dt>contrast (callable(lam, WA)):</dt>
-<dd>optical system contrast curve (must be callable - can be lambda,
+<dd>System contrast curve (must be callable - can be lambda,
 function, scipy.interpolate.interp2d object, etc.) with inputs
 wavelength (astropy Quantity) and angular separation/working angle
 (astropy Quantity).</dd>
-<dt>IWA:</dt>
-<dd>Inner working angle</dd>
-<dt>OWA:</dt>
-<dd>Outer working angle</dd>
-<dt>dMagLim:</dt>
+<dt>IWA (astropy Quantity):</dt>
+<dd>Inner working angle in units of arcsec</dd>
+<dt>OWA (astropy Quantity):</dt>
+<dd>Outer working angle in units of arcsec</dd>
+<dt>dMagLim (float):</dt>
 <dd>System delta magnitude limit</dd>
 <dt>PSF (callable(lam, WA)):</dt>
-<dd>point spread function - 2D ndarray of values, normalized to 1 at
+<dd>Point spread function - 2D ndarray of values, normalized to 1 at
 the core (must be callable - can be lambda, function,
 scipy.interpolate.interp2d object, etc.) with inputs wavelength
 (astropy Quantity) and angular separation/working angle (astropy
 Quantity). Note: normalization means that all throughput effects
 must be contained in the throughput attribute.</dd>
-<dt>samp (Quantity):</dt>
-<dd>Sampling of PSF in arcsec/pixel (default units of arcsec)</dd>
+<dt>samp (astropy Quantity):</dt>
+<dd>Sampling of PSF in units of arcsec (per pixel)</dd>
 <dt>ohTime (astropy Quantity):</dt>
-<dd>Overhead time (default units of days)</dd>
+<dd>Overhead time in units of days</dd>
 <dt>imagTimeMult (float):</dt>
 <dd>Imaging time multiplier</dd>
 <dt>charTimeMult (float):</dt>
@@ -841,35 +880,35 @@ must be contained in the throughput attribute.</dd>
 </dl>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb">
-<code class="descname">Cp_Cb</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em>, <em>inst</em>, <em>syst</em>, <em>Npix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.Cp_Cb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb" title="Permalink to this definition">¶</a></dt>
+<code class="descname">Cp_Cb</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em>, <em>inst</em>, <em>syst</em>, <em>Npix</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.Cp_Cb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates electron count rates for planet signal and background noise.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
-<li><strong>inst</strong> &#8211; Selected scienceInstrument</li>
-<li><strong>syst</strong> &#8211; Selected starlightSuppressionSystem</li>
-<li><strong>Npix</strong> &#8211; Number of noise pixels</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>inst</strong> (<em>dict</em>) &#8211; Selected Science Instrument</li>
+<li><strong>syst</strong> (<em>dict</em>) &#8211; Selected Starlight Suppression System</li>
+<li><strong>Npix</strong> (<em>float</em>) &#8211; Number of noise pixels</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>1D numpy array of planet signal electron count rate (units of s^-1)
-C_b:</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>C_p</strong> &#8211;     Planet signal electron count rate in units of 1/s
+C_b (astropy Quantity array):</p>
 <blockquote>
-<div><p>1D numpy array of background noise electron count rate (units of s^-1)</p>
+<div><p>Background noise electron count rate in units of 1/s</p>
 </div></blockquote>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">C_p</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -878,7 +917,7 @@ C_b:</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime">
-<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds characterization time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation class object.
 This method defines the data type expected, characterization time is
@@ -888,20 +927,20 @@ determined by specific OpticalSystem classes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;     1D numpy ndarray of characterization times (default units of day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;     Characterization times in units of day</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -910,7 +949,7 @@ and their host star</li>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
 <p>This method is called by a method in the SurveySimulation class object.
 This method defines the data type expected, integration time is
@@ -920,20 +959,20 @@ determined by specific OpticalSystem classes.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intTime</strong> &#8211;     1D numpy ndarray of integration times (default units of day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intTime</strong> &#8211;     Integration times in units of day</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -951,41 +990,11 @@ the planet inclination is set to 0.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> &#8211; TargetList class object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array containing maximum integration time for target
-list stars (astropy Quantity with units of day)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>maxintTime</strong> &#8211;     Maximum integration times for target list stars in units of day</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.TargetList.TargetList.maxintTime" title="EXOSIMS.Prototypes.TargetList.TargetList.maxintTime">maxintTime</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starMag">
-<code class="descname">starMag</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.starMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starMag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.
-using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).
-The expression for flux is accurate to about 7%, in the range of validity
-400 nm &lt; λ &lt; 1000 nm (Traub et al. 2016).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> &#8211; (integer ndarray) indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>lam</strong> &#8211; Wavelength in nm</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Star visual magnitudes with B-V color</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">mag</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -1012,9 +1021,29 @@ Planet Physical Model Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_Phi">
+<code class="descname">calc_Phi</code><span class="sig-paren">(</span><em>beta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_Phi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_Phi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the phase function. Prototype method uses the Lambert phase
+function from Sobolev 1975.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>Quantity</em>) &#8211; numpy ndarray containing planet phase angles (radians) at which the
+phase function is to be calculated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Phi</strong> &#8211;     numpy ndarray of planet phase function</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_albedo_from_sma">
 <code class="descname">calc_albedo_from_sma</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_albedo_from_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_albedo_from_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for calculating albedo.
+<dd><p>Helper function for calculating albedo given the semi-major axis.
 The prototype provides only a dummy function that always returns the
 same value of 0.367.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1154,25 +1183,6 @@ in degrees</p>
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>PlanetPhysicalModel</em> &#8211; Planet physical model object</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.calc_Phi">
-<code class="descname">calc_Phi</code><span class="sig-paren">(</span><em>beta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.calc_Phi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.calc_Phi" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the Lambert phase function from Sobolev 1975.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>Quantity</em>) &#8211; numpy ndarray containing planet phase angles (radians) at which the
-phase function is to be calculated.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Phi</strong> &#8211;     numpy ndarray of planet phase function</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -1406,6 +1416,12 @@ Post Processing Module calculations in exoplanet mission simulation.</p>
 <dd><p><em>float</em> &#8211; Signal-to-noise ratio threshold for characterization</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.BackgroundSources">
+<code class="descname">BackgroundSources</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.BackgroundSources" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>BackgroundSources</em> &#8211; BackgroundSources class object</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">
 <code class="descname">det_occur</code><span class="sig-paren">(</span><em>observationPossible</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
@@ -1426,6 +1442,8 @@ Null detection boolean</td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Notes</p>
+<p>TODO: Add backgroundsources hook</p>
 </dd></dl>
 
 </dd></dl>
@@ -1449,142 +1467,154 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList">
-<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TargetList</em> &#8211; TargetList class object</p>
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation">
+<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>object</em> &#8211; PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysicalModel</em> &#8211; PlanetPhysicalModel class object</p>
+<dd><p><em>object</em> &#8211; PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.OpticalSystem">
 <code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.OpticalSystem" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSystem</em> &#8211; OpticalSystem class object</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation">
-<code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPopulation</em> &#8211; PlanetPopulation class object</p>
+<dd><p><em>object</em> &#8211; OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.ZodiacalLight">
 <code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ZodiacalLight</em> &#8211; ZodiacalLight class object</p>
+<dd><p><em>object</em> &#8211; ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.BackgroundSources">
 <code class="descname">BackgroundSources</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.BackgroundSources" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>BackgroundSources</em> &#8211; BackgroundSources class object</p>
+<dd><p><em>object</em> &#8211; BackgroundSources class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PostProcessing">
 <code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PostProcessing" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PostProcessing</em> &#8211; PostProcessing class object</p>
+<dd><p><em>object</em> &#8211; PostProcessing class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Completeness">
 <code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Completeness" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Completeness</em> &#8211; Completeness class object</p>
+<dd><p><em>object</em> &#8211; Completeness class object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList">
+<code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.TargetList" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>object</em> &#8211; TargetList class object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eta">
+<code class="descname">eta</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eta" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Global occurrence rate defined as expected number of planets
+per star in a given universe</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.nPlans">
 <code class="descname">nPlans</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.nPlans" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> &#8211; total number of planets</p>
+<dd><p><em>integer</em> &#8211; Total number of planets</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.plan2star">
 <code class="descname">plan2star</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.plan2star" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of indices mapping planets to target stars in
-TargetList</p>
+<dd><p><em>integer ndarray</em> &#8211; Indices mapping planets to target stars in TargetList</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.sInds">
 <code class="descname">sInds</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.sInds" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; indicies of target stars in TargetList with planets</p>
+<dd><p><em>integer ndarray</em> &#8211; Unique indices of stars with planets in TargetList</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">
 <code class="descname">a</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing semi-major axis for each planet
-(default units of AU)</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet semi-major axis in units of AU</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.e">
 <code class="descname">e</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.e" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing eccentricity for each planet</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w">
-<code class="descname">w</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing argument of perigee in degrees</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O">
-<code class="descname">O</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing right ascension of the ascending node
-in degrees</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">
-<code class="descname">Mp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing mass for each planet (default units of
-kg)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">
-<code class="descname">Rp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing radius for each planet (default units
-of km)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r">
-<code class="descname">r</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; numpy ndarray containing position vector for each planet (default
-units of km)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.v">
-<code class="descname">v</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.v" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; numpy ndarray containing velocity vector for each planet (default
-units of km/s)</p>
+<dd><p><em>float ndarray</em> &#8211; Planet eccentricity</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.I">
 <code class="descname">I</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.I" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing inclination in degrees for each planet</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet inclination in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O">
+<code class="descname">O</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.O" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet right ascension of the ascending node in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w">
+<code class="descname">w</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.w" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet argument of perigee in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r">
+<code class="descname">r</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity nx3 array</em> &#8211; Planet position vector in units of km</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.v">
+<code class="descname">v</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.v" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity nx3 array</em> &#8211; Planet velocity vector in units of km/s</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s">
+<code class="descname">s</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet-star apparent separations in units of km</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.d">
+<code class="descname">d</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.d" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet-star distances in units of km</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">
+<code class="descname">Mp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet mass in units of kg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">
+<code class="descname">Rp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet radius in units of km</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p">
 <code class="descname">p</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing albedo for each planet</p>
+<dd><p><em>float ndarray</em> &#8211; Planet albedo</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fEZ">
 <code class="descname">fEZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fEZ" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing exozodi level for each planet</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Surface brightness of exozodiacal light in units of 1/arcsec2</p>
 </dd></dl>
 
 <dl class="method">
@@ -1605,11 +1635,11 @@ given indices.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the planets of interest</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the planets of interest</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>WA</strong> &#8211;     numpy ndarray of working angles (units of arcsecons)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>WA</strong> &#8211;     Working angles in units of arcsec</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -1619,35 +1649,18 @@ given indices.</p>
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">
 <code class="descname">planet_pos_vel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_pos_vel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet an initial position (km) and velocity (km/s)</p>
-<p>This defines the data type expected, specific SimulatedUniverse class
-objects will populate these values.</p>
-<dl class="docutils">
-<dt>This method has access to the following:</dt>
-<dd><dl class="first last docutils">
-<dt>self.a:</dt>
-<dd>planet semi-major axis</dd>
-<dt>self.e:</dt>
-<dd>planet eccentricity</dd>
-<dt>self.Mp:</dt>
-<dd>planet masses</dd>
-<dt>self.I:</dt>
-<dd>planet inclinations in degrees</dd>
-<dt>self.w:</dt>
-<dd>planet argument of perigee in degrees</dd>
-<dt>self.O:</dt>
-<dd>planet right ascension of the ascending node in degrees</dd>
-</dl>
-</dd>
-</dl>
+<p>This method makes us of the planet orbital elements (a, e, I, O, w, E),
+and the planet and star masses.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>r, v</strong> &#8211;     numpy ndarray containing initial position vector of each planet
-(units of km), numpy ndarray containing initial velocity vector
-of each planet (units of km/s)</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>r</strong> &#8211;     Initial position vector of each planet in units of km
+v (astropy Quantity nx3 array):<blockquote>
+<div>Initial velocity vector of each planet in units of km/s</div></blockquote>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Quantity, Quantity</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity nx3 array</td>
 </tr>
 </tbody>
 </table>
@@ -1665,21 +1678,31 @@ the Kepler state transition matrix.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>r</strong> (<em>Quantity</em>) &#8211; numpy ndarray containing planet position vectors relative to
-host stars (units of distance)</li>
-<li><strong>v</strong> (<em>Quantity</em>) &#8211; numpy ndarray containing planet velocity vectors relative to
-host stars (units of velocity)</li>
-<li><strong>Mp</strong> (<em>Quantity</em>) &#8211; 1D numpy ndarray containing planet masses (units of mass)</li>
-<li><strong>Ms</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray containing target star mass (in M_sun)</li>
-<li><strong>dt</strong> (<em>Quantity</em>) &#8211; time increment to propagate the system (units of time)</li>
+<li><strong>r</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Initial position vector of each planet in units of km</li>
+<li><strong>v</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Initial velocity vector of each planet in units of km/s</li>
+<li><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet masses in units of kg</li>
+<li><strong>Ms</strong> (<em>float ndarray</em>) &#8211; Target star masses in M_sun</li>
+<li><strong>dt</strong> (<em>astropy Quantity</em>) &#8211; Time increment to propagate the system in units of day</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>rnew, vnew</strong> &#8211;     numpy ndarray of propagated position vectors (units of km),
-numpy ndarray of propagated velocity vectors (units of km/day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>rnew</strong> &#8211;     Propagated position vectors in units of km
+vnew (astropy Quantity nx3 array):</p>
+<blockquote>
+<div><p>Propagated velocity vectors in units of km/s</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>snew (astropy Quantity array):</dt>
+<dd><p class="first last">Propagated apparent separations in units of km</p>
+</dd>
+<dt>dnew (astropy Quantity array):</dt>
+<dd><p class="first last">Propagated planet-star distances in units of km</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, Quantity</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity nx3 array</p>
 </td>
 </tr>
 </tbody>
@@ -1701,137 +1724,128 @@ Star Catalog Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Name">
 <code class="descname">Name</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of star names</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Type">
-<code class="descname">Type</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Type" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of star types</p>
+<dd><p><em>string ndarray</em> &#8211; Star names</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Spec">
 <code class="descname">Spec</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Spec" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of spectral types</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.parx">
-<code class="descname">parx</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.parx" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of parallax in milliarcseconds</p>
+<dd><p><em>string ndarray</em> &#8211; Star spectral types</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Umag">
 <code class="descname">Umag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Umag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of U magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; U magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Bmag">
 <code class="descname">Bmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Bmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of B magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; B magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Vmag">
 <code class="descname">Vmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Vmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of V magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; V magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Rmag">
 <code class="descname">Rmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Rmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of R magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; R magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Imag">
 <code class="descname">Imag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Imag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of I magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; I magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Jmag">
 <code class="descname">Jmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Jmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of J magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; J magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Hmag">
 <code class="descname">Hmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Hmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of H magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; H magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Kmag">
 <code class="descname">Kmag</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Kmag" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of K magnitude</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.dist">
-<code class="descname">dist</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.dist" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of distance in parsecs to star</p>
+<dd><p><em>float ndarray</em> &#8211; K magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.BV">
 <code class="descname">BV</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.BV" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of B-V Johnson magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; B-V Johnson magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.MV">
 <code class="descname">MV</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.MV" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of absolute V magnitude</p>
+<dd><p><em>float ndarray</em> &#8211; Absolute V magnitude</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.BC">
 <code class="descname">BC</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.BC" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of bolometric correction</p>
+<dd><p><em>float ndarray</em> &#8211; Bolometric correction</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.L">
 <code class="descname">L</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.L" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of stellar luminosity in Solar luminosities</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords">
-<code class="descname">coords</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SkyCoord</em> &#8211; numpy ndarray of astropy SkyCoord objects containing right ascension
-and declination in degrees</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmra">
-<code class="descname">pmra</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmra" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of proper motion in right ascension in
-milliarcseconds/year</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmdec">
-<code class="descname">pmdec</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmdec" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of proper motion in declination in
-milliarcseconds/year</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.rv">
-<code class="descname">rv</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.rv" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of radial velocity in km/s</p>
+<dd><p><em>float ndarray</em> &#8211; Stellar luminosity in Solar luminosities</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Binary_Cut">
 <code class="descname">Binary_Cut</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Binary_Cut" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of booleans where True is a star with a companion
-closer than 10 arcsec</p>
+<dd><p><em>boolean ndarray</em> &#8211; Booleans where True is a star with a companion closer than 10 arcsec</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.dist">
+<code class="descname">dist</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.dist" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Distance to star in units of pc</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.parx">
+<code class="descname">parx</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.parx" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Parallax in units of mas</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords">
+<code class="descname">coords</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy SkyCoord array</em> &#8211; SkyCoord objects containing right ascension, declination, and
+distance to star in units of deg, deg, and pc</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmra">
+<code class="descname">pmra</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmra" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Proper motion in right ascension in units of mas/year</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmdec">
+<code class="descname">pmdec</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.pmdec" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Proper motion in declination in units of mas/year</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.rv">
+<code class="descname">rv</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.rv" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Radial velocity in units of km/s</p>
 </dd></dl>
 
 </dd></dl>
@@ -2163,7 +2177,7 @@ irradiance (units of <span class="math">\(1/(m^2*nm*s)\)</span>)</p>
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>keepStarCatalog=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>keepStarCatalog=False</em>, <em>minComp=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -2193,7 +2207,7 @@ StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhyiscalModel">
 <code class="descname">PlanetPhyiscalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhyiscalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysicalModel</em> &#8211; Physical model class object</p>
+<dd><p><em>PlanetPhysicalModel</em> &#8211; PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2221,27 +2235,21 @@ StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.StarCatalog">
+<code class="descname">StarCatalog</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>StarCatalog</em> &#8211; StarCatalog class object (only retained if keepStarCatalog is True)</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.Name">
 <code class="descname">Name</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Name" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of star names</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.Type">
-<code class="descname">Type</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Type" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of star types</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.Spec">
 <code class="descname">Spec</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Spec" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of spectral types</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.parx">
-<code class="descname">parx</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.parx" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of parallax (in milliarcseconds)</p>
+<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of star spectral types</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2293,12 +2301,6 @@ StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.dist">
-<code class="descname">dist</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.dist" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of distance to star (in parsecs)</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.BV">
 <code class="descname">BV</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.BV" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of B-V Johnson magnitude</p>
@@ -2323,35 +2325,49 @@ StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.Binary_Cut">
+<code class="descname">Binary_Cut</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Binary_Cut" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of booleans where True is a star with a companion
+closer than 10 arcsec</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.dist">
+<code class="descname">dist</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.dist" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray of distance to star (default units of parsecs)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.parx">
+<code class="descname">parx</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.parx" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray of parallax (default units of milliarcseconds)</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.coords">
 <code class="descname">coords</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.coords" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SkyCoord</em> &#8211; numpy ndarray of astropy SkyCoord objects containing right ascension
-and declination in degrees</p>
+<dd><p><em>SkyCoord</em> &#8211; numpy ndarray of astropy SkyCoord objects containing right ascension,
+declination, and distance to star (default units of degree and parsecs)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.pmra">
 <code class="descname">pmra</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.pmra" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of proper motion in right ascension (in mas/year)</p>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray of proper motion in right ascension (default units of
+milliarcseconds/year)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.pmdec">
 <code class="descname">pmdec</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.pmdec" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of proper motion in declination (in mas/year)</p>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray of proper motion in declination (default units of
+milliarcseconds/year)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.rv">
 <code class="descname">rv</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.rv" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of radial velocity (in km/s)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.Binary_Cut">
-<code class="descname">Binary_Cut</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.Binary_Cut" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray of booleans where True is a star with a companion
-closer than 10 arcsec</p>
+<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray of radial velocity (default units of km/s)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2384,6 +2400,12 @@ closer than 10 arcsec</p>
 <dd><p><em>int</em> &#8211; number of target stars</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.minComp">
+<code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.minComp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; minimum completeness level for inclusion in target list</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.binary_filter">
 <code class="descname">binary_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.binary_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.binary_filter" title="Permalink to this definition">¶</a></dt>
@@ -2411,12 +2433,11 @@ closer than 10 arcsec</p>
 maximum integration time is calculated
 Filters applied to star catalog data:</p>
 <blockquote>
-<div><a href="#id1"><span class="problematic" id="id2">*</span></a>nan data from star catalog quantities are removed
-<a href="#id3"><span class="problematic" id="id4">*</span></a>systems with planets inside the IWA removed
-<a href="#id5"><span class="problematic" id="id6">*</span></a>systems where maximum delta mag is not in allowable orbital range
+<div><a href="#id1"><span class="problematic" id="id2">*</span></a>systems with planets inside the IWA removed
+<a href="#id3"><span class="problematic" id="id4">*</span></a>systems where maximum delta mag is not in allowable orbital range
 removed
-<a href="#id7"><span class="problematic" id="id8">*</span></a>systems where integration time is longer than maximum time removed
-<a href="#id9"><span class="problematic" id="id10">*</span></a>systems not meeting the completeness threshold removed</div></blockquote>
+<a href="#id5"><span class="problematic" id="id6">*</span></a>systems where integration time is longer than maximum time removed
+<a href="#id7"><span class="problematic" id="id8">*</span></a>systems not meeting the completeness threshold removed</div></blockquote>
 <p>Additional filters can be provided in specific TargetList implementations.</p>
 </dd></dl>
 
@@ -2454,17 +2475,6 @@ removed
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.outside_IWA_filter">
 <code class="descname">outside_IWA_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.outside_IWA_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.outside_IWA_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Includes stars with planets with orbits outside of the IWA</p>
-<dl class="docutils">
-<dt>This method uses the following inherited class objects:</dt>
-<dd><dl class="first last docutils">
-<dt>self.OpticalSystem:</dt>
-<dd>OpticalSystem class object</dd>
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
-<p>Args:</p>
 </dd></dl>
 
 <dl class="method">
@@ -2487,6 +2497,33 @@ and updates the number of target stars.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indices to keep</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.starMag">
+<code class="descname">starMag</code><span class="sig-paren">(</span><em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.starMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.starMag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates star visual magnitudes with B-V color using empirical fit
+to data from Pecaut and Mamajek (2013, Appendix C).
+The expression for flux is accurate to about 7%, in the range of validity
+400 nm &lt; λ &lt; 1000 nm (Traub et al. 2016).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Indices of the stars of interest</li>
+<li><strong>lam</strong> (<em>astropy Quantity</em>) &#8211; Wavelength in units of nm</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mV</strong> &#8211;     Star visual magnitudes with B-V color</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float ndarray</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2679,25 +2716,25 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.magZ">
 <code class="descname">magZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.magZ" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; 1 zodi brightness in mag per asec2</p>
+<dd><p><em>float</em> &#8211; 1 zodi brightness magnitude (per arcsec2)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.magEZ">
 <code class="descname">magEZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.magEZ" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; 1 exozodi brightness in mag per asec2</p>
+<dd><p><em>float</em> &#8211; 1 exo-zodi brightness magnitude (per arcsec2)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.varEZ">
 <code class="descname">varEZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.varEZ" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; exozodi variation (variance of log-normal distribution)</p>
+<dd><p><em>float</em> &#8211; exo-zodiacal light variation (variance of log-normal distribution)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.nEZ">
 <code class="descname">nEZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.nEZ" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; exozodi level in zodi</p>
+<dd><p><em>float</em> &#8211; exo-zodiacal light level in zodi</p>
 </dd></dl>
 
 <dl class="method">
@@ -2709,17 +2746,17 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
 with the length of the number of planets of interest.</li>
-<li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
+<li><strong>I</strong> (<em>astropy Quantity array</em>) &#8211; Inclination of the planets of interest in units of deg</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fEZ</strong> &#8211;     1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fEZ</strong> &#8211;     Surface brightness of exo-zodiacal light in units of 1/arcsec2</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -2728,24 +2765,25 @@ with the length of the number of planets of interest.</li>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em>, <em>r_sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>lam</strong> &#8211; Central wavelength (default units of nm)</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>lam</strong> (<em>astropy Quantity</em>) &#8211; Central wavelength in units of nm</li>
+<li><strong>r_sc</strong> (<em>astropy Quantity 1x3 array</em>) &#8211; Observatory (spacecraft) position vector in units of km</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fZ</strong> &#8211;     1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fZ</strong> &#8211;     Surface brightness of zodiacal light in units of 1/arcsec2</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>

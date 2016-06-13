@@ -10,59 +10,56 @@ class StarCatalog(object):
     Star Catalog Module calculations in exoplanet mission simulation.
     
     Attributes:
-        Name (ndarray):
-            1D numpy ndarray of star names
-        Spec (ndarray):
-            1D numpy ndarray of star spectral types
-        Umag (ndarray):
-            1D numpy ndarray of U magnitude
-        Bmag (ndarray):
-            1D numpy ndarray of B magnitude
-        Vmag (ndarray):
-            1D numpy ndarray of V magnitude
-        Rmag (ndarray):
-            1D numpy ndarray of R magnitude
-        Imag (ndarray):
-            1D numpy ndarray of I magnitude
-        Jmag (ndarray):
-            1D numpy ndarray of J magnitude
-        Hmag (ndarray):
-            1D numpy ndarray of H magnitude
-        Kmag (ndarray):
-            1D numpy ndarray of K magnitude
-        BV (ndarray):
-            1D numpy ndarray of B-V Johnson magnitude
-        MV (ndarray):
-            1D numpy ndarray of absolute V magnitude
-        BC (ndarray):
-            1D numpy ndarray of bolometric correction
-        L (ndarray):
-            1D numpy ndarray of stellar luminosity in Solar luminosities
-        dist (ndarray):
-            1D numpy ndarray of distance to star in parsecs
-        parx (ndarray):
-            1D numpy ndarray of parallax in milliarcseconds
-        coords (SkyCoord):
-            numpy ndarray of astropy SkyCoord objects containing right ascension
-            and declination in degrees, and distance to star in parsecs
-        pmra (ndarray):
-            1D numpy ndarray of proper motion in right ascension in
-            milliarcseconds/year
-        pmdec (ndarray):
-            1D numpy ndarray of proper motion in declination in 
-            milliarcseconds/year
-        rv (ndarray):
-            1D numpy ndarray of radial velocity in km/s
-        Binary_Cut (ndarray):
-            1D numpy ndarray of booleans where True is a star with a companion 
-            closer than 10 arcsec
+        Name (string ndarray):
+            Star names
+        Spec (string ndarray):
+            Star spectral types
+        Umag (float ndarray):
+            U magnitude
+        Bmag (float ndarray):
+            B magnitude
+        Vmag (float ndarray):
+            V magnitude
+        Rmag (float ndarray):
+            R magnitude
+        Imag (float ndarray):
+            I magnitude
+        Jmag (float ndarray):
+            J magnitude
+        Hmag (float ndarray):
+            H magnitude
+        Kmag (float ndarray):
+            K magnitude
+        BV (float ndarray):
+            B-V Johnson magnitude
+        MV (float ndarray):
+            Absolute V magnitude
+        BC (float ndarray):
+            Bolometric correction
+        L (float ndarray):
+            Stellar luminosity in Solar luminosities
+        Binary_Cut (boolean ndarray):
+            Booleans where True is a star with a companion closer than 10 arcsec
+        dist (astropy Quantity array):
+            Distance to star in units of pc
+        parx (astropy Quantity array):
+            Parallax in units of mas
+        coords (astropy SkyCoord array):
+            SkyCoord objects containing right ascension, declination, and 
+            distance to star in units of deg, deg, and pc
+        pmra (astropy Quantity array):
+            Proper motion in right ascension in units of mas/year
+        pmdec (astropy Quantity array):
+            Proper motion in declination in units of mas/year
+        rv (astropy Quantity array):
+            Radial velocity in units of km/s
         
     """
 
     _modtype = 'StarCatalog'
     _outspec = {}
 
-    def __init__(self,ntargs=0,**specs):
+    def __init__(self, ntargs=0, **specs):
         
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc # distance in parsecs (dist = 1000/parx)

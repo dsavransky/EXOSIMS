@@ -42,6 +42,7 @@
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
 
 <div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Post Processing class template</span>
@@ -64,6 +65,8 @@
 <span class="sd">            Signal-to-noise ratio threshold for imaging/detection</span>
 <span class="sd">        SNchar (float):</span>
 <span class="sd">            Signal-to-noise ratio threshold for characterization</span>
+<span class="sd">        BackgroundSources (BackgroundSources):</span>
+<span class="sd">            BackgroundSources class object</span>
 <span class="sd">            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
@@ -83,6 +86,10 @@
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
+
+        <span class="c1">#instantiate background sources object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">],</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+ 
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Post Processing object</span>
@@ -110,7 +117,9 @@
 <span class="sd">            FA, DET, MD, NULL (bool, bool, bool, bool):</span>
 <span class="sd">                False Alarm boolean, Detection boolean, Missed Detection boolean,</span>
 <span class="sd">                Null detection boolean</span>
-<span class="sd">        </span>
+<span class="sd">       </span>
+<span class="sd">        Notes:</span>
+<span class="sd">            TODO: Add backgroundsources hook</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">FA</span><span class="p">,</span> <span class="n">DET</span><span class="p">,</span> <span class="n">MD</span><span class="p">,</span> <span class="n">NULL</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span>

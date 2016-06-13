@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import numbers
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 from EXOSIMS.util.get_module import get_module
@@ -24,7 +25,7 @@ class TargetList(object):
         PlanetPopulation (PlanetPopulation):
             PlanetPopulation class object
         PlanetPhyiscalModel (PlanetPhysicalModel):
-            Physical model class object
+            PlanetPhysicalModel class object
         ZodiacalLight (ZodiacalLight):
             ZodiacalLight class object
         Completeness (Completeness):
@@ -33,12 +34,12 @@ class TargetList(object):
             BackgroundSources class object
         PostProcessing (PostProcessing):
             PostProcessing class object
+        StarCatalog (StarCatalog):
+            StarCatalog class object (only retained if keepStarCatalog is True)
         Name (ndarray):
             1D numpy ndarray of star names
         Spec (ndarray):
             1D numpy ndarray of star spectral types
-        parx (ndarray):
-            1D numpy ndarray of parallax (in milliarcseconds)
         Umag (ndarray):
             1D numpy ndarray of U magnitude
         Bmag (ndarray):
@@ -55,8 +56,6 @@ class TargetList(object):
             1D numpy ndarray of H magnitude
         Kmag (ndarray):
             1D numpy ndarray of K magnitude
-        dist (ndarray):
-            1D numpy ndarray of distance to star (in parsecs)
         BV (ndarray):
             1D numpy ndarray of B-V Johnson magnitude
         MV (ndarray):
@@ -65,18 +64,24 @@ class TargetList(object):
             1D numpy ndarray of bolometric correction
         L (ndarray):
             1D numpy ndarray of stellar luminosity in Solar luminosities
-        coords (SkyCoord):
-            numpy ndarray of astropy SkyCoord objects containing right ascension
-            and declination in degrees
-        pmra (ndarray):
-            1D numpy ndarray of proper motion in right ascension (in mas/year)
-        pmdec (ndarray):
-            1D numpy ndarray of proper motion in declination (in mas/year)
-        rv (ndarray):
-            1D numpy ndarray of radial velocity (in km/s)
         Binary_Cut (ndarray):
             1D numpy ndarray of booleans where True is a star with a companion 
             closer than 10 arcsec
+        dist (Quantity):
+            1D numpy ndarray of distance to star (default units of parsecs)
+        parx (Quantity):
+            1D numpy ndarray of parallax (default units of milliarcseconds)
+        coords (SkyCoord):
+            numpy ndarray of astropy SkyCoord objects containing right ascension,
+            declination, and distance to star (default units of degree and parsecs)
+        pmra (Quantity):
+            1D numpy ndarray of proper motion in right ascension (default units of 
+            milliarcseconds/year)
+        pmdec (Quantity):
+            1D numpy ndarray of proper motion in declination (default units of 
+            milliarcseconds/year)
+        rv (Quantity):
+            1D numpy ndarray of radial velocity (default units of km/s)
         maxintTime (Quantity):
             1D numpy ndarray containing maximum integration time (units of time)
         comp0 (ndarray):
@@ -87,23 +92,33 @@ class TargetList(object):
             1D numpy ndarray containing 'true' stellar mass in M_sun
         nStars (int):
             number of target stars
+        minComp (float): 
+            minimum completeness level for inclusion in target list
+            
     
     """
 
     _modtype = 'TargetList'
     _outspec = {}
 
-    def __init__(self, keepStarCatalog=False, **specs):
+    def __init__(self, keepStarCatalog=False, minComp=0.1, **specs):
         """
         Initializes target list
         
         """
+
+        #validate inputs
+        assert isinstance(minComp,numbers.Number),\
+                "minComp must be a number."
+        assert isinstance(keepStarCatalog,bool),\
+                "keepStarCatalog must be a boolean."
+        self.minComp = float(minComp)
+
         
-        # get desired module names (specific or prototype)
+        # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)
         self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
         self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
-        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],'BackgroundSources')(**specs)
         self.PostProcessing = get_module(specs['modules']['PostProcessing'],'PostProcessing')(**specs)
         self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
         
@@ -111,6 +126,7 @@ class TargetList(object):
         Comp = self.Completeness
         self.PlanetPopulation = Comp.PlanetPopulation
         self.PlanetPhysicalModel = Comp.PlanetPhysicalModel
+        self.BackgroundSources = self.PostProcessing.BackgroundSources
         
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -121,6 +137,9 @@ class TargetList(object):
         self.populate_target_list(**specs)
         self.filter_target_list(**specs)
         
+        # generate any completeness update data needed
+        self.Completeness.gen_update(self)
+        
         # have target list, no need for catalog now
         if not keepStarCatalog:
             del self.StarCatalog
@@ -128,6 +147,7 @@ class TargetList(object):
         # populate outspec
         self._outspec['nStars'] = self.nStars
         self._outspec['keepStarCatalog'] = keepStarCatalog
+        self._outspec['minComp'] = self.minComp
 
     def __str__(self):
         """String representation of the Target List object
@@ -188,7 +208,6 @@ class TargetList(object):
         binary stars are removed
         maximum integration time is calculated
         Filters applied to star catalog data:
-            *nan data from star catalog quantities are removed
             *systems with planets inside the IWA removed
             *systems where maximum delta mag is not in allowable orbital range 
             removed
@@ -293,23 +312,14 @@ class TargetList(object):
     def outside_IWA_filter(self):
         """Includes stars with planets with orbits outside of the IWA 
         
-        This method uses the following inherited class objects:
-            self.OpticalSystem:
-                OpticalSystem class object
-            self.PlanetPopulation:
-                PlanetPopulation class object
-                
-        Args:
-        
         """
         
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
         
-        ss = np.tan(OS.IWA)*self.dist
-        if PPop.scaleOrbits:
-            ss = ss/np.sqrt(self.L)
-        i = np.where(np.max(PPop.rrange) > ss)[0]
+        s = np.tan(OS.IWA)*self.dist
+        L = np.sqrt(self.L) if PPop.scaleOrbits else 1. # stellar luminosity in Solar luminosities
+        i = np.where(s < L*np.max(PPop.rrange))[0]
         self.revise_lists(i)
 
     def int_cutoff_filter(self):
@@ -327,6 +337,7 @@ class TargetList(object):
         
         OS = self.OpticalSystem
         PPop = self.PlanetPopulation
+        PPMod = self.PlanetPhysicalModel
         
         # s and beta arrays
         s = np.tan(OS.IWA)*self.dist
@@ -335,8 +346,8 @@ class TargetList(object):
         beta = np.array([1.10472881476178]*len(s))*u.rad
         
         # fix out of range values
-        below = np.where(s/np.sin(beta) < np.min(PPop.rrange))[0]
-        above = np.where(s/np.sin(beta) > np.max(PPop.rrange))[0]
+        below = np.where(s < np.min(PPop.rrange)*np.sin(beta))[0]
+        above = np.where(s > np.max(PPop.rrange)*np.sin(beta))[0]
         s[below] = np.sin(beta[below])*np.min(PPop.rrange)
         beta[above] = np.arcsin(s[above]/np.max(PPop.rrange))
         
@@ -344,7 +355,7 @@ class TargetList(object):
         p = np.max(PPop.prange)
         Rp = np.max(PPop.Rrange)
         d = s/np.sin(beta)
-        Phi = PPop.calc_Phi(beta)
+        Phi = PPMod.calc_Phi(beta)
         i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
         self.revise_lists(i)
 
@@ -353,7 +364,7 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.comp0 > self.Completeness.minComp)[0]
+        i = np.where(self.comp0 > self.minComp)[0]
         self.revise_lists(i)
 
     def revise_lists(self, ind):
@@ -395,3 +406,38 @@ class TargetList(object):
         # if additional filters are desired, need self.catalog_atts fully populated
         self.catalog_atts.append('MsEst')
         self.catalog_atts.append('MsTrue')
+
+    def starMag(self, sInds, lam):
+        """Calculates star visual magnitudes with B-V color using empirical fit 
+        to data from Pecaut and Mamajek (2013, Appendix C).
+        The expression for flux is accurate to about 7%, in the range of validity 
+        400 nm < λ < 1000 nm (Traub et al. 2016).
+        
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            lam (astropy Quantity):
+                Wavelength in units of nm
+        
+        Returns:
+            mV (float ndarray):
+                Star visual magnitudes with B-V color
+        
+        """
+        
+        # check type of sInds
+        sInds = np.array(sInds)
+        if not sInds.shape:
+            sInds = np.array([sInds])
+        
+        Vmag = self.Vmag[sInds]
+        BV = self.BV[sInds]
+        
+        lam_um = lam.to('um').value
+        if lam_um < .550:
+            b = 2.20
+        else:
+            b = 1.54
+        mV = Vmag + b*BV*(1/lam_um - 1.818)
+        
+        return mV

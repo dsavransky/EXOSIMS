@@ -45,99 +45,6 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-EXOSIMS.ZodiacalLight.Lindler">
-<span id="exosims-zodiacallight-lindler-module"></span><h2>EXOSIMS.ZodiacalLight.Lindler module<a class="headerlink" href="#module-EXOSIMS.ZodiacalLight.Lindler" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler">
-<em class="property">class </em><code class="descclassname">EXOSIMS.ZodiacalLight.Lindler.</code><code class="descname">Lindler</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight" title="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight</span></code></a></p>
-<p>Lindler Zodiacal Light class</p>
-<p>This class contains all variables and methods necessary to perform
-Zodiacal Light Module calculations in exoplanet mission simulation using
-the model from Lindler.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ">
-<code class="descname">fEZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns surface brightness of exo-zodiacal light</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray or scalar value of inclination in degrees</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fEZ</strong> &#8211;     1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns surface brightness of local zodiacal light</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>lam</strong> &#8211; Central wavelength (default units of nm)</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fZ</strong> &#8211;     1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.ZodiacalLight.Lindler.Lindler.fbeta">
-<code class="descname">fbeta</code><span class="sig-paren">(</span><em>beta</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Lindler.html#Lindler.fbeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Lindler.Lindler.fbeta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Empirically derived variation of zodiacal light with viewing angle</p>
-<p>This method encodes the empirically derived formula for zodiacal light
-with viewing angle from Lindler.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>ndarray</em>) &#8211; angle in degrees</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     zodiacal light in zodi</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-EXOSIMS.ZodiacalLight.Stark">
 <span id="exosims-zodiacallight-stark-module"></span><h2>EXOSIMS.ZodiacalLight.Stark module<a class="headerlink" href="#module-EXOSIMS.ZodiacalLight.Stark" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -150,24 +57,25 @@ Zodiacal Light Module calculations in exoplanet mission simulation using
 the model from Stark et al. 2014.</p>
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.Stark.Stark.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em>, <em>r_sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>lam</strong> &#8211; Central wavelength (default units of nm)</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>lam</strong> (<em>astropy Quantity</em>) &#8211; Central wavelength in units of nm</li>
+<li><strong>r_sc</strong> (<em>astropy Quantity 1x3 array</em>) &#8211; Observatory (spacecraft) position vector in units of km</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fZ</strong> &#8211;     1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>fZ</strong> &#8211;     Surface brightness of zodiacal light in units of 1/arcsec2</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -192,7 +100,6 @@ with the length of the number of planets of interest.</li>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.ZodiacalLight package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.ZodiacalLight.Lindler">EXOSIMS.ZodiacalLight.Lindler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.ZodiacalLight.Stark">EXOSIMS.ZodiacalLight.Stark module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.ZodiacalLight">Module contents</a></li>
 </ul>

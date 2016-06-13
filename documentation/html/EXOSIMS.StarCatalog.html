@@ -53,15 +53,13 @@
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
 <p>EXOCAT Catalog class</p>
 <p>This class populates the star catalog used in EXOSIMS from
-Margaret Trunbull&#8217;s EXOCAT catalog, retrieved from the
+Margaret Turnbull&#8217;s EXOCAT catalog, retrieved from the
 NASA Exoplanet Archive as a VOTABLE.</p>
 <dl class="attribute">
-<dt id="EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1.stardata">
-<code class="descname">stardata</code><a class="headerlink" href="#EXOSIMS.StarCatalog.EXOCAT1.EXOCAT1.stardata" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; All VOTABLE data</p>
-</dd></dl>
+<dt>
+<code class="descname">Only StarCatalog prototype attributes are used.</code></dt>
+<dd></dd></dl>
 
-<p>All other attributes as in StarCatalog</p>
 </dd></dl>
 
 </div>
@@ -73,15 +71,13 @@ NASA Exoplanet Archive as a VOTABLE.</p>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="EXOSIMS.Prototypes.StarCatalog.StarCatalog"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.StarCatalog.StarCatalog</span></code></a></p>
 <p>EXOCAT Catalog class</p>
 <p>This class populates the star catalog used in EXOSIMS from
-Margaret Trunbull&#8217;s EXOCAT catalog, provided by Rhonda Morgan
+Margaret Turnbull&#8217;s EXOCAT catalog, provided by Rhonda Morgan
 as an Excel spreasheet.</p>
 <dl class="attribute">
-<dt id="EXOSIMS.StarCatalog.EXOCATXLS.EXOCATXLS.stardata">
-<code class="descname">stardata</code><a class="headerlink" href="#EXOSIMS.StarCatalog.EXOCATXLS.EXOCATXLS.stardata" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; All original spreadsheet data</p>
-</dd></dl>
+<dt>
+<code class="descname">Only StarCatalog prototype attributes are used.</code></dt>
+<dd></dd></dl>
 
-<p>All other attributes as in StarCatalog</p>
 </dd></dl>
 
 </div>
@@ -118,7 +114,7 @@ directory.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>matpath</strong> (<em>str</em>) &#8211; path to .mat file</li>
+<li><strong>matpath</strong> (<em>string</em>) &#8211; path to .mat file</li>
 <li><strong>pklpath</strong> (<em>str</em>) &#8211; pat to .pkl file to be written</li>
 </ul>
 </td>
@@ -126,7 +122,7 @@ directory.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>bool</strong> &#8211;     True if successful, False if not</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">boolean</p>
 </td>
 </tr>
 </tbody>
@@ -138,7 +134,7 @@ populate the Star Catalog object in StarCatalog directory.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl">
-<code class="descname">populatepkl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog.populatepkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl" title="Permalink to this definition">¶</a></dt>
+<code class="descname">populatepkl</code><span class="sig-paren">(</span><em>pklpath</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/StarCatalog/SIMBADCatalog.html#SIMBADCatalog.populatepkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Populates the star catalog and returns True if successful</p>
 <p>This method populates the star catalog from a pickled dictionary file
 housed in the StarCatalog directory and returns True if successful.</p>
@@ -146,11 +142,11 @@ housed in the StarCatalog directory and returns True if successful.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; name of the pickled dictionary file with extension .pkl</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pklpath</strong> (<em>string</em>) &#8211; path to the pickled dictionary file with extension .pkl</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>bool</strong> &#8211;     True if successful, False if not</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
 </tr>
 </tbody>
 </table>
@@ -171,7 +167,7 @@ a toy catalog generated by Rhonda Morgan, fed in as a CSV file based on
 the original Excel spreadsheet.</p>
 <dl class="attribute">
 <dt>
-<code class="descname">Only StarCatalog prototype attribtues are used.</code></dt>
+<code class="descname">Only StarCatalog prototype attributes are used.</code></dt>
 <dd></dd></dl>
 
 </dd></dl>

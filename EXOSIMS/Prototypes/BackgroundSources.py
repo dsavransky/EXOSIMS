@@ -7,13 +7,13 @@ class BackgroundSources(object):
     
     This module provides functionality to return the number density of background
     sources for a given target position and dark hole depth.
-
+    
     Args:
         \*\*specs:
             user specified values
-
+    
     Attributes: None
-
+    
     """
 
     _modtype = "BackgroundSources"
@@ -36,17 +36,19 @@ class BackgroundSources(object):
         """Returns background source number densities
         
         Args:
-            coords (array-like of SkyCoord):
-                numpy ndarray or list of astropy SkyCoord objects representing
-                the coordinates of one or more targets
-            intDepths (array-like of Floats):
-                numpy ndarray or list of floating point values representing 
-                absolute magnitudes of the dark hole for each target.
+            coords (astropy SkyCoord array):
+                SkyCoord object containing right ascension, declination, and 
+                distance to star of the planets of interest in units of deg, deg and pc
+            intDepths (float ndarray):
+                Integration depths equal to absolute magnitudes (in the detection 
+                band) of the dark hole to be produced for each target. 
                 Must be of same length as coords.
+        
         Returns:
-            dN (ndarray):
-                Number density of background sources in number per square 
-                arcminute. Same length as inputs.
+            dN (astropy Quantity array):
+                Number densities of background sources for given targets in 
+                units of 1/arcmin2. Same length as inputs.
+        
         """
         
         assert isinstance(intDepths,(tuple,list,np.ndarray)), \
@@ -60,4 +62,4 @@ class BackgroundSources(object):
         
         dN = np.zeros(len(intDepths))
         
-        return dN
+        return dN/u.arcmin**2

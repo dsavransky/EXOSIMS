@@ -39,12 +39,12 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.TargetList.KnownRVPlanetsTargetList</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.TargetList</span> <span class="kn">import</span> <span class="n">TargetList</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
-
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.TargetList</span> <span class="kn">import</span> <span class="n">TargetList</span>
 
 <div class="viewcode-block" id="KnownRVPlanetsTargetList"><a class="viewcode-back" href="../../../EXOSIMS.TargetList.html#EXOSIMS.TargetList.KnownRVPlanetsTargetList.KnownRVPlanetsTargetList">[docs]</a><span class="k">class</span> <span class="nc">KnownRVPlanetsTargetList</span><span class="p">(</span><span class="n">TargetList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -56,6 +56,7 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes: </span>
+<span class="sd">        See TargetList prototype for attributes.</span>
 <span class="sd">                </span>
 <span class="sd">    </span>
 <span class="sd">    Notes:  </span>
@@ -67,7 +68,6 @@
         <span class="c1">#define mapping between attributes we need and the IPAC data</span>
         <span class="c1">#table loaded in the Planet Population module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atts_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span><span class="s1">&#39;pl_hostname&#39;</span><span class="p">,</span>
-                             <span class="s1">&#39;Type&#39;</span><span class="p">:</span><span class="s1">&#39;st_spstr&#39;</span><span class="p">,</span> 
                              <span class="s1">&#39;Spec&#39;</span><span class="p">:</span><span class="s1">&#39;st_spstr&#39;</span><span class="p">,</span>
                              <span class="s1">&#39;parx&#39;</span><span class="p">:</span><span class="s1">&#39;st_plx&#39;</span><span class="p">,</span>
                              <span class="s1">&#39;Umag&#39;</span><span class="p">:</span><span class="s1">&#39;st_uj&#39;</span><span class="p">,</span>
@@ -90,7 +90,9 @@
 <div class="viewcode-block" id="KnownRVPlanetsTargetList.populate_target_list"><a class="viewcode-back" href="../../../EXOSIMS.TargetList.html#EXOSIMS.TargetList.KnownRVPlanetsTargetList.KnownRVPlanetsTargetList.populate_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">populate_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
         
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">allplanetdata</span><span class="p">[:]</span>
         <span class="c1"># filter out targets with planets outside of WA range </span>
@@ -124,11 +126,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span>  <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">-</span> <span class="mf">26.832</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span>  <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
         
-        <span class="c1"># populate completness values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># populate completeness values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="c1"># populate maximum integration time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="c1"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>

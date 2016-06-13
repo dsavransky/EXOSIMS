@@ -27,25 +27,23 @@ class Nemati(OpticalSystem):
         based on Nemati 2014 (SPIE).
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-            fEZ:
-                Surface brightness of exo-zodiacal light (in 1/arcsec2)
-            fZ:
-                Surface brightness of local zodiacal light (in 1/arcsec2)
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
         
         Returns:
-            intTime:
-                1D numpy array of integration times (astropy Quantity with 
-                units of day)
+            intTime (astropy Quantity array):
+                Integration times in units of day
         
         """
         
@@ -80,24 +78,23 @@ class Nemati(OpticalSystem):
         based on Nemati 2014 (SPIE).
         
         Args:
-            TL:
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            dMag:
-                Numpy ndarray containing differences in magnitude between planets 
-                and their host star
-            WA:
-                Numpy ndarray containing working angles of the planets of interest
-            fEZ:
-                Surface brightness of exo-zodiacal light (in 1/arcsec2)
-            fZ:
-                Surface brightness of local zodiacal light (in 1/arcsec2)
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
         
         Returns:
-            charTime (Quantity):
-                1D numpy ndarray of characterization times (default units of day)
+            charTime (astropy Quantity array):
+                Characterization times in units of day
         
         """
         

@@ -11,8 +11,6 @@ class KeplerLikeUniverse(SimulatedUniverse):
     Args: 
         \*\*specs: 
             user specified values
-            
-    Attributes: 
     
     Notes:
         The occurrence rate in these universes is set entirely by the radius

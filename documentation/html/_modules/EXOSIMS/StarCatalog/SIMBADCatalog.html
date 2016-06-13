@@ -46,6 +46,7 @@
 <span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="SIMBADCatalog"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog">[docs]</a><span class="k">class</span> <span class="nc">SIMBADCatalog</span><span class="p">(</span><span class="n">StarCatalog</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;SIMBAD Catalog class</span>
@@ -53,71 +54,45 @@
 <span class="sd">    This class provides the functions to populate the star catalog used in </span>
 <span class="sd">    EXOSIMS from the SIMBAD star catalog data.&quot;&quot;&quot;</span>
     
-<div class="viewcode-block" id="SIMBADCatalog.populatepkl"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl">[docs]</a>    <span class="k">def</span> <span class="nf">populatepkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<div class="viewcode-block" id="SIMBADCatalog.populatepkl"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl">[docs]</a>    <span class="k">def</span> <span class="nf">populatepkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pklpath</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates the star catalog and returns True if successful</span>
 <span class="sd">        </span>
 <span class="sd">        This method populates the star catalog from a pickled dictionary file </span>
 <span class="sd">        housed in the StarCatalog directory and returns True if successful.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            filename (str):</span>
-<span class="sd">                name of the pickled dictionary file with extension .pkl</span>
+<span class="sd">            pklpath (string):</span>
+<span class="sd">                path to the pickled dictionary file with extension .pkl</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            bool (bool):</span>
+<span class="sd">            bool (boolean):</span>
 <span class="sd">                True if successful, False if not</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># pickled dictionary stored in filename must contain at least the first </span>
-        <span class="c1"># key (&#39;Name&#39;) defined</span>
-        <span class="c1"># &#39;Name&#39; - list of star names</span>
-        <span class="c1"># &#39;Type&#39; - list of star types</span>
-        <span class="c1"># &#39;Spec&#39; - list of spectral types</span>
-        <span class="c1"># &#39;parx&#39; - list of parallax in milliarcseconds</span>
-        <span class="c1"># &#39;Umag&#39; - list of U magnitude</span>
-        <span class="c1"># &#39;Bmag&#39; - list of B magnitude</span>
-        <span class="c1"># &#39;Vmag&#39; - list of V magnitude</span>
-        <span class="c1"># &#39;Rmag&#39; - list of R magnitude</span>
-        <span class="c1"># &#39;Imag&#39; - list of I magnitude</span>
-        <span class="c1"># &#39;Jmag&#39; - list of J magnitude</span>
-        <span class="c1"># &#39;Hmag&#39; - list of H magnitude</span>
-        <span class="c1"># &#39;Kmag&#39; - list of K magnitude</span>
-        <span class="c1"># &#39;dist&#39; - list of distance in parsecs</span>
-        <span class="c1"># &#39;BV&#39; - list of B-V Johnson magnitude</span>
-        <span class="c1"># &#39;MV&#39; - list of absolute V magnitude</span>
-        <span class="c1"># &#39;BC&#39; - list of bolometric correction</span>
-        <span class="c1"># &#39;L&#39; - list of stellar luminosity in Solar luminosities</span>
-        <span class="c1"># &#39;radeg&#39; - list of right ascension in degrees</span>
-        <span class="c1"># &#39;decdeg&#39; - list of declination in degrees</span>
-        <span class="c1"># &#39;pmra&#39;- list of proper motion in right assension in milliarcseconds/year</span>
-        <span class="c1"># &#39;pmdec&#39; - list of proper motion in declination in milliarcseconds/year</span>
-        <span class="c1"># &#39;rv&#39; - list of radial velocity in kilometers/second</span>
-        <span class="c1"># &#39;Binary_Cut&#39; - boolean list where True is companion closer than 10 arcsec</span>
-        
-        <span class="n">nan</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span> <span class="c1"># used to fill missing data</span>
-        
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pklpath</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
             <span class="k">if</span> <span class="s1">&#39;Name&#39;</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span>
-                <span class="c1"># store attributes as list</span>
-                <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> 
-                <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">atts</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s1">&#39;radeg&#39;</span> <span class="ow">or</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s1">&#39;decdeg&#39;</span><span class="p">:</span>
-                            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">attr</span><span class="p">]))</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">attr</span> <span class="o">!=</span> <span class="s1">&#39;coords&#39;</span><span class="p">:</span>
-                            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)))</span>
-                            <span class="k">print</span> <span class="s2">&quot;Warning, </span><span class="si">%s</span><span class="s2"> not in </span><span class="si">%s</span><span class="s2"> list set to &#39;nan&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">],</span> <span class="n">dec</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+                <span class="n">ntargs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">])</span>
+                <span class="n">StarCatalog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntargs</span><span class="o">=</span><span class="n">ntargs</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+                
+                <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="c1"># list of astropy attributes</span>
+                    <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span><span class="s1">&#39;parx&#39;</span><span class="p">,</span><span class="s1">&#39;pmra&#39;</span><span class="p">,</span><span class="s1">&#39;pmdec&#39;</span><span class="p">,</span><span class="s1">&#39;rv&#39;</span><span class="p">):</span>
+                        <span class="n">unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">unit</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">att</span><span class="p">])</span><span class="o">*</span><span class="n">unit</span><span class="p">)</span>
+                    <span class="c1"># list of non-astropy attributes</span>
+                    <span class="k">elif</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">att</span><span class="p">]))</span>
+                <span class="c1"># astropy SkyCoord object</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">],</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg,deg,pc&#39;</span><span class="p">)</span>
+                
                 <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">filename</span>
+                <span class="k">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">pklpath</span>
                 <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">filename</span>
+            <span class="k">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">pklpath</span>
             <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
         
         <span class="k">return</span> <span class="n">success</span></div>
@@ -130,13 +105,13 @@
 <span class="sd">        directory.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            matpath (str):</span>
+<span class="sd">            matpath (string):</span>
 <span class="sd">                path to .mat file</span>
 <span class="sd">            pklpath (str):</span>
 <span class="sd">                pat to .pkl file to be written</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            bool (bool):</span>
+<span class="sd">            bool (boolean):</span>
 <span class="sd">                True if successful, False if not</span>
 <span class="sd">        </span>
 <span class="sd">        Stores pickled dictionary file with same name as .mat file (and </span>

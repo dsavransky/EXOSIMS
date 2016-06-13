@@ -27,7 +27,7 @@
     <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
     <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="next" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
-    <link rel="prev" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="prev" title="EXOSIMS.BackgroundSources package" href="EXOSIMS.BackgroundSources.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -49,7 +49,7 @@
 <span id="exosims-completeness-browncompleteness-module"></span><h2>EXOSIMS.Completeness.BrownCompleteness module<a class="headerlink" href="#module-EXOSIMS.Completeness.BrownCompleteness" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Completeness.BrownCompleteness.</code><code class="descname">BrownCompleteness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Completeness.BrownCompleteness.</code><code class="descname">BrownCompleteness</code><span class="sig-paren">(</span><em>Nplanets=100000000.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness" title="EXOSIMS.Prototypes.Completeness.Completeness"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.Completeness.Completeness</span></code></a></p>
 <p>Completeness class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -75,42 +75,29 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC">
-<code class="descname">EVPOC</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.EVPOC" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>interp2d</em> &#8211; scipy interp2d object to find initial completeness values</p>
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath">
+<code class="descname">classpath</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; path on disk to Brown Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds">
-<code class="descname">obsinds</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.obsinds" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing target list star indices of stars
-which have been observed during simulation</p>
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename">
+<code class="descname">filename</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; name of file where completeness interpolant is stored</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime">
-<code class="descname">initialobstime</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.initialobstime" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray with units of time attached containing the
-initial observation time of each star in obsinds</p>
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits">
+<code class="descname">visits</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; number of observations corresponding to each star in the target list
+(initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated">
-<code class="descname">accumulated</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.accumulated" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; accumulated completeness value for observed stars in obsinds</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp">
-<code class="descname">tcomp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.tcomp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray with units of day containing time to compare</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non">
-<code class="descname">non</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.non" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing completeness value for planets which
-are not observable at any time</p>
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates">
+<code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; completeness values of successive observations of each star in the
+target list (initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="method">
@@ -166,6 +153,21 @@ the 2D completeness values needed for interpolation.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.gen_update">
+<code class="descname">gen_update</code><span class="sig-paren">(</span><em>targlist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.gen_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.gen_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates dynamic completeness values for multiple visits of each
+star in the target list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</td>
 </tr>
 </tbody>
 </table>
@@ -262,7 +264,7 @@ the 2D completeness values needed for interpolation.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
-      <li>Previous: <a href="EXOSIMS.html" title="previous chapter">EXOSIMS package</a></li>
+      <li>Previous: <a href="EXOSIMS.BackgroundSources.html" title="previous chapter">EXOSIMS.BackgroundSources package</a></li>
       <li>Next: <a href="EXOSIMS.Observatory.html" title="next chapter">EXOSIMS.Observatory package</a></li>
   </ul></li>
   </ul></li>

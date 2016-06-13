@@ -45,7 +45,8 @@
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span><span class="p">,</span> <span class="n">interp2d</span><span class="p">,</span> <span class="n">griddata</span>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span><span class="p">,</span> <span class="n">griddata</span>
 
 <div class="viewcode-block" id="Stark"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Stark.Stark">[docs]</a><span class="k">class</span> <span class="nc">Stark</span><span class="p">(</span><span class="n">ZodiacalLight</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stark Zodiacal Light class</span>
@@ -54,21 +55,23 @@
 <span class="sd">    Zodiacal Light Module calculations in exoplanet mission simulation using</span>
 <span class="sd">    the model from Stark et al. 2014.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Stark.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Stark.Stark.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+<div class="viewcode-block" id="Stark.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Stark.Stark.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList):</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            lam:</span>
-<span class="sd">                Central wavelength (default units of nm)</span>
+<span class="sd">                Integer indices of the stars of interest, with the length of </span>
+<span class="sd">                the number of planets of interest</span>
+<span class="sd">            lam (astropy Quantity):</span>
+<span class="sd">                Central wavelength in units of nm</span>
+<span class="sd">            r_sc (astropy Quantity 1x3 array):</span>
+<span class="sd">                Observatory (spacecraft) position vector in units of km</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            fZ (ndarray):</span>
-<span class="sd">                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># check type of sInds</span>
@@ -76,9 +79,22 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
             <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
         
-        <span class="c1"># solar longitudes and latitudes of targets</span>
-        <span class="n">lon</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">barycentrictrueecliptic</span><span class="o">.</span><span class="n">lon</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">lat</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">barycentrictrueecliptic</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># observatory coordinates wrt Sun</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">rsc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span>
+        <span class="c1"># longitude of the sun</span>
+        <span class="n">lon0</span> <span class="o">=</span> <span class="n">rsc</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="mi">180</span>
+        
+        <span class="c1"># target coordinates wrt observatory</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">rt</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span>
+        <span class="c1"># longitudes and latitudes of targets</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">lon0</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">value</span>
         <span class="n">lon</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">lon</span><span class="o">+</span><span class="mi">180</span><span class="p">)</span><span class="o">%</span><span class="mi">360</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span>
         <span class="n">lat</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
         

@@ -64,54 +64,67 @@
 <span class="sd">        obscurFac (float):</span>
 <span class="sd">            Obscuration factor due to secondary mirror and spiders</span>
 <span class="sd">        shapeFac (float):</span>
-<span class="sd">            shape factor (also known as fill factor) where </span>
-<span class="sd">            :math:`shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea`</span>
-<span class="sd">        pupilDiam (Quantity):</span>
-<span class="sd">            entrance pupil diameter (default units of m)</span>
-<span class="sd">        pupilArea (Quantity):</span>
-<span class="sd">            entrance pupil area (default units of m\ :sup:`2`)</span>
-<span class="sd">        telescopeKeepout (float):</span>
-<span class="sd">            telescope keepout angle in degrees</span>
+<span class="sd">            Shape factor of the unobscured pupil area, so that</span>
+<span class="sd">            shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea</span>
+<span class="sd">        pupilDiam (astropy Quantity):</span>
+<span class="sd">            Entrance pupil diameter in units of m</span>
+<span class="sd">        pupilArea (astropy Quantity):</span>
+<span class="sd">            Entrance pupil area in units of m2</span>
+<span class="sd">        telescopeKeepout (astropy Quantity):</span>
+<span class="sd">            Telescope keepout angle in units of deg</span>
 <span class="sd">        attenuation (float):</span>
-<span class="sd">            non-coronagraph attenuation (throughput)</span>
-<span class="sd">        intCutoff (Quantity):</span>
-<span class="sd">            integration cutoff (default units of day)</span>
+<span class="sd">            Non-coronagraph attenuation, equal to the throughput of the optical </span>
+<span class="sd">            system without the coronagraph elements</span>
+<span class="sd">        intCutoff (astropy Quantity):</span>
+<span class="sd">            Maximum allowed integration time in units of day</span>
 <span class="sd">        Npix (float):</span>
-<span class="sd">            number of noise pixels</span>
+<span class="sd">            Number of noise pixels</span>
 <span class="sd">        Ndark (float):</span>
-<span class="sd">            number of dark frames used</span>
-<span class="sd">        haveOcculter (bool):</span>
-<span class="sd">            boolean signifying if the system has an occulter</span>
+<span class="sd">            Number of dark frames used</span>
+<span class="sd">        haveOcculter (boolean):</span>
+<span class="sd">            Boolean signifying if the system has an occulter</span>
 <span class="sd">        F0 (callable(lam)):</span>
 <span class="sd">            Spectral flux density</span>
-<span class="sd">        IWA (Quantity):</span>
-<span class="sd">            Fundamental Inner Working Angle (default units of arcsecond)</span>
-<span class="sd">        OWA (Quantity):</span>
-<span class="sd">            Fundamental Outer Working Angle (default units of arcsecond)</span>
+<span class="sd">        IWA (astropy Quantity):</span>
+<span class="sd">            Fundamental Inner Working Angle in units of arcsec</span>
+<span class="sd">        OWA (astropy Quantity):</span>
+<span class="sd">            Fundamental Outer Working Angle in units of arcsec</span>
 <span class="sd">        dMagLim (float):</span>
-<span class="sd">            Fundamental limiting delta magnitude. </span>
+<span class="sd">            Fundamental limiting delta magnitude</span>
 <span class="sd">        scienceInstruments (list of dicts):</span>
 <span class="sd">            All science instrument attributes (variable)</span>
+<span class="sd">        Imager (dict):</span>
+<span class="sd">            Dictionary containing imaging camera attributes.</span>
+<span class="sd">            Default to scienceInstruments[0]</span>
+<span class="sd">        Spectro (dict):</span>
+<span class="sd">            Dictionary containing spectrograph attributes.</span>
+<span class="sd">            Default to scienceInstruments[-1]</span>
 <span class="sd">        starlightSuppressionSystems (list of dicts):</span>
 <span class="sd">            All starlight suppression system attributes (variable)</span>
+<span class="sd">        ImagerSyst (dict):</span>
+<span class="sd">            Dictionary containing imaging coronagraph attributes.</span>
+<span class="sd">            Default to starlightSuppressionSystems[0]</span>
+<span class="sd">        SpectroSyst (dict):</span>
+<span class="sd">            Dictionary containing spectroscopy coronagraph attributes.</span>
+<span class="sd">            Default to starlightSuppressionSystems[-1]</span>
 <span class="sd">    </span>
 <span class="sd">    Common Science Instrument Attributes:</span>
-<span class="sd">        type:</span>
+<span class="sd">        type (string):</span>
 <span class="sd">            Instrument type (e.g. imaging, spectro)</span>
-<span class="sd">        lam (Quantity):</span>
-<span class="sd">            Central wavelength (default units of nm)</span>
-<span class="sd">        deltaLam (Quantity):</span>
-<span class="sd">            Bandwidth (default units of nm)</span>
+<span class="sd">        lam (astropy Quantity):</span>
+<span class="sd">            Central wavelength in units of nm</span>
+<span class="sd">        deltaLam (astropy Quantity):</span>
+<span class="sd">            Bandwidth in units of nm</span>
 <span class="sd">        BW (float):</span>
 <span class="sd">            Bandwidth fraction</span>
-<span class="sd">        pitch (float):</span>
-<span class="sd">            Pixel pitch (default units of m)</span>
-<span class="sd">        focal (float):</span>
-<span class="sd">            Focal length (default units of m)</span>
-<span class="sd">        idark (float):</span>
-<span class="sd">            Dark current rate (default units of s^-1)</span>
-<span class="sd">        texp (float):</span>
-<span class="sd">            Exposure time per frame (default units of s)</span>
+<span class="sd">        pitch (astropy Quantity):</span>
+<span class="sd">            Pixel pitch in units of m</span>
+<span class="sd">        focal (astropy Quantity):</span>
+<span class="sd">            Focal length in units of m</span>
+<span class="sd">        idark (astropy Quantity):</span>
+<span class="sd">            Dark current rate in units of 1/s</span>
+<span class="sd">        texp (astropy Quantity):</span>
+<span class="sd">            Exposure time per frame in units of s</span>
 <span class="sd">        sread (float):</span>
 <span class="sd">            Detector readout noise</span>
 <span class="sd">        CIC (float):</span>
@@ -127,39 +140,39 @@
 <span class="sd">        QE (callable(lam)):</span>
 <span class="sd">            Quantum efficiency (must be callable - can be lambda function, </span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with input </span>
-<span class="sd">            wavelength (astropy Quantity).  </span>
+<span class="sd">            wavelength (astropy Quantity).</span>
 <span class="sd">     </span>
 <span class="sd">    Common Starlight Suppression System Attributes:</span>
-<span class="sd">        type:</span>
+<span class="sd">        type (string):</span>
 <span class="sd">            System type (e.g. internal, external, hybrid), should also contain the</span>
 <span class="sd">            type of science instrument it can be used with (e.g. imaging, spectro)</span>
 <span class="sd">        throughput (callable(lam, WA)):</span>
-<span class="sd">            optical system throughput (must be callable - can be lambda,</span>
+<span class="sd">            System throughput (must be callable - can be lambda,</span>
 <span class="sd">            function, scipy.interpolate.interp2d object, etc.) with inputs</span>
 <span class="sd">            wavelength (astropy Quantity) and angular separation/working angle </span>
 <span class="sd">            (astropy Quantity).</span>
 <span class="sd">        contrast (callable(lam, WA)):</span>
-<span class="sd">            optical system contrast curve (must be callable - can be lambda,</span>
+<span class="sd">            System contrast curve (must be callable - can be lambda,</span>
 <span class="sd">            function, scipy.interpolate.interp2d object, etc.) with inputs</span>
 <span class="sd">            wavelength (astropy Quantity) and angular separation/working angle </span>
 <span class="sd">            (astropy Quantity).</span>
-<span class="sd">        IWA:</span>
-<span class="sd">            Inner working angle</span>
-<span class="sd">        OWA:</span>
-<span class="sd">            Outer working angle</span>
-<span class="sd">        dMagLim:</span>
+<span class="sd">        IWA (astropy Quantity):</span>
+<span class="sd">            Inner working angle in units of arcsec</span>
+<span class="sd">        OWA (astropy Quantity):</span>
+<span class="sd">            Outer working angle in units of arcsec</span>
+<span class="sd">        dMagLim (float):</span>
 <span class="sd">            System delta magnitude limit</span>
 <span class="sd">        PSF (callable(lam, WA)):</span>
-<span class="sd">            point spread function - 2D ndarray of values, normalized to 1 at</span>
+<span class="sd">            Point spread function - 2D ndarray of values, normalized to 1 at</span>
 <span class="sd">            the core (must be callable - can be lambda, function,</span>
 <span class="sd">            scipy.interpolate.interp2d object, etc.) with inputs wavelength</span>
 <span class="sd">            (astropy Quantity) and angular separation/working angle (astropy </span>
 <span class="sd">            Quantity). Note: normalization means that all throughput effects </span>
 <span class="sd">            must be contained in the throughput attribute.</span>
-<span class="sd">        samp (Quantity):</span>
-<span class="sd">            Sampling of PSF in arcsec/pixel (default units of arcsec)</span>
+<span class="sd">        samp (astropy Quantity):</span>
+<span class="sd">            Sampling of PSF in units of arcsec (per pixel)</span>
 <span class="sd">        ohTime (astropy Quantity):</span>
-<span class="sd">            Overhead time (default units of days)</span>
+<span class="sd">            Overhead time in units of days</span>
 <span class="sd">        imagTimeMult (float):</span>
 <span class="sd">            Imaging time multiplier</span>
 <span class="sd">        charTimeMult (float):</span>
@@ -438,70 +451,35 @@
         
         <span class="k">return</span> <span class="s1">&#39;Optical System class object attributes&#39;</span>
 
-<div class="viewcode-block" id="OpticalSystem.starMag"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.starMag">[docs]</a>    <span class="k">def</span> <span class="nf">starMag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculates star visual magnitudes with B-V color, based on Traub et al. 2016.</span>
-<span class="sd">        using empirical fit to data from Pecaut and Mamajek (2013, Appendix C).</span>
-<span class="sd">        The expression for flux is accurate to about 7%, in the range of validity </span>
-<span class="sd">        400 nm &lt; λ &lt; 1000 nm (Traub et al. 2016).</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            TL:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            sInds:</span>
-<span class="sd">                (integer ndarray) indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            lam:</span>
-<span class="sd">                Wavelength in nm</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            mag:</span>
-<span class="sd">                Star visual magnitudes with B-V color</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># check type of sInds</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
-            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
-        
-        <span class="n">Vmag</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="n">BV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">BV</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">lam</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;</span> <span class="mf">550.</span><span class="p">:</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="mf">2.20</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="mf">1.54</span>
-        <span class="n">mag</span> <span class="o">=</span> <span class="n">Vmag</span> <span class="o">+</span> <span class="n">b</span><span class="o">*</span><span class="n">BV</span><span class="o">*</span><span class="p">(</span><span class="mf">1000.</span><span class="o">/</span><span class="n">lam</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="mf">1.818</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">mag</span></div>
-
-<div class="viewcode-block" id="OpticalSystem.Cp_Cb"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb">[docs]</a>    <span class="k">def</span> <span class="nf">Cp_Cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">syst</span><span class="p">,</span> <span class="n">Npix</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSystem.Cp_Cb"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb">[docs]</a>    <span class="k">def</span> <span class="nf">Cp_Cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">inst</span><span class="p">,</span> <span class="n">syst</span><span class="p">,</span> <span class="n">Npix</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Calculates electron count rates for planet signal and background noise.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL:</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            I:</span>
-<span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
-<span class="sd">            dMag:</span>
-<span class="sd">                Numpy ndarray containing differences in magnitude between planets </span>
-<span class="sd">                and their host star</span>
-<span class="sd">            WA:</span>
-<span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
-<span class="sd">            inst:</span>
-<span class="sd">                Selected scienceInstrument</span>
-<span class="sd">            syst:</span>
-<span class="sd">                Selected starlightSuppressionSystem</span>
-<span class="sd">            Npix:</span>
+<span class="sd">                Integer indices of the stars of interest, with the length of </span>
+<span class="sd">                the number of planets of interest</span>
+<span class="sd">            dMag (float ndarray):</span>
+<span class="sd">                Differences in magnitude between planets and their host star</span>
+<span class="sd">            WA (astropy Quantity array):</span>
+<span class="sd">                Working angles of the planets of interest in units of arcsec</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            inst (dict):</span>
+<span class="sd">                Selected Science Instrument</span>
+<span class="sd">            syst (dict):</span>
+<span class="sd">                Selected Starlight Suppression System</span>
+<span class="sd">            Npix (float):</span>
 <span class="sd">                Number of noise pixels</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            C_p:</span>
-<span class="sd">                1D numpy array of planet signal electron count rate (units of s^-1)</span>
-<span class="sd">            C_b:</span>
-<span class="sd">                1D numpy array of background noise electron count rate (units of s^-1)</span>
+<span class="sd">            C_p (astropy Quantity array):</span>
+<span class="sd">                Planet signal electron count rate in units of 1/s</span>
+<span class="sd">            C_b (astropy Quantity array):</span>
+<span class="sd">                Background noise electron count rate in units of 1/s</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -516,10 +494,7 @@
         <span class="n">Q</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;contrast&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>               <span class="c1"># contrast</span>
         <span class="n">T</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;throughput&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span> <span class="o">/</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;Ns&#39;</span><span class="p">]</span> \
                 <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span><span class="o">**</span><span class="mi">2</span>               <span class="c1"># throughput</span>
-        <span class="n">mV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starMag</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">lam</span><span class="p">)</span>             <span class="c1"># star visual magnitude</span>
-        <span class="n">zodi</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">ZodiacalLight</span>                     <span class="c1"># zodiacalLight module</span>
-        <span class="n">fZ</span> <span class="o">=</span> <span class="n">zodi</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">lam</span><span class="p">)</span>                  <span class="c1"># surface brightness of local zodi</span>
-        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">zodi</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">I</span><span class="p">)</span>                  <span class="c1"># surface brightness of exo-zodi</span>
+        <span class="n">mV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starMag</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">lam</span><span class="p">)</span>                  <span class="c1"># star visual magnitude</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>                            <span class="c1"># aperture photometry radius (in lam/D)</span>
         <span class="n">Theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="o">*</span><span class="n">lam</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">pupilDiam</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span> <span class="c1"># angular radius (in arcseconds)</span>
         <span class="n">Omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">Theta</span><span class="o">**</span><span class="mi">2</span>                      <span class="c1"># solid angle subtended by the aperture</span>
@@ -536,37 +511,7 @@
         
         <span class="k">return</span> <span class="n">C_p</span><span class="p">,</span> <span class="n">C_b</span></div>
 
-<div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
-<span class="sd">        </span>
-<span class="sd">        This method is called in the __init__ method of the TargetList class</span>
-<span class="sd">        object. The working angle is set to the optical system IWA value, and</span>
-<span class="sd">        the planet inclination is set to 0.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            TL:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            maxintTime:</span>
-<span class="sd">                1D numpy array containing maximum integration time for target</span>
-<span class="sd">                list stars (astropy Quantity with units of day)</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># generate sInds for the whole TargetList</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">))</span>
-        
-        <span class="c1"># set default max integration time to I = 0, dMag = dMagLim, WA = IWA</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>
-        <span class="n">dMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
-        <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
-        
-        <span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">maxintTime</span></div>
-
-<div class="viewcode-block" id="OpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">fZ</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called by a method in the SurveySimulation class object.</span>
@@ -574,22 +519,23 @@
 <span class="sd">        determined by specific OpticalSystem classes.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL:</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            I:</span>
-<span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
-<span class="sd">            dMag:</span>
-<span class="sd">                Numpy ndarray containing differences in magnitude between planets </span>
-<span class="sd">                and their host star</span>
-<span class="sd">            WA:</span>
-<span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
+<span class="sd">                Integer indices of the stars of interest, with the length of </span>
+<span class="sd">                the number of planets of interest</span>
+<span class="sd">            dMag (float ndarray):</span>
+<span class="sd">                Differences in magnitude between planets and their host star</span>
+<span class="sd">            WA (astropy Quantity array):</span>
+<span class="sd">                Working angles of the planets of interest in units of arcsec</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            intTime (Quantity):</span>
-<span class="sd">                1D numpy ndarray of integration times (default units of day)</span>
+<span class="sd">            intTime (astropy Quantity array):</span>
+<span class="sd">                Integration times in units of day</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -602,7 +548,7 @@
         
         <span class="k">return</span> <span class="n">intTime</span></div>
 
-<div class="viewcode-block" id="OpticalSystem.calc_charTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_charTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">):</span>
+<div class="viewcode-block" id="OpticalSystem.calc_charTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_charTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_charTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">fZ</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds characterization time for a specific target system </span>
 <span class="sd">        </span>
 <span class="sd">        This method is called by a method in the SurveySimulation class object.</span>
@@ -610,22 +556,23 @@
 <span class="sd">        determined by specific OpticalSystem classes.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL:</span>
+<span class="sd">            TL (object):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
-<span class="sd">                with the length of the number of planets of interest.</span>
-<span class="sd">            I:</span>
-<span class="sd">                Numpy ndarray containing inclinations of the planets of interest</span>
-<span class="sd">            dMag:</span>
-<span class="sd">                Numpy ndarray containing differences in magnitude between planets </span>
-<span class="sd">                and their host star</span>
-<span class="sd">            WA:</span>
-<span class="sd">                Numpy ndarray containing working angles of the planets of interest</span>
+<span class="sd">                Integer indices of the stars of interest, with the length of </span>
+<span class="sd">                the number of planets of interest</span>
+<span class="sd">            dMag (float ndarray):</span>
+<span class="sd">                Differences in magnitude between planets and their host star</span>
+<span class="sd">            WA (astropy Quantity array):</span>
+<span class="sd">                Working angles of the planets of interest in units of arcsec</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            charTime (Quantity):</span>
-<span class="sd">                1D numpy ndarray of characterization times (default units of day)</span>
+<span class="sd">            charTime (astropy Quantity array):</span>
+<span class="sd">                Characterization times in units of day</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -636,7 +583,37 @@
         
         <span class="n">charTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
-        <span class="k">return</span> <span class="n">charTime</span></div></div>
+        <span class="k">return</span> <span class="n">charTime</span></div>
+
+<div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
+<span class="sd">        </span>
+<span class="sd">        This method is called in the __init__ method of the TargetList class</span>
+<span class="sd">        object. The working angle is set to the optical system IWA value, and</span>
+<span class="sd">        the planet inclination is set to 0.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (object):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            maxintTime (astropy Quantity array):</span>
+<span class="sd">                Maximum integration times for target list stars in units of day</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># generate sInds for the whole TargetList</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">))</span>
+        
+        <span class="c1"># set default max integration time to dMag = dMagLim, WA = IWA, fzodi = 0</span>
+        <span class="n">dMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">fZ</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">maxintTime</span></div></div>
 </pre></div>
 
           </div>

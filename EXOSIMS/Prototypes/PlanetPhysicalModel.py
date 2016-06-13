@@ -34,7 +34,7 @@ class PlanetPhysicalModel(object):
 
     def calc_albedo_from_sma(self,a):
         """
-        Helper function for calculating albedo.
+        Helper function for calculating albedo given the semi-major axis.
         The prototype provides only a dummy function that always returns the 
         same value of 0.367.
         
@@ -84,4 +84,21 @@ class PlanetPhysicalModel(object):
         rho = 1000*u.kg/u.m**3.
         
         return (rho*4*np.pi*R**3./3.).decompose()
+
+    def calc_Phi(self,beta):
+        """Calculate the phase function. Prototype method uses the Lambert phase 
+        function from Sobolev 1975.
+        
+        Args:
+            beta (Quantity):
+                numpy ndarray containing planet phase angles (radians) at which the 
+                phase function is to be calculated.
+                
+        Returns:
+            Phi (Quantity):
+                numpy ndarray of planet phase function
+        """
+        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        
+        return Phi
 

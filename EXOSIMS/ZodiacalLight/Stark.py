@@ -18,19 +18,19 @@ class Stark(ZodiacalLight):
         """Returns surface brightness of local zodiacal light
         
         Args:
-            TL (TargetList):
+            TL (object):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
-            lam:
-                Central wavelength (default units of nm)
-            r_sc:
-                Observatory (spacecraft) position vector
+                Integer indices of the stars of interest, with the length of 
+                the number of planets of interest
+            lam (astropy Quantity):
+                Central wavelength in units of nm
+            r_sc (astropy Quantity 1x3 array):
+                Observatory (spacecraft) position vector in units of km
         
         Returns:
-            fZ (ndarray):
-                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)
+            fZ (astropy Quantity array):
+                Surface brightness of zodiacal light in units of 1/arcsec2
         """
         
         # check type of sInds

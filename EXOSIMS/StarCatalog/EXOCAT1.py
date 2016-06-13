@@ -19,13 +19,13 @@ class EXOCAT1(StarCatalog):
     
     """
     
-    def __init__(self,catalogpath=None,**specs):
+    def __init__(self, catalogpath=None, **specs):
         """
         Constructor for EXOCAT1
         
         Args:
-            catalogpath (str):
-                Full path to catalog VOTABLE.  Defaults to mission_exocat.votable
+            catalogpath (string):
+                Full path to catalog VOTABLE. Defaults to mission_exocat.votable
         
         """
        

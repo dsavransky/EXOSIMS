@@ -65,7 +65,7 @@ the model from Kasdin &amp; Braems 2006.</p>
 </table>
 <dl class="method">
 <dt id="EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/KasdinBraems.html#KasdinBraems.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.KasdinBraems.KasdinBraems.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system,
 based on Kasdin and Braems 2006.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -73,21 +73,20 @@ based on Kasdin and Braems 2006.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">1D numpy array of integration times (astropy Quantity with
-units of day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intTime</strong> &#8211;     Integration times in units of day</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -117,7 +116,7 @@ the model from Nemati 2014.</p>
 </table>
 <dl class="method">
 <dt id="EXOSIMS.OpticalSystem.Nemati.Nemati.calc_charTime">
-<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_charTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_charTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati.calc_charTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_charTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds characterization time for a specific target system,
 based on Nemati 2014 (SPIE).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -125,20 +124,20 @@ based on Nemati 2014 (SPIE).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;     1D numpy ndarray of characterization times (default units of day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>charTime</strong> &#8211;     Characterization times in units of day</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>
@@ -147,7 +146,7 @@ and their host star</li>
 
 <dl class="method">
 <dt id="EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>dMag</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dMag</em>, <em>WA</em>, <em>fEZ</em>, <em>fZ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati.html#Nemati.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati.Nemati.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system,
 based on Nemati 2014 (SPIE).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -155,21 +154,20 @@ based on Nemati 2014 (SPIE).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Numpy ndarray containing integer indices of the stars of interest,
-with the length of the number of planets of interest.</li>
-<li><strong>I</strong> &#8211; Numpy ndarray containing inclinations of the planets of interest</li>
-<li><strong>dMag</strong> &#8211; Numpy ndarray containing differences in magnitude between planets
-and their host star</li>
-<li><strong>WA</strong> &#8211; Numpy ndarray containing working angles of the planets of interest</li>
+<li><strong>TL</strong> (<em>object</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest, with the length of
+the number of planets of interest</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">1D numpy array of integration times (astropy Quantity with
-units of day)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intTime</strong> &#8211;     Integration times in units of day</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity array</p>
 </td>
 </tr>
 </tbody>

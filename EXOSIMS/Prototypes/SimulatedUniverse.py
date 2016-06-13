@@ -18,57 +18,57 @@ class SimulatedUniverse(object):
             user specified values
     
     Attributes:
-        TargetList (TargetList):
-            TargetList class object
-        PlanetPhysicalModel (PlanetPhysicalModel):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem):
-            OpticalSystem class object
-        PlanetPopulation (PlanetPopulation):
+        PlanetPopulation (object):
             PlanetPopulation class object
-        ZodiacalLight (ZodiacalLight):
+        PlanetPhysicalModel (object):
+            PlanetPhysicalModel class object
+        OpticalSystem (object):
+            OpticalSystem class object
+        ZodiacalLight (object):
             ZodiacalLight class object
-        BackgroundSources (BackgroundSources):
+        BackgroundSources (object):
             BackgroundSources class object
-        PostProcessing (PostProcessing):
+        PostProcessing (object):
             PostProcessing class object
-        Completeness (Completeness):
+        Completeness (object):
             Completeness class object
-        nPlans (int):
-            total number of planets
-        plan2star (ndarray):
-            1D numpy ndarray of indices mapping planets to target stars in
-            TargetList
-        sInds (ndarray):
-            indicies of target stars in TargetList with planets
-        a (Quantity):
-            1D numpy ndarray containing semi-major axis for each planet 
-            (default units of AU)
-        e (ndarray):
-            1D numpy ndarray containing eccentricity for each planet
-        w (Quantity):
-            1D numpy ndarray containing argument of perigee in degrees
-        O (Quantity):
-            1D numpy ndarray containing right ascension of the ascending node 
-            in degrees
-        Mp (Quantity):
-            1D numpy ndarray containing mass for each planet (default units of 
-            kg)
-        Rp (Quantity):
-            1D numpy ndarray containing radius for each planet (default units 
-            of km)
-        r (Quantity):
-            numpy ndarray containing position vector for each planet (default
-            units of km)
-        v (Quantity):
-            numpy ndarray containing velocity vector for each planet (default 
-            units of km/s)
-        I (Quantity):
-            1D numpy ndarray containing inclination in degrees for each planet
-        p (ndarray):
-            1D numpy ndarray containing albedo for each planet
-        fEZ (ndarray):
-            1D numpy ndarray containing exozodi level for each planet
+        TargetList (object):
+            TargetList class object
+        eta (float)
+            Global occurrence rate defined as expected number of planets 
+            per star in a given universe
+        nPlans (integer):
+            Total number of planets
+        plan2star (integer ndarray):
+            Indices mapping planets to target stars in TargetList
+        sInds (integer ndarray):
+            Unique indices of stars with planets in TargetList
+        a (astropy Quantity array):
+            Planet semi-major axis in units of AU
+        e (float ndarray):
+            Planet eccentricity
+        I (astropy Quantity array):
+            Planet inclination in units of deg
+        O (astropy Quantity array):
+            Planet right ascension of the ascending node in units of deg
+        w (astropy Quantity array):
+            Planet argument of perigee in units of deg
+        r (astropy Quantity nx3 array):
+            Planet position vector in units of km
+        v (astropy Quantity nx3 array):
+            Planet velocity vector in units of km/s
+        s (astropy Quantity array):
+            Planet-star apparent separations in units of km
+        d (astropy Quantity array):
+            Planet-star distances in units of km
+        Mp (astropy Quantity array):
+            Planet mass in units of kg
+        Rp (astropy Quantity array):
+            Planet radius in units of km
+        p (float ndarray):
+            Planet albedo
+        fEZ (astropy Quantity array):
+            Surface brightness of exozodiacal light in units of 1/arcsec2
     
     """
 
@@ -147,53 +147,41 @@ class SimulatedUniverse(object):
     def planet_pos_vel(self):
         """Assigns each planet an initial position (km) and velocity (km/s)
         
-        This defines the data type expected, specific SimulatedUniverse class
-        objects will populate these values.
-        
-        This method has access to the following:
-            self.a:
-                planet semi-major axis
-            self.e:
-                planet eccentricity
-            self.Mp:
-                planet masses
-            self.I:
-                planet inclinations in degrees
-            self.w:
-                planet argument of perigee in degrees
-            self.O:
-                planet right ascension of the ascending node in degrees
+        This method makes us of the planet orbital elements (a, e, I, O, w, E), 
+        and the planet and star masses.
                 
         Returns:
-            r, v (Quantity, Quantity):
-                numpy ndarray containing initial position vector of each planet 
-                (units of km), numpy ndarray containing initial velocity vector 
-                of each planet (units of km/s)
-                
+            r (astropy Quantity nx3 array):
+                Initial position vector of each planet in units of km
+            v (astropy Quantity nx3 array):
+                Initial velocity vector of each planet in units of km/s
+        
         """
         
-        Omega = self.O.to('rad').value
-        omega = self.w.to('rad').value
-        I = self.I.to('rad').value
-        a = self.a
-        e = self.e
+        # planet orbital elements
+        a = self.a                              # semi-major axis
+        e = self.e                              # eccentricity
+        I = self.I.to('rad').value              # inclinations
+        Omega = self.O.to('rad').value          # right ascension of the ascending node
+        w = self.w.to('rad').value              # argument of perigee
+        M = np.random.uniform(high=2*np.pi,size=self.nPlans) # generate random mean anomaly
+        E = eccanom(M,e)                        # eccentric anomaly
+        
+        # planet and star masses
         Mp = self.Mp
         Ms = self.TargetList.MsTrue[self.plan2star]
         
-        #generate random mean anomlay and calculate eccentric anomaly
-        M = np.random.uniform(high=2.*np.pi,size=self.nPlans)
-        E = eccanom(M,e)
         
-        a1 = (a*(np.cos(Omega)*np.cos(omega) - np.sin(Omega)*np.cos(I)*np.sin(omega))).to('AU')
-        a2 = (a*(np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.cos(I)*np.sin(omega))).to('AU')
-        a3 = (a*np.sin(I)*np.sin(omega)).to('AU')
+        a1 = (a*(np.cos(Omega)*np.cos(w) - np.sin(Omega)*np.cos(I)*np.sin(w))).to('AU')
+        a2 = (a*(np.sin(Omega)*np.cos(w) + np.cos(Omega)*np.cos(I)*np.sin(w))).to('AU')
+        a3 = (a*np.sin(I)*np.sin(w)).to('AU')
         A = np.vstack((a1,a2,a3)).T.value*u.AU
         
-        b1 = (-a*np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(omega) + np.sin(Omega)\
-                *np.cos(I)*np.cos(omega))).to('AU')
-        b2 = (a*np.sqrt(1.-e**2)*(-np.sin(Omega)*np.sin(omega) + np.cos(Omega)\
-                *np.cos(I)*np.cos(omega))).to('AU')
-        b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(omega)).to('AU')
+        b1 = (-a*np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(w) + np.sin(Omega)\
+                *np.cos(I)*np.cos(w))).to('AU')
+        b2 = (a*np.sqrt(1.-e**2)*(-np.sin(Omega)*np.sin(w) + np.cos(Omega)\
+                *np.cos(I)*np.cos(w))).to('AU')
+        b3 = (a*np.sqrt(1.-e**2)*np.sin(I)*np.cos(w)).to('AU')
         B = np.vstack((b1,b2,b3)).T.value*u.AU
         
         r1 = np.cos(E) - e
@@ -219,23 +207,26 @@ class SimulatedUniverse(object):
         the Kepler state transition matrix.
         
         Args:
-            r (Quantity):
-                numpy ndarray containing planet position vectors relative to 
-                host stars (units of distance)
-            v (Quantity): 
-                numpy ndarray containing planet velocity vectors relative to 
-                host stars (units of velocity)
-            Mp (Quantity):
-                1D numpy ndarray containing planet masses (units of mass)
-            Ms (ndarray):
-                1D numpy ndarray containing target star mass (in M_sun)
-            dt (Quantity):
-                time increment to propagate the system (units of time)
+            r (astropy Quantity nx3 array):
+                Initial position vector of each planet in units of km
+            v (astropy Quantity nx3 array):
+                Initial velocity vector of each planet in units of km/s
+            Mp (astropy Quantity array):
+                Planet masses in units of kg
+            Ms (float ndarray):
+                Target star masses in M_sun
+            dt (astropy Quantity):
+                Time increment to propagate the system in units of day
         
         Returns:
-            rnew, vnew (Quantity, Quantity):
-                numpy ndarray of propagated position vectors (units of km),
-                numpy ndarray of propagated velocity vectors (units of km/day)
+            rnew (astropy Quantity nx3 array):
+                Propagated position vectors in units of km
+            vnew (astropy Quantity nx3 array):
+                Propagated velocity vectors in units of km/s
+            snew (astropy Quantity array):
+                Propagated apparent separations in units of km
+            dnew (astropy Quantity array):
+                Propagated planet-star distances in units of km
         
         """
         
@@ -274,11 +265,12 @@ class SimulatedUniverse(object):
         
         Args:
             pInds (integer ndarray):
-                Numpy ndarray containing integer indices of the planets of interest
+                Integer indices of the planets of interest
         
         Returns:
-            WA (Quantity):
-                numpy ndarray of working angles (units of arcsecons)
+            WA (astropy Quantity array):
+                Working angles in units of arcsec
+        
         """
         
         starDists = self.TargetList.dist[self.plan2star[pInds]] # distance to star

@@ -144,11 +144,16 @@ class SimulatedUniverse(object):
         # exo-zodi levels for systems with planets
         self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
 
-    def planet_pos_vel(self):
+    def planet_pos_vel(self,M=None):
         """Assigns each planet an initial position (km) and velocity (km/s)
         
         This method makes us of the planet orbital elements (a, e, I, O, w, E), 
         and the planet and star masses.
+
+        Inputs:
+            M (ndarray)
+                Initial Mean anomaly in radians.  If None (default) will be randomly
+                generated in U([0, 2\pi))
                 
         Returns:
             r (astropy Quantity nx3 array):
@@ -164,9 +169,12 @@ class SimulatedUniverse(object):
         I = self.I.to('rad').value              # inclinations
         Omega = self.O.to('rad').value          # right ascension of the ascending node
         w = self.w.to('rad').value              # argument of perigee
-        M = np.random.uniform(high=2*np.pi,size=self.nPlans) # generate random mean anomaly
-        E = eccanom(M,e)                        # eccentric anomaly
+
+        if M is None:
+            # generate random mean anomaly
+            M = np.random.uniform(high=2*np.pi,size=self.nPlans) 
         
+        E = eccanom(M,e)                        # eccentric anomaly
         # planet and star masses
         Mp = self.Mp
         Ms = self.TargetList.MsTrue[self.plan2star]

@@ -29,8 +29,8 @@ def eccanom(M, e):
         e = np.array([e]*len(M))
     
     assert e.shape == M.shape, "Incompatible inputs."
-    assert np.all((e>=0)&(e<1)), "e defined outside [0,1["
-    
+    assert np.all((e>=0)&(e<1)), "e defined outside [0,1)"
+
     #initial values for E
     E = M/(1-e)
     mask = e*E**2 > 6*(1-e)

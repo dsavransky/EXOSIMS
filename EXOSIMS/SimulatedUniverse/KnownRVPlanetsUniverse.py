@@ -2,6 +2,7 @@ from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+from astropy.time import Time
 
 class KnownRVPlanetsUniverse(SimulatedUniverse):
     """
@@ -14,11 +15,11 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         
     """
 
-    def __init__(self, **specs):
+    def __init__(self,**specs):
         
         SimulatedUniverse.__init__(self, **specs)
         
-    def gen_planetary_systems(self,**specs):
+    def gen_planetary_systems(self,missionStart=60634.,**specs):
         """
         Generate the planetary systems for the current simulated universe.
         This routine populates arrays of the orbital elements and physical 
@@ -69,8 +70,22 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.I = self.I.data*u.deg                          # inclination
         self.Mp = PPop.mass[planinds]                       # mass
         self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius
+        self.Rmask = ~PPop.radiusmask[planinds]
+        self.Rp[self.Rmask] = PPop.radius[planinds][self.Rmask]
+        self.Rperr1 = PPop.radiuserr1[planinds][self.Rmask]
+        self.Rperr2 = PPop.radiuserr2[planinds][self.Rmask]
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
-        self.r, self.v = self.planet_pos_vel()              # initial position
+
+
+        missionStart = Time(float(missionStart), format='mjd', scale='tai')
+        T = PPop.period[planinds] +  np.random.normal(size=self.nPlans)\
+                *PPop.perioderr[planinds]
+        T[T <= 0] = PPop.period[planinds][T<= 0]
+        tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
+                *PPop.tpererr[planinds]).to(u.d).value,format='jd')
+        M0 = np.mod(((missionStart - tper)/T).decompose().value*2*np.pi,2*np.pi)
+
+        self.r, self.v = self.planet_pos_vel(M=M0)          # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
         

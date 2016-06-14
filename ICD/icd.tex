@@ -1523,7 +1523,7 @@ The \verb+filter_target_list+ method calls multiple helper functions to perform 
 % SIMULATED UNIVERSE 
 
 \subsection{Simulated Universe} \label{sec:simulateduniverse}
-The Simulated Universe module instantiate the Target List module and creates a synthetic universe by populating planetary systems about some or all of the stars in the target list.  For each target, a planetary system is generated based on the statistics encoded in the Planet Population module, so that the overall planet occurrence and multiplicity rates are consistent with the provided distribution functions.  Physical parameters for each planet are similarly sampled from the input density functions (or calculated via the Planet physical model).  All planetary orbital and physical parameters are encoded as arrays of values, with an indexing array that maps planets to the stars in the target list. 
+The Simulated Universe module instantiates the Target List module and creates a synthetic universe by populating planetary systems about some or all of the stars in the target list.  For each target, a planetary system is generated based on the statistics encoded in the Planet Population module, so that the overall planet occurrence and multiplicity rates are consistent with the provided distribution functions.  Physical parameters for each planet are similarly sampled from the input density functions (or calculated via the Planet physical model).  All planetary orbital and physical parameters are encoded as arrays of values, with an indexing array that maps planets to the stars in the target list. 
 
 The Simulated Universe module contains the following methods: 
 \begin{itemize}
@@ -1608,6 +1608,13 @@ The \verb+gen_planetary_system+ method generates the planetary systems for the c
 
 \subsubsection*{Inputs}
 This method does not take any explicit inputs.  It uses the inherited TargetList and PlanetPopulation objects.
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[M (ndarray)] \hfill \\
+        Initial mean anomaly of all planets.  Must be an ndarray of the same size as PlanetPopulation.a (and all other orbital parameters).  Must be in radians, in range of $[0,2\pi)$. If set to None (the default) this array will be populated with uniformly distributed random values in that range.
+  \end{description}
+\end{itemize}
 
 \subsubsection*{Updated Attributes}
 \begin{itemize}

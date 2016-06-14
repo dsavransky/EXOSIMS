@@ -4,6 +4,7 @@ import astropy.constants as const
 import numpy as np
 import os,inspect
 from astropy.io.votable import parse
+from astropy.time import Time
 from EXOSIMS.util import statsFun 
 
 
@@ -39,6 +40,11 @@ class KnownRVPlanets(KeplerLike1):
         rvplanetfilepath (string)
             Full path to RV planet votable file from IPAC. If None,
             assumes default file in PlanetPopulation directory of EXOSIMS.
+        period (astropy Quantity)
+            Orbital period (default days).  Error in perioderr.
+        tper (astropy Time)
+            Periastron time (default jd).  Error in tpererr.
+        
     
     Notes:  
     
@@ -100,7 +106,28 @@ class KnownRVPlanets(KeplerLike1):
         mask = data['pl_orbeccenerr1'].mask
         self.eccenerr[mask | np.isnan(self.eccenerr)] = np.nanmean(self.eccenerr)
         
-        #self.radius = data['pl_radj']*const.R_jup
+        #store available radii for using in KnownRVPlanetsTargetList
+        self.radius = data['pl_radj'].data*const.R_jup
+        self.radiusmask = data['pl_radj'].mask
+        self.radiuserr1 = data['pl_radjerr1'].data*const.R_jup
+        self.radiuserr2 = data['pl_radjerr2'].data*const.R_jup
+
+        #save the periastron time and period 
+        tmp = data['pl_orbper'].data*u.d
+        tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
+                /(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun)).decompose().to(u.d)
+        self.period = tmp
+        self.perioderr = data['pl_orbpererr1'].data*u.d
+        mask = data['pl_orbpererr1'].mask
+        self.perioderr[mask] = np.nanmean(self.perioderr)
+
+        #if perisastron time missing, fill in random value
+        tmp = data['pl_orbtper'].data
+        tmp[data['pl_orbtper'].mask] = np.random.uniform(low=np.nanmin(tmp),high=np.nanmax(tmp),\
+                size=np.where(data['pl_orbtper'].mask)[0].size)
+        self.tper =  Time(tmp,format='jd')
+        self.tpererr = data['pl_orbtpererr1'].data*u.d
+        self.tpererr[data['pl_orbtpererr1'].mask] = np.nanmean(self.tpererr)
         
         #save host names
         self.hostname = data['pl_hostname'].filled().astype(str)

@@ -71,6 +71,9 @@ class Nemati(OpticalSystem):
         C_b += C_p*inst['ENF']**2                   # Cb must include the planet
         intTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
         
+        # negative values correspond to infinite integration times
+        intTime[intTime < 0] = np.inf
+        
         return intTime.to('day')
 
     def calc_charTime(self, TL, sInds, dMag, WA, fEZ, fZ):
@@ -121,5 +124,8 @@ class Nemati(OpticalSystem):
         SpStr = C_p*10.**(0.4*dMag)*Q*ppFact        # spatial structure to the speckle
         C_b += C_p*inst['ENF']**2                   # Cb must include the planet
         charTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
+        
+        # negative values correspond to infinite characterization times
+        charTime[charTime < 0] = np.inf
         
         return charTime.to('day')

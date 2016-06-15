@@ -1,5 +1,5 @@
 from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCahoyMix1
-from EXOSIMS.PlanetPhysicalModel.func import piece_linear, ProbRGivenM, classification
+from EXOSIMS.PlanetPhysicalModel.forecaster_func import piece_linear, ProbRGivenM, classification
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
@@ -10,8 +10,8 @@ class Forecaster(FortneyMarleyCahoyMix1):
     """
     Planet M-R relation model based on the FORECASTER software, Chen & Kippling 2016.
     This module requires to download the following files:
-    - fitting_parameters.h5
-    - func.py
+    - forecaster_fitting_parameters.h5
+    - forecaster_func.py
     from the FORECASTER GitHub repository at https://github.com/chenjj2/forecaster
     
     Args: 
@@ -27,29 +27,29 @@ class Forecaster(FortneyMarleyCahoyMix1):
         # number of category
         self.n_pop = int(n_pop)
         
-        # read parameter file: fitting_parameters.h5
+        # read forecaster parameter file
         classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        filename = 'fitting_parameters.h5'
+        filename = 'forecaster_fitting_parameters.h5'
         parampath = os.path.join(classpath, filename)
         h5 = h5py.File(parampath, 'r')
         self.all_hyper = h5['hyper_posterior'][:]
         h5.close()
 
-    def calc_radius_from_mass(self, M):
+    def calc_radius_from_mass(self, Mp):
         """
         Forecast the Radius distribution given the mass distribution.
         
         Args:
-            M (astropy Quantity array)
-               Planet mass values in units of kg
+            Mp (astropy Quantity array):
+                Planet mass in units of kg
         
         Returns:
-            R (astropy Quantity array)
-                Planet radius values in units of km
+            Rp (astropy Quantity array):
+                Planet radius in units of km
         
         """
         
-        mass = (M/const.M_earth).decompose().value
+        mass = (Mp/const.M_earth).decompose().value
         assert np.min(mass) > 3e-4 and np.max(mass) < 3e5, \
                 "Mass range out of model expectation. Returning None."
         
@@ -63,7 +63,7 @@ class Forecaster(FortneyMarleyCahoyMix1):
         for i in range(sample_size):
             logr[i] = piece_linear(hyper[i], logm[i], prob[i])
         
-        radius_sample = 10.** logr
+        Rp = 10.**logr*const.R_earth.to('km')
         
-        return radius_sample*const.R_earth.to('km')
+        return Rp
 

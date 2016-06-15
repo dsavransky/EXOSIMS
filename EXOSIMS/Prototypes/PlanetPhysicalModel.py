@@ -39,64 +39,70 @@ class PlanetPhysicalModel(object):
         same value of 0.367.
         
         Args:
-            a (Quanitity):
-               Array of semi-major axis values
+            a (astropy Quanitity array):
+               Semi-major axis values
         
         Returns:
-            p (numpy ndarray)
+            p (ndarray):
+                Albedo values
         
         """
+        p = np.array([0.367]*a.size)
         
-        return np.array([0.367]*a.size)
+        return p
 
-    def calc_radius_from_mass(self, M):
+    def calc_radius_from_mass(self, Mp):
         """
         Helper function for calculating radius given the mass.
         
         Prototype provides only a dummy function that assumes a density of water.
         
         Args:
-            M (Quantity):
-               Array of mass values
+            Mp (astropy Quantity array):
+                Planet mass in units of kg
         
         Returns:
-            R (Quantity)
+            Rp (astropy Quantity array):
+                Planet radius in units of km
         
         """
         
         rho = 1000*u.kg/u.m**3.
+        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).decompose()
         
-        return ((3.*M/rho/np.pi/4.)**(1./3.)).decompose()
+        return Rp.to('km')
 
-    def calc_mass_from_radius(self, R):
+    def calc_mass_from_radius(self, Rp):
         """
         Helper function for calculating mass given the radius.
         
         Args:
-            R (Quantity):
-               Array of radius values
+            Rp (astropy Quantity array):
+                Planet radius in units of km
         
         Returns:
-            M (Quantity)
+            Mp (astropy Quantity array):
+                Planet mass in units of kg
         
         """
         
         rho = 1000*u.kg/u.m**3.
+        Mp = (rho*4*np.pi*R**3./3.).decompose()
         
-        return (rho*4*np.pi*R**3./3.).decompose()
+        return Mp.to('kg')
 
     def calc_Phi(self,beta):
         """Calculate the phase function. Prototype method uses the Lambert phase 
         function from Sobolev 1975.
         
         Args:
-            beta (Quantity):
-                numpy ndarray containing planet phase angles (radians) at which the 
-                phase function is to be calculated.
+            beta (astropy Quantity array):
+                Planet phase angles at which the phase function is to be calculated,
+                in units of rad
                 
         Returns:
-            Phi (Quantity):
-                numpy ndarray of planet phase function
+            Phi (astropy Quantity array):
+                Planet phase function
         """
         Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
         

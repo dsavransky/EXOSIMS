@@ -17,35 +17,30 @@ class PlanetPopulation(object):
             user specified values
             
     Attributes:
-        arange (Quantity):
-            1D numpy ndarray containing minimum and maximum semi-major axis 
-            (default units of AU)
-        erange (ndarray):
-            1D numpy ndarray containing minimum and maximum eccentricity
-        wrange (ndarray):
-            1D numpy ndarray containing minimum and maximum argument of perigee
-            in degrees
-        Orange (ndarray):
-            1D numpy ndarray containing minimum and maximum right ascension of
-            the ascending node in degrees
-        prange (ndarray):
-            1D numpy ndarray containing minimum and maximum albedo
-        Irange (ndarray):
-            1D numpy ndarray containing minimum and maximum orbital inclination
-            in degrees
-        Rrange (Quantity):
-            1D numpy ndarray containing minimum and maximum planetary radius 
-            (default units of km)
-        Mprange (Quantity):
-            1D numpy ndarray containing minimum and maximum planetary mass
-            (default units of kg)
-        rrange (Quantity):
-            1D numpy array containing minimum and maximum orbital radius
-            (default units of km)
-        scaleOrbits (bool):
+        arange (astropy Quantity 1x2 array):
+            Semi-major axis range in untis of AU
+        erange (1x2 ndarray):
+            Eccentricity range
+        Irange (astropy Quantity 1x2 array):
+            Orbital inclination range in units of deg
+        Orange (astropy Quantity 1x2 array):
+            Right ascension of the ascending node range in units of deg
+        wrange (astropy Quantity 1x2 array):
+            Argument of perigee range in units of deg
+        prange (1x2 ndarray):
+            Albedo range
+        Rprange (astropy Quantity 1x2 array):
+            Planet radius range in units of km
+        Mprange (astropy Quantity 1x2 array):
+            Planet mass range in units of kg
+        rrange (astropy Quantity 1x2 array):
+            Orbital radius range in units of km
+        scaleOrbits (boolean):
             Scales orbits by sqrt(L) when True
-        PlanetPhysicalModel (PlanetPhysicalModel):
-            Planet physical model object
+        constrainOrbits (boolean):
+            Constrains orbital radii to sma range when True
+        PlanetPhysicalModel (object):
+            PlanetPhysicalModel class object
         
     """
 
@@ -53,8 +48,8 @@ class PlanetPopulation(object):
     _outspec = {}
 
     def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
-                 wrange=[0.,360.], Orange=[0.,360.], Irange=[0.,180.],\
-                 prange=[0.1,0.6], Rrange=[1.,30.], Mprange = [1.,4131.],\
+                 Irange=[0.,180.], Orange=[0.,360.], wrange=[0.,360.],\
+                 prange=[0.1,0.6], Rprange=[1.,30.], Mprange = [1.,4131.],\
                  scaleOrbits=False, constrainOrbits=False, **specs):
         
         #do all input checks
@@ -64,7 +59,7 @@ class PlanetPopulation(object):
         self.Orange = self.checkranges(Orange,'Orange')*u.deg
         self.Irange = self.checkranges(Irange,'Irange')*u.deg
         self.prange = self.checkranges(prange,'prange')
-        self.Rrange = self.checkranges(Rrange,'Rrange')*const.R_earth
+        self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth
         self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
         
         assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
@@ -85,7 +80,7 @@ class PlanetPopulation(object):
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
             if att == 'Mprange':
                 self._outspec[att] /= const.M_earth.value
-            elif att == 'Rrange':
+            elif att == 'Rprange':
                 self._outspec[att] /= const.R_earth.value
         
         # import PlanetPhysicalModel
@@ -99,7 +94,7 @@ class PlanetPopulation(object):
         assert var[0] <= var[1],\
             "The second element of %s must be greater or equal to the first."%name
         
-        return [float(v) for v in var]
+        return np.array([float(v) for v in var])
 
     def __str__(self):
         """String representation of the Planet Population object
@@ -244,10 +239,10 @@ class PlanetPopulation(object):
         
         """
         n = self.gen_input_check(n)
-        v = self.Rrange.value
+        v = self.Rprange.value
         vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
-        return vals*self.Rrange.unit
+        return vals*self.Rprange.unit
 
     def gen_mass(self, n):
         """Generate planetary mass values in kg

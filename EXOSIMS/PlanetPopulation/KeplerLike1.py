@@ -1,9 +1,8 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
+from EXOSIMS.util import statsFun 
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
-#from scipy.stats import rv_continuous
-from EXOSIMS.util import statsFun 
 import scipy.integrate as integrate
 
 
@@ -17,9 +16,9 @@ class KeplerLike1(PlanetPopulation):
             user specified values
             
     Attributes: 
-        smaknee (numeric) 
-            Location (in AU) of semi-major axis decay point.
-        esigma (numeric)
+        smaknee (float):
+            Location (in AU) of semi-major axis decay point (knee).
+        esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
         
 
@@ -28,7 +27,7 @@ class KeplerLike1(PlanetPopulation):
     there.  Any user-set mass limits are ignored.
     2. The gen_abledo function samples the sma, and then calculates the albedos
     from there. Any user-set albedo limits are ignored.
-    3. The Rrange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
+    3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
     settings (the JSON input will be ignored) 
     4. The radius piece-wise distribution provides the normalization required to
     get the proper overall eta.  The gen_radius method provided here normalizes
@@ -41,9 +40,9 @@ class KeplerLike1(PlanetPopulation):
 
     """
 
-    def __init__(self, smaknee=30., esigma=0.25, **specs):
+    def __init__(self, smaknee=30, esigma=0.25, **specs):
         
-        specs['Rrange'] = [1,22.6]
+        specs['Rprange'] = [1,22.6]
         specs['prange'] = [0.083,0.882]
         PlanetPopulation.__init__(self, **specs)
         
@@ -52,11 +51,11 @@ class KeplerLike1(PlanetPopulation):
                "sma knee value must be in sma range."
         
         #define sma distribution
-        self.smaknee = smaknee
+        self.smaknee = float(smaknee)
         self.smadist = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-((x/s0)**2))
         
         #define Rayleigh eccentricity distribution
-        self.esigma = esigma
+        self.esigma = float(esigma)
         self.edist = lambda x,sigma=self.esigma: (x/sigma**2)*np.exp(-x**2/(2.*sigma**2))
         
         #define Kepler radius distribution
@@ -77,17 +76,61 @@ class KeplerLike1(PlanetPopulation):
         determined by class attribute smaknee
         
         Args:
-            n (numeric):
+            n (integer):
                 Number of samples to generate
                 
         Returns:
-            a (astropy Quantity units AU)
+            a (astropy Quantity array):
+                Semi-major axis in units of AU
         
         """
         n = self.gen_input_check(n)
+        a = statsFun.simpSample(self.smadist, n, self.arange[0].to('AU').value,\
+                self.arange[1].to('AU').value)*u.AU
         
-        return statsFun.simpSample(self.smadist, n, self.arange[0].to('AU').value,\
-                self.arange[1].to('AU').value)*self.arange.unit
+        return a
+
+    def gen_eccen(self, n):
+        """Generate eccentricity values
+        
+        Rayleigh distribution, as in Kipping et. al (2013)
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+                
+        Returns:
+            e (ndarray):
+                Planet eccentricity
+        
+        """
+        
+        n = self.gen_input_check(n)
+        e = statsFun.simpSample(self.edist, n, self.erange[0],self.erange[1])
+        
+        return e
+
+    def gen_albedo(self, n):
+        """Generate geometric albedo values
+        
+        The albedo is determined by sampling the semi-major axis distribution, 
+        and then calculating the albedo from the physical model.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+                
+        Returns:
+            p (ndarray):
+                Planet albedo
+        
+        """
+        
+        n = self.gen_input_check(n)
+        atmp = self.gen_sma(n)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(atmp)
+        
+        return p
 
     def gen_radius(self,n):
         """Generate planetary radius values in km
@@ -96,11 +139,12 @@ class KeplerLike1(PlanetPopulation):
         with fixed occurrence rates.
         
         Args:
-            n (numeric):
+            n (integer):
                 Number of samples to generate
                 
         Returns:
-            R (astropy Quantity units km)
+            Rp (astropy Quantity array):
+                Planet radius in units of km
         
         """
         
@@ -114,8 +158,9 @@ class KeplerLike1(PlanetPopulation):
         
         if len(R) > n:
             R = R[np.random.choice(range(len(R)),size=n,replace=False)]
+        Rp = R*const.R_earth.to('km')
         
-        return (R*const.R_earth).to('km')
+        return Rp
 
     def gen_radius_nonorm(self,n):
         """Generate planetary radius values in km
@@ -125,11 +170,12 @@ class KeplerLike1(PlanetPopulation):
         occurrence rates of all planets.
         
         Args:
-            n (numeric):
-                Number of targets to generate systems about
-        
+            n (integer):
+                Number of samples to generate
+                
         Returns:
-            R (astropy Quantity units km)
+            Rp (astropy Quantity array):
+                Planet radius in units of km
         
         """
         
@@ -140,46 +186,9 @@ class KeplerLike1(PlanetPopulation):
             R = np.hstack((R, np.exp(np.log(self.Rs[j])+\
                     (np.log(self.Rs[j+1])-np.log(self.Rs[j]))*\
                     np.random.uniform(size=nsamp))))
+        Rp = R*const.R_earth.to('km')
         
-        return (R*const.R_earth).to('km')
-
-    def gen_eccen(self, n):
-        """Generate eccentricity values
-        
-        Rayleigh distribution, as in Kipping et. al (2013)
-        
-        Args:
-            n (numeric):
-                Number of samples to generate
-                
-        Returns:
-            e (numpy ndarray)
-        
-        """
-        
-        n = self.gen_input_check(n)
-        
-        return statsFun.simpSample(self.edist, n, self.erange[0],self.erange[1])
-
-    def gen_albedo(self, n):
-        """Generate geometric albedo values
-        
-        The albedo is determined by sampling the semi-major axis distribution, 
-        and then calculating the albedo from the physical model.
-        
-        Args:
-            n (numeric):
-                Number of samples to generate
-        
-        Returns:
-            p (numpy ndarray)
-        
-        """
-        
-        n = self.gen_input_check(n)
-        atmp = self.gen_sma(n)
-        
-        return self.PlanetPhysicalModel.calc_albedo_from_sma(atmp)
+        return Rp
 
     def gen_mass(self, n):
         """Generate planetary mass values in kg
@@ -188,15 +197,17 @@ class KeplerLike1(PlanetPopulation):
         mass from the physical model.
         
         Args:
-            n (numeric):
+            n (integer):
                 Number of samples to generate
-        
+                
         Returns:
-            Mp (astropy Quantity units kg)
+            Mp (astropy Quantity array):
+                Planet mass in units of kg
         
         """
         
         n = self.gen_input_check(n)
         Rtmp = self.gen_radius(n)
+        Mp = self.PlanetPhysicalModel.calc_mass_from_radius(Rtmp)
         
-        return self.PlanetPhysicalModel.calc_mass_from_radius(Rtmp)
+        return Mp

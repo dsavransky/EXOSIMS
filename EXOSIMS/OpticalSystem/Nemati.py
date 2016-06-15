@@ -115,7 +115,7 @@ class Nemati(OpticalSystem):
         
         # Nemati14+ method
         PP = TL.PostProcessing                      # post-processing module
-        SNR = PP.SNchar                             # SNR threshold for characterization
+        SNR = PP.SNimag                             # SNR threshold for imaging/detection
         ppFact = PP.ppFact                          # post-processing contrast factor
         Q = syst['contrast'](lam, WA)
         SpStr = C_p*10.**(0.4*dMag)*Q*ppFact        # spatial structure to the speckle

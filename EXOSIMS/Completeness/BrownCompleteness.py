@@ -78,10 +78,10 @@ class BrownCompleteness(Completeness):
 
         # yedges is array of delta magnitude values for interpolant
         ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*\
-                (self.PlanetPopulation.Rrange[1]/(self.PlanetPopulation.rrange[0]))\
+                (self.PlanetPopulation.Rprange[1]/(self.PlanetPopulation.rrange[0]))\
                 .decompose().value**2)))
         ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange[0]*\
-                (self.PlanetPopulation.Rrange[0]/(self.PlanetPopulation.rrange[1]))\
+                (self.PlanetPopulation.Rprange[0]/(self.PlanetPopulation.rrange[1]))\
                 .decompose().value**2*1e-11)))
         yedges = np.linspace(ymin, ymax, bins)
         

@@ -33,27 +33,27 @@ class KnownRVPlanets(KeplerLike1):
             user specified values
             
     Attributes: 
-        smaknee (numeric) 
-            Location (in AU) of semi-major axis decay point.
-        esigma (numeric)
+        smaknee (float): 
+            Location (in AU) of semi-major axis decay point (knee).
+        esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
-        rvplanetfilepath (string)
+        rvplanetfilepath (string):
             Full path to RV planet votable file from IPAC. If None,
             assumes default file in PlanetPopulation directory of EXOSIMS.
-        period (astropy Quantity)
-            Orbital period (default days).  Error in perioderr.
+        period (astropy Quantity array)
+            Orbital period in units of day.  Error in perioderr.
         tper (astropy Time)
-            Periastron time (default jd).  Error in tpererr.
+            Periastron time in units of jd.  Error in tpererr.
         
     
     Notes:  
     
     """
 
-    def __init__(self, smaknee=30., esigma=0.25, rvplanetfilepath=None, **specs):
+    def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None, **specs):
         
-        specs['smaknee'] = smaknee
-        specs['esigma'] = esigma
+        specs['smaknee'] = float(smaknee)
+        specs['esigma'] = float(esigma)
         KeplerLike1.__init__(self, **specs)
         
         #default file is ipac_2016-05-15
@@ -138,6 +138,26 @@ class KnownRVPlanets(KeplerLike1):
         #define the mass distribution function (in Jupiter masses)
         self.massdist = lambda x: x**(-1.3)
 
+    def gen_radius(self,n):
+        """Generate planetary radius values in km
+        
+        Samples the mass distribution and then converts to radius using the physical model.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+                
+        Returns:
+            Rp (astropy Quantity array):
+                Planet radius in units of km
+        
+        """
+        n = self.gen_input_check(n)
+        Mtmp = self.gen_mass(n)
+        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)
+        
+        return Rp
+
     def gen_mass(self,n):
         """Generate planetary mass values in kg
         
@@ -145,34 +165,17 @@ class KnownRVPlanets(KeplerLike1):
         Cumming et al. 2010
         
         Args:
-            n (numeric):
+            n (integer):
                 Number of samples to generate
                 
         Returns:
-            Mp (astropy Quantity units kg)
+            Mp (astropy Quantity array):
+                Planet mass in units of kg
         
         """
         n = self.gen_input_check(n)
         Mmin = (self.Mprange[0]/const.M_jup).decompose().value
         Mmax = (self.Mprange[1]/const.M_jup).decompose().value
+        Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
         
-        return statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
-
-    def gen_radius(self,n):
-        """Generate planetary radius values in km
-        
-        Samples the mass distribution and then converts to radius using the physical model.
-        
-        Args:
-            n (numeric):
-                Number of samples to generate
-                
-        Returns:
-            R (astropy Quantity units m)
-        
-        """
-        n = self.gen_input_check(n)
-        Mtmp = self.gen_mass(n)
-        
-        return self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)
-
+        return Mp

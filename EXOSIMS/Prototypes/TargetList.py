@@ -353,7 +353,7 @@ class TargetList(object):
         
         # calculate delta mag
         p = np.max(PPop.prange)
-        Rp = np.max(PPop.Rrange)
+        Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
         i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]

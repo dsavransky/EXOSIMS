@@ -44,9 +44,9 @@ class BrownCompleteness(Completeness):
         
         # bring in inherited Completeness prototype __init__ values
         Completeness.__init__(self, **specs)
-
+        
         # Number of planets to sample
-        self.Nplanets = Nplanets
+        self.Nplanets = float(Nplanets)
         
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
@@ -66,7 +66,7 @@ class BrownCompleteness(Completeness):
                 1D numpy array of completeness values for each target star
         
         """
-
+        
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
         # bins for interpolant
@@ -75,7 +75,7 @@ class BrownCompleteness(Completeness):
         xedges = np.linspace(0., self.PlanetPopulation.rrange[1].value, bins)*\
                 self.PlanetPopulation.arange.unit
         xedges = xedges.to('AU').value
-
+        
         # yedges is array of delta magnitude values for interpolant
         ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*\
                 (self.PlanetPopulation.Rprange[1]/(self.PlanetPopulation.rrange[0]))\
@@ -120,7 +120,7 @@ class BrownCompleteness(Completeness):
         """
         
         print 'Beginning completeness update calculations'
-        self.visits = [0]*targlist.nStars
+        self.visits = np.array([0]*targlist.nStars)
         self.updates = []
         # constants needed
         Msun = const.M_sun
@@ -146,7 +146,8 @@ class BrownCompleteness(Completeness):
         if np.isfinite(targlist.OpticalSystem.OWA):
             smax = (np.tan(targlist.OpticalSystem.OWA)*targlist.dist).to('AU')
         else:
-            smax = np.array([np.max(self.PlanetPopulation.arange)*(1.+np.max(self.PlanetPopulation.erange))]*targlist.nStars)
+            smax = np.array([np.max(self.PlanetPopulation.arange.to('AU').value)*\
+                    (1.+np.max(self.PlanetPopulation.erange))]*targlist.nStars)*u.AU
         # fill dynamic completeness values
         for sInd in xrange(targlist.nStars):
             # remove rmax < smin and rmin > smax
@@ -163,17 +164,17 @@ class BrownCompleteness(Completeness):
                 r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
                 r2 = (r*np.sin(E)*np.sqrt(1. -  e[new_plan_inds]**2))
                 r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-        
+                
                 a1 = np.cos(Omega[new_plan_inds])*np.cos(omega[new_plan_inds]) - np.sin(Omega[new_plan_inds])*np.sin(omega[new_plan_inds])*np.cos(I[new_plan_inds])
                 a2 = np.sin(Omega[new_plan_inds])*np.cos(omega[new_plan_inds]) + np.cos(Omega[new_plan_inds])*np.sin(omega[new_plan_inds])*np.cos(I[new_plan_inds])
                 a3 = np.sin(omega[new_plan_inds])*np.sin(I[new_plan_inds])
                 A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-
+                
                 b1 = -np.cos(Omega[new_plan_inds])*np.sin(omega[new_plan_inds]) - np.sin(Omega[new_plan_inds])*np.cos(omega[new_plan_inds])*np.cos(I[new_plan_inds])
                 b2 = -np.sin(Omega[new_plan_inds])*np.sin(omega[new_plan_inds]) + np.cos(Omega[new_plan_inds])*np.cos(omega[new_plan_inds])*np.cos(I[new_plan_inds])
                 b3 = np.cos(omega[new_plan_inds])*np.sin(I[new_plan_inds])
                 B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-
+                
                 # planet position, planet-star distance, apparent separation
                 r = (A*r1 + B*r2)*u.AU # position vector
                 d = np.sqrt(np.sum(r**2, axis=1)) # planet-star distance
@@ -181,7 +182,7 @@ class BrownCompleteness(Completeness):
                 beta = np.arccos(r[:,2]/d) # phase angle
                 Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                 dMag = deltaMag(p[new_plan_inds],Rp[new_plan_inds],d,Phi) # difference in magnitude
-
+                
                 toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                 toremovedmag = np.where(dMag < targlist.OpticalSystem.dMagLim)[0]
                 toremove = np.intersect1d(toremoves, toremovedmag)
@@ -191,15 +192,17 @@ class BrownCompleteness(Completeness):
                     dynamic.append(targlist.comp0[sInd])
                 else:
                     dynamic.append(len(toremove)/nplan)
-
+                
                 # update M
                 mu = const.G*(Msun+Mp[new_plan_inds])
                 n = np.sqrt(mu/a[new_plan_inds]**3)
                 M[new_plan_inds] = (M[new_plan_inds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-
+                
             self.updates.append(dynamic)
             if (sInd+1) % 50 == 0:
                 print 'stars: %r / %r' % (sInd+1,targlist.nStars)
+        
+        self.updates = np.array(self.updates)
         print 'Completeness update calculations finished'
         
     def completeness_update(self, sInd, targlist, obsbegin, obsend, nexttime):
@@ -230,8 +233,9 @@ class BrownCompleteness(Completeness):
             targlist.comp0[sInd] = self.updates[sInd][-1]
         else:
             targlist.comp0[sInd] = self.updates[sInd][self.visits[sInd]]
-            
         
+        return targlist.comp0
+
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness
         
@@ -288,7 +292,7 @@ class BrownCompleteness(Completeness):
             print '2D completeness array stored in %r' % Cpath
         
         return C, xedges, yedges
-        
+
     def hist(self, nplan, xedges, yedges):
         """Returns completeness histogram for Monte Carlo simulation
         
@@ -314,7 +318,7 @@ class BrownCompleteness(Completeness):
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
         
         return h, xedges, yedges
-        
+
     def genplans(self, nplan):
         """Generates planet data needed for Monte Carlo simulation
         
@@ -328,12 +332,12 @@ class BrownCompleteness(Completeness):
         
         """
         nplan = int(nplan)
-
+        
         # sample uniform distribution of mean anomaly
         M = np.random.uniform(high=2.*np.pi,size=nplan)
         # sample semi-major axis        
         a = self.PlanetPopulation.gen_sma(nplan).to('AU').value
-
+        
         # sample other necessary orbital parameters
         if np.sum(self.PlanetPopulation.erange) == 0:
             # all circular orbits
@@ -350,7 +354,7 @@ class BrownCompleteness(Completeness):
             E = eccanom(M,e)
             # orbital radius
             r = a*(1-e*np.cos(E))
-
+        
         # orbit angle sampling
         Omega = self.PlanetPopulation.gen_O(nplan).to('rad').value
         omega = self.PlanetPopulation.gen_w(nplan).to('rad').value
@@ -365,26 +369,26 @@ class BrownCompleteness(Completeness):
         a2 = np.sin(Omega)*np.cos(omega) + np.cos(Omega)*np.sin(omega)*np.cos(I)
         a3 = np.sin(omega)*np.sin(I)
         A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-
+        
         b1 = -np.cos(Omega)*np.sin(omega) - np.sin(Omega)*np.cos(omega)*np.cos(I)
         b2 = -np.sin(Omega)*np.sin(omega) + np.cos(Omega)*np.cos(omega)*np.cos(I)
         b3 = np.cos(omega)*np.sin(I)
         B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-
+        
         # planet position, planet-star distance, apparent separation
         r = (A*r1 + B*r2)*u.AU
         d = np.sqrt(np.sum(r**2, axis=1))
         s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
-
+        
         # sample albedo, planetary radius, phase function
         p = self.PlanetPopulation.gen_albedo(nplan)
         Rp = self.PlanetPopulation.gen_radius(nplan)
-
+        
         beta = np.arccos(r[:,2]/d)
-
+        
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
-
+        
         # calculate dMag
         dMag = deltaMag(p,Rp,d,Phi)
-
+        
         return s, dMag

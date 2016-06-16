@@ -106,14 +106,13 @@ class TargetList(object):
         Initializes target list
         
         """
-
+        
         #validate inputs
         assert isinstance(minComp,numbers.Number),\
                 "minComp must be a number."
         assert isinstance(keepStarCatalog,bool),\
                 "keepStarCatalog must be a boolean."
         self.minComp = float(minComp)
-
         
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)

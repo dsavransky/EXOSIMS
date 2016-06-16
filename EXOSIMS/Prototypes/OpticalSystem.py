@@ -40,6 +40,8 @@ class OpticalSystem(object):
             Number of noise pixels
         Ndark (float):
             Number of dark frames used
+        dMagLim (float):
+            Fundamental delta magnitude limit
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
         F0 (callable(lam)):
@@ -119,8 +121,6 @@ class OpticalSystem(object):
             Inner working angle in units of arcsec
         OWA (astropy Quantity):
             Outer working angle in units of arcsec
-        dMagLim (float):
-            System delta magnitude limit
         PSF (callable(lam, WA)):
             Point spread function - 2D ndarray of values, normalized to 1 at
             the core (must be callable - can be lambda, function,
@@ -143,11 +143,11 @@ class OpticalSystem(object):
     _outspec = {}
 
     def __init__(self,obscurFac=0.2,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.57,intCutoff=50,Npix=14.3,Ndark=10,scienceInstruments=None,\
+            attenuation=0.57,intCutoff=50,Npix=14.3,Ndark=10,dMagLim=20,scienceInstruments=None,\
             lam=500,BW=0.2,pitch=13e-6,focal=240,idark=9e-5,texp=1e3,sread=3,CIC=0.0013,\
             ENF=1,Gem=1,Rs=70,QE=0.9,starlightSuppressionSystems=None,throughput=1e-2,\
             contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,imagTimeMult=1,\
-            charTimeMult=1,IWA=None,OWA=None,dMagLim=None,**specs):
+            charTimeMult=1,IWA=None,OWA=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
@@ -161,6 +161,7 @@ class OpticalSystem(object):
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Npix = float(Npix)                 # number of noise pixels
         self.Ndark = float(Ndark)               # number of dark frames used
+        self.dMagLim = float(dMagLim)           # fundamental delta magnitude limit
         
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
@@ -299,22 +300,9 @@ class OpticalSystem(object):
                 # Constraining IWA and OWA
                 syst['IWA'] = max(np.min(WA),syst.get('IWA',np.min(WA)))
                 syst['OWA'] = min(np.max(WA),syst.get('OWA',np.max(WA)))
-                if not syst.has_key('dMagLim'):
-                    Cmin = scipy.optimize.minimize(Cinterp, WA[np.argmin(C)],\
-                            bounds=((np.min(WA),np.max(WA)),) )
-                    if Cmin.success:
-                        Cmin = Cmin.fun[0]
-                    else:
-                        print "Warning: failed to find minimum of contrast "\
-                                "interpolant for starlight suppression system "\
-                                "#%d"%(nsyst+1)
-                        Cmin = np.min(C)
-                    syst['dMagLim'] = -2.5*np.log10(Cmin)
             
             elif isinstance(syst['contrast'],numbers.Number):
                 assert syst['contrast']>0, "Contrast must be positive."
-                if not syst.has_key('dMagLim'):
-                    syst['dMagLim'] = -2.5*np.log10(float(syst['contrast']))
                 syst['contrast'] = lambda lam, WA, C=float(syst['contrast']): C
             
             #check for PSF
@@ -342,7 +330,6 @@ class OpticalSystem(object):
             # Loading system specifications
             syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
-            syst['dMagLim'] = float(syst.get('dMagLim'))            # outer WA
             syst['samp'] = float(syst.get('samp',samp))*u.arcsec    # PSF sampling
             syst['ohTime'] = float(syst.get('ohTime',ohTime))*u.d   # overhead time
             # imaging and characterization time multipliers
@@ -356,7 +343,7 @@ class OpticalSystem(object):
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat,u.Quantity) else dat
         
-        # populate fundamental IWA, OWA, and dMagLim as required
+        # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
                 if x.get('IWA') is not None]
         if IWA is not None:
@@ -376,15 +363,6 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental OWA.")
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
-        
-        dMagLims = [x.get('dMagLim') for x in self.starlightSuppressionSystems \
-                if x.get('dMagLim') is not None]
-        if dMagLim is not None:
-            self.dMagLim = float(dMagLim)
-        elif dMagLims:
-            self.dMagLim = max(dMagLims)
-        else:
-            raise ValueError("Could not determine fundamental dMagLim.")
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():

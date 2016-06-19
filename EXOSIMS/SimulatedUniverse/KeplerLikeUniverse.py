@@ -48,12 +48,12 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(PPMod.ggdat['radii'])] = 0.02*u.AU
-        self.e = PPop.gen_eccen(self.nPlans)         # eccentricity
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+        self.e = PPop.gen_eccen(self.nPlans)                # eccentricity
         self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass
+        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
+        self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass
         self.r, self.v = self.planet_pos_vel()              # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation

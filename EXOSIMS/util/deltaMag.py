@@ -20,6 +20,6 @@ def deltaMag(p,Rp,d,Phi):
             Planet delta magnitudes
     
     """
-    dMag = -2.5*np.log10(p*(Rp/d)**2*Phi)
+    dMag = -2.5*np.log10(p*(Rp/d)**2*Phi).value
     
     return dMag

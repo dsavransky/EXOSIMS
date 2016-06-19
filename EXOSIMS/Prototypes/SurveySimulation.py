@@ -209,7 +209,7 @@ class SurveySimulation(object):
         
         # initialize run options
         # keep track of spectral characterizations, 0 is no characterization
-        spectra = np.zeros((SU.nPlans,1), dtype=int)
+        spectra = np.zeros(SU.nPlans, dtype=int)
         # get index of first target star
         sInd,_ = self.next_target()
         
@@ -301,9 +301,6 @@ class SurveySimulation(object):
             TL.comp0 = self.Completeness.completeness_update(sInd, TL, obsbegin, \
                     obsend, nexttime)
             
-            # acquire a new target star index
-            sInd, DRM = self.next_target(sInd, DRM)
-            
             # append result values to self.DRM
             self.DRM.append(DRM)
             
@@ -311,6 +308,9 @@ class SurveySimulation(object):
             if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                 print 'Total fuel mass exceeded at %r' % TK.currentTimeNorm
                 break
+            
+            # acquire a new target star index
+            sInd, DRM = self.next_target(sInd, DRM)
         
         Logger.info('run_sim finishing OK')
         print 'Survey simulation: finishing OK'
@@ -429,9 +429,9 @@ class SurveySimulation(object):
                 # propagate planet positions and velocities
                 try:
                     dt = TK.currentTimeNorm - planPosTime[pInd]
-                    SU.r[pInd], SU.v[pInd],SU.s[pInd],SU.d[pInd] = \
-                            SU.prop_system(SU.r[pInd],SU.v[pInd],SU.Mp[pInd],\
-                            TL.MsTrue[sInd],dt)
+                    j = np.array([pInd])
+                    SU.r[j],SU.v[j],SU.s[j],SU.d[j] = SU.prop_system(SU.r[j],\
+                            SU.v[j],SU.Mp[j],TL.MsTrue[sInd],dt)
                     # update planet position times
                     planPosTime[pInd] += dt
                 except ValueError:
@@ -449,7 +449,7 @@ class SurveySimulation(object):
             fEZ = SU.fEZ[pInds]
             fZ = ZL.fZ(TL,sInds,OS.Imager['lam'],Obs.r_sc)
             t_trueint = OS.calc_intTime(TL,sInds,dMag,WA,fEZ,fZ)
-            observationPossible &= (t_trueint <= OS.intCutoff)
+            observationPossible = observationPossible & (t_trueint <= OS.intCutoff)
         
         # determine if planets are observable at the end of observation
         # and update integration time
@@ -521,7 +521,7 @@ class SurveySimulation(object):
         # check if characterization has been done
         if pInds.shape[0] != 0:
             if np.any(observationPossible):
-                if np.any(spectra[pInds[observationPossible],0] == 0):
+                if np.any(spectra[pInds[observationPossible]] == 0):
                     # perform first characterization
                     # find characterization time
                     sInds = np.array([sInd]*len(pInds))
@@ -578,16 +578,16 @@ class SurveySimulation(object):
                         # spectrum is captured
                         if np.any(charPossible):
                             if OS.haveOcculter:
-                                spectra[pInds[charPossible],0] = 1
+                                spectra[pInds[charPossible]] = 1
                                 # encode success
                                 DRM['char_1_success'] = 1
                             else:
-                                lamEff = np.arctan(SU.s[pInds]/(TL.dist[sInd])) / OS.IWA.to('rad')
+                                lamEff = np.arctan(SU.s[pInds]/TL.dist[sInd]) / OS.IWA.to('rad')
                                 lamEff *= OS.Spectro['lam']/OS.pupilDiam*np.sqrt(OS.pupilArea/OS.shapeFac)
-                                charPossible = np.logical_and(charPossible, lamEff >= 800.*u.nm)
+                                charPossible = charPossible & (lamEff >= 800.*u.nm)
                                 # encode results
                                 if np.any(charPossible):
-                                    spectra[pInds[charPossible],0] = 1
+                                    spectra[pInds[charPossible]] = 1
                                     DRM['char_1_success'] = 1
                                 else:
                                     DRM['char_1_success'] = lamEff.max().to('nm').value
@@ -645,16 +645,13 @@ class SurveySimulation(object):
                     Phi = PPMod.calc_Phi(np.arcsin(send/dend))
                     dMagend = deltaMag(SU.p[j],SU.Rp[j],dend,Phi)[0]
                     WAend = np.arctan(send/TL.dist[sInd])[0]
-                    if (dMagend <= OS.dMagLim) * (WAend >= OS.IWA):
+                    if (dMagend <= OS.dMagLim) & (WAend >= OS.IWA):
                         obsRes = 1
                         # planet visible at the end of observation
                         if not t_char_calc:
                             # update integration time
                             t_int = max(t_trueint[i],t_int) if t_int != TL.maxintTime[sInd] else t_trueint[i]
-                    else:
-                        obsRes = 0
-                else:
-                    obsRes = -1
+                    # if kogood, do characterization
                     if t_char_calc:
                         chargo = True
         
@@ -670,14 +667,6 @@ class SurveySimulation(object):
         
         This method encodes detection status (FA, DET, MD) values in the DRM 
         dictionary.
-        
-        This method accesses the following inherited class objects:
-            OS:
-                OpticalSystem class object
-            TL:
-                TargetList class object
-            self.PlanetPopulation:
-                PlanetPopulation class object
         
         Args:
             DRM (dict):
@@ -713,6 +702,8 @@ class SurveySimulation(object):
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
         
+        # planet indexes
+        DRM['plan_inds'] = pInds
         # default DRM detection status to null detection
         DRM['det_status'] = 0
         # apparent separation placeholders

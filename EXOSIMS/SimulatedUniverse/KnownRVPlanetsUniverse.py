@@ -54,37 +54,34 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
                 *PPop.smaerr[planinds]                      # semi-major axis
         # ensure sampling did not make it negative
         self.a[self.a <= 0] = PPop.sma[planinds][self.a <= 0]
-
         self.e = PPop.eccen[planinds] + np.random.normal(size=self.nPlans)\
                 *PPop.eccenerr[planinds]                    # eccentricity
         self.e[self.e < 0.] = 0.
         self.e[self.e > 0.9] = 0.9
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
-        lper = PPop.allplanetdata['pl_orblper'][planinds] + \
-                np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
-        self.O = lper.data*u.deg - self.w                   # longitude of ascending node
-        self.O[np.isnan(self.O)] =  PPop.gen_O(len(np.where(np.isnan(self.O))[0]))
         self.I = PPop.allplanetdata['pl_orbincl'][planinds] + np.random.normal\
                 (size=self.nPlans)*PPop.allplanetdata['pl_orbinclerr1'][planinds] 
         self.I[self.I.mask] = PPop.gen_I(len(np.where(self.I.mask)[0])).to('deg').value
         self.I = self.I.data*u.deg                          # inclination
-        self.Mp = PPop.mass[planinds]                       # mass
-        self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius
+        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis first!
+        lper = PPop.allplanetdata['pl_orblper'][planinds] + \
+                np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
+        self.O = lper.data*u.deg - self.w                   # longitude of ascending node
+        self.O[np.isnan(self.O)] =  PPop.gen_O(len(np.where(np.isnan(self.O))[0]))
+        self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
+        self.Mp = PPop.mass[planinds]                       # mass first!
+        self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius from mass
         self.Rmask = ~PPop.radiusmask[planinds]
         self.Rp[self.Rmask] = PPop.radius[planinds][self.Rmask]
         self.Rperr1 = PPop.radiuserr1[planinds][self.Rmask]
         self.Rperr2 = PPop.radiuserr2[planinds][self.Rmask]
-        self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
-
-
+        
         missionStart = Time(float(missionStart), format='mjd', scale='tai')
-        T = PPop.period[planinds] +  np.random.normal(size=self.nPlans)\
-                *PPop.perioderr[planinds]
-        T[T <= 0] = PPop.period[planinds][T<= 0]
+        T = PPop.period[planinds] + np.random.normal(size=self.nPlans)\
+                *PPop.perioderr[planinds]                   # period
+        T[T <= 0] = PPop.period[planinds][T <= 0]
         tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
-                *PPop.tpererr[planinds]).to(u.d).value,format='jd')
+                *PPop.tpererr[planinds]).to('day').value,format='jd')
         M0 = np.mod(((missionStart - tper)/T).decompose().value*2*np.pi,2*np.pi)
-
         self.r, self.v = self.planet_pos_vel(M=M0)          # initial position
         self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation

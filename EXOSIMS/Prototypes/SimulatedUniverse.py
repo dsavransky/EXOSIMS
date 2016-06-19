@@ -53,6 +53,12 @@ class SimulatedUniverse(object):
             Planet right ascension of the ascending node in units of deg
         w (astropy Quantity array):
             Planet argument of perigee in units of deg
+        p (float ndarray):
+            Planet albedo
+        Rp (astropy Quantity array):
+            Planet radius in units of km
+        Mp (astropy Quantity array):
+            Planet mass in units of kg
         r (astropy Quantity nx3 array):
             Planet position vector in units of km
         v (astropy Quantity nx3 array):
@@ -61,12 +67,6 @@ class SimulatedUniverse(object):
             Planet-star apparent separations in units of km
         d (astropy Quantity array):
             Planet-star distances in units of km
-        Mp (astropy Quantity array):
-            Planet mass in units of kg
-        Rp (astropy Quantity array):
-            Planet radius in units of km
-        p (float ndarray):
-            Planet albedo
         fEZ (astropy Quantity array):
             Surface brightness of exozodiacal light in units of 1/arcsec2
     
@@ -130,10 +130,10 @@ class SimulatedUniverse(object):
         
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccen(self.nPlans)     # eccentricity
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+                else PPop.gen_eccen(self.nPlans)            # eccentricity
         self.I = PPop.gen_I(self.nPlans)                    # inclination
+        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
+        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
         self.Rp = PPop.gen_radius(self.nPlans)              # radius
         self.Mp = PPop.gen_mass(self.nPlans)                # mass
         self.p = PPop.gen_albedo(self.nPlans)               # albedo

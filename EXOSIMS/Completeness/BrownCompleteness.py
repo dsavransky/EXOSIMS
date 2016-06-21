@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 import numpy as np
 from scipy import interpolate
 import astropy.units as u
@@ -123,8 +124,6 @@ class BrownCompleteness(Completeness):
         print 'Beginning completeness update calculations'
         self.visits = np.array([0]*targlist.nStars)
         self.updates = []
-        # constants needed
-        Msun = const.M_sun
         # number of planets to simulate
         nplan = int(2e4)
         # normalization time
@@ -152,33 +151,38 @@ class BrownCompleteness(Completeness):
                     (1.+np.max(self.PlanetPopulation.erange))]*targlist.nStars)*u.AU
         # fill dynamic completeness values
         for sInd in xrange(targlist.nStars):
+            Mstar = targlist.MsTrue[sInd]*const.M_sun
             # remove rmax < smin and rmin > smax
             inside = np.where(rmax > smin[sInd])[0]
             outside = np.where(rmin < smax[sInd])[0]
-            new_pInds = np.intersect1d(inside,outside)
+            pInds = np.intersect1d(inside,outside)
             dynamic = []
             # calculate for 5 successive observations
             for num in xrange(5):
+                if not pInds.any():
+                    dynamic.append(0.)
+                    break
                 # find Eccentric anomaly
                 if num == 0:
-                    E = eccanom(M[new_pInds],e[new_pInds])
-                    newM[new_pInds] = M[new_pInds]
+                    E = eccanom(M[pInds],e[pInds])
+                    newM[pInds] = M[pInds]
                 else:
-                    E = eccanom(newM[new_pInds],e[new_pInds])
-                r = a[new_pInds]*(1.-e[new_pInds]*np.cos(E))
-                r1 = r*(np.cos(E) - e[new_pInds])
+                    E = eccanom(newM[pInds],e[pInds])
+                
+                r = a[pInds]*(1.-e[pInds]*np.cos(E))
+                r1 = r*(np.cos(E) - e[pInds])
                 r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-                r2 = (r*np.sin(E)*np.sqrt(1. -  e[new_pInds]**2))
+                r2 = (r*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
                 r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
                 
-                a1 = np.cos(O[new_pInds])*np.cos(w[new_pInds]) - np.sin(O[new_pInds])*np.sin(w[new_pInds])*np.cos(I[new_pInds])
-                a2 = np.sin(O[new_pInds])*np.cos(w[new_pInds]) + np.cos(O[new_pInds])*np.sin(w[new_pInds])*np.cos(I[new_pInds])
-                a3 = np.sin(w[new_pInds])*np.sin(I[new_pInds])
+                a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
+                a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
+                a3 = np.sin(w[pInds])*np.sin(I[pInds])
                 A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
                 
-                b1 = -np.cos(O[new_pInds])*np.sin(w[new_pInds]) - np.sin(O[new_pInds])*np.cos(w[new_pInds])*np.cos(I[new_pInds])
-                b2 = -np.sin(O[new_pInds])*np.sin(w[new_pInds]) + np.cos(O[new_pInds])*np.cos(w[new_pInds])*np.cos(I[new_pInds])
-                b3 = np.cos(w[new_pInds])*np.sin(I[new_pInds])
+                b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
+                b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
+                b3 = np.cos(w[pInds])*np.sin(I[pInds])
                 B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
                 
                 # planet position, planet-star distance, apparent separation
@@ -187,22 +191,24 @@ class BrownCompleteness(Completeness):
                 s = np.sqrt(np.sum(r[:,0:2]**2, axis=1)) # apparent separation
                 beta = np.arccos(r[:,2]/d) # phase angle
                 Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
-                dMag = deltaMag(p[new_pInds],Rp[new_pInds],d,Phi) # difference in magnitude
+                dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
                 
                 toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                 toremovedmag = np.where(dMag < targlist.OpticalSystem.dMagLim)[0]
                 toremove = np.intersect1d(toremoves, toremovedmag)
                 
-                new_pInds = np.delete(new_pInds, toremove)
+                pInds = np.delete(pInds, toremove)
+                
                 if num == 0:
                     dynamic.append(targlist.comp0[sInd])
                 else:
                     dynamic.append(float(len(toremove))/nplan)
                 
                 # update M
-                mu = const.G*(Msun+Mp[new_pInds])
-                n = np.sqrt(mu/a[new_pInds]**3)
-                newM[new_pInds] = (newM[new_pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
+                mu = const.G*(Mstar+Mp[pInds])
+                n = np.sqrt(mu/a[pInds]**3)
+                newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
+            
             self.updates.append(dynamic)
                 
             if (sInd+1) % 50 == 0:
@@ -268,16 +274,23 @@ class BrownCompleteness(Completeness):
         
         # if the 2D completeness array exists as a .comp file load it
         if os.path.exists(Cpath):
-            print 'Loading completeness file from %s'%Cpath
+            print 'Loading cached completeness file from "%s".' % Cpath
             C = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness Loaded'
+            print 'Completeness loaded from cache.'
             #h, xedges, yedges = self.hist(nplan, xedges, yedges)
         else:
             # run Monte Carlo simulation and pickle the resulting array
-            print 'Beginning Monte Carlo completeness calculations'
+            print 'Cached completeness file not found at "%s".' % Cpath
+            print 'Beginning Monte Carlo completeness calculations.'
             
+            t0, t1 = None, None # keep track of per-iteration time
             for i in xrange(steps):
-                print 'iteration: %r / %r' % (i+1, steps)
+                t0, t1 = t1, time.time()
+                if t0 is None:
+                    delta_t_msg = '' # no message
+                else:
+                    delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
+                print 'Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg)
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:

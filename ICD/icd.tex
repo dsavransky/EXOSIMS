@@ -335,8 +335,8 @@ If the module implementations are in the appropriate subfolder in the EXOSIMS tr
 These parameters apply to all simulations, and are described in detail in their specific module definitions:
 
 \begin{itemize}[leftmargin=1in,font={\ttfamily}]
-\item[missionLifetime] (float) The total mission lifetime in $ years $.  When the mission time is equal or greater to this value, the mission simulation stops.
-\item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1. The mission simulation stops when the total integration time plus observation overhead time is equal to the missionLifetime $\times$ missionPortion.
+\item[missionLife] (float) The total mission lifetime in $ years $.  When the mission time is equal or greater to this value, the mission simulation stops.
+\item[missionPortion] (float) The portion of the mission dedicated to exoplanet science, given as a value between 0 and 1. The mission simulation stops when the total integration time plus observation overhead time is equal to the missionLife $\times$ missionPortion.
 \item[keepStarCatalog] (boolean) Boolean representing whether to delete the star catalog after assembling the target list.  If true, object reference will be available from TargetList object.
 \item[minComp] (float) Minimum completeness value for inclusion in target list. 
 \item[lam] (float) Detection central wavelength in $ nm $.
@@ -355,32 +355,30 @@ These parameters apply to all simulations, and are described in detail in their 
 \item[telescopeKeepout] (float) Telescope keepout angle in $ deg $
 \item[attenuation] (float) Non-coronagraph attenuation, equal to the throughput of the optical system without the coronagraph elements.
 \item[intCutoff] (float)  Maximum allowed integration time in $ day $. No integrations will be started that would take longer than this value.
-\item[exozodi] (float) Mean Exo-zodi level in zodi.
-\item[exozodiVar] (float) Exo-zodi variation (variance of log-normal distribution). Zodi is constant if set to zero. 
 \item[FAP] (float) Detection false alarm probability
 \item[MDP] (float) Missed detection probability
 \item[SNimag] (float) Signal to Noise Ratio for imaging/detection.
 \item[SNchar] (float) Signal to Noise Ratio for characterization.
-\item[arange]   2 element list of minimum and maximum semi-major axes in $ AU $. 
-\item[erange]   2 element list of minimum and maximum eccentricity.  
-\item[wrange]   2 element list of minimum and maximum argument of perigee in $ deg $. 
-\item[Orange]   2 element list of minimum and maximum ascension of the ascending node in $ deg $.  
-\item[Irange]   2 element list of minimum and maximum inclination in $ deg $.  
-\item[prange]   2 element list of minimum and maximum planetary geometric albedo.  
- \item[Rrange]   2 element list of minimum and maximum planetary Radius in Earth radii.  
-\item[Mprange]   2 element list of minimum and maximum planetary mass in Earth masses.  
-\item [scaleOrbits]   (boolean) True means planetary orbits are scaled by the square root of stellar luminosity. 
-\item[missionStart]  (float) Mission start time in $ MJD $. 
-\item[missionLife]  (float) Total length of mission in $ years $. 
-\item[extendedLife]  (float) Extended mission time in $ years $.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed
-\item[settlingTime] (float) Amount of time needed for observatory to settle after a repointing in $ day $.             
+\item[arange] (float) 1$\times$2 list of semi-major axis range in $ AU $. 
+\item[erange] (float) 1$\times$2 list of eccentricity range.
+\item[Irange] (float) 1$\times$2 list of inclination range in $ deg $.  
+\item[Orange] (float) 1$\times$2 list of ascension of the ascending node range in $ deg $.  
+\item[wrange] (float) 1$\times$2 list of argument of perigee range in $ deg $. 
+\item[prange] (float) 1$\times$2 list of planetary geometric albedo range.  
+\item[Rprange] (float) 1$\times$2 list of planetary radius range in Earth radii.  
+\item[Mprange] (float) 1$\times$2 list of planetary mass range in Earth masses.  
+\item [scaleOrbits] (boolean) True means planetary orbits are scaled by the square root of stellar luminosity. 
+\item[constrainOrbits] (boolean) True means planetary orbits are constrained to never leave the semi-major axis range (arange).
+\item[missionStart] (float) Mission start time in $ MJD $. 
+\item[extendedLife] (float) Extended mission time in $ years $.  Extended life typically differs from the primary mission in some way---most typically only revisits are allowed
+\item[settlingTime] (float) Amount of time needed for observatory to settle after a repointing in $ day $.           
 \item[thrust] (float) Occulter slew thrust in $ mN $.
-\item[slewIsp] (float) Occulter slew specific impulse in $ s $. 
+\item[slewIsp] (float) Occulter slew specific impulse in $ s $.
 \item[scMass] (float) Occulter (maneuvering spacecraft) initial wet mass in $ kg $. 
 \item[dryMass] (float) Occulter (maneuvering spacecraft) dry mass in $ kg $. 
 \item[coMass] (float) Telescope (or non-maneuvering spacecraft) mass in $ kg $. 
 \item[skIsp] (float) Specific impulse for station keeping in $ s $. 
-\item[defburnPortion] (float) Default burn portion for slewing. 
+\item[defburnPortion] (float) Default burn portion for slewing.
 \item[spkpath] (string) Full path to SPK kernel file.
 \item[forceStaticEphem]  (boolean) Force use of static solar system ephemeris if set to True, even if jplephem module is present.
 \end{itemize}
@@ -421,21 +419,21 @@ The following are all entries in the passed specs dictionary (derived from the J
 \item
 \begin{description}
     \item[arange] \hfill \\
-    2 element list of minimum and maximum semi-major axes in $ AU $. Default value is [0.01, 100]
+    1$\times$2 list of semi-major axis range in $ AU $. Default value is [0.01, 100]
     \item[erange] \hfill \\
-    2 element list of minimum and maximum eccentricity.  Default value is [0.01,0.99]
-    \item[wrange] \hfill \\
-    2 element list of minimum and maximum argument of perigee in $ deg $.  Default value is [0,360]
-    \item[Orange] \hfill \\
-    2 element list of minimum and maximum ascension of the ascending node in $ deg $.  Default value is [0,360]
+    1$\times$2 list of eccentricity range.  Default value is [0.01,0.99]
     \item[Irange] \hfill \\
-    2 element list of minimum and maximum inclination in $ deg $.  Default value is [0,180]
+    1$\times$2 list of inclination range in $ deg $.  Default value is [0,180]
+    \item[Orange] \hfill \\
+    1$\times$2 list of ascension of the ascending node range in $ deg $.  Default value is [0,360]
+    \item[wrange] \hfill \\
+    1$\times$2 list of perigee range in $ deg $.  Default value is [0,360]
     \item[prange] \hfill \\
-    2 element list of minimum and maximum planetary geometric albedo.  Default value is [0.1,0.6]
-     \item[Rrange] \hfill \\
-    2 element list of minimum and maximum planetary Radius in Earth radii.  Default value is [1, 30]
+    1$\times$2 list of planetary geometric albedo range.  Default value is [0.1,0.6]
+    \item[Rprange] \hfill \\
+    1$\times$2 list of planetary Radius in Earth radii.  Default value is [1, 30]
     \item[Mprange] \hfill \\
-    2 element list of minimum and maximum planetary mass in Earth masses.  Default value is [1, 4131]
+    1$\times$2 list of planetary mass in Earth masses.  Default value is [1, 4131]
     \item [scaleOrbits] \hfill \\
     Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
     \item[constrainOrbits] \hfill \\
@@ -447,30 +445,30 @@ The following are all entries in the passed specs dictionary (derived from the J
 \begin{itemize}
     \item
     \begin{description}
-        \item[arange] \hfill \\
-        Semi-major axis range defined as [a\_min, a\_max] (astropy Quantity initially set in $ AU $)
-        \item[erange] \hfill \\
+        \item[arange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Semi-major axis range defined as [a\_min, a\_max] in units of $ AU $
+        \item[erange (1$\times$2 ndarray):] \hfill \\
         Eccentricity range defined as [e\_min, e\_max]
-        \item[wrange] \hfill \\
-        Argument of perigee range defined as [w\_min, w\_max] (astropy Quantity initially set in $ deg $)
-        \item[Orange] \hfill \\
-        Right ascension of the ascending node range defined as [O\_min, O\_max]  (astropy Quantity initially set in $ deg $)
-        \item[prange] \hfill \\
+        \item[Irange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Planetary orbital inclination range defined as [I\_min, I\_max] in units of $ deg $
+        \item[Orange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Right ascension of the ascending node range defined as [O\_min, O\_max] in units of $ deg $
+        \item[wrange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Argument of perigee range defined as [w\_min, w\_max] in units of $ deg $
+        \item[prange (1$\times$2 ndarray):] \hfill \\
         Planetary geometric albedo range defined as [p\_min, p\_max]
-        \item[Irange] \hfill \\
-        Planetary orbital inclination range defined as [I\_min, I\_max]  (astropy Quantity initially set in $ deg $)
-        \item[Rrange] \hfill \\
-        Planetary radius range defined as [R\_min, R\_max] (astropy Quantity initially set in $ m $)
-        \item[Mprange] \hfill \\
-        Planetary mass range defined as [Mp\_min, Mp\_max] (astropy Quantity initially set in $ kg $)
-        \item[rrange] \hfill \\
-        Planetary orbital radius range defined as [r\_min, r\_max] derived from PlanetPopulation.arange and PlanetPopulation.erange (astropy Quantity initially set in $ AU $)
-     \item [scaleOrbits] \hfill \\
-    Boolean where True means planetary orbits are scaled by the square root of stellar luminosity.
-    \item[constrainOribts] \hfill \\
-    Boolean where True means planetary orbits are constrained to never leave the semi-major axis range (arange). If set to True, an additional method (\verb+gen_eccen_from_sma+) must be provided by the implementation---see below.
-         \item[PlanetPhysicalModel] \hfill \\     
-            Planet physical model object
+        \item[Rprange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Planetary radius range defined as [R\_min, R\_max] in units of $ km $
+        \item[Mprange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Planetary mass range defined as [Mp\_min, Mp\_max] in units of $ kg $
+        \item[rrange (astropy Quantity 1$\times$2 array):] \hfill \\
+        Planetary orbital radius range defined as [r\_min, r\_max] derived from PlanetPopulation.arange and PlanetPopulation.erange, in units of $ AU $
+        \item [scaleOrbits (boolean):] \hfill \\
+        Boolean where True means planetary orbits are scaled by the square root of stellar luminosity.
+        \item[constrainOribts (boolean):] \hfill \\
+        Boolean where True means planetary orbits are constrained to never leave the semi-major axis range (arange). If set to True, an additional method (\verb+gen_eccen_from_sma+) must be provided by the implementation---see below.
+        \item[PlanetPhysicalModel (object):] \hfill \\     
+            PlanetPhysicalModel class object
     \end{description}
 \end{itemize}
 
@@ -628,7 +626,7 @@ Information from simulation specification JSON file organized into a Python dict
     \item 
 \begin{description}
     \item[obscurFac] \hfill \\
-    Obscuration factor due to secondary mirror and spiders. Default value is 0.2.
+    Obscuration factor due to secondary mirror and spiders. Default value is 0.1.
     \item[shapeFac] \hfill \\
     Shape factor of the unobscured pupil area, so that $ shapeFac \times pupilDiam^2  \times (1-obscurFac) = pupilArea $. Default value is $ \frac{\pi}{4} $.
     \item[pupilDiam] \hfill \\
@@ -648,7 +646,7 @@ Information from simulation specification JSON file organized into a Python dict
     \item[OWA] \hfill \\
     Fundamental Outer Working Angle in $ arcsec $. Set to $ Inf $ for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as $ Inf $.
     \item[dMagLim] \hfill \\
-    Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is minimum of contrast.
+    Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is 20.
     \item[scienceInstruments] \hfill\\ List of dictionaries containing specific attributes of all science instruments. For each instrument, if the below attributes are missing from the dictionary, they will be assigned the default values listed, or any value directly passed as input to the class constructor. In case of multiple instruments, specified wavelength values (lam, deltaLam, BW) of the first instrument become the new default values.
     \begin{description}
     \item[type] \hfill\\ (Required) String indicating type of system.  Standard values are `imaging' and `spectro'.
@@ -689,8 +687,6 @@ Information from simulation specification JSON file organized into a Python dict
      Inner Working Angle of this system in $ arcsec $. If not set, or if too small for this system contrast/throughput definitions, defaults to smallest WA of contrast/throughput definitions.
     \item[OWA] \hfill \\
     Specific Outer Working Angle of this system in $ arcsec $. Set to $ Inf $ for no OWA. If not set, or if too large for this system contrast/throughput definitions, defaults to largest WA of contrast/throughput definitions.  JSON values of $ 0 $ will be interpreted as $ Inf $.
-    \item[dMagLim] \hfill \\
-    Limiting $ \Delta$mag for this system. Default value is minimum of the system contrast.
     \item[PSF] \hfill \\
     Instrument point spread function. Either a 2D array of a single-PSF, or a 3D array of wavelength-dependent PSFs. May be data or FITS filename. Default is numpy.ones((3,3)).
     \item[samp] \hfill \\
@@ -1586,18 +1582,18 @@ All planetary parameters are generated in the constructor via calls to the appro
         Planet right ascension of the ascending node in units of $ deg $
         \item[w (astropy Quantity array)] \hfill \\
         Planet argument of perigee in units of $ deg $
+        \item[p (float ndarray)] \hfill \\
+            Planet albedo
+        \item[Rp (astropy Quantity array)] \hfill \\
+            Planet radius in units of $ km $
+        \item[Mp (astropy Quantity array)] \hfill \\
+            Planet mass in units of $ kg $
         \item[r (astropy Quantity n$\times$3 array)] \hfill \\ Planet position vector in units of $ km $
         \item[v (astropy Quantity n$\times$3 array)] \hfill \\ Planet velocity vector in units of $ km/s $
         \item[s (astropy Quantity array)] \hfill \\
         Planet-star apparent separations in units of $ km $
         \item[d (astropy Quantity array)] \hfill \\
         Planet-star distances in units of $ km $
-        \item[Mp (astropy Quantity array)] \hfill \\
-            Planet mass in units of $ kg $
-        \item[Rp (astropy Quantity array)] \hfill \\
-            Planet radius in units of $ km $
-        \item[p (float ndarray)] \hfill \\
-            Planet albedo
         \item[fEZ (astropy Quantity array)] \hfill \\
             Surface brightness of exozodiacal light in units of $ 1/arcsec2 $, determined from \verb+ZodiacalLight.fEZ+ \S\ref{sec:fEZtask}
     \end{description}
@@ -1661,10 +1657,10 @@ This method does not take any explicit inputs.  It uses the following attributes
 \begin{itemize}
     \item \verb+SimulatedUniverse.a+
     \item \verb+SimulatedUniverse.e+
-    \item \verb+SimulatedUniverse.Mp+
     \item \verb+SimulatedUniverse.I+
-    \item \verb+SimulatedUniverse.w+
     \item \verb+SimulatedUniverse.O+
+    \item \verb+SimulatedUniverse.w+
+    \item \verb+SimulatedUniverse.Mp+
 \end{itemize}
 \subsubsection*{Outputs}
 \begin{itemize}

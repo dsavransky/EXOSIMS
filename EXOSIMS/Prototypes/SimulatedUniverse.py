@@ -34,9 +34,6 @@ class SimulatedUniverse(object):
             Completeness class object
         TargetList (object):
             TargetList class object
-        eta (float)
-            Global occurrence rate defined as expected number of planets 
-            per star in a given universe
         nPlans (integer):
             Total number of planets
         plan2star (integer ndarray):
@@ -70,21 +67,16 @@ class SimulatedUniverse(object):
         fEZ (astropy Quantity array):
             Surface brightness of exozodiacal light in units of 1/arcsec2
     
+    Notes:
+        PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
+        Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
     """
 
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, eta=0.1, **specs):
+    def __init__(self, **specs):
        
-        #check inputs
-        assert isinstance(eta,numbers.Number) and (eta > 0),\
-                "eta must be a positive number."
-        
-        #global occurrence rate defined as expected number of planets per 
-        #star in a given universe
-        self.eta = eta
-        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],'TargetList')(**specs)
         
@@ -123,11 +115,22 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
         
         # Map planets to target stars
-        probs = np.random.uniform(size=TL.nStars)
-        self.plan2star = np.where(probs > self.eta)[0]
+        #this version only works for eta < 1
+        #probs = np.random.uniform(size=TL.nStars)
+        #self.plan2star = np.where(probs > PPop.eta)[0]
+        #self.sInds = np.unique(self.plan2star)
+        #self.nPlans = len(self.plan2star)
+
+        #treat eta as the rate paramter of a Poisson distribution
+        targetSystems = np.random.poisson(lam=PPop.eta,size=TL.nStars)
+        plan2star = []
+        for j,n in enumerate(targetSystems):
+            plan2star = np.hstack((plan2star,[j]*n))
+        self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
-        
+
+        #sample all of the orbital and physical parameters
         self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
         self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
                 else PPop.gen_eccen(self.nPlans)            # eccentricity

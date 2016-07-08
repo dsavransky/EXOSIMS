@@ -42,8 +42,8 @@ class KeplerLike1(PlanetPopulation):
 
     def __init__(self, smaknee=30, esigma=0.25, **specs):
         
-        specs['Rprange'] = [1,22.6]
         specs['prange'] = [0.083,0.882]
+        specs['Rprange'] = [1,22.6]
         PlanetPopulation.__init__(self, **specs)
         
         assert (smaknee >= self.arange[0].to('AU').value) and \
@@ -68,6 +68,7 @@ class KeplerLike1(PlanetPopulation):
         
         self.Rs = Rs
         self.Rvals = Rvals
+        self.eta = np.sum(Rvals)
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU

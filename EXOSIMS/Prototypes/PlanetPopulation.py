@@ -34,11 +34,14 @@ class PlanetPopulation(object):
         Mprange (astropy Quantity 1x2 array):
             Planet mass range in units of kg
         rrange (astropy Quantity 1x2 array):
-            Orbital radius range in units of km
+            Orbital radius range in units of AU
         scaleOrbits (boolean):
             Scales orbits by sqrt(L) when True
         constrainOrbits (boolean):
             Constrains orbital radii to sma range when True
+        eta (float)
+            Global occurrence rate defined as expected number of planets 
+            per star in a given universe
         PlanetPhysicalModel (object):
             PlanetPhysicalModel class object
         
@@ -50,14 +53,14 @@ class PlanetPopulation(object):
     def __init__(self, arange=[0.1,100], erange=[0.01,0.99],\
                  Irange=[0.,180.], Orange=[0.,360.], wrange=[0.,360.],\
                  prange=[0.1,0.6], Rprange=[1.,30.], Mprange = [1.,4131.],\
-                 scaleOrbits=False, constrainOrbits=False, **specs):
+                 scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
         
         #do all input checks
         self.arange = self.checkranges(arange,'arange')*u.AU
         self.erange = self.checkranges(erange,'erange')
-        self.wrange = self.checkranges(wrange,'wrange')*u.deg
-        self.Orange = self.checkranges(Orange,'Orange')*u.deg
         self.Irange = self.checkranges(Irange,'Irange')*u.deg
+        self.Orange = self.checkranges(Orange,'Orange')*u.deg
+        self.wrange = self.checkranges(wrange,'wrange')*u.deg
         self.prange = self.checkranges(prange,'prange')
         self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth
         self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
@@ -69,6 +72,12 @@ class PlanetPopulation(object):
         assert isinstance(constrainOrbits,bool), "constrainOrbits must be boolean"
         # constrain planetary orbital radii to sma range
         self.constrainOrbits = constrainOrbits
+        
+        assert isinstance(eta,numbers.Number) and (eta > 0),\
+                "eta must be a positive number."
+        #global occurrence rate defined as expected number of planets per 
+        #star in a given universe
+        self.eta = eta
         
         # orbital radius range
         self.rrange = [self.arange[0].value*(1.-self.erange[1]),\
@@ -184,10 +193,10 @@ class PlanetPopulation(object):
         
         return vals
 
-    def gen_w(self, n):
-        """Generate argument of periapse in degrees
+    def gen_I(self, n):
+        """Generate inclination in degrees
         
-        The prototype provides a uniform distribution between the minimum and 
+        The prototype provides a sinusoidal distribution between the minimum and 
         maximum values.
         
         Args:
@@ -195,14 +204,14 @@ class PlanetPopulation(object):
                 Number of samples to generate
                 
         Returns:
-            w (astropy Quantity units degrees)
+            I (astropy Quantity units degrees)
         
         """
         n = self.gen_input_check(n)
-        v = self.wrange.value
-        vals = v[0]+(v[1]-v[0])*np.random.uniform(size=n)
+        v = np.sort(np.cos(self.Irange))
+        vals = np.arccos(v[0]+(v[1]-v[0])*np.random.uniform(size=n)).to(self.Irange.unit)
         
-        return vals*self.wrange.unit
+        return vals
 
     def gen_O(self, n):
         """Generate longitude of the ascending node in degrees
@@ -223,6 +232,45 @@ class PlanetPopulation(object):
         vals = v[0]+(v[1]-v[0])*np.random.uniform(size=n)
         
         return vals*self.Orange.unit
+
+    def gen_w(self, n):
+        """Generate argument of periapse in degrees
+        
+        The prototype provides a uniform distribution between the minimum and 
+        maximum values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+                
+        Returns:
+            w (astropy Quantity units degrees)
+        
+        """
+        n = self.gen_input_check(n)
+        v = self.wrange.value
+        vals = v[0]+(v[1]-v[0])*np.random.uniform(size=n)
+        
+        return vals*self.wrange.unit
+
+    def gen_albedo(self, n):
+        """Generate geometric albedo values
+        
+        The prototype provides a uniform distribution between the minimum and 
+        maximum values.
+        
+        Args:
+            n (numeric):
+                Number of samples to generate
+                
+        Returns:
+            p (numpy ndarray)
+        
+        """
+        n = self.gen_input_check(n)
+        vals = self.prange[0] +(self.prange[1] - self.prange[0])*np.random.uniform(size=n)
+        
+        return vals
 
     def gen_radius(self, n):
         """Generate planetary radius values in m
@@ -263,42 +311,3 @@ class PlanetPopulation(object):
         vals = np.exp(np.log(v[0])+(np.log(v[1])-np.log(v[0]))*np.random.uniform(size=n))
         
         return vals*self.Mprange.unit
-
-    def gen_albedo(self, n):
-        """Generate geometric albedo values
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (numeric):
-                Number of samples to generate
-                
-        Returns:
-            p (numpy ndarray)
-        
-        """
-        n = self.gen_input_check(n)
-        vals = self.prange[0] +(self.prange[1] - self.prange[0])*np.random.uniform(size=n)
-        
-        return vals
-
-    def gen_I(self, n):
-        """Generate inclination in degrees
-        
-        The prototype provides a sinusoidal distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (numeric):
-                Number of samples to generate
-                
-        Returns:
-            I (astropy Quantity units degrees)
-        
-        """
-        n = self.gen_input_check(n)
-        v = np.sort(np.cos(self.Irange))
-        vals = np.arccos(v[0]+(v[1]-v[0])*np.random.uniform(size=n)).to(self.Irange.unit)
-        
-        return vals

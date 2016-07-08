@@ -438,6 +438,8 @@ The following are all entries in the passed specs dictionary (derived from the J
     Boolean where True means planetary orbits are scaled by the square root of stellar luminosity. Default value is False.
     \item[constrainOrbits] \hfill \\
     Boolean where True means planetary orbits are constrained to never leave the semi-major axis range (arange). Default value is False.
+    \item[eta] \hfill \\
+    The average occurrence rate of planets per star for the entire population.  The expected number of planets generated per simulation is equal to the product of eta with the total number of targets.  Note that this is the expectation value \emph{only}---the actual number of planets generated in a given simulation may vary depending on the specific method of sampling the population.
 \end{description}
 \end{itemize}
 
@@ -445,29 +447,31 @@ The following are all entries in the passed specs dictionary (derived from the J
 \begin{itemize}
     \item
     \begin{description}
-        \item[arange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[arange (astropy Quantity 1$\times$2 array)] \hfill \\
         Semi-major axis range defined as [a\_min, a\_max] in units of $ AU $
-        \item[erange (1$\times$2 ndarray):] \hfill \\
+        \item[erange (1$\times$2 ndarray)] \hfill \\
         Eccentricity range defined as [e\_min, e\_max]
-        \item[Irange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[Irange (astropy Quantity 1$\times$2 array)] \hfill \\
         Planetary orbital inclination range defined as [I\_min, I\_max] in units of $ deg $
-        \item[Orange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[Orange (astropy Quantity 1$\times$2 array)] \hfill \\
         Right ascension of the ascending node range defined as [O\_min, O\_max] in units of $ deg $
-        \item[wrange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[wrange (astropy Quantity 1$\times$2 array)] \hfill \\
         Argument of perigee range defined as [w\_min, w\_max] in units of $ deg $
-        \item[prange (1$\times$2 ndarray):] \hfill \\
+        \item[prange (1$\times$2 ndarray)] \hfill \\
         Planetary geometric albedo range defined as [p\_min, p\_max]
-        \item[Rprange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[Rprange (astropy Quantity 1$\times$2 array)] \hfill \\
         Planetary radius range defined as [R\_min, R\_max] in units of $ km $
-        \item[Mprange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[Mprange (astropy Quantity 1$\times$2 array)] \hfill \\
         Planetary mass range defined as [Mp\_min, Mp\_max] in units of $ kg $
-        \item[rrange (astropy Quantity 1$\times$2 array):] \hfill \\
+        \item[rrange (astropy Quantity 1$\times$2 array)] \hfill \\
         Planetary orbital radius range defined as [r\_min, r\_max] derived from PlanetPopulation.arange and PlanetPopulation.erange, in units of $ AU $
-        \item [scaleOrbits (boolean):] \hfill \\
+        \item [scaleOrbits (boolean)] \hfill \\
         Boolean where True means planetary orbits are scaled by the square root of stellar luminosity.
-        \item[constrainOribts (boolean):] \hfill \\
+        \item[constrainOribts (boolean)] \hfill \\
         Boolean where True means planetary orbits are constrained to never leave the semi-major axis range (arange). If set to True, an additional method (\verb+gen_eccen_from_sma+) must be provided by the implementation---see below.
-        \item[PlanetPhysicalModel (object):] \hfill \\     
+        \item[eta (float)] \hfill \\
+        The average occurrence rate of planets per star for the entire population.
+        \item[PlanetPhysicalModel (object)] \hfill \\     
             PlanetPhysicalModel class object
     \end{description}
 \end{itemize}
@@ -1416,7 +1420,7 @@ The \verb+completeness_update+ method updates the completeness values for each s
 % TARGET LIST
 
 \subsection{Target List}
-The Target List module takes in information from the Optical System, Star Catalog, Planet Population, and Observatory modules and Completeness module to generate the target list for the simulated survey.  This list can either contain all of the targets where a planet with specified parameter ranges could be observed or a list of pre-determined targets such as in the case of a mission which only seeks to observe stars where planets are known to exist from previous surveys.  The final target list encodes all of the same information as is provided by the Star Catalog module.
+The Target List module takes in information from the Star Catalog, Optical System, Zodiacal Light, Post Processing, Background Sources, Completeness, PlanetPopulation, and Planet Physical Model modules to generate the target list for the simulated survey.  This list can either contain all of the targets where a planet with specified parameter ranges could be observed or a list of pre-determined targets such as in the case of a mission which only seeks to observe stars where planets are known to exist from previous surveys.  The final target list encodes all of the same information as is provided by the Star Catalog module.
 
 \label{sec:targetlist}
 \subsubsection{Target List Object Attribute Initialization}
@@ -1564,8 +1568,6 @@ All planetary parameters are generated in the constructor via calls to the appro
         Completeness class object (see \ref{sec:completeness})
         \item[TargetList (object)] \hfill \\
         TargetList class object (see \ref{sec:targetlist})
-        \item[eta (float)] \hfill \\
-        Global occurrence rate defined as expected number of planets per star in a given universe
         \item[nPlans (integer)] \hfill \\
         Total number of planets
         \item[plan2star (integer ndarray)] \hfill \\
@@ -1719,7 +1721,8 @@ The \verb+get_current_WA+ method calculates the current working angles for plane
 % SURVEY SIMULATION
 
 \subsection{Survey Simulation} \label{sec:surveysim}
-The Survey Simulation module takes as input instances of the Simulated Universe  module and the Time Keeping, and Post-Processing modules. This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
+%The Survey Simulation module takes as input instances of the Simulated Universe  module and the Time Keeping, and Post-Processing modules. 
+This is the module that performs a specific simulation based on all of the input parameters and models. This module returns the mission timeline - an ordered list of simulated observations of various targets on the target list along with their outcomes.  The output also includes an encoding of the final state of the simulated universe (so that a subsequent simulation can start from where a previous simulation left off) and the final state of the observatory definition (so that post-simulation analysis can determine the percentage of volatiles expended, and other engineering metrics).
 
 Survey Simulation TASKS: 
 \verb+run_sim()+ - perform survey simulation \S\ref{sec:runsimtask}

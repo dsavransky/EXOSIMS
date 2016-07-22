@@ -1,4 +1,6 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
+import warnings
+import astropy
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
@@ -65,7 +67,13 @@ class KnownRVPlanets(KeplerLike1):
             raise IOError('RV Planet File %s Not Found.'%rvplanetfilepath)
         
         #read votable
-        votable = parse(rvplanetfilepath)
+        with warnings.catch_warnings():
+            # warnings for IPAC votables are out of control 
+            #   they are not moderated by pedantic=False
+            #   they all have to do with units, which we handle independently anyway
+            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableSpecWarning)
+            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableChangeWarning)
+            votable = parse(rvplanetfilepath)
         table = votable.get_first_table()
         data = table.array
         

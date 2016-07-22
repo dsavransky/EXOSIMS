@@ -142,8 +142,8 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self,obscurFac=0.2,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.57,intCutoff=50,Npix=14.3,Ndark=10,dMagLim=20,scienceInstruments=None,\
+    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
+            attenuation=0.6,intCutoff=50,Npix=14.3,Ndark=10,dMagLim=20,scienceInstruments=None,\
             lam=500,BW=0.2,pitch=13e-6,focal=240,idark=9e-5,texp=1e3,sread=3,CIC=0.0013,\
             ENF=1,Gem=1,Rs=70,QE=0.9,starlightSuppressionSystems=None,throughput=1e-2,\
             contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,imagTimeMult=1,\
@@ -165,7 +165,7 @@ class OpticalSystem(object):
         
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
-        self.F0 = lambda lam: 1e4*10**(4.01-(1e-3*lam.value-0.55)/0.77)*u.ph/u.s/u.m**2/u.nm 
+        self.F0 = lambda lam: 1e4*10**(4.01-(lam.to('nm').value-550)/770)*u.ph/u.s/u.m**2/u.nm 
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science isntrument defined."
@@ -430,7 +430,7 @@ class OpticalSystem(object):
         QE = inst['QE'](lam)                        # quantum efficiency
         Q = syst['contrast'](lam, WA)               # contrast
         T = syst['throughput'](lam, WA) / inst['Ns'] \
-                * self.attenuation**2               # throughput
+                * self.attenuation                  # throughput
         mV = TL.starMag(sInds,lam)                  # star visual magnitude
         X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
         Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
@@ -439,12 +439,12 @@ class OpticalSystem(object):
         # electron count rates [ s^-1 ]
         C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
         C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
-        C_s = C_F0*10.**(-0.4*mV)*Q                 # residual suppressed starlight (coro)
-        C_z = C_F0*(fZ+fEZ)*Omega                   # zodiacal light = local + exo
-        C_id = Npix*inst['idark']                   # dark current
+        C_sr = C_F0*10.**(-0.4*mV)*Q                # residual suppressed starlight (coro)
+        C_zl = C_F0*(fZ+fEZ)*Omega                  # zodiacal light = local + exo
+        C_dc = Npix*inst['idark']                   # dark current
         C_cc = Npix*inst['CIC']/inst['texp']        # clock-induced-charge
-        C_sr = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
-        C_b = inst['ENF']**2*(C_s + C_z + C_id + C_cc) + C_sr   # total noise budget
+        C_rn = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
+        C_b = inst['ENF']**2*(C_sr+C_zl+C_dc+C_cc)+C_rn   # total noise budget
         
         return C_p, C_b
 

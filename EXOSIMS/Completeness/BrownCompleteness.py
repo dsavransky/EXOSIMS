@@ -52,9 +52,11 @@ class BrownCompleteness(Completeness):
         
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation']+specs['modules']['PlanetPhysicalModel']
+        self.filename = specs['modules']['PlanetPopulation']
+        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+        
         extstr = ''
-        for att in self.PlanetPopulation.__dict__.keys():
+        for att in atts:
             extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
@@ -106,7 +108,10 @@ class BrownCompleteness(Completeness):
             
         # calculate separations based on IWA
         smin = np.tan(targlist.OpticalSystem.IWA)*targlist.dist
-        smax = np.tan(targlist.OpticalSystem.OWA)*targlist.dist
+        if np.isinf(targlist.OpticalSystem.OWA):
+            smax = xedges[-1]*u.AU
+        else:
+            smax = np.tan(targlist.OpticalSystem.OWA)*targlist.dist
 
         # calculate dMags based on limiting dMag
         dMagmax = targlist.OpticalSystem.dMagLim #np.array([targlist.OpticalSystem.dMagLim]*targlist.nStars)
@@ -119,7 +124,7 @@ class BrownCompleteness(Completeness):
             dMagmax -= 2.5*np.log10(L)
             
         comp0 = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMagmax)
-        
+
         return comp0
 
     def gen_update(self, targlist):

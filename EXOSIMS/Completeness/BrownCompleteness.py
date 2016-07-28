@@ -97,23 +97,28 @@ class BrownCompleteness(Completeness):
         # number of simulations to perform (must be integer)
         steps = int(self.Nplanets/nplan)
         
-        # path to 2D completeness array for interpolation
+        # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
-        C, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
-        C = C/float(self.Nplanets)
-        EVPOC = interpolate.RectBivariateSpline(xedges, yedges, C.T)
-        EVPOC = np.vectorize(EVPOC)
+        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
+
+        EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
+        EVPOC = np.vectorize(EVPOCpdf.integral)
             
         # calculate separations based on IWA
-        s = np.tan(targlist.OpticalSystem.IWA)*targlist.dist
+        smin = np.tan(targlist.OpticalSystem.IWA)*targlist.dist
+        smax = np.tan(targlist.OpticalSystem.OWA)*targlist.dist
+
         # calculate dMags based on limiting dMag
-        dMag = np.array([targlist.OpticalSystem.dMagLim]*targlist.nStars)
+        dMagmax = targlist.OpticalSystem.dMagLim #np.array([targlist.OpticalSystem.dMagLim]*targlist.nStars)
+        dMagmin = ymin
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(targlist.L>0, targlist.L, 1e-10) #take care of zero/negative values
-            s = s/np.sqrt(L)
-            dMag = dMag - 2.5*np.log10(L)
+            smin = smin/np.sqrt(L)
+            smax = smax/np.sqrt(L)
+            dMagmin -= 2.5*np.log10(L)
+            dMagmax -= 2.5*np.log10(L)
             
-        comp0 = EVPOC(s.to('AU').value, dMag)
+        comp0 = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMagmax)
         
         return comp0
 
@@ -273,15 +278,15 @@ class BrownCompleteness(Completeness):
                 number of simulations to perform
                 
         Returns:
-            C (ndarray):
-                2D numpy ndarray of completeness values
+            H (ndarray):
+                2D numpy ndarray of completeness probability density values
         
         """
         
-        # if the 2D completeness array exists as a .comp file load it
+        # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             print 'Loading cached completeness file from "%s".' % Cpath
-            C = pickle.load(open(Cpath, 'rb'))
+            H = pickle.load(open(Cpath, 'rb'))
             print 'Completeness loaded from cache.'
             #h, xedges, yedges = self.hist(nplan, xedges, yedges)
         else:
@@ -303,19 +308,15 @@ class BrownCompleteness(Completeness):
                     H = h
                 else:
                     H += h
-            # initialize completeness
-            C = np.zeros(H.shape)
-            mult = np.tril(np.ones(H.shape))
-            C[0,:] = np.dot(H[0,:], mult)
-            for i in xrange(len(C) - 1):
-                C[i+1,:] = C[i,:] + np.dot(H[i+1,:], mult)
             
-            # store 2D completeness array as .comp file
-            pickle.dump(C, open(Cpath, 'wb'))
+            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))            
+                        
+            # store 2D completeness pdf array as .comp file
+            pickle.dump(H, open(Cpath, 'wb'))
             print 'Monte Carlo completeness calculations finished'
             print '2D completeness array stored in %r' % Cpath
         
-        return C, xedges, yedges
+        return H, xedges, yedges
 
     def hist(self, nplan, xedges, yedges):
         """Returns completeness histogram for Monte Carlo simulation

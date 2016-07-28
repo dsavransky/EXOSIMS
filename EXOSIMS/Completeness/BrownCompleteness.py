@@ -9,6 +9,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import hashlib
 from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
@@ -51,7 +52,12 @@ class BrownCompleteness(Completeness):
         
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation']
+        self.filename = specs['modules']['PlanetPopulation']+specs['modules']['PlanetPhysicalModel']
+        extstr = ''
+        for att in self.PlanetPopulation.__dict__.keys():
+            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        ext = hashlib.md5(extstr).hexdigest()
+        self.filename += ext
 
     def target_completeness(self, targlist):
         """Generates completeness values for target stars

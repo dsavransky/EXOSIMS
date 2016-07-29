@@ -41,6 +41,7 @@
   <h1>Source code for EXOSIMS.PlanetPopulation.EarthTwinHabZone1</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.PlanetPopulation</span> <span class="kn">import</span> <span class="n">PlanetPopulation</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="EarthTwinHabZone1"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1">[docs]</a><span class="k">class</span> <span class="nc">EarthTwinHabZone1</span><span class="p">(</span><span class="n">PlanetPopulation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -57,9 +58,9 @@
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;arange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;erange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Rrange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Mprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;prange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.367</span><span class="p">,</span><span class="mf">0.367</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Rprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Mprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;scaleOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
@@ -70,18 +71,19 @@
 <span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            n (numeric):</span>
+<span class="sd">            n (integer):</span>
 <span class="sd">                Number of samples to generate</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            a (astropy Quantity units AU)</span>
+<span class="sd">            a (astropy Quantity array):</span>
+<span class="sd">                Semi-major axis in units of AU</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">high</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">vals</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span></div></div>
+        <span class="k">return</span> <span class="n">vals</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span></div></div>
 
 </pre></div>
 
@@ -101,8 +103,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -116,7 +118,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

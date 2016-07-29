@@ -71,9 +71,12 @@
 <span class="sd">                SkyCoord object containing right ascension, declination, and </span>
 <span class="sd">                distance to star of the planets of interest in units of deg, deg and pc</span>
 <span class="sd">            intDepths (float ndarray):</span>
-<span class="sd">                Integration depths equal to absolute magnitudes (in the detection </span>
-<span class="sd">                band) of the dark hole to be produced for each target. </span>
+<span class="sd">                Integration depths equal to the V magnitude (in the detection </span>
+<span class="sd">                band) of the dark hole to be produced for each target. it is the</span>
+<span class="sd">                limiting planet magnitude (faintest planet/objects we can observe),</span>
+<span class="sd">                which corresponds to dMagLim + Vmag of each specific target.</span>
 <span class="sd">                Must be of same length as coords.</span>
+<span class="sd">                </span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dN (astropy Quantity array):</span>
@@ -136,8 +139,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -151,7 +154,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

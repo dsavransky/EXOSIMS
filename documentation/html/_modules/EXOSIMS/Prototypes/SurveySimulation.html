@@ -250,7 +250,7 @@
         
         <span class="c1"># initialize run options</span>
         <span class="c1"># keep track of spectral characterizations, 0 is no characterization</span>
-        <span class="n">spectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">spectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="c1"># get index of first target star</span>
         <span class="n">sInd</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">()</span>
         
@@ -342,9 +342,6 @@
             <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> \
                     <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">)</span>
             
-            <span class="c1"># acquire a new target star index</span>
-            <span class="n">sInd</span><span class="p">,</span> <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">DRM</span><span class="p">)</span>
-            
             <span class="c1"># append result values to self.DRM</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DRM</span><span class="p">)</span>
             
@@ -352,6 +349,9 @@
             <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="ow">and</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">&lt;</span> <span class="n">Obs</span><span class="o">.</span><span class="n">dryMass</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s1">&#39;Total fuel mass exceeded at </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span>
                 <span class="k">break</span>
+            
+            <span class="c1"># acquire a new target star index</span>
+            <span class="n">sInd</span><span class="p">,</span> <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">DRM</span><span class="p">)</span>
         
         <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;run_sim finishing OK&#39;</span><span class="p">)</span>
         <span class="k">print</span> <span class="s1">&#39;Survey simulation: finishing OK&#39;</span>
@@ -470,9 +470,9 @@
                 <span class="c1"># propagate planet positions and velocities</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">dt</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">-</span> <span class="n">planPosTime</span><span class="p">[</span><span class="n">pInd</span><span class="p">]</span>
-                    <span class="n">SU</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span> <span class="n">SU</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">pInd</span><span class="p">]</span> <span class="o">=</span> \
-                            <span class="n">SU</span><span class="o">.</span><span class="n">prop_system</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInd</span><span class="p">],</span>\
-                            <span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">sInd</span><span class="p">],</span><span class="n">dt</span><span class="p">)</span>
+                    <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pInd</span><span class="p">])</span>
+                    <span class="n">SU</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">prop_system</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>\
+                            <span class="n">SU</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">sInd</span><span class="p">],</span><span class="n">dt</span><span class="p">)</span>
                     <span class="c1"># update planet position times</span>
                     <span class="n">planPosTime</span><span class="p">[</span><span class="n">pInd</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dt</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -490,7 +490,7 @@
             <span class="n">fEZ</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">fEZ</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span>
             <span class="n">fZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">OS</span><span class="o">.</span><span class="n">Imager</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">],</span><span class="n">Obs</span><span class="o">.</span><span class="n">r_sc</span><span class="p">)</span>
             <span class="n">t_trueint</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">dMag</span><span class="p">,</span><span class="n">WA</span><span class="p">,</span><span class="n">fEZ</span><span class="p">,</span><span class="n">fZ</span><span class="p">)</span>
-            <span class="n">observationPossible</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">t_trueint</span> <span class="o">&lt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span>
+            <span class="n">observationPossible</span> <span class="o">=</span> <span class="n">observationPossible</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t_trueint</span> <span class="o">&lt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span>
         
         <span class="c1"># determine if planets are observable at the end of observation</span>
         <span class="c1"># and update integration time</span>
@@ -562,7 +562,7 @@
         <span class="c1"># check if characterization has been done</span>
         <span class="k">if</span> <span class="n">pInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">observationPossible</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">observationPossible</span><span class="p">]]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
                     <span class="c1"># perform first characterization</span>
                     <span class="c1"># find characterization time</span>
                     <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInd</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">))</span>
@@ -619,16 +619,16 @@
                         <span class="c1"># spectrum is captured</span>
                         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">charPossible</span><span class="p">):</span>
                             <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span><span class="p">:</span>
-                                <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                                <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
                                 <span class="c1"># encode success</span>
                                 <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="n">lamEff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">]))</span> <span class="o">/</span> <span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span>
+                                <span class="n">lamEff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">])</span> <span class="o">/</span> <span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span>
                                 <span class="n">lamEff</span> <span class="o">*=</span> <span class="n">OS</span><span class="o">.</span><span class="n">Spectro</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">OS</span><span class="o">.</span><span class="n">pupilDiam</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">OS</span><span class="o">.</span><span class="n">pupilArea</span><span class="o">/</span><span class="n">OS</span><span class="o">.</span><span class="n">shapeFac</span><span class="p">)</span>
-                                <span class="n">charPossible</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">charPossible</span><span class="p">,</span> <span class="n">lamEff</span> <span class="o">&gt;=</span> <span class="mf">800.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+                                <span class="n">charPossible</span> <span class="o">=</span> <span class="n">charPossible</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">lamEff</span> <span class="o">&gt;=</span> <span class="mf">800.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
                                 <span class="c1"># encode results</span>
                                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">charPossible</span><span class="p">):</span>
-                                    <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">],</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                                    <span class="n">spectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charPossible</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
                                     <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
                                 <span class="k">else</span><span class="p">:</span>
                                     <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_1_success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lamEff</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;nm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
@@ -686,16 +686,13 @@
                     <span class="n">Phi</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">send</span><span class="o">/</span><span class="n">dend</span><span class="p">))</span>
                     <span class="n">dMagend</span> <span class="o">=</span> <span class="n">deltaMag</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">SU</span><span class="o">.</span><span class="n">Rp</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">dend</span><span class="p">,</span><span class="n">Phi</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">WAend</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">send</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="n">dMagend</span> <span class="o">&lt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">WAend</span> <span class="o">&gt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">dMagend</span> <span class="o">&lt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">WAend</span> <span class="o">&gt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">):</span>
                         <span class="n">obsRes</span> <span class="o">=</span> <span class="mi">1</span>
                         <span class="c1"># planet visible at the end of observation</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">t_char_calc</span><span class="p">:</span>
                             <span class="c1"># update integration time</span>
                             <span class="n">t_int</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_trueint</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">t_int</span><span class="p">)</span> <span class="k">if</span> <span class="n">t_int</span> <span class="o">!=</span> <span class="n">TL</span><span class="o">.</span><span class="n">maxintTime</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="k">else</span> <span class="n">t_trueint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">obsRes</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">obsRes</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="c1"># if kogood, do characterization</span>
                     <span class="k">if</span> <span class="n">t_char_calc</span><span class="p">:</span>
                         <span class="n">chargo</span> <span class="o">=</span> <span class="bp">True</span>
         
@@ -711,14 +708,6 @@
 <span class="sd">        </span>
 <span class="sd">        This method encodes detection status (FA, DET, MD) values in the DRM </span>
 <span class="sd">        dictionary.</span>
-<span class="sd">        </span>
-<span class="sd">        This method accesses the following inherited class objects:</span>
-<span class="sd">            OS:</span>
-<span class="sd">                OpticalSystem class object</span>
-<span class="sd">            TL:</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            self.PlanetPopulation:</span>
-<span class="sd">                PlanetPopulation class object</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            DRM (dict):</span>
@@ -754,6 +743,8 @@
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
         
+        <span class="c1"># planet indexes</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;plan_inds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pInds</span>
         <span class="c1"># default DRM detection status to null detection</span>
         <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1"># apparent separation placeholders</span>
@@ -791,8 +782,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -806,7 +797,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

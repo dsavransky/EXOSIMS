@@ -65,8 +65,10 @@ arcminute, including galaxies and faint stars.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>coords</strong> (<em>astropy SkyCoord array</em>) &#8211; SkyCoord object containing right ascension, declination, and
 distance to star of the planets of interest in units of deg, deg and pc</li>
-<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to absolute magnitudes (in the detection
-band) of the dark hole to be produced for each target.
+<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to the V magnitude (in the detection
+band) of the dark hole to be produced for each target. it is the
+limiting planet magnitude (faintest planet/objects we can observe),
+which corresponds to dMagLim + Vmag of each specific target.
 Must be of same length as coords.</li>
 </ul>
 </td>
@@ -126,8 +128,8 @@ units of 1/arcmin2. Same length as inputs.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -141,7 +143,7 @@ units of 1/arcmin2. Same length as inputs.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

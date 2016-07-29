@@ -62,18 +62,18 @@
 <span class="sd">            </span>
 <span class="sd">    Attributes: </span>
 <span class="sd">                </span>
-
+<span class="sd">    </span>
 <span class="sd">    Notes:  </span>
 <span class="sd">    1. The calculation of albedo is based solely on the semi-major axis</span>
 <span class="sd">    and uses a uniform distribution of metallicities to interpolate albedo from </span>
 <span class="sd">    the grid in Cahoy et al. 2010. </span>
-
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-
+        
         <span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-
+        
         <span class="c1">#define albedo interpolant:</span>
         <span class="n">smas</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span>
         <span class="n">fes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">30</span><span class="p">]</span>
@@ -85,7 +85,7 @@
         <span class="n">grid_a</span><span class="p">,</span> <span class="n">grid_fe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">smas</span><span class="p">,</span><span class="n">fes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">albedo_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">grid_a</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span><span class="n">grid_fe</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">albedo_vals</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
+        
         <span class="c1">#define conversion functions for icy/rocky/metal planets</span>
         <span class="c1">#ice/rock fraction - Fortney et al., 2007 Eq. 7 (as corrected in paper erratum)</span>
         <span class="c1">#units are in Earth masses and radii, frac = 1 is pure ice</span>
@@ -94,7 +94,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">M_ir</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">frac</span><span class="p">,</span><span class="n">R</span><span class="p">:</span> <span class="mf">10.</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mf">0.333</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.7387</span><span class="p">)</span> <span class="o">+</span> \
                 <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mf">0.333</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.7387</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="o">-</span> <span class="mf">4.</span><span class="o">*</span><span class="p">(</span><span class="mf">0.0912</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.1603</span><span class="p">)</span><span class="o">*</span>\
                 <span class="p">(</span><span class="mf">0.4639</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">1.1193</span> <span class="o">-</span> <span class="n">R</span><span class="p">)))</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="p">(</span><span class="mf">0.0912</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.1603</span><span class="p">)))</span>
-
+        
         <span class="c1">#rock/iron fraction - Fortney et al., 2007 Eq. 8 (as corrected in paper erratum)</span>
         <span class="c1">#units are in Earth masses and radii, frac = 1 is pure rock</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">R_ri</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">frac</span><span class="p">,</span><span class="n">M</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0592</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.0975</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="o">+</span> \
@@ -102,8 +102,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">M_ri</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">frac</span><span class="p">,</span><span class="n">R</span><span class="p">:</span> <span class="mf">10.</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mf">0.2337</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.4938</span><span class="p">)</span> <span class="o">+</span> \
                 <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mf">0.2337</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.4938</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span> <span class="o">-</span> <span class="mf">4.</span><span class="o">*</span><span class="p">(</span><span class="mf">0.0592</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.0975</span><span class="p">)</span> <span class="o">*</span> \
                 <span class="p">(</span><span class="mf">0.3102</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.7932</span> <span class="o">-</span> <span class="n">R</span><span class="p">)))</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="p">(</span><span class="mf">0.0592</span><span class="o">*</span><span class="n">frac</span> <span class="o">+</span> <span class="mf">0.0975</span><span class="p">)))</span>
-
-
+        
         <span class="c1">#find and load the Fortney et al. Table 4 data (gas giant densities)</span>
         <span class="c1">#data is al in Jupiter radii, Earth masses and AU</span>
         <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
@@ -114,7 +113,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="nb">open</span><span class="p">(</span> <span class="n">datapath</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span> <span class="p">)</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span>
-
+        
         <span class="n">Rtmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">Rtmp</span> <span class="o">*=</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">Rtmp</span><span class="p">[</span><span class="n">Rtmp</span> <span class="o">!=</span> <span class="n">Rtmp</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -122,93 +121,89 @@
                                     <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;x3&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span>\
                                     <span class="n">Rtmp</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">giant_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;x2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">giant_pts2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;x1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span>\
                                     <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;x3&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span>\
                                     <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;x2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">giant_vals2</span> <span class="o">=</span> <span class="n">Rtmp</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_jup</span>
-
 
 <div class="viewcode-block" id="FortneyMarleyCahoyMix1.calc_albedo_from_sma"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_albedo_from_sma">[docs]</a>    <span class="k">def</span> <span class="nf">calc_albedo_from_sma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">a</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function for calculating albedo. We assume a uniform distribution </span>
 <span class="sd">        of metallicities, and then interpolate the grid from Cahoy et al. 2010.</span>
-
-
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            a (Quanitity)</span>
-<span class="sd">               Array of semi-major axis values</span>
-
+<span class="sd">            a (astropy Quanitity array):</span>
+<span class="sd">               Semi-major axis values</span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            p (numpy ndarray)</span>
-
+<span class="sd">            p (ndarray):</span>
+<span class="sd">                Albedo values</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="c1">#grab the sma values and constrain to grid</span>
         <span class="n">atmp</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">atmp</span><span class="p">[</span><span class="n">atmp</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">;</span>
         <span class="n">atmp</span><span class="p">[</span><span class="n">atmp</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
-
+        
         <span class="c1">#generate uniform fe grid:</span>
         <span class="n">fetmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">atmp</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+        
+        <span class="n">p</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">griddata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">albedo_pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedo_vals</span><span class="p">,</span>\
+                <span class="p">(</span><span class="n">atmp</span><span class="p">,</span><span class="n">fetmp</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">p</span></div>
 
-
-        <span class="k">return</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">griddata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">albedo_pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">albedo_vals</span><span class="p">,</span>\
-                <span class="p">(</span><span class="n">atmp</span><span class="p">,</span><span class="n">fetmp</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="FortneyMarleyCahoyMix1.calc_mass_from_radius"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_mass_from_radius">[docs]</a>    <span class="k">def</span> <span class="nf">calc_mass_from_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+<div class="viewcode-block" id="FortneyMarleyCahoyMix1.calc_mass_from_radius"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_mass_from_radius">[docs]</a>    <span class="k">def</span> <span class="nf">calc_mass_from_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rp</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function for calculating mass given the radius.  The calculation</span>
 <span class="sd">        is done in two steps, first covering all things that can only ice/rock/iron, </span>
 <span class="sd">        and then things that can be giants.</span>
-
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            R (Quantity)</span>
-<span class="sd">               Array of radius values</span>
-
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planet radius in units of km</span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            M (Quantity)</span>
-<span class="sd">                Array of mass values</span>
-
+<span class="sd">            Mp (astropy Quantity array):</span>
+<span class="sd">                Planet mass in units of kg</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        
+        <span class="n">Mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         
         <span class="c1">#first, the things up to the min giant radius but greater </span>
         <span class="c1">#than 2 Earth radii (assumed to be icy)</span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="p">(</span><span class="n">R</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">R</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span>
-        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="p">(</span><span class="n">Rp</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Rp</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span>
+        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
         <span class="n">fracs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">Rtmp</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
-        <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M_ir</span><span class="p">(</span><span class="n">fracs</span><span class="p">,(</span><span class="n">Rtmp</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-
+        <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M_ir</span><span class="p">(</span><span class="n">fracs</span><span class="p">,(</span><span class="n">Rtmp</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        
         <span class="c1">#everything under 2 Earth radii can by ice/rock/iron</span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="n">R</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span>
-        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">Rp</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span>
+        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
         <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Rtmp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="n">fracs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">Rtmp</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">low</span><span class="o">=-</span><span class="mf">1.</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
-
-        <span class="c1">#ice/rock</span>
+        
+        <span class="c1">#ice/rock and rock/iron</span>
         <span class="n">icerock</span> <span class="o">=</span> <span class="n">fracs</span> <span class="o">&lt;</span> <span class="mi">0</span>
         <span class="n">Mtmp</span><span class="p">[</span><span class="n">icerock</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M_ir</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fracs</span><span class="p">[</span><span class="n">icerock</span><span class="p">]),</span>\
                 <span class="p">(</span><span class="n">Rtmp</span><span class="p">[</span><span class="n">icerock</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        
-        <span class="c1">#rock/iron</span>
         <span class="n">rockiron</span> <span class="o">=</span> <span class="n">fracs</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="n">Mtmp</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M_ri</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fracs</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]),</span>\
                 <span class="p">(</span><span class="n">Rtmp</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-
-        <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Mtmp</span>
-
+        <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Mtmp</span>
+        
         <span class="c1">#everything else is a giant.  those above the table limit </span>
         <span class="c1">#are inflated close-in things that are undetectable</span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="n">R</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">])</span>
-        <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-
-        <span class="n">inds</span> <span class="o">=</span> <span class="p">(</span><span class="n">R</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">R</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> 
-        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">Rp</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">])</span>
+        <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="n">inds</span> <span class="o">=</span> <span class="p">(</span><span class="n">Rp</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Rp</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;radii&#39;</span><span class="p">]))</span> 
+        <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
         <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">griddata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">giant_pts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">giant_vals</span><span class="p">,</span>\
                 <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">Rtmp</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>\
                  <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">9.5</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.02</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">Rtmp</span><span class="o">.</span><span class="n">size</span><span class="p">)),</span>\
@@ -216,62 +211,63 @@
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Mtmp</span><span class="p">)):</span>
             <span class="n">inds2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Mtmp</span><span class="p">)</span>
             <span class="n">Mtmp</span><span class="p">[</span><span class="n">inds2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(((</span><span class="mf">1.33</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">g</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">cm</span><span class="o">**</span><span class="mf">3.</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">Rtmp</span><span class="p">[</span><span class="n">inds2</span><span class="p">]</span><span class="o">**</span><span class="mf">3.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-                    
-        <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Mtmp</span>  
+        <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Mtmp</span>
+        
+        <span class="n">Mp</span> <span class="o">=</span> <span class="n">Mp</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">Mp</span></div>
 
-        <span class="k">return</span> <span class="n">M</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span></div>
-
-<div class="viewcode-block" id="FortneyMarleyCahoyMix1.calc_radius_from_mass"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_radius_from_mass">[docs]</a>    <span class="k">def</span> <span class="nf">calc_radius_from_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+<div class="viewcode-block" id="FortneyMarleyCahoyMix1.calc_radius_from_mass"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_radius_from_mass">[docs]</a>    <span class="k">def</span> <span class="nf">calc_radius_from_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Mp</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function for calculating radius given the mass.  The calculation</span>
 <span class="sd">        is done in two steps, first covering all things that can only ice/rock/iron, </span>
 <span class="sd">        and then things that can be giants.</span>
-
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            M (Quantity)</span>
-<span class="sd">               Array of mass values</span>
-
+<span class="sd">            Mp (astropy Quantity array):</span>
+<span class="sd">                Planet mass in units of kg</span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            R (Quantity)</span>
-<span class="sd">                Array of radius values</span>
-
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planet radius in units of km</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Mp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         
         <span class="c1">#Everything below the tabulated mass values is treated as</span>
         <span class="c1">#ice/rock/iron</span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span>
-        <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">Mp</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span>
+        <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
         <span class="n">Rtmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Mtmp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="n">fracs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">Mtmp</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">low</span><span class="o">=-</span><span class="mf">1.</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
-
-        <span class="c1">#ice/rock</span>
+        
+        <span class="c1">#ice/rock and rock/iron</span>
         <span class="n">icerock</span> <span class="o">=</span> <span class="n">fracs</span> <span class="o">&lt;</span> <span class="mi">0</span>
         <span class="n">Rtmp</span><span class="p">[</span><span class="n">icerock</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">R_ir</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fracs</span><span class="p">[</span><span class="n">icerock</span><span class="p">]),</span>\
                 <span class="p">(</span><span class="n">Mtmp</span><span class="p">[</span><span class="n">icerock</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        
-        <span class="c1">#rock/iron</span>
         <span class="n">rockiron</span> <span class="o">=</span> <span class="n">fracs</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="n">Rtmp</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">R_ri</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fracs</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]),</span>\
                 <span class="p">(</span><span class="n">Mtmp</span><span class="p">[</span><span class="n">rockiron</span><span class="p">]</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-
-        <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Rtmp</span>
-
+        <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">Rtmp</span>
+        
         <span class="c1">#everything else is a giant. </span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="n">M</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span>
-        <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
-        <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">griddata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">giant_pts2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">giant_vals2</span><span class="p">,</span>\
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">Mp</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ggdat</span><span class="p">[</span><span class="s1">&#39;planet_mass&#39;</span><span class="p">])</span>
+        <span class="n">Mtmp</span> <span class="o">=</span> <span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span>
+        <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">griddata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">giant_pts2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">giant_vals2</span><span class="p">,</span>\
                 <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">high</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">Mtmp</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>\
                  <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">9.5</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.02</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">Mtmp</span><span class="o">.</span><span class="n">size</span><span class="p">)),</span>\
                  <span class="p">(</span><span class="n">Mtmp</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
-
+        
         <span class="c1">#things that failed</span>
-        <span class="n">inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">R</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="n">inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Rp</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">Rp</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">inds</span><span class="p">):</span>
-            <span class="n">R</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span>   <span class="p">(((</span><span class="mf">3.</span><span class="o">*</span><span class="n">M</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">1.33</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">g</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">cm</span><span class="o">**</span><span class="mf">3.</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-
-        <span class="k">return</span> <span class="n">R</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span></div></div>
+            <span class="n">rho</span> <span class="o">=</span> <span class="mf">1.33</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">g</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">cm</span><span class="o">**</span><span class="mf">3.</span>
+            <span class="n">Rp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="mi">3</span><span class="o">*</span><span class="n">Mp</span><span class="p">[</span><span class="n">inds</span><span class="p">]</span><span class="o">/</span><span class="n">rho</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">Rp</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">Rp</span></div></div>
 
 </pre></div>
 
@@ -291,8 +287,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -306,7 +302,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

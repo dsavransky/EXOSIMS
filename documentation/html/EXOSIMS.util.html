@@ -44,6 +44,83 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-EXOSIMS.util.InverseTransformSampler">
+<span id="exosims-util-inversetransformsampler-module"></span><h2>EXOSIMS.util.InverseTransformSampler module<a class="headerlink" href="#module-EXOSIMS.util.InverseTransformSampler" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.util.InverseTransformSampler.InverseTransformSampler">
+<em class="property">class </em><code class="descclassname">EXOSIMS.util.InverseTransformSampler.</code><code class="descname">InverseTransformSampler</code><span class="sig-paren">(</span><em>f</em>, <em>xMin</em>, <em>xMax</em>, <em>nints=10000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/InverseTransformSampler.html#InverseTransformSampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.InverseTransformSampler.InverseTransformSampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximate Inverse Transform Sampler for arbitrary distributions
+defined via a PDF encoded as a function (or lambda function)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> (<em>function</em>) &#8211; Probability density function.  Must be able to operate
+on numpy ndarrays.  Function does not need to be
+normalized over the sampling interval.</li>
+<li><strong>xMin</strong> (<em>float</em>) &#8211; Minimum of interval to sample (inclusive).</li>
+<li><strong>xMax</strong> (<em>float</em>) &#8211; Maximum of interval to sample (inclusive).</li>
+<li><strong>nints</strong> (<em>int</em>) &#8211; Number of intervals to use in approximating CDF.
+Defaults to 10000</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt>
+<code class="descname">f, xMin, xMax</code></dt>
+<dd><p>As above</p>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>If xMin == xMax, return values will all exactly equal xMin.
+To sample call the object with the desired number of samples.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.util.RejectionSampler">
+<span id="exosims-util-rejectionsampler-module"></span><h2>EXOSIMS.util.RejectionSampler module<a class="headerlink" href="#module-EXOSIMS.util.RejectionSampler" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.util.RejectionSampler.RejectionSampler">
+<em class="property">class </em><code class="descclassname">EXOSIMS.util.RejectionSampler.</code><code class="descname">RejectionSampler</code><span class="sig-paren">(</span><em>f</em>, <em>xMin</em>, <em>xMax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/RejectionSampler.html#RejectionSampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.RejectionSampler.RejectionSampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple Rejection Sampler for arbitrary distributions defined
+via a PDF encoded as a function (or lambda function)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> (<em>function</em>) &#8211; Probability density function.  Must be able to operate
+on numpy ndarrays.  Function does not need to be
+normalized over the sampling interval.</li>
+<li><strong>xMin</strong> (<em>float</em>) &#8211; Minimum of interval to sample (inclusive).</li>
+<li><strong>xMax</strong> (<em>float</em>) &#8211; Maximum of interval to sample (inclusive).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt>
+<code class="descname">f, xMin, xMax</code></dt>
+<dd><p>As above</p>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>If xMin == xMax, return values will all exactly equal xMin.
+To sample call the object with the desired number of samples.</p>
+<dl class="method">
+<dt id="EXOSIMS.util.RejectionSampler.RejectionSampler.calcM">
+<code class="descname">calcM</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/RejectionSampler.html#RejectionSampler.calcM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.RejectionSampler.RejectionSampler.calcM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the maximum bound of the distribution over the
+sampling interval.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util.deltaMag">
 <span id="exosims-util-deltamag-module"></span><h2>EXOSIMS.util.deltaMag module<a class="headerlink" href="#module-EXOSIMS.util.deltaMag" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -56,17 +133,17 @@ radius, and position with respect to host star.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>p</strong> &#8211; (1D numpy ndarray) planet albedo</li>
-<li><strong>Rp</strong> &#8211; (astropy Quantity) planet radius, default astropy units of km</li>
-<li><strong>d</strong> &#8211; (astropy Quantity) planet-star distance, default astropy units of AU</li>
-<li><strong>Phi</strong> &#8211; (1D numpy ndarray) Phase function value</li>
+<li><strong>p</strong> (<em>ndarray</em>) &#8211; Planet albedo</li>
+<li><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of km</li>
+<li><strong>d</strong> (<em>astropy Quantity array</em>) &#8211; Planet-star distance in units of AU</li>
+<li><strong>Phi</strong> (<em>ndarray</em>) &#8211; Planet phase function</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">(1D numpy ndarray) planet delta magnitudes</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dMag</strong> &#8211;     Planet delta magnitudes</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dMag</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -109,21 +186,44 @@ an array, but otherwise must match the size of M.</li>
 <dl class="function">
 <dt id="EXOSIMS.util.get_module.get_module">
 <code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">get_module</code><span class="sig-paren">(</span><em>name</em>, <em>folder=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#get_module"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.get_module" title="Permalink to this definition">¶</a></dt>
-<dd><p>Imports specific or Prototype class module</p>
+<dd><p>Import specific or Prototype class module.</p>
+<p>There are three ways to use the name argument:
+Case 1: Applies when name ends in .py: it is interpreted as the name of</p>
+<blockquote>
+<div>a python source file implementing the stated module type.  For example,
+$HOME/EXOSIMS_local/MyObservatory.py which would be a module that
+implements a MyObservatory class.  Shell variables are expanded.</div></blockquote>
+<dl class="docutils">
+<dt>Case 2: Default case.  The name is interpreted as an EXOSIMS module, which</dt>
+<dd>must be loaded.  If folder is given (best practice), we look first
+at EXOSIMS.folder.name for the module (&#8220;specific module&#8221;), and then
+at EXOSIMS.Prototypes.name (&#8220;prototype module&#8221;).
+As a shortcut (provided that folder is given) if the name is empty or
+all-blanks, we look at EXOSIMS.Prototypes.folder.</dd>
+<dt>Case 3: Used when a . (a Python module separator) is part of the name.  The</dt>
+<dd>name is interpreted as a loadable Python module, and is loaded.  This
+mechanism supports loading of modules from anywhere on the PYTHONPATH.
+For example, as in case 1, if $HOME/EXOSIMS_local/__init__.py exists
+(making EXOSIMS_local a valid Python package), and $HOME is on $PYTHONPATH,
+then giving name as EXOSIMS_local.MyObservatory will load the MyObservatory
+class within the given file.  This supports locally-customized module sets.</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> (<em>str</em>) &#8211; string containing desired class name
-OR full path to desired module.
+<li><strong>name</strong> (<em>str</em>) &#8211; string containing desired class name (cases 2, 3 above)
+OR full path to desired module (case 1).
 The class name must be the same as the file name.</li>
-<li><strong>folder</strong> (<em>str</em>) &#8211; string containing folder housing desired class
-Equivalently the module type (i.e., Observatory)</li>
+<li><strong>folder</strong> (<em>str</em>) &#8211; The module type (e.g., Observatory or TimeKeeping), which is
+validated against the _modtype attribute of the loaded class.
+For specific modules, this is the same as the name of the
+folder housing the desired class.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desiredmodule</strong> &#8211;     desired module</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desired_module</strong> &#8211;     module (class) that was requested</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">object</p>
@@ -131,6 +231,103 @@ Equivalently the module type (i.e., Observatory)</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.get_module_chain">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">get_module_chain</code><span class="sig-paren">(</span><em>names</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#get_module_chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.get_module_chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to load a module from an ordered list of module names until one succeeds.</p>
+<dl class="docutils">
+<dt>Module names may be given fully as:</dt>
+<dd>EXOSIMS.OpticalSystem.Nemati</dd>
+<dt>or as wildcards like:</dt>
+<dd>EXOSIMS.*.Nemati</dd>
+</dl>
+<p>Wildcards, if given, must match only one module.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.get_module_from_specs">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">get_module_from_specs</code><span class="sig-paren">(</span><em>specs</em>, <em>modtype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#get_module_from_specs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.get_module_from_specs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Import specific or Prototype class module using specs dictionary.</p>
+<dl class="docutils">
+<dt>The universal idiom for initializing an EXOSIMS module follows the pattern:</dt>
+<dd>get_module(specs[&#8216;modules&#8217;][&#8216;TimeKeeping&#8217;], &#8216;TimeKeeping&#8217;)(<a href="#id1"><span class="problematic" id="id2">**</span></a>specs)</dd>
+</dl>
+<p>Here, get_module loads the module, and the invocation with <a href="#id3"><span class="problematic" id="id4">**</span></a>specs runs its
+__init__ method.
+The present function abstracts the first half of the idiom by returning:</p>
+<blockquote>
+<div>get_module(specs[&#8216;modules&#8217;][modtype], modtype)</div></blockquote>
+<dl class="docutils">
+<dt>thus the above idiom may be replaced by:</dt>
+<dd>get_module_from_specs(specs, &#8216;TimeKeeping&#8217;)(<a href="#id5"><span class="problematic" id="id6">**</span></a>specs)</dd>
+</dl>
+<p>which is shorter, and avoids the duplication of the module type.
+Note: we do not abstract the specs as well, because many callers might wish
+to modify the given <a href="#id7"><span class="problematic" id="id8">**</span></a>specs with keywords, or to separate getting the class
+from initializing it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>specs</strong> (<em>dict</em>) &#8211; specs dictionary with a &#8216;modules&#8217; key present.</li>
+<li><strong>modtype</strong> (<em>str</em>) &#8211; The module type (e.g., Observatory or TimeKeeping) of the
+EXOSIMS module to fetch.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>desired_module</strong> &#8211;     module (class) that was requested</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">object</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.get_module_in_package">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">get_module_in_package</code><span class="sig-paren">(</span><em>name</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#get_module_in_package"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.get_module_in_package" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an EXOSIMS module from a given package: handles most requests for modules.</p>
+<p>Return value is a Python package matching the given name.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.modules_below_matching">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">modules_below_matching</code><span class="sig-paren">(</span><em>pkg</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#modules_below_matching"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.modules_below_matching" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of modules, below the named package, matching a given name.</p>
+<dl class="docutils">
+<dt>Example usage:</dt>
+<dd>pkgs = modules_below_matching(&#8216;EXOSIMS&#8217;, &#8216;Nemati&#8217;)</dd>
+<dt>which would find the unique module</dt>
+<dd>EXOSIMS.OpticalSystem.Nemati</dd>
+</dl>
+<p>and return a length-1 list of that string.  It matches recursively, so intervening
+modules (in the above, &#8220;OpticalSystem&#8221;) do not matter.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.shorten_name">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">shorten_name</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#shorten_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.shorten_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a shortened version of a file or package path for one-line printing.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="EXOSIMS.util.get_module.wildcard_expand">
+<code class="descclassname">EXOSIMS.util.get_module.</code><code class="descname">wildcard_expand</code><span class="sig-paren">(</span><em>pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/get_module.html#wildcard_expand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.get_module.wildcard_expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expand a pattern like pkg.*.module into a full package name like pkg.subpkg.module.</p>
+<p>The full package name, which is returned, must be unique, or an error is raised.
+Example usage:</p>
+<blockquote>
+<div>module = wildcard_expand(&#8216;EXOSIMS.*.Nemati&#8217;)</div></blockquote>
+<dl class="docutils">
+<dt>which would find the unique module named</dt>
+<dd>&#8216;EXOSIMS.OpticalSystem.Nemati&#8217;</dd>
+</dl>
+<p>The returned value is a single string.</p>
 </dd></dl>
 
 </div>
@@ -169,8 +366,6 @@ metric.  Higher values mean faster convergence, but sacrifice precision.</dd>
 is AU/day, mu must be in AU^3/day^2.</p>
 <p>Algorithm from Shepperd, 1984, using Goodyear&#8217;s universal variables
 and continued fraction to solve the Kepler equation.</p>
-<p>12/21/2011 Dmitry Savransky <a class="reference external" href="mailto:savransky1&#37;&#52;&#48;llnl&#46;gov">savransky1<span>&#64;</span>llnl<span>&#46;</span>gov</a>
-12/23/2011 Added epsmult param - ds</p>
 </dd></dl>
 
 <dl class="class">
@@ -245,6 +440,8 @@ this value.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.InverseTransformSampler">EXOSIMS.util.InverseTransformSampler module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.RejectionSampler">EXOSIMS.util.RejectionSampler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.deltaMag">EXOSIMS.util.deltaMag module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.eccanom">EXOSIMS.util.eccanom module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
@@ -275,8 +472,8 @@ this value.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -290,7 +487,7 @@ this value.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -41,84 +41,293 @@
   <h1>Source code for EXOSIMS.util.get_module</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">pkgutil</span>
+<span class="kn">import</span> <span class="nn">imp</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># local indicator of verbosity: False is the typical non-debug setting</span>
+<span class="n">_verbose</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c1">#########################################</span>
+<span class="c1"># </span>
+<span class="c1"># Helper functions</span>
+<span class="c1"># </span>
+<span class="c1">#########################################</span>
+
+<div class="viewcode-block" id="modules_below_matching"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.modules_below_matching">[docs]</a><span class="k">def</span> <span class="nf">modules_below_matching</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">r&#39;&#39;&#39;Return a list of modules, below the named package, matching a given name.</span>
+
+<span class="sd">    Example usage:</span>
+<span class="sd">      pkgs = modules_below_matching(&#39;EXOSIMS&#39;, &#39;Nemati&#39;)</span>
+<span class="sd">    which would find the unique module</span>
+<span class="sd">      EXOSIMS.OpticalSystem.Nemati</span>
+<span class="sd">    and return a length-1 list of that string.  It matches recursively, so intervening</span>
+<span class="sd">    modules (in the above, &quot;OpticalSystem&quot;) do not matter.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># import the top-level package (e.g., &quot;EXOSIMS&quot;)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">root_pkg</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">pkg</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="c1"># mis-specification is a hard error</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Error: Could not import root module &quot;</span><span class="si">%s</span><span class="s1">&quot; within recursive search.</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">pkg</span><span class="p">)</span>
+        <span class="k">raise</span>
+    <span class="c1"># search below root_pkg</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">root_pkg</span><span class="o">.</span><span class="n">__name__</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">modname</span><span class="p">,</span> <span class="n">is_pkg</span> <span class="ow">in</span> <span class="n">pkgutil</span><span class="o">.</span><span class="n">walk_packages</span><span class="p">(</span><span class="n">root_pkg</span><span class="o">.</span><span class="n">__path__</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+        <span class="c1"># skip packages: they are one up from the level we want</span>
+        <span class="k">if</span> <span class="n">is_pkg</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="c1"># print &quot;Found %s -- %s&quot; % (modname, &quot;pkg&quot; if is_pkg else &quot;not-pkg&quot;)</span>
+        <span class="k">if</span> <span class="n">modname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">modname</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">modules</span></div>
+
+
+<div class="viewcode-block" id="wildcard_expand"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.wildcard_expand">[docs]</a><span class="k">def</span> <span class="nf">wildcard_expand</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+    <span class="sd">r&#39;&#39;&#39;Expand a pattern like pkg.*.module into a full package name like pkg.subpkg.module.</span>
+
+<span class="sd">    The full package name, which is returned, must be unique, or an error is raised.</span>
+<span class="sd">    Example usage:</span>
+<span class="sd">      module = wildcard_expand(&#39;EXOSIMS.*.Nemati&#39;)</span>
+<span class="sd">    which would find the unique module named</span>
+<span class="sd">      &#39;EXOSIMS.OpticalSystem.Nemati&#39;</span>
+<span class="sd">    The returned value is a single string.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># a.b.*.y.z -&gt; a.b., .y.z</span>
+    <span class="n">head</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="c1"># a.b, y.z</span>
+    <span class="n">root_pkg</span><span class="p">,</span> <span class="n">mod_name</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">tail</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="c1"># under a.b, find y.z</span>
+    <span class="n">sub_pkgs</span> <span class="o">=</span> <span class="n">modules_below_matching</span><span class="p">(</span><span class="n">root_pkg</span><span class="p">,</span> <span class="n">mod_name</span><span class="p">)</span>
+    <span class="c1"># it&#39;s an error if it&#39;s not unique</span>
+    <span class="c1">#    Note: we do not suppress the error and try the next possibility because</span>
+    <span class="c1">#    we want mis-specification to be a hard error</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_pkgs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Error: multiple modules with name matching &quot;</span><span class="si">%s</span><span class="s1">&quot;.  Specify folder.</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">pattern</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not find unique &quot;</span><span class="si">%s</span><span class="s1">&quot; in EXOSIMS.*&#39;</span> <span class="o">%</span> <span class="n">pattern</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_pkgs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not find any &quot;</span><span class="si">%s</span><span class="s1">&quot; in EXOSIMS.*&#39;</span> <span class="o">%</span> <span class="n">pattern</span><span class="p">)</span>
+    <span class="c1"># return the unique match -- a string</span>
+    <span class="k">return</span> <span class="n">sub_pkgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_module_chain"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.get_module_chain">[docs]</a><span class="k">def</span> <span class="nf">get_module_chain</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;Attempt to load a module from an ordered list of module names until one succeeds.</span>
+
+<span class="sd">    Module names may be given fully as:</span>
+<span class="sd">      EXOSIMS.OpticalSystem.Nemati</span>
+<span class="sd">    or as wildcards like:</span>
+<span class="sd">      EXOSIMS.*.Nemati</span>
+<span class="sd">    Wildcards, if given, must match only one module.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="c1"># replace name by its expansion if needed</span>
+        <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">wildcard_expand</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">full_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="c1">#module_name = package</span>
+            <span class="c1">#source = package</span>
+            <span class="k">return</span> <span class="n">full_module</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">continue</span>
+    <span class="k">return</span> <span class="bp">None</span></div>
+        
+
+<div class="viewcode-block" id="get_module_in_package"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.get_module_in_package">[docs]</a><span class="k">def</span> <span class="nf">get_module_in_package</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;Get an EXOSIMS module from a given package: handles most requests for modules.</span>
+
+<span class="sd">    Return value is a Python package matching the given name.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Helper function: make a qualified module name</span>
+    <span class="c1">#    e.g., (&#39;EXOSIMS&#39;, &#39;Prototypes&#39;, &#39;OpticalSystem&#39;) -&gt; &#39;EXOSIMS.Prototypes.OpticalSystem&#39;</span>
+    <span class="k">def</span> <span class="nf">make_module_name</span><span class="p">(</span><span class="o">*</span><span class="n">tup</span><span class="p">):</span> <span class="k">return</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tup</span><span class="p">)</span>
+
+    <span class="c1"># Method: for each case, define a list of names to search for.</span>
+    <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="c1"># Case 3: module name is given as a qualified module name</span>
+        <span class="c1">#    -- the name can be given as, e.g., Local.PlanetPopulation.MyPlanets, if &quot;Local&quot; is a package</span>
+        <span class="c1">#       on sys.path.</span>
+        <span class="c1">#    -- the name can also be given as, e.g., &quot;.MyPlanets&quot;, and it is converted to just &quot;MyPlanets&quot;</span>
+        <span class="c1">#       to allow loading from a &quot;MyPlanets.py&quot; module on sys.path</span>
+        <span class="c1">#       i.e., the leading dot allows selection of this case, for very flat local module hierarchies,</span>
+        <span class="c1">#       but the dot is removed before searching.</span>
+        <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;get_module: case 3: attempting to load &lt;</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="c1"># kill leading ., if any</span>
+        <span class="n">module_names</span> <span class="o">=</span> <span class="p">[</span> <span class="n">name</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span> <span class="p">]</span>
+    <span class="k">elif</span> <span class="n">folder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c1"># Case 2a: folder given</span>
+        <span class="c1">#    -- first: EXOSIMS.Prototypes.name</span>
+        <span class="c1">#    -- fallback: EXOSIMS.folder.name</span>
+        <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;get_module: case 2a: attempting to load &lt;</span><span class="si">%s</span><span class="s1">&gt; from &lt;</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
+
+        <span class="c1"># load from Prototype, using asked-for module type, if name is empty or just blanks</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">module_names</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">make_module_name</span><span class="p">(</span><span class="s1">&#39;EXOSIMS&#39;</span><span class="p">,</span> <span class="s1">&#39;Prototypes&#39;</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
+                <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">module_names</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">make_module_name</span><span class="p">(</span><span class="s1">&#39;EXOSIMS&#39;</span><span class="p">,</span> <span class="n">folder</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+                <span class="n">make_module_name</span><span class="p">(</span><span class="s1">&#39;EXOSIMS&#39;</span><span class="p">,</span> <span class="s1">&#39;Prototypes&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;get_module: case 2b: attempting to load &lt;</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="c1"># Case 2b: folder NOT given</span>
+        <span class="c1">#   -- first: EXOSIMS.Prototypes.name</span>
+        <span class="c1">#   -- fallback: EXOSIMS.*.name</span>
+        <span class="n">module_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">make_module_name</span><span class="p">(</span><span class="s1">&#39;EXOSIMS&#39;</span><span class="p">,</span> <span class="s1">&#39;Prototypes&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+            <span class="n">make_module_name</span><span class="p">(</span><span class="s1">&#39;EXOSIMS&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="p">]</span>
+    <span class="c1"># in all cases, use the list of module names to retrieve the first available module</span>
+    <span class="n">full_module</span> <span class="o">=</span> <span class="n">get_module_chain</span><span class="p">(</span><span class="n">module_names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">full_module</span><span class="p">:</span>
+        <span class="c1"># we can provide a good message now</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Error: No module on paths: </span><span class="si">%s</span><span class="s1">.</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span>
+                         <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">module_names</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">full_module</span></div>
+
+
+<div class="viewcode-block" id="shorten_name"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.shorten_name">[docs]</a><span class="k">def</span> <span class="nf">shorten_name</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">r&quot;&quot;&quot;Produce a shortened version of a file or package path for one-line printing.&quot;&quot;&quot;</span>
+    <span class="n">ellipsis</span> <span class="o">=</span> <span class="s1">&#39;[...]&#39;</span>
+    <span class="p">(</span><span class="n">n_head</span><span class="p">,</span> <span class="n">n_tail</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_head</span> <span class="o">+</span> <span class="n">n_tail</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">ellipsis</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">filename</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">filename</span><span class="p">[:</span><span class="n">n_head</span><span class="p">]</span> <span class="o">+</span> <span class="n">ellipsis</span> <span class="o">+</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="n">n_tail</span><span class="p">:]</span></div>
+
+<span class="c1">#########################################</span>
+<span class="c1"># </span>
+<span class="c1"># Recommended functions for external callers are below</span>
+<span class="c1"># </span>
+<span class="c1">#########################################</span>
 
 <div class="viewcode-block" id="get_module"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.get_module">[docs]</a><span class="k">def</span> <span class="nf">get_module</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">folder</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Imports specific or Prototype class module</span>
+    <span class="sd">&quot;&quot;&quot;Import specific or Prototype class module.</span>
 <span class="sd">    </span>
+<span class="sd">    There are three ways to use the name argument:</span>
+<span class="sd">    Case 1: Applies when name ends in .py: it is interpreted as the name of</span>
+<span class="sd">        a python source file implementing the stated module type.  For example,</span>
+<span class="sd">        $HOME/EXOSIMS_local/MyObservatory.py which would be a module that</span>
+<span class="sd">        implements a MyObservatory class.  Shell variables are expanded.</span>
+<span class="sd">    Case 2: Default case.  The name is interpreted as an EXOSIMS module, which</span>
+<span class="sd">        must be loaded.  If folder is given (best practice), we look first</span>
+<span class="sd">        at EXOSIMS.folder.name for the module (&quot;specific module&quot;), and then</span>
+<span class="sd">        at EXOSIMS.Prototypes.name (&quot;prototype module&quot;).</span>
+<span class="sd">        As a shortcut (provided that folder is given) if the name is empty or </span>
+<span class="sd">        all-blanks, we look at EXOSIMS.Prototypes.folder.</span>
+<span class="sd">    Case 3: Used when a . (a Python module separator) is part of the name.  The</span>
+<span class="sd">        name is interpreted as a loadable Python module, and is loaded.  This</span>
+<span class="sd">        mechanism supports loading of modules from anywhere on the PYTHONPATH.</span>
+<span class="sd">        For example, as in case 1, if $HOME/EXOSIMS_local/__init__.py exists</span>
+<span class="sd">        (making EXOSIMS_local a valid Python package), and $HOME is on $PYTHONPATH,</span>
+<span class="sd">        then giving name as EXOSIMS_local.MyObservatory will load the MyObservatory</span>
+<span class="sd">        class within the given file.  This supports locally-customized module sets.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        name (str):</span>
-<span class="sd">            string containing desired class name</span>
-<span class="sd">            OR full path to desired module.  </span>
+<span class="sd">            string containing desired class name (cases 2, 3 above)</span>
+<span class="sd">            OR full path to desired module (case 1).  </span>
 <span class="sd">            The class name must be the same as the file name.</span>
 <span class="sd">        folder (str):</span>
-<span class="sd">            string containing folder housing desired class</span>
-<span class="sd">            Equivalently the module type (i.e., Observatory)</span>
+<span class="sd">            The module type (e.g., Observatory or TimeKeeping), which is</span>
+<span class="sd">            validated against the _modtype attribute of the loaded class.</span>
+<span class="sd">            For specific modules, this is the same as the name of the</span>
+<span class="sd">            folder housing the desired class.</span>
 <span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">        desiredmodule (object):</span>
-<span class="sd">            desired module </span>
+<span class="sd">        desired_module (object):</span>
+<span class="sd">            module (class) that was requested</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="o">==</span><span class="s1">&#39;.py&#39;</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">imp</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">load_source</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
-        <span class="n">desiredmodule</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="k">print</span> <span class="s1">&#39;Imported module </span><span class="si">%s</span><span class="s1"> from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">importlib</span>
-        <span class="k">if</span> <span class="n">folder</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">package</span> <span class="o">=</span> <span class="s1">&#39;EXOSIMS.&#39;</span><span class="o">+</span><span class="n">folder</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">name</span>
-            <span class="k">try</span> <span class="p">:</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-                <span class="n">desiredmodule</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">folder</span><span class="o">==</span><span class="s1">&#39;Prototypes&#39;</span><span class="p">:</span>
-                    <span class="k">print</span> <span class="s1">&#39;Imported </span><span class="si">%s</span><span class="s1"> prototype module&#39;</span> <span class="o">%</span> <span class="n">name</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">print</span> <span class="s1">&#39;Imported specific </span><span class="si">%s</span><span class="s1"> module </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-                <span class="n">package</span> <span class="o">=</span> <span class="s1">&#39;EXOSIMS.Prototypes.&#39;</span><span class="o">+</span><span class="n">folder</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-                <span class="n">desiredmodule</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s1">&#39;Imported </span><span class="si">%s</span><span class="s1"> prototype module&#39;</span> <span class="o">%</span> <span class="n">folder</span>
-        
-        <span class="c1"># else, if the folder name is not given.         </span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">package</span> <span class="o">=</span> <span class="s1">&#39;EXOSIMS.Prototypes.&#39;</span><span class="o">+</span><span class="n">name</span>
-            <span class="k">try</span> <span class="p">:</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-                <span class="n">desiredmodule</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s1">&#39;Imported </span><span class="si">%s</span><span class="s1"> prototype module&#39;</span> <span class="o">%</span> <span class="n">name</span>
-            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-                <span class="kn">import</span> <span class="nn">inspect</span>
-                <span class="n">paths</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">get_module</span><span class="p">))))</span>
-                <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">subdirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
-                    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">filename</span> <span class="o">==</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.py&#39;</span><span class="p">:</span>
-                            <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                            <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">package</span> <span class="o">=</span> <span class="s1">&#39;EXOSIMS.&#39;</span><span class="o">+</span><span class="n">folder</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="o">+</span><span class="n">name</span>
-                <span class="k">elif</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="k">print</span> <span class="s1">&#39;Error: multiple modules with same name. Specify folder.&#39;</span><span class="p">,</span> <span class="n">paths</span>
-                <span class="n">b</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-                <span class="n">desiredmodule</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s1">&#39;Imported specific </span><span class="si">%s</span><span class="s1"> module </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
-    <span class="c1">#validate what you&#39;ve loaded</span>
-    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">desiredmodule</span><span class="p">,</span><span class="s1">&#39;_modtype&#39;</span><span class="p">),</span>\
+    <span class="c1"># Divide into two top-level cases:</span>
+    <span class="c1">#   1: load from python source file (.py ending), vs.</span>
+    <span class="c1">#   2, 3: load module from a python package on sys.path (everything else)</span>
+    <span class="c1"># Both branches below must set up these variables:</span>
+    <span class="c1">#   -- full_module, as a package import</span>
+    <span class="c1">#   -- source, indicating where the import came from (file or package name)</span>
+    <span class="c1">#   -- note, as a string indicating the type of the source of the import</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">):</span>
+        <span class="c1"># Case 1: module name is given as a path</span>
+        <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;get_module: Case 1: attempting to load &lt;</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="c1"># expand ~/..., $HOME/..., etc.</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not load module from path &quot;</span><span class="si">%s</span><span class="s1">&quot;.&#39;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+        <span class="c1"># the module is loaded under this name</span>
+        <span class="n">module_name_to_use</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">full_module</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">load_source</span><span class="p">(</span><span class="n">module_name_to_use</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="s1">&#39;named file&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Cases 2, 3: module name is loadable from the module path (sys.path)</span>
+        <span class="n">full_module</span> <span class="o">=</span> <span class="n">get_module_in_package</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">full_module</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not import module &quot;</span><span class="si">%s</span><span class="s1">&quot; (path issue?).&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">full_module</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="s1">&#39;prototype&#39;</span> <span class="k">if</span> <span class="s1">&#39;EXOSIMS.Prototypes&#39;</span> <span class="ow">in</span> <span class="n">full_module</span><span class="o">.</span><span class="n">__name__</span> <span class="k">else</span> <span class="s1">&#39;specific&#39;</span>
+        
+    <span class="c1"># extract the tail end of the module name -- e.g., TimeKeeping, or Nemati</span>
+    <span class="n">module_name</span> <span class="o">=</span> <span class="n">full_module</span><span class="o">.</span><span class="n">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># ensure that, if the module is named BetterTimeKeeping, the class within has this name also</span>
+    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">full_module</span><span class="p">,</span> <span class="n">module_name</span><span class="p">),</span> \
+            <span class="s2">&quot;Module name is incorrect.  This is not a valid EXOSIMS class.&quot;</span>
+    <span class="c1"># extract the particular class from the full module&#39;s namespace</span>
+    <span class="n">desired_module</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">full_module</span><span class="p">,</span> <span class="n">module_name</span><span class="p">)</span>
+    <span class="c1"># ensure the extracted object is a class</span>
+    <span class="k">assert</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">desired_module</span><span class="p">),</span> \
+      <span class="s2">&quot;Module contains an attribute </span><span class="si">%s</span><span class="s2"> but it is not a class.&quot;</span> <span class="o">%</span> <span class="n">module_name</span>
+    <span class="k">print</span> <span class="s1">&#39;Imported </span><span class="si">%s</span><span class="s1"> (</span><span class="si">%s</span><span class="s1"> module) from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">module_name</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">shorten_name</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+    <span class="c1"># validate the _modtype property of the module we just loaded</span>
+    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">desired_module</span><span class="p">,</span> <span class="s1">&#39;_modtype&#39;</span><span class="p">),</span> \
             <span class="s2">&quot;Module lacks attribute _modtype.  This is not a valid EXOSIMS class.&quot;</span>
     <span class="k">if</span> <span class="n">folder</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="p">(</span><span class="n">desiredmodule</span><span class="o">.</span><span class="n">_modtype</span> <span class="o">==</span> <span class="n">folder</span><span class="p">),</span> \
-            <span class="s2">&quot;Module type (</span><span class="si">%s</span><span class="s2">) does not match input (</span><span class="si">%s</span><span class="s2">).&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">desiredmodule</span><span class="o">.</span><span class="n">_modtype</span><span class="p">,</span><span class="n">folder</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">desired_module</span><span class="o">.</span><span class="n">_modtype</span> <span class="o">==</span> <span class="n">folder</span><span class="p">),</span> \
+            <span class="s2">&quot;Module type as loaded (</span><span class="si">%s</span><span class="s2">) does not match request (</span><span class="si">%s</span><span class="s2">).&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">desired_module</span><span class="o">.</span><span class="n">_modtype</span><span class="p">,</span> <span class="n">folder</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">desiredmodule</span></div>
-    
+    <span class="k">return</span> <span class="n">desired_module</span></div>
+
+<div class="viewcode-block" id="get_module_from_specs"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.get_module.get_module_from_specs">[docs]</a><span class="k">def</span> <span class="nf">get_module_from_specs</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">modtype</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Import specific or Prototype class module using specs dictionary.</span>
+<span class="sd">    </span>
+<span class="sd">    The universal idiom for initializing an EXOSIMS module follows the pattern:</span>
+<span class="sd">        get_module(specs[&#39;modules&#39;][&#39;TimeKeeping&#39;], &#39;TimeKeeping&#39;)(**specs)</span>
+<span class="sd">    Here, get_module loads the module, and the invocation with **specs runs its</span>
+<span class="sd">    __init__ method.</span>
+<span class="sd">    The present function abstracts the first half of the idiom by returning:</span>
+<span class="sd">        get_module(specs[&#39;modules&#39;][modtype], modtype)</span>
+<span class="sd">    thus the above idiom may be replaced by:</span>
+<span class="sd">        get_module_from_specs(specs, &#39;TimeKeeping&#39;)(**specs)</span>
+<span class="sd">    which is shorter, and avoids the duplication of the module type.</span>
+<span class="sd">    Note: we do not abstract the specs as well, because many callers might wish</span>
+<span class="sd">    to modify the given **specs with keywords, or to separate getting the class</span>
+<span class="sd">    from initializing it.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        specs (dict):</span>
+<span class="sd">            specs dictionary with a &#39;modules&#39; key present.</span>
+<span class="sd">        modtype (str):</span>
+<span class="sd">            The module type (e.g., Observatory or TimeKeeping) of the </span>
+<span class="sd">            EXOSIMS module to fetch.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        desired_module (object):</span>
+<span class="sd">            module (class) that was requested</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">modtype</span><span class="p">],</span> <span class="n">modtype</span><span class="p">)</span></div>
+
+
 </pre></div>
 
           </div>
@@ -137,8 +346,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -152,7 +361,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

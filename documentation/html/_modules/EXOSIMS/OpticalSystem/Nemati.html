@@ -105,12 +105,15 @@
         
         <span class="c1"># Nemati14+ method</span>
         <span class="n">PP</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PostProcessing</span>                      <span class="c1"># post-processing module</span>
-        <span class="n">SNR</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">SNchar</span>                             <span class="c1"># SNR threshold for characterization</span>
+        <span class="n">SNR</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">SNimag</span>                             <span class="c1"># SNR threshold for imaging/detection</span>
         <span class="n">ppFact</span> <span class="o">=</span> <span class="n">PP</span><span class="o">.</span><span class="n">ppFact</span>                          <span class="c1"># post-processing contrast factor</span>
         <span class="n">Q</span> <span class="o">=</span> <span class="n">syst</span><span class="p">[</span><span class="s1">&#39;contrast&#39;</span><span class="p">](</span><span class="n">lam</span><span class="p">,</span> <span class="n">WA</span><span class="p">)</span>
         <span class="n">SpStr</span> <span class="o">=</span> <span class="n">C_p</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dMag</span><span class="p">)</span><span class="o">*</span><span class="n">Q</span><span class="o">*</span><span class="n">ppFact</span>        <span class="c1"># spatial structure to the speckle</span>
         <span class="n">C_b</span> <span class="o">+=</span> <span class="n">C_p</span><span class="o">*</span><span class="n">inst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>                   <span class="c1"># Cb must include the planet</span>
         <span class="n">intTime</span> <span class="o">=</span> <span class="n">SNR</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">C_b</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_p</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">SNR</span><span class="o">*</span><span class="n">SpStr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">);</span>
+        
+        <span class="c1"># negative values correspond to infinite integration times</span>
+        <span class="n">intTime</span><span class="p">[</span><span class="n">intTime</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         
         <span class="k">return</span> <span class="n">intTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span></div>
 
@@ -163,6 +166,9 @@
         <span class="n">C_b</span> <span class="o">+=</span> <span class="n">C_p</span><span class="o">*</span><span class="n">inst</span><span class="p">[</span><span class="s1">&#39;ENF&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>                   <span class="c1"># Cb must include the planet</span>
         <span class="n">charTime</span> <span class="o">=</span> <span class="n">SNR</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">C_b</span> <span class="o">/</span> <span class="p">(</span><span class="n">C_p</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">SNR</span><span class="o">*</span><span class="n">SpStr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">);</span>
         
+        <span class="c1"># negative values correspond to infinite characterization times</span>
+        <span class="n">charTime</span><span class="p">[</span><span class="n">charTime</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        
         <span class="k">return</span> <span class="n">charTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span></div></div>
 </pre></div>
 
@@ -182,8 +188,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -197,7 +203,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

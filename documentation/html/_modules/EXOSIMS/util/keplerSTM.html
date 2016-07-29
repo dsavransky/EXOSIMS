@@ -71,8 +71,6 @@
 <span class="sd">Algorithm from Shepperd, 1984, using Goodyear&#39;s universal variables</span>
 <span class="sd">and continued fraction to solve the Kepler equation.</span>
 
-<span class="sd">12/21/2011 Dmitry Savransky savransky1@llnl.gov</span>
-<span class="sd">12/23/2011 Added epsmult param - ds</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <div class="viewcode-block" id="planSys"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys">[docs]</a><span class="k">class</span> <span class="nc">planSys</span><span class="p">:</span>    
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">epsmult</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">):</span>
@@ -126,10 +124,8 @@
             <span class="n">deltaU</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
 
 
-        <span class="c1">#np.finfo(float).eps*4.01*dt</span>
         <span class="c1">#loop until convergence of the time array to the time step</span>
-<span class="c1">#            np.finfo(float).eps*4.01*np.max(np.abs(np.hstack((t,dt)))))</span>
-        <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">))</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
             <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">*</span><span class="n">u</span><span class="o">**</span><span class="mf">2.</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">*</span><span class="n">u</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span>
             <span class="n">U0w2</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="mf">2.</span><span class="o">*</span><span class="n">q</span>
             <span class="n">U1w2</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">q</span><span class="p">)</span><span class="o">*</span><span class="n">u</span>
@@ -145,10 +141,6 @@
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
-<span class="c1">#            print &#39;t,dt&#39;,np.abs(np.hstack((t,dt)))</span>
-<span class="c1">#            print &#39;max t,dt val&#39;,np.max(np.abs(np.hstack((t,dt))))</span>
-<span class="c1">#            print &#39;max t - dt&#39;, np.max(np.abs(t-dt))</span>
-<span class="c1">#            print &#39;max (t - dt)/eps&#39;,np.max(np.abs(t-dt))/np.finfo(float).eps</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on t.&#39;</span><span class="p">);</span>
 
         <span class="c1">#Kepler solution</span>
@@ -177,8 +169,7 @@
         <span class="n">Gprev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span>
         <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1">#loop until convergence of continued fraction</span>
-        <span class="c1">#np.finfo(float).eps*4.01</span>
-        <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">G</span><span class="o">-</span><span class="n">Gprev</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">G</span><span class="o">-</span><span class="n">Gprev</span><span class="p">))</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">G</span><span class="p">)))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
             <span class="n">k</span> <span class="o">=</span> <span class="o">-</span><span class="n">k</span>
             <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="o">+</span><span class="mf">2.</span>
             <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">+</span><span class="mf">4.</span><span class="o">*</span><span class="n">l</span>
@@ -190,10 +181,7 @@
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
-<span class="c1">#            print &#39;max dG&#39;, np.max(np.abs(G-Gprev))</span>
-<span class="c1">#            print &#39;max (dG)/eps&#39;,np.max(np.abs(G-Gprev))/np.finfo(float).eps</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on G, most likely due to divergence in continued fractions.&#39;</span><span class="p">);</span>
-
 
         <span class="k">return</span> <span class="n">G</span></div></div>
 
@@ -215,8 +203,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -230,7 +218,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -147,14 +147,13 @@
 <span class="sd">        Initializes target list</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="c1">#validate inputs</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minComp</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">),</span>\
                 <span class="s2">&quot;minComp must be a number.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">,</span><span class="nb">bool</span><span class="p">),</span>\
                 <span class="s2">&quot;keepStarCatalog must be a boolean.&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minComp</span><span class="p">)</span>
-
         
         <span class="c1"># get desired module names (specific or prototype) and instantiate objects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">],</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
@@ -394,7 +393,7 @@
         
         <span class="c1"># calculate delta mag</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">prange</span><span class="p">)</span>
-        <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">Rrange</span><span class="p">)</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">Rprange</span><span class="p">)</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">Phi</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">Rp</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">Phi</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -417,7 +416,10 @@
 <span class="sd">                1D numpy ndarray of indices to keep</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
+       
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Target list filtered to empty.&quot;</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;coords&#39;</span><span class="p">:</span>
                 <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
@@ -500,8 +502,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -515,7 +517,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

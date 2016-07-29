@@ -662,7 +662,7 @@ objects.</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.2, shapeFac=0.7853981633974483, pupilDiam=4, telescopeKeepout=45, attenuation=0.57, intCutoff=50, Npix=14.3, Ndark=10, scienceInstruments=None, lam=500, BW=0.2, pitch=1.3e-05, focal=240, idark=9e-05, texp=1000.0, sread=3, CIC=0.0013, ENF=1, Gem=1, Rs=70, QE=0.9, starlightSuppressionSystems=None, throughput=0.01, contrast=1e-09, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), samp=10, ohTime=1, imagTimeMult=1, charTimeMult=1, IWA=None, OWA=None, dMagLim=None, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, telescopeKeepout=45, attenuation=0.6, intCutoff=50, Npix=14.3, Ndark=10, dMagLim=20, scienceInstruments=None, lam=500, BW=0.2, pitch=1.3e-05, focal=240, idark=9e-05, texp=1000.0, sread=3, CIC=0.0013, ENF=1, Gem=1, Rs=70, QE=0.9, starlightSuppressionSystems=None, throughput=0.01, contrast=1e-09, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), samp=10, ohTime=1, imagTimeMult=1, charTimeMult=1, IWA=None, OWA=None, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -733,6 +733,12 @@ system without the coronagraph elements</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
+<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Fundamental delta magnitude limit</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter">
 <code class="descname">haveOcculter</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.haveOcculter" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>boolean</em> &#8211; Boolean signifying if the system has an occulter</p>
@@ -757,8 +763,8 @@ system without the coronagraph elements</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
-<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
+<dt>
+<code class="descname">dMagLim</code></dt>
 <dd><p><em>float</em> &#8211; Fundamental limiting delta magnitude</p>
 </dd></dl>
 
@@ -858,8 +864,6 @@ wavelength (astropy Quantity) and angular separation/working angle
 <dd>Inner working angle in units of arcsec</dd>
 <dt>OWA (astropy Quantity):</dt>
 <dd>Outer working angle in units of arcsec</dd>
-<dt>dMagLim (float):</dt>
-<dd>System delta magnitude limit</dd>
 <dt>PSF (callable(lam, WA)):</dt>
 <dd>Point spread function - 2D ndarray of values, normalized to 1 at
 the core (must be callable - can be lambda, function,
@@ -1029,12 +1033,12 @@ function from Sobolev 1975.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>Quantity</em>) &#8211; numpy ndarray containing planet phase angles (radians) at which the
-phase function is to be calculated.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>beta</strong> (<em>astropy Quantity array</em>) &#8211; Planet phase angles at which the phase function is to be calculated,
+in units of rad</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Phi</strong> &#8211;     numpy ndarray of planet phase function</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Phi</strong> &#8211;     Planet phase function</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -1050,9 +1054,11 @@ same value of 0.367.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>Quanitity</em>) &#8211; Array of semi-major axis values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>astropy Quanitity array</em>) &#8211; Semi-major axis values</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">p (numpy ndarray)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;     Albedo values</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -1060,15 +1066,17 @@ same value of 0.367.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_mass_from_radius">
-<code class="descname">calc_mass_from_radius</code><span class="sig-paren">(</span><em>R</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_mass_from_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_mass_from_radius" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_mass_from_radius</code><span class="sig-paren">(</span><em>Rp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_mass_from_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_mass_from_radius" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for calculating mass given the radius.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>R</strong> (<em>Quantity</em>) &#8211; Array of radius values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of km</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">M (Quantity)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Mp</strong> &#8211;     Planet mass in units of kg</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -1076,16 +1084,18 @@ same value of 0.367.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_radius_from_mass">
-<code class="descname">calc_radius_from_mass</code><span class="sig-paren">(</span><em>M</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_radius_from_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_radius_from_mass" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_radius_from_mass</code><span class="sig-paren">(</span><em>Mp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_radius_from_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_radius_from_mass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function for calculating radius given the mass.</p>
 <p>Prototype provides only a dummy function that assumes a density of water.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>M</strong> (<em>Quantity</em>) &#8211; Array of mass values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">R (Quantity)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;     Planet radius in units of km</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -1098,7 +1108,7 @@ same value of 0.367.</p>
 <span id="exosims-prototypes-planetpopulation-module"></span><h2>EXOSIMS.Prototypes.PlanetPopulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], wrange=[0.0, 360.0], Orange=[0.0, 360.0], Irange=[0.0, 180.0], prange=[0.1, 0.6], Rrange=[1.0, 30.0], Mprange=[1.0, 4131.0], scaleOrbits=False, constrainOrbits=False, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], Irange=[0.0, 180.0], Orange=[0.0, 360.0], wrange=[0.0, 360.0], prange=[0.1, 0.6], Rprange=[1.0, 30.0], Mprange=[1.0, 4131.0], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Population Description class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1115,74 +1125,80 @@ simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arange">
 <code class="descname">arange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.arange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing minimum and maximum semi-major axis
-(default units of AU)</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Semi-major axis range in untis of AU</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.erange">
 <code class="descname">erange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.erange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing minimum and maximum eccentricity</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.wrange">
-<code class="descname">wrange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.wrange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing minimum and maximum argument of perigee
-in degrees</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Orange">
-<code class="descname">Orange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Orange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing minimum and maximum right ascension of
-the ascending node in degrees</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.prange">
-<code class="descname">prange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.prange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing minimum and maximum albedo</p>
+<dd><p><em>1x2 ndarray</em> &#8211; Eccentricity range</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Irange">
 <code class="descname">Irange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Irange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; 1D numpy ndarray containing minimum and maximum orbital inclination
-in degrees</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Orbital inclination range in units of deg</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rrange">
-<code class="descname">Rrange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rrange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing minimum and maximum planetary radius
-(default units of km)</p>
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Orange">
+<code class="descname">Orange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Orange" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Right ascension of the ascending node range in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.wrange">
+<code class="descname">wrange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.wrange" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Argument of perigee range in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.prange">
+<code class="descname">prange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.prange" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>1x2 ndarray</em> &#8211; Albedo range</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rprange">
+<code class="descname">Rprange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rprange" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet radius range in units of km</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Mprange">
 <code class="descname">Mprange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Mprange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy ndarray containing minimum and maximum planetary mass
-(default units of kg)</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet mass range in units of kg</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.rrange">
 <code class="descname">rrange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.rrange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Quantity</em> &#8211; 1D numpy array containing minimum and maximum orbital radius
-(default units of km)</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Orbital radius range in units of AU</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits">
 <code class="descname">scaleOrbits</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.scaleOrbits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em> &#8211; Scales orbits by sqrt(L) when True</p>
+<dd><p><em>boolean</em> &#8211; Scales orbits by sqrt(L) when True</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.constrainOrbits">
+<code class="descname">constrainOrbits</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.constrainOrbits" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Constrains orbital radii to sma range when True</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eta">
+<code class="descname">eta</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.eta" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Global occurrence rate defined as expected number of planets
+per star in a given universe</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysicalModel</em> &#8211; Planet physical model object</p>
+<dd><p><em>object</em> &#8211; PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="method">
@@ -1453,7 +1469,7 @@ Null detection boolean</td>
 <span id="exosims-prototypes-simulateduniverse-module"></span><h2>EXOSIMS.Prototypes.SimulatedUniverse module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SimulatedUniverse" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>eta=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Simulated Universe class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1515,13 +1531,6 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eta">
-<code class="descname">eta</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.eta" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Global occurrence rate defined as expected number of planets
-per star in a given universe</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.nPlans">
 <code class="descname">nPlans</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.nPlans" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>integer</em> &#8211; Total number of planets</p>
@@ -1570,6 +1579,24 @@ per star in a given universe</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p">
+<code class="descname">p</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Planet albedo</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">
+<code class="descname">Rp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet radius in units of km</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">
+<code class="descname">Mp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Planet mass in units of kg</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r">
 <code class="descname">r</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity nx3 array</em> &#8211; Planet position vector in units of km</p>
@@ -1594,29 +1621,14 @@ per star in a given universe</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">
-<code class="descname">Mp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Planet mass in units of kg</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">
-<code class="descname">Rp</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Planet radius in units of km</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p">
-<code class="descname">p</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Planet albedo</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fEZ">
 <code class="descname">fEZ</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fEZ" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity array</em> &#8211; Surface brightness of exozodiacal light in units of 1/arcsec2</p>
 </dd></dl>
 
+<p class="rubric">Notes</p>
+<p>PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
+Each target&#8217;s number of planets is a Poisson random variable sampled with lambda=eta.</p>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems">
 <code class="descname">gen_planetary_systems</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.gen_planetary_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems" title="Permalink to this definition">¶</a></dt>
@@ -1647,10 +1659,19 @@ given indices.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">
-<code class="descname">planet_pos_vel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_pos_vel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel" title="Permalink to this definition">¶</a></dt>
+<code class="descname">planet_pos_vel</code><span class="sig-paren">(</span><em>M=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.planet_pos_vel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns each planet an initial position (km) and velocity (km/s)</p>
 <p>This method makes us of the planet orbital elements (a, e, I, O, w, E),
 and the planet and star masses.</p>
+<dl class="docutils">
+<dt>Inputs:</dt>
+<dd><dl class="first last docutils">
+<dt>M (ndarray)</dt>
+<dd>Initial Mean anomaly in radians.  If None (default) will be randomly
+generated in U([0, 2pi))</dd>
+</dl>
+</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1996,18 +2017,6 @@ characterization data (t_char_calc = True only)</p>
 <dd><p>Determines detection status</p>
 <p>This method encodes detection status (FA, DET, MD) values in the DRM
 dictionary.</p>
-<dl class="docutils">
-<dt>This method accesses the following inherited class objects:</dt>
-<dd><dl class="first last docutils">
-<dt>OS:</dt>
-<dd>OpticalSystem class object</dd>
-<dt>TL:</dt>
-<dd>TargetList class object</dd>
-<dt>self.PlanetPopulation:</dt>
-<dd>PlanetPopulation class object</dd>
-</dl>
-</dd>
-</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2847,8 +2856,8 @@ the number of planets of interest</li>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -2862,7 +2871,7 @@ the number of planets of interest</li>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

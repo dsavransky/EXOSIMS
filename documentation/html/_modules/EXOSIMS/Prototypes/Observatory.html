@@ -173,7 +173,13 @@
                     <span class="n">spkpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">SPK</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">spkpath</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># All ephemeride data from Vallado Appendix D.4</span>
+            <span class="sd">&quot;&quot;&quot;All ephemeride data from Vallado Appendix D.4</span>
+<span class="sd">            Values are:</span>
+<span class="sd">            a     e             i               O                       w                   lM</span>
+<span class="sd">            sma   eccentricity  inclination     long. ascending node    long. perihelion    mean longitude</span>
+<span class="sd">            AU    N/A           deg             deg                     deg                 deg</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
             <span class="c1"># Store Mercury ephemerides data (ecliptic)</span>
             <span class="n">Mercurya</span> <span class="o">=</span> <span class="mf">0.387098310</span>
             <span class="n">Mercurye</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.20563175</span><span class="p">,</span> <span class="mf">0.000020406</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0000000284</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.00000000017</span><span class="p">]</span>
@@ -457,8 +463,8 @@
         <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
         <span class="n">lM</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">propeph</span><span class="p">(</span><span class="n">planet</span><span class="o">.</span><span class="n">lM</span><span class="p">,</span> <span class="n">TDB</span><span class="p">))</span>
         <span class="c1"># Find mean anomaly and argument of perigee</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">lM</span> <span class="o">-</span> <span class="n">w</span>
-        <span class="n">wp</span> <span class="o">=</span> <span class="n">w</span> <span class="o">-</span> <span class="n">O</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">lM</span> <span class="o">-</span> <span class="n">w</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">wp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">w</span> <span class="o">-</span> <span class="n">O</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
         <span class="c1"># Find eccentric anomaly</span>
         <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># Find true anomaly</span>
@@ -822,8 +828,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -837,7 +843,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

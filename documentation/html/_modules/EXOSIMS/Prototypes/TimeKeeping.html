@@ -129,7 +129,7 @@
         <span class="c1"># populate outspec</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,(</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span><span class="n">Time</span><span class="p">))</span> <span class="k">else</span> <span class="n">dat</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;String representation of the TimeKeeping object.</span>
@@ -233,8 +233,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -248,7 +248,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

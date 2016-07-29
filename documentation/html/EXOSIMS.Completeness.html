@@ -65,38 +65,38 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp">
 <code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.minComp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; minimum completeness level for detection</p>
+<dd><p><em>float</em> &#8211; Minimum completeness level for detection</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets">
 <code class="descname">Nplanets</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; number of planets for initial completeness Monte Carlo simulation</p>
+<dd><p><em>integer</em> &#8211; Number of planets for initial completeness Monte Carlo simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath">
 <code class="descname">classpath</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> &#8211; path on disk to Brown Completeness</p>
+<dd><p><em>string</em> &#8211; Path on disk to Brown Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename">
 <code class="descname">filename</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> &#8211; name of file where completeness interpolant is stored</p>
+<dd><p><em>string</em> &#8211; Name of file where completeness interpolant is stored</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits">
 <code class="descname">visits</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list</em> &#8211; number of observations corresponding to each star in the target list
+<dd><p><em>ndarray</em> &#8211; Number of observations corresponding to each star in the target list
 (initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates">
 <code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list</em> &#8211; completeness values of successive observations of each star in the
+<dd><p><em>nx5 ndarray</em> &#8211; Completeness values of successive observations of each star in the
 target list (initialized in gen_update)</p>
 </dd></dl>
 
@@ -109,16 +109,15 @@ target list (initialized in gen_update)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sInd</strong> (<em>int</em>) &#8211; index of star just observed</li>
-<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList module</li>
-<li><strong>obsbegin</strong> (<em>Quantity</em>) &#8211; time of observation begin</li>
-<li><strong>obsend</strong> (<em>Quantity</em>) &#8211; time of observation end</li>
-<li><strong>nexttime</strong> (<em>Quantity</em>) &#8211; time of next observational period</li>
+<li><strong>sInd</strong> (<em>integer</em>) &#8211; Index of star just observed</li>
+<li><strong>targlist</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.TargetList"><em>TargetList</em></a>) &#8211; TargetList class module</li>
+<li><strong>obsbegin</strong> (<em>astropy Quantity</em>) &#8211; Time of observation begin in units of day</li>
+<li><strong>obsend</strong> (<em>astropy Quantity</em>) &#8211; Time of observation end in units of day</li>
+<li><strong>nexttime</strong> (<em>astropy Quantity</em>) &#8211; Time of next observational period in units of day</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>comp0</strong> &#8211;     1D numpy ndarray of completeness values for each star in the
-target list</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>comp0</strong> &#8211;     Completeness values for each star in the target list</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -140,15 +139,15 @@ the 2D completeness values needed for interpolation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Cpath</strong> (<em>str</em>) &#8211; path to 2D completeness value array</li>
+<li><strong>Cpath</strong> (<em>string</em>) &#8211; path to 2D completeness value array</li>
 <li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used in each simulation</li>
 <li><strong>xedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of x edge of 2d histogram (separation)</li>
 <li><strong>yedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of y edge of 2d histogram (dMag)</li>
-<li><strong>steps</strong> (<em>int</em>) &#8211; number of simulations to perform</li>
+<li><strong>steps</strong> (<em>integer</em>) &#8211; number of simulations to perform</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>C</strong> &#8211;     2D numpy ndarray of completeness values</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>H</strong> &#8211;     2D numpy ndarray of completeness probability density values</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
@@ -181,11 +180,14 @@ star in the target list</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>int</em>) &#8211; number of planets</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>integer</em>) &#8211; Number of planets</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s, dMag, a</strong> &#8211;     planet separations (in AU), difference in brightness</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s</strong> &#8211;     Planet apparent separations in units of AU
+dMag (ndarray):<blockquote>
+<div>Difference in brightness</div></blockquote>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Quantity, ndarray, Quantity</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -201,7 +203,7 @@ star in the target list</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used</li>
+<li><strong>nplan</strong> (<em>float</em>) &#8211; Number of planets used</li>
 <li><strong>xedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of x edge of 2d histogram (separation)</li>
 <li><strong>yedges</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of y edge of 2d histogram (dMag)</li>
 </ul>
@@ -280,8 +282,8 @@ star in the target list</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -295,7 +297,7 @@ star in the target list</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

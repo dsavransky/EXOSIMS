@@ -4,6 +4,22 @@ EXOSIMS.util package
 Submodules
 ----------
 
+EXOSIMS.util.InverseTransformSampler module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.util.InverseTransformSampler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.RejectionSampler module
+------------------------------------
+
+.. automodule:: EXOSIMS.util.RejectionSampler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.deltaMag module
 ----------------------------
 

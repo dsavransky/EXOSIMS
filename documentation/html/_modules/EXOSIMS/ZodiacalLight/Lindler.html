@@ -50,22 +50,22 @@
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
 <span class="sd">    Zodiacal Light Module calculations in exoplanet mission simulation using</span>
 <span class="sd">    the model from Lindler.</span>
-
+<span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs:</span>
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Lindler.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
+<div class="viewcode-block" id="Lindler.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Lindler.Lindler.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist (TargetList):</span>
+<span class="sd">            TL (TargetList):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
@@ -77,18 +77,25 @@
 <span class="sd">            fZ (ndarray):</span>
 <span class="sd">                1D numpy ndarray of surface brightness of zodiacal light (per arcsec2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># ecliptic latitudes</span>
-        <span class="n">lat</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">barycentrictrueecliptic</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="n">fZ</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">fbeta</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">fZ</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span></div>
         
-<div class="viewcode-block" id="Lindler.fEZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ">[docs]</a>    <span class="k">def</span> <span class="nf">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targlist</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
+        <span class="c1"># ecliptic latitudes</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">barycentrictrueecliptic</span><span class="o">.</span><span class="n">lat</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="n">nZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fbeta</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+        
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">nZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="k">return</span> <span class="n">fZ</span></div>
+
+<div class="viewcode-block" id="Lindler.fEZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Lindler.Lindler.fEZ">[docs]</a>    <span class="k">def</span> <span class="nf">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of exo-zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            targlist (TargetList):</span>
+<span class="sd">            TL (TargetList):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Numpy ndarray containing integer indices of the stars of interest, </span>
@@ -99,24 +106,33 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            fEZ (ndarray):</span>
 <span class="sd">                1D numpy ndarray of surface brightness of exo-zodiacal light (per arcsec2)</span>
-
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mf">90.</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">I</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-            <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">180.</span> <span class="o">-</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="c1"># maximum V magnitude</span>
-        <span class="n">MV</span> <span class="o">=</span> <span class="n">targlist</span><span class="o">.</span><span class="n">MV</span>
+        <span class="c1"># check type of sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        
         <span class="c1"># assume log-normal distribution of variance</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),))</span>
-
-        <span class="n">fEZ</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nEZ</span> <span class="o">*</span> <span class="mf">2.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fbeta</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="mf">2.5</span><span class="o">**</span><span class="p">(</span><span class="mf">4.78</span><span class="o">-</span><span class="n">MV</span><span class="p">[</span><span class="n">sInds</span><span class="p">])</span>
-
-        <span class="k">return</span> <span class="n">fEZ</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span></div>
+            <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         
+        <span class="c1"># supplementary angle for inclination &gt; 90 degrees</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">I</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">I</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        
+        <span class="c1"># maximum V magnitude</span>
+        <span class="n">MV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MV</span>
+        
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fbeta</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="mf">2.5</span><span class="o">**</span><span class="p">(</span><span class="mf">4.78</span><span class="o">-</span><span class="n">MV</span><span class="p">[</span><span class="n">sInds</span><span class="p">])</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="k">return</span> <span class="n">fEZ</span></div>
+
 <div class="viewcode-block" id="Lindler.fbeta"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Lindler.Lindler.fbeta">[docs]</a>    <span class="k">def</span> <span class="nf">fbeta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Empirically derived variation of zodiacal light with viewing angle</span>
 <span class="sd">        </span>

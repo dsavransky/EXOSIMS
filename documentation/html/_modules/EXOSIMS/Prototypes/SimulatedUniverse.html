@@ -75,9 +75,6 @@
 <span class="sd">            Completeness class object</span>
 <span class="sd">        TargetList (object):</span>
 <span class="sd">            TargetList class object</span>
-<span class="sd">        eta (float)</span>
-<span class="sd">            Global occurrence rate defined as expected number of planets </span>
-<span class="sd">            per star in a given universe</span>
 <span class="sd">        nPlans (integer):</span>
 <span class="sd">            Total number of planets</span>
 <span class="sd">        plan2star (integer ndarray):</span>
@@ -94,6 +91,12 @@
 <span class="sd">            Planet right ascension of the ascending node in units of deg</span>
 <span class="sd">        w (astropy Quantity array):</span>
 <span class="sd">            Planet argument of perigee in units of deg</span>
+<span class="sd">        p (float ndarray):</span>
+<span class="sd">            Planet albedo</span>
+<span class="sd">        Rp (astropy Quantity array):</span>
+<span class="sd">            Planet radius in units of km</span>
+<span class="sd">        Mp (astropy Quantity array):</span>
+<span class="sd">            Planet mass in units of kg</span>
 <span class="sd">        r (astropy Quantity nx3 array):</span>
 <span class="sd">            Planet position vector in units of km</span>
 <span class="sd">        v (astropy Quantity nx3 array):</span>
@@ -102,30 +105,19 @@
 <span class="sd">            Planet-star apparent separations in units of km</span>
 <span class="sd">        d (astropy Quantity array):</span>
 <span class="sd">            Planet-star distances in units of km</span>
-<span class="sd">        Mp (astropy Quantity array):</span>
-<span class="sd">            Planet mass in units of kg</span>
-<span class="sd">        Rp (astropy Quantity array):</span>
-<span class="sd">            Planet radius in units of km</span>
-<span class="sd">        p (float ndarray):</span>
-<span class="sd">            Planet albedo</span>
 <span class="sd">        fEZ (astropy Quantity array):</span>
 <span class="sd">            Surface brightness of exozodiacal light in units of 1/arcsec2</span>
 <span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.</span>
+<span class="sd">        Each target&#39;s number of planets is a Poisson random variable sampled with \lambda=\eta.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;SimulatedUniverse&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
        
-        <span class="c1">#check inputs</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">eta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span>\
-                <span class="s2">&quot;eta must be a positive number.&quot;</span>
-        
-        <span class="c1">#global occurrence rate defined as expected number of planets per </span>
-        <span class="c1">#star in a given universe</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="n">eta</span>
-        
         <span class="c1"># import TargetList class</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;TargetList&#39;</span><span class="p">],</span><span class="s1">&#39;TargetList&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
@@ -164,17 +156,28 @@
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         
         <span class="c1"># Map planets to target stars</span>
-        <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">probs</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">eta</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#this version only works for eta &lt; 1</span>
+        <span class="c1">#probs = np.random.uniform(size=TL.nStars)</span>
+        <span class="c1">#self.plan2star = np.where(probs &gt; PPop.eta)[0]</span>
+        <span class="c1">#self.sInds = np.unique(self.plan2star)</span>
+        <span class="c1">#self.nPlans = len(self.plan2star)</span>
+
+        <span class="c1">#treat eta as the rate paramter of a Poisson distribution</span>
+        <span class="n">targetSystems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="n">PPop</span><span class="o">.</span><span class="n">eta</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="n">plan2star</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">targetSystems</span><span class="p">):</span>
+            <span class="n">plan2star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">plan2star</span><span class="p">,[</span><span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="n">n</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">=</span> <span class="n">plan2star</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">)</span>
-        
+
+        <span class="c1">#sample all of the orbital and physical parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                  <span class="c1"># semi-major axis</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span> <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">constrainOrbits</span> \
-                <span class="k">else</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>     <span class="c1"># eccentricity</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># argument of periapsis</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># longitude of ascending node</span>
+                <span class="k">else</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>            <span class="c1"># eccentricity</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_I</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># inclination</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># longitude of ascending node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># argument of periapsis</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>              <span class="c1"># radius</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                <span class="c1"># mass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>               <span class="c1"># albedo</span>
@@ -185,11 +188,16 @@
         <span class="c1"># exo-zodi levels for systems with planets</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SimulatedUniverse.planet_pos_vel"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">[docs]</a>    <span class="k">def</span> <span class="nf">planet_pos_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SimulatedUniverse.planet_pos_vel"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">[docs]</a>    <span class="k">def</span> <span class="nf">planet_pos_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">M</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Assigns each planet an initial position (km) and velocity (km/s)</span>
 <span class="sd">        </span>
 <span class="sd">        This method makes us of the planet orbital elements (a, e, I, O, w, E), </span>
 <span class="sd">        and the planet and star masses.</span>
+
+<span class="sd">        Inputs:</span>
+<span class="sd">            M (ndarray)</span>
+<span class="sd">                Initial Mean anomaly in radians.  If None (default) will be randomly</span>
+<span class="sd">                generated in U([0, 2\pi))</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            r (astropy Quantity nx3 array):</span>
@@ -205,9 +213,12 @@
         <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># inclinations</span>
         <span class="n">Omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>          <span class="c1"># right ascension of the ascending node</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># argument of perigee</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span> <span class="c1"># generate random mean anomaly</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>                        <span class="c1"># eccentric anomaly</span>
+
+        <span class="k">if</span> <span class="n">M</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c1"># generate random mean anomaly</span>
+            <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span> 
         
+        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>                        <span class="c1"># eccentric anomaly</span>
         <span class="c1"># planet and star masses</span>
         <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span>
         <span class="n">Ms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">]</span>
@@ -337,8 +348,8 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -352,7 +363,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -8,3 +8,5 @@ Written by Daniel Garrett, Dmitry Savransky, Christian Delacroix, with contribut
 EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC) and NNX15AJ67G (WPS).
 
 See ICD/icd.pdf for the interface control documentation and documentation/html/ for the as-built documentation (currently under development).
+
+EXOSIMS requires astropy - a community-developed core Python package for Astronomy (Astropy Collaboration, 2013); http://www.astropy.org

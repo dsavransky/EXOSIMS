@@ -30,8 +30,6 @@ is AU/day, mu must be in AU^3/day^2.
 Algorithm from Shepperd, 1984, using Goodyear's universal variables
 and continued fraction to solve the Kepler equation.
 
-12/21/2011 Dmitry Savransky savransky1@llnl.gov
-12/23/2011 Added epsmult param - ds
 '''
 class planSys:    
     def __init__(self, x0, mu, epsmult = 2.0):
@@ -85,10 +83,8 @@ class planSys:
             deltaU[eorbs] = 2*pi*n*self.beta[eorbs]**(-5./2.)
 
 
-        #np.finfo(float).eps*4.01*dt
         #loop until convergence of the time array to the time step
-#            np.finfo(float).eps*4.01*np.max(np.abs(np.hstack((t,dt)))))
-        while (np.max(np.abs(t-dt)) > epsmult*np.finfo(float).eps) and (counter < 1000):
+        while (np.max(np.abs(t-dt)) > self.epsmult*np.spacing(dt)) and (counter < 1000):
             q = self.beta*u**2./(1+self.beta*u**2.)
             U0w2 = 1. - 2.*q
             U1w2 = 2.*(1.-q)*u
@@ -104,10 +100,6 @@ class planSys:
             counter += 1
 
         if (counter == 1000):
-#            print 't,dt',np.abs(np.hstack((t,dt)))
-#            print 'max t,dt val',np.max(np.abs(np.hstack((t,dt))))
-#            print 'max t - dt', np.max(np.abs(t-dt))
-#            print 'max (t - dt)/eps',np.max(np.abs(t-dt))/np.finfo(float).eps
             raise ValueError('Failed to converge on t.');
 
         #Kepler solution
@@ -136,8 +128,7 @@ class planSys:
         Gprev = np.zeros(x.size)+2
         counter = 0
         #loop until convergence of continued fraction
-        #np.finfo(float).eps*4.01
-        while (np.max(np.abs(G-Gprev)) > np.finfo(float).eps) and (counter < 1000):
+        while (np.max(np.abs(G-Gprev)) > self.epsmult*np.max(np.spacing(G))) and (counter < 1000):
             k = -k
             l = l+2.
             d = d+4.*l
@@ -149,10 +140,7 @@ class planSys:
             counter += 1
 
         if (counter == 1000):
-#            print 'max dG', np.max(np.abs(G-Gprev))
-#            print 'max (dG)/eps',np.max(np.abs(G-Gprev))/np.finfo(float).eps
             raise ValueError('Failed to converge on G, most likely due to divergence in continued fractions.');
-
 
         return G
 

@@ -375,7 +375,10 @@ class TargetList(object):
                 1D numpy ndarray of indices to keep
         
         """
-        
+       
+        if len(ind) == 0:
+            raise IndexError("Target list filtered to empty.")
+
         for att in self.catalog_atts:
             if att == 'coords':
                 ra = self.coords.ra[ind].to('deg')

@@ -33,9 +33,9 @@ class KeplerLikeUniverse(SimulatedUniverse):
         calculated via the physical model.
         """
         
-        TL = self.TargetList
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
+        TL = self.TargetList
         
         # Generate distribution of radii first
         self.Rp = PPop.gen_radius_nonorm(TL.nStars)
@@ -52,12 +52,7 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.I = PPop.gen_I(self.nPlans)                    # inclination
         self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
         self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass
-        self.r, self.v = self.planet_pos_vel()              # initial position
-        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
-        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-        
-        # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
 

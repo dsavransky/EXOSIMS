@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.OpticalSystem.Nemati import Nemati
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 import astropy.units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 
-class KasdinBraems(Nemati):
+class KasdinBraems(OpticalSystem):
     """KasdinBraems Optical System class
     
     This class contains all variables and methods necessary to perform
@@ -20,26 +20,27 @@ class KasdinBraems(Nemati):
     
     def __init__(self, **specs):
         
-        Nemati.__init__(self, **specs)
+        OpticalSystem.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, dMag, WA, fEZ, fZ):
-        """Finds integration time for a specific target system,
-        based on Kasdin and Braems 2006.
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+        """Finds integration times of target systems for a specific observing 
+        mode (imaging or characterization), based on Kasdin and Braems 2006.
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
                 Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+            mode (dict):
+                Selected observing mode
         
         Returns:
             intTime (astropy Quantity array):
@@ -47,22 +48,17 @@ class KasdinBraems(Nemati):
         
         """
         
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        # use the imager to calculate the integration time
-        inst = self.Imager
-        syst = self.ImagerSyst
-        lam = inst['lam']
-        
-        # nb of pixels for photometry aperture = 1/sharpness
-        PSF = syst['PSF'](lam, WA)
-        Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix)
+        # electron counts
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        # for characterization, Cb must include the planet
+        if mode['detection'] != 1:
+            C_b += C_p*mode['inst']['ENF']**2
         
         # Kasdin06+ method
+        inst = mode['inst']                         # scienceInstrument
+        syst = mode['syst']                         # starlightSuppressionSystem
+        lam = mode['lam']
+        PSF = syst['PSF'](lam, WA)  # this is the only place where PSF is used!
         Pbar = PSF/np.max(PSF)
         P1 = np.sum(Pbar)
         Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
@@ -73,9 +69,11 @@ class KasdinBraems(Nemati):
         gamma = st.norm.ppf(1-PP.MDP)               # missed detection threshold
         deltaAlphaBar = ((inst['pitch']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
                 .decompose()                        # dimensionless pixel size
-        T = syst['throughput'](lam, WA) * self.attenuation**2
-        Ta = T*self.shapeFac*deltaAlphaBar*P1       # Airy throughput 
-        beta = C_p/T
+        Tcore = syst['core_thruput'](lam, WA)
+        Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput 
+        beta = C_p/Tcore
         intTime = 1./beta*(K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2/(Qbar*Ta*Psi)
+        # integration times (negative values correspond to infinity)
+        intTime[intTime < 0] = np.inf
         
         return intTime.to('day')

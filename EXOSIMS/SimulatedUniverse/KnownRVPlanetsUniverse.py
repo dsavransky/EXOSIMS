@@ -30,9 +30,9 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         catalog values for each planet.
         """
         
-        TL = self.TargetList
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
+        TL = self.TargetList
         
         # Go through the target list and pick out the planets belonging to those hosts
         starinds = np.array([])
@@ -75,17 +75,13 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.Rperr1 = PPop.radiuserr1[planinds][self.Rmask]
         self.Rperr2 = PPop.radiuserr2[planinds][self.Rmask]
         
+        # calculate period
         missionStart = Time(float(missionStart), format='mjd', scale='tai')
         T = PPop.period[planinds] + np.random.normal(size=self.nPlans)\
-                *PPop.perioderr[planinds]                   # period
+                *PPop.perioderr[planinds]
         T[T <= 0] = PPop.period[planinds][T <= 0]
+        # calculate initial mean anomaly
         tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
                 *PPop.tpererr[planinds]).to('day').value,format='jd')
-        M0 = np.mod(((missionStart - tper)/T).decompose().value*2*np.pi,2*np.pi)
-        self.r, self.v = self.planet_pos_vel(M=M0)          # initial position
-        self.d = np.sqrt(np.sum(self.r**2, axis=1))         # planet-star distance
-        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))  # apparent separation
-        
-        # exo-zodi levels for systems with planets
-        self.fEZ = self.ZodiacalLight.fEZ(TL,self.plan2star,self.I)
+        self.M0 = np.mod(((missionStart - tper)/T).decompose().value*360,360)*u.deg
 

@@ -20,81 +20,39 @@ class TargetList(object):
             user specified values
             
     Attributes:
-        OpticalSystem (OpticalSystem):
-            OpticalSystem class object
-        PlanetPopulation (PlanetPopulation):
-            PlanetPopulation class object
-        PlanetPhyiscalModel (PlanetPhysicalModel):
-            PlanetPhysicalModel class object
-        ZodiacalLight (ZodiacalLight):
-            ZodiacalLight class object
-        Completeness (Completeness):
-            Completeness class object
-        BackgroundSources (BackgroundSources):
-            BackgroundSources class object
-        PostProcessing (PostProcessing):
-            PostProcessing class object
-        StarCatalog (StarCatalog):
+        (StarCatalog values)
+            Mission specific filtered star catalog values from StarCatalog class object:
+            Name, Spec, Umag, Bmag, Vmag, Rmag, Imag, Jmag, Hmag, Kmag, BV, MV,
+            BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv
+        StarCatalog (StarCatalog module):
             StarCatalog class object (only retained if keepStarCatalog is True)
-        Name (ndarray):
-            1D numpy ndarray of star names
-        Spec (ndarray):
-            1D numpy ndarray of star spectral types
-        Umag (ndarray):
-            1D numpy ndarray of U magnitude
-        Bmag (ndarray):
-            1D numpy ndarray of B magnitude
-        Vmag (ndarray):
-            1D numpy ndarray of V magnitude
-        Rmag (ndarray):
-            1D numpy ndarray of R magnitude
-        Imag (ndarray):
-            1D numpy ndarray of I magnitude
-        Jmag (ndarray):
-            1D numpy ndarray of J magnitude
-        Hmag (ndarray):
-            1D numpy ndarray of H magnitude
-        Kmag (ndarray):
-            1D numpy ndarray of K magnitude
-        BV (ndarray):
-            1D numpy ndarray of B-V Johnson magnitude
-        MV (ndarray):
-            1D numpy ndarray of absolute V magnitude
-        BC (ndarray):
-            1D numpy ndarray of bolometric correction
-        L (ndarray):
-            1D numpy ndarray of stellar luminosity in Solar luminosities
-        Binary_Cut (ndarray):
-            1D numpy ndarray of booleans where True is a star with a companion 
-            closer than 10 arcsec
-        dist (Quantity):
-            1D numpy ndarray of distance to star (default units of parsecs)
-        parx (Quantity):
-            1D numpy ndarray of parallax (default units of milliarcseconds)
-        coords (SkyCoord):
-            numpy ndarray of astropy SkyCoord objects containing right ascension,
-            declination, and distance to star (default units of degree and parsecs)
-        pmra (Quantity):
-            1D numpy ndarray of proper motion in right ascension (default units of 
-            milliarcseconds/year)
-        pmdec (Quantity):
-            1D numpy ndarray of proper motion in declination (default units of 
-            milliarcseconds/year)
-        rv (Quantity):
-            1D numpy ndarray of radial velocity (default units of km/s)
-        maxintTime (Quantity):
-            1D numpy ndarray containing maximum integration time (units of time)
+        PlanetPopulation (PlanetPopulation module):
+            PlanetPopulation class object
+        PlanetPhysicalModel ( module):
+            PlanetPhysicalModel class object
+        OpticalSystem (OpticalSystem module):
+            OpticalSystem class object
+        ZodiacalLight (ZodiacalLight module):
+            ZodiacalLight class object
+        BackgroundSources (BackgroundSources module):
+            BackgroundSources class object
+        PostProcessing (PostProcessing module):
+            PostProcessing class object
+        Completeness (Completeness module):
+            Completeness class object
+        tint0 (astropy Quantity array):
+            Integration time for each target star in units of day, for a minimum 
+            delta magnitude dMagLim
         comp0 (ndarray):
-            1D numpy ndarray containing completeness value for each target star
-        MsEst (ndarray):
-            1D numpy ndarray containing 'approximate' stellar mass in M_sun
-        MsTrue (ndarray):
-            1D numpy ndarray containing 'true' stellar mass in M_sun
-        nStars (int):
-            number of target stars
+            Completeness value for each target star
         minComp (float): 
-            minimum completeness level for inclusion in target list
-            
+            Minimum completeness value for inclusion in target list
+        MsEst (float ndarray):
+            'approximate' stellar mass in M_sun
+        MsTrue (float ndarray):
+            'true' stellar mass in M_sun
+        nStars (int):
+            Number of target stars
     
     """
 
@@ -108,10 +66,10 @@ class TargetList(object):
         """
         
         #validate inputs
-        assert isinstance(minComp,numbers.Number),\
-                "minComp must be a number."
         assert isinstance(keepStarCatalog,bool),\
                 "keepStarCatalog must be a boolean."
+        assert isinstance(minComp,numbers.Number),\
+                "minComp must be a number."
         self.minComp = float(minComp)
         
         # get desired module names (specific or prototype) and instantiate objects
@@ -189,14 +147,15 @@ class TargetList(object):
         self.nan_filter()
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate maximum integration time
-        self.maxintTime = OS.calc_maxintTime(self)
+        # populate minimum integration time values, for minimum dMag
+        self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
+                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, OS.detectionMode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('maxintTime')
+        self.catalog_atts.append('tint0')
 
     def filter_target_list(self,**specs):
         """ 
@@ -289,9 +248,10 @@ class TargetList(object):
         
         """
         
-        iF = np.where(np.core.defchararray.startswith(self.Spec, 'F'))[0]
-        iG = np.where(np.core.defchararray.startswith(self.Spec, 'G'))[0]
-        iK = np.where(np.core.defchararray.startswith(self.Spec, 'K'))[0]
+        spec = np.array(map(str, self.Spec))
+        iF = np.where(np.core.defchararray.startswith(spec, 'F'))[0]
+        iG = np.where(np.core.defchararray.startswith(spec, 'G'))[0]
+        iK = np.where(np.core.defchararray.startswith(spec, 'K'))[0]
         i = np.append(np.append(iF, iG), iK)
         i = np.unique(i)
         self.revise_lists(i)
@@ -319,14 +279,6 @@ class TargetList(object):
         s = np.tan(OS.IWA)*self.dist
         L = np.sqrt(self.L) if PPop.scaleOrbits else 1. # stellar luminosity in Solar luminosities
         i = np.where(s < L*np.max(PPop.rrange))[0]
-        self.revise_lists(i)
-
-    def int_cutoff_filter(self):
-        """Includes stars if calculated integration time is less than cutoff
-        
-        """
-        
-        i = np.where(self.maxintTime <= self.OpticalSystem.intCutoff)[0]
         self.revise_lists(i)
 
     def max_dmag_filter(self):
@@ -358,6 +310,14 @@ class TargetList(object):
         i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
         self.revise_lists(i)
 
+    def int_cutoff_filter(self):
+        """Includes stars if calculated integration time is less than cutoff
+        
+        """
+        
+        i = np.where(self.tint0 < self.OpticalSystem.intCutoff)[0]
+        self.revise_lists(i)
+
     def completeness_filter(self):
         """Includes stars if completeness is larger than the minimum value
         
@@ -378,7 +338,7 @@ class TargetList(object):
        
         if len(ind) == 0:
             raise IndexError("Target list filtered to empty.")
-
+        
         for att in self.catalog_atts:
             if att == 'coords':
                 ra = self.coords.ra[ind].to('deg')
@@ -428,9 +388,7 @@ class TargetList(object):
         """
         
         # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
+        sInds = np.array(sInds,ndmin=1)
         
         Vmag = self.Vmag[sInds]
         BV = self.BV[sInds]

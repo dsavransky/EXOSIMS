@@ -87,7 +87,7 @@ class PlanetPhysicalModel(object):
         """
         
         rho = 1000*u.kg/u.m**3.
-        Mp = (rho*4*np.pi*R**3./3.).decompose()
+        Mp = (rho*4*np.pi*Rp**3./3.).decompose()
         
         return Mp.to('kg')
 

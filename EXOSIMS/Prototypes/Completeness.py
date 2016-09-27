@@ -42,12 +42,12 @@ class Completeness(object):
         This method is called from TargetList __init__ method.
         
         Args:
-            TL (TargetList): 
+            TL (TargetList module):
                 TargetList class object
             
         Returns:
-            comp0 (ndarray): 
-                1D numpy array of completeness values for each target star
+            comp0 (float ndarray): 
+                Completeness values for each target star
         
         """
         
@@ -61,31 +61,30 @@ class Completeness(object):
         target list)
         
         Args:
-            TL (TargetList):
-                TargetList module
+            TL (TargetList module):
+                TargetList class object
         
         """
         pass
 
-    def completeness_update(self, sInd, TL, obsbegin, obsend, nexttime):
+    def completeness_update(self, TL, sInd, obsbegin, obsend, nexttime):
         """Updates completeness value for stars previously observed
         
         Args:
-            sInd (int):
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
                 index of star just observed
-            TL (TargetList):
-                TargetList module
-            obsbegin (Quantity):
+            obsbegin (astropy Quantity):
                 time of observation begin
-            obsend (Quantity):
+            obsend (astropy Quantity):
                 time of observation end
-            nexttime (Quantity):
+            nexttime (astropy Quantity):
                 time of next observational period
         
         Returns:
-            comp0 (ndarray):
-                1D numpy ndarray of completeness values for each star in the 
-                target list
+            comp0 (float ndarray):
+                Completeness values for each star in the target list
         
         """
         # prototype returns the "virgin" completeness value

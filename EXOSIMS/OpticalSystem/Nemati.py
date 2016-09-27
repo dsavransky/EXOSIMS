@@ -22,24 +22,25 @@ class Nemati(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, dMag, WA, fEZ, fZ):
-        """Finds integration time for a specific target system,
-        based on Nemati 2014 (SPIE).
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+        """Finds integration times of target systems for a specific observing 
+        mode (imaging or characterization), based on Nemati 2014 (SPIE).
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
                 Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+            mode (dict):
+                Selected observing mode
         
         Returns:
             intTime (astropy Quantity array):
@@ -47,85 +48,16 @@ class Nemati(OpticalSystem):
         
         """
         
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
+        # electron counts
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        # for characterization, Cb must include the planet
+        if mode['detection'] != 1:
+            C_b += C_p*mode['inst']['ENF']**2
         
-        # use the imager to calculate the integration time
-        inst = self.Imager
-        syst = self.ImagerSyst
-        lam = inst['lam']
-        
-        # nb of pixels for photometry aperture = 1/sharpness
-        PSF = syst['PSF'](lam, WA)
-        Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix)
-        
-        # Nemati14+ method
-        PP = TL.PostProcessing                      # post-processing module
-        SNR = PP.SNchar                             # SNR threshold for characterization
-        ppFact = PP.ppFact                          # post-processing contrast factor
-        Q = syst['contrast'](lam, WA)
-        SpStr = C_p*10.**(0.4*dMag)*Q*ppFact        # spatial structure to the speckle
-        C_b += C_p*inst['ENF']**2                   # Cb must include the planet
-        intTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
-        
-        # negative values correspond to infinite integration times
+        # get SNR threshold
+        SNR = mode['SNR']
+        intTime = SNR**2*C_b / (C_p**2 - (SNR*C_sp)**2)
+        # integration times (negative values correspond to infinity)
         intTime[intTime < 0] = np.inf
         
         return intTime.to('day')
-
-    def calc_charTime(self, TL, sInds, dMag, WA, fEZ, fZ):
-        """Finds characterization time for a specific target system,
-        based on Nemati 2014 (SPIE).
-        
-        Args:
-            TL (object):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-        
-        Returns:
-            charTime (astropy Quantity array):
-                Characterization times in units of day
-        
-        """
-        
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        # use the spectro to calculate the characterization time
-        inst = self.Spectro
-        syst = self.SpectroSyst
-        lam = inst['lam']
-        
-        # nb of pixels for photometry aperture = 1/sharpness
-        PSF = syst['PSF'](lam, WA)
-        Npix = (np.sum(PSF))**2/np.sum(PSF**2)
-        C_p, C_b = self.Cp_Cb(TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix)
-        
-        # Nemati14+ method
-        PP = TL.PostProcessing                      # post-processing module
-        SNR = PP.SNimag                             # SNR threshold for imaging/detection
-        ppFact = PP.ppFact                          # post-processing contrast factor
-        Q = syst['contrast'](lam, WA)
-        SpStr = C_p*10.**(0.4*dMag)*Q*ppFact        # spatial structure to the speckle
-        C_b += C_p*inst['ENF']**2                   # Cb must include the planet
-        charTime = SNR**2*C_b / (C_p**2 - (SNR*SpStr)**2);
-        
-        # negative values correspond to infinite characterization times
-        charTime[charTime < 0] = np.inf
-        
-        return charTime.to('day')

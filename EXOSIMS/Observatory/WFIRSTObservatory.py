@@ -10,118 +10,119 @@ class WFIRSTObservatory(Observatory):
     observatory needed to perform Observatory Definition Module calculations
     in exoplanet mission simulation."""
 
-    def orbit(self, time):
-        """Finds WFIRST geosynchronous circular orbit position vector
+    def orbit(self, currentTime):
+        """Finds observatory orbit position vector in heliocentric equatorial frame.
         
-        This method finds the WFIRST geosynchronous circular orbit position 
-        vector as 1D numpy array (astropy Quantity with units of km) in the
-        heliocentric equatorial frame, stores this vector in self.r_sc,
-        and returns True if successful.
+        This method returns the WFIRST geosynchronous circular orbit position vector
+        in the heliocentric equatorial frame.
         
         Args:
-            time (Time):
-                current absolute time (astropy Time)
-            
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+        
         Returns:
-            success (bool):
-                True if successful, False if not
+            r_sc (astropy Quantity nx3 array):
+                Observatory (spacecraft) position vector in units of km
         
         """
         
-        pi = np.pi
-        i = 28.5 # orbital inclination in degrees
-        i = np.radians(i)
-        O = 228. # right ascension of the ascending node in degrees
-        O = np.radians(O)
+        i = np.radians(28.5) # orbital inclination in degrees
+        O = np.radians(228.) # right ascension of the ascending node in degrees
         # orbital period is one sidereal day
-        f = 2.*pi # orbital frequency (2*pi/period)
+        f = 2.*np.pi # orbital frequency (2*pi/period)
         r = 42164.*u.km # orbital height in km
         
         # Find Earth position vector (km in heliocentric equatorial frame)
-        r_earth = self.solarSystem_body_position(time, 'Earth')
+        r_earth = self.solarSystem_body_position(currentTime, 'Earth').T
         
         # Find spacecraft position vector with respect to Earth in orbital plane
-        t = time.mjd - int(time.mjd) # gives percent of day
-        r_scearth = r*np.array([np.cos(f*t), np.sin(f*t), 0.])
+        t = currentTime.mjd - np.floor(currentTime.mjd) # gives percent of day
+        r_scearth = r*np.array([np.cos(f*t), np.sin(f*t), np.zeros(t.size)]).T
         
         # Find spacecraft position vector with respect to Earth in equatorial frame
-        r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth)
+        r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth.T).T
         
         # Find spacecraft position vector with respect to sun (heliocentric equatorial)
-        self.r_sc = r_earth + r_scearth
+        r_sc = r_earth + r_scearth
         
-        b = np.isfinite(self.r_sc) # finds if all values are finite floats
-        success = all(b) # returns True if all values of self.r_sc are finite
+        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
         
-        return success
+        return r_sc.to('km').reshape(currentTime.size,3)
 
-    def keepout(self, time, TL, koangle):
-        """Finds keepout Boolean values, returns True if successful
+    def keepout(self, TL, sInds, currentTime, r_sc, koangle):
+        """Finds keepout Boolean values for stars of interest.
         
-        This method finds the keepout Boolean values for each target star where
-        True is an observable star and stores the 1D numpy array in self.kogood.
+        This method returns the keepout Boolean values for stars of interest, where
+        True is an observable star.
         
         Args:
-            time (Time):
-                absolute time (astropy Time)
-            TL (TargetList or StarCatalog):
-                TargetList or StarCatalog class object
-            koangle (float):
-                Telescope keepout angle in degrees
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            r_sc (astropy Quantity nx3 array):
+                Current observatory (spacecraft) position vector in units of km
+            koangle (astropy Quantity):
+                Telescope keepout angle in units of degree
                 
         Returns:
-            success (bool):
-                True if successful, False if not
+            kogood (boolean ndarray):
+                True is an observable star.
+        
+        Note: currentTime must be of size len(sInds), and r_sc of shape (len(sInds),3)
         
         """
         
-        # get updated orbital position vector
-        a = self.orbit(time)
+        # check type of sInds
+        sInds = np.array(sInds,ndmin=1)
         
-        # Find position and unit vectors for list of stars in catalog wrt spacecraft
-        r_targ = [np.zeros((1,3))]*TL.nStars # initialize list of position vectors
-        u_targ = r_targ # initialize list of unit vectors
-        for x in xrange(TL.nStars):
-            r_targ[x] = self.starprop(time, TL, x) # position vector wrt sun
-            r_targ[x] -= self.r_sc # position vector wrt spacecraft
-            u_targ[x] = r_targ[x]/np.linalg.norm(r_targ[x]) # unit vector wrt spacecraft
+        # check shape of currentTime and r_sc
+        assert currentTime.size == len(sInds), 'currentTime must be of size len(sInds)'
+        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
         
-        # list of bright object position vectors wrt sun
-        r_bright = [-self.r_sc, # sun
-                    self.solarSystem_body_position(time, 'Mercury'), # Mercury
-                    self.solarSystem_body_position(time, 'Venus'), # Venus
-                    self.solarSystem_body_position(time, 'Earth'), # Earth
-                    self.solarSystem_body_position(time, 'Mars'), # Mars
-                    self.solarSystem_body_position(time, 'Jupiter'), # Jupiter
-                    self.solarSystem_body_position(time, 'Saturn'), # Saturn
-                    self.solarSystem_body_position(time, 'Uranus'), # Uranus
-                    self.solarSystem_body_position(time, 'Neptune'), # Neptune
-                    self.solarSystem_body_position(time, 'Pluto'), # Pluto
-                    self.solarSystem_body_position(time, 'Moon')] # moon
-        u_bright = r_bright # initialize list of unit vectors
+        # reshape currentTime
+        currentTime = currentTime.reshape(currentTime.size)
         
-        # Find position and unit vectors for bright objects wrt spacecraft
-        for x in xrange(len(r_bright)):
-            r_bright[x] -= self.r_sc # position vector wrt spacecraft
-            u_bright[x] = r_bright[x]/np.linalg.norm(r_bright[x]) # unit vector
+        # First, find unit vectors wrt spacecraft for stars of interest
+        # position vectors wrt sun
+        r_targ = self.starprop(TL, sInds, currentTime) 
+        # position vectors wrt spacecraft
+        r_targ -= r_sc
+        # unit vectors wrt spacecraft
+        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
+        
+        # Second, find unit vectors wrt spacecraft for bright objects
+        # position vectors wrt sun
+        r_bright = np.array([np.zeros((len(sInds),3)), # sun
+            self.solarSystem_body_position(currentTime, 'Mercury').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Venus').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Mars').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Jupiter').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Saturn').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Uranus').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Neptune').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Pluto').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Moon').T.to('km').value])*u.km
+        # position vectors wrt spacecraft
+        r_bright -= r_sc
+        # unit vectors wrt spacecraft
+        u_bright = (r_bright.value.T/np.linalg.norm(r_bright, axis=-1).T).T
             
-        # Find angles and make angle comparisons for self.kogood
-        # if bright objects have an angle with the target vector less than 
-        # pi/4 they are in the field of view and the target star may not be
+        # Find angles and make angle comparisons for kogood
+        # if bright objects have an angle with the target vector less than koangle 
+        # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False
-        self.kogood = np.array([True]*TL.nStars)
-        for i in xrange(TL.nStars):
-            for j in xrange(len(u_bright)):
-                angle = np.arccos(np.dot(u_targ[i], u_bright[j]))
-                if angle < np.radians(koangle).value:
-                    self.kogood[i] = False
-                    break
+        kogood = np.array([True]*len(u_targ))
+        for i in xrange(len(u_targ)):
+            angles = np.arccos(np.dot(u_bright[:,i,:], u_targ[i]))
+            if any(angles < np.radians(koangle).value):
+                kogood[i] = False
         
-        # check to make sure all elements in self.kogood are Boolean
-        b = [isinstance(element, np.bool_) for element in self.kogood]  
-        c = [a, b]
-        # return True if orbital position is successful and all elements of
-        # self.kogood are Boolean
-        success = all(c)
+        # check to make sure all elements in kogood are Boolean
+        trues = [isinstance(element, np.bool_) for element in kogood]
+        assert all(trues), 'An element of kogood is not Boolean'
         
-        return success
+        return kogood

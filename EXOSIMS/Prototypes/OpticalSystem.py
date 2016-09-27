@@ -36,12 +36,8 @@ class OpticalSystem(object):
             system without the coronagraph elements
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
-        Npix (float):
-            Number of noise pixels
         Ndark (float):
             Number of dark frames used
-        dMagLim (float):
-            Fundamental delta magnitude limit
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
         F0 (callable(lam)):
@@ -54,88 +50,114 @@ class OpticalSystem(object):
             Fundamental limiting delta magnitude
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
-        Imager (dict):
-            Dictionary containing imaging camera attributes.
-            Default to scienceInstruments[0]
-        Spectro (dict):
-            Dictionary containing spectrograph attributes.
-            Default to scienceInstruments[-1]
         starlightSuppressionSystems (list of dicts):
             All starlight suppression system attributes (variable)
-        ImagerSyst (dict):
-            Dictionary containing imaging coronagraph attributes.
-            Default to starlightSuppressionSystems[0]
-        SpectroSyst (dict):
-            Dictionary containing spectroscopy coronagraph attributes.
-            Default to starlightSuppressionSystems[-1]
-    
-    Common Science Instrument Attributes:
-        type (string):
-            Instrument type (e.g. imaging, spectro)
-        lam (astropy Quantity):
-            Central wavelength in units of nm
-        deltaLam (astropy Quantity):
-            Bandwidth in units of nm
-        BW (float):
-            Bandwidth fraction
+        observingModes (list of dicts):
+            Mission observing modes attributes
+        detectionMode (dict):
+            Observing mode selected for detections.
+        
+    Common science instrument attributes:
+        name (string):
+            Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
+            instrument (imager or spectro). Every instrument should have a unique name.
         pitch (astropy Quantity):
             Pixel pitch in units of m
         focal (astropy Quantity):
             Focal length in units of m
         idark (astropy Quantity):
             Dark current rate in units of 1/s
-        texp (astropy Quantity):
-            Exposure time per frame in units of s
-        sread (float):
-            Detector readout noise
         CIC (float):
             Clock-induced-charge
+        sread (float):
+            Detector readout noise
+        texp (astropy Quantity):
+            Exposure time per frame in units of s
         ENF (float):
             Excess noise factor
-        Gem (float):
-            Electron multiplication gain
         Rs (float):
             Spectral resolving power
-        Ns (float):
-            Number of spectral elements in each band
-        QE (callable(lam)):
-            Quantum efficiency (must be callable - can be lambda function, 
-            scipy.interpolate.interp2d object, etc.) with input 
-            wavelength (astropy Quantity).
-     
-    Common Starlight Suppression System Attributes:
-        type (string):
-            System type (e.g. internal, external, hybrid), should also contain the
-            type of science instrument it can be used with (e.g. imaging, spectro)
-        throughput (callable(lam, WA)):
-            System throughput (must be callable - can be lambda,
-            function, scipy.interpolate.interp2d object, etc.) with inputs
-            wavelength (astropy Quantity) and angular separation/working angle 
-            (astropy Quantity).
-        contrast (callable(lam, WA)):
-            System contrast curve (must be callable - can be lambda,
-            function, scipy.interpolate.interp2d object, etc.) with inputs
-            wavelength (astropy Quantity) and angular separation/working angle 
-            (astropy Quantity).
+        QE (float, callable):
+            Detector quantum efficiency: either a scalar for constant QE, or a 
+            two-column array for wavelength-dependent QE, where the first column 
+            contains the wavelengths in units of nm. May be data or FITS filename.
+        
+    Common starlight suppression system attributes:
+        name (string):
+            System name (e.g. HLC-465, HLC-565, SPC-660), should also contain the
+            central wavelength the system is optimized for. Every system must have 
+            a unique name. 
+        lam (astropy Quantity):
+            Central wavelength in units of nm
+        deltaLam (astropy Quantity):
+            Bandwidth in units of nm
+        BW (float):
+            Bandwidth fraction
+        occ_trans (float, callable):
+            Intensity transmission of extended background sources such as zodiacal light.
+            Includes pupil mask, occulter, Lyot stop and polarizer.
+        core_thruput (float, callable):
+            System throughput in the FWHM region of the planet PSF core.
+        core_contrast (float, callable):
+            System contrast = mean_intensity / PSF_peak
+        core_mean_intensity (float, callable):
+            Mean starlight residual normalized intensity per pixel, required to calculate 
+            the total core intensity as core_mean_intensity * Npix. If not specified, 
+            then the total core intensity is equal to core_contrast * core_thruput.
+        core_area (astropy Quantity, callable):
+            Area of the FWHM region of the planet PSF, in units of arcsec^2
         IWA (astropy Quantity):
             Inner working angle in units of arcsec
         OWA (astropy Quantity):
             Outer working angle in units of arcsec
-        PSF (callable(lam, WA)):
+        PSF (float, callable):
             Point spread function - 2D ndarray of values, normalized to 1 at
-            the core (must be callable - can be lambda, function,
-            scipy.interpolate.interp2d object, etc.) with inputs wavelength
-            (astropy Quantity) and angular separation/working angle (astropy 
-            Quantity). Note: normalization means that all throughput effects 
+            the core. Note: normalization means that all throughput effects 
             must be contained in the throughput attribute.
         samp (astropy Quantity):
             Sampling of PSF in units of arcsec (per pixel)
         ohTime (astropy Quantity):
             Overhead time in units of days
-        imagTimeMult (float):
-            Imaging time multiplier
-        charTimeMult (float):
-            Characterization time multiplier
+        occulter (0 or 1):
+            Equals 1 if the system has an occulter (external or hybrid system), 
+            otherwise 0 (internal system)
+        occulterDiameter (astropy Quantity):
+            Occulter diameter in units of m. Measured petal tip-to-tip.
+        NocculterDistances (integer):
+            Number of telescope separations the occulter operates over (number of 
+            occulter bands). If greater than 1, then the occulter description is 
+            an array of dicts.
+        occulterDistance (astropy Quantity):
+            Telescope-occulter separation in units of km.
+        occulterBlueEdge (astropy Quantity):
+            Occulter blue end of wavelength band in units of nm.
+        occulterRedEdge (astropy Quantity):
+            Occulter red end of wavelength band in units of nm.
+    
+    Common observing mode attributes:
+        instName (string):
+            Instrument name. Must match with the name of a defined 
+            Science Instrument.
+        systName (string):
+            System name. Must match with the name of a defined 
+            Starlight Suppression System.
+        inst (dict):
+            Selected instrument of the observing mode.
+        syst (dict):
+            Selected system of the observing mode.
+        detection (0 or 1):
+            Equals 1 if this observing mode is the detection mode, otherwise 0. 
+            Only one detection mode can be specified.
+        SNR (float):
+            Signal-to-noise ratio threshold
+        timeMultiplier (float):
+            Integration time multiplier
+        lam (astropy Quantity):
+            Central wavelength in units of nm
+        deltaLam (astropy Quantity):
+            Bandwidth in units of nm
+        BW (float):
+            Bandwidth fraction
             
     """
 
@@ -143,11 +165,11 @@ class OpticalSystem(object):
     _outspec = {}
 
     def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.6,intCutoff=50,Npix=14.3,Ndark=10,dMagLim=20,scienceInstruments=None,\
-            lam=500,BW=0.2,pitch=13e-6,focal=240,idark=9e-5,texp=1e3,sread=3,CIC=0.0013,\
-            ENF=1,Gem=1,Rs=70,QE=0.9,starlightSuppressionSystems=None,throughput=1e-2,\
-            contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,imagTimeMult=1,\
-            charTimeMult=1,IWA=None,OWA=None,**specs):
+            attenuation=0.5,intCutoff=50,Ndark=10,dMagLim=22.5,scienceInstruments=None,\
+            pitch=1e-5,focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,\
+            QE=0.9,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
+            core_thruput=1e-2,core_contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,\
+            observingModes=None,SNR=5,timeMultiplier=1,IWA=None,OWA=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
@@ -159,47 +181,35 @@ class OpticalSystem(object):
                                                 # keepout angle in degrees
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
-        self.Npix = float(Npix)                 # number of noise pixels
         self.Ndark = float(Ndark)               # number of dark frames used
         self.dMagLim = float(dMagLim)           # fundamental delta magnitude limit
         
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
-        self.F0 = lambda lam: 1e4*10**(4.01-(lam.to('nm').value-550)/770)*u.ph/u.s/u.m**2/u.nm 
+        self.F0 = lambda l: 1e4*10**(4.01-(l.to('nm').value-550)/770)*u.ph/u.s/u.m**2/u.nm 
         
         # loop through all science Instruments (must have one defined)
-        assert scienceInstruments, "No science isntrument defined."
+        assert scienceInstruments, "No science instrument defined."
         self.scienceInstruments = scienceInstruments
         self._outspec['scienceInstruments'] = []
         for ninst,inst in enumerate(self.scienceInstruments):
             assert isinstance(inst,dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('type') and isinstance(inst['type'],basestring),\
-                    "All science instruments must have key type."
-            #populate with values that may be filenames (interpolants)
+            assert inst.has_key('name') and isinstance(inst['name'],basestring),\
+                    "All science instruments must have key name."
+            # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE',QE)
             self._outspec['scienceInstruments'].append(inst.copy())
-            
-            # When provided, always use bandwidth (nm) instead of bandwidth fraction.
-            inst['lam'] = float(inst.get('lam',lam))*u.nm       # central wavelength (nm)
-            inst['deltaLam'] = float(inst.get('deltaLam',inst['lam'].value\
-                    *inst.get('BW',BW)))*u.nm                   # bandwidth (nm)
-            inst['BW'] = float(inst['deltaLam']/inst['lam'])    # bandwidth fraction
-            # Default lam and BW updated with values from first instrument
-            if ninst == 0:
-                lam, BW = inst.get('lam').value, inst.get('BW')
             
             # Loading detector specifications
             inst['pitch'] = float(inst.get('pitch',pitch))*u.m  # pixel pitch
             inst['focal'] = float(inst.get('focal',focal))*u.m  # focal length
             inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
-            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
-            inst['sread'] = float(inst.get('sread',sread))      # detector readout noise
             inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
+            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
+            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
             inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
-            inst['Gem'] = float(inst.get('Gem',Gem))            # e- multiplication gain
-            inst['Rs'] = float(inst.get('Rs',Rs))               # spectral resolving power
-            inst['Ns'] = float(inst['Rs']*inst['BW']) if 'spec' in inst['type'] \
-                    .lower() else 1.            # number of spectral elements in each band
+            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
+                    .lower() else 1.                            # spectral resolving power
             
             # quantum efficiency
             if inst.has_key('QE'):
@@ -210,9 +220,9 @@ class OpticalSystem(object):
                     #basic validation here for size and wavelength
                     #inst['QE'] = lambda or interp
                 elif isinstance(inst['QE'],numbers.Number):
-                    inst['QE'] = lambda lam, QE=float(inst['QE']): QE/u.photon
+                    inst['QE'] = lambda l, QE=float(inst['QE']): QE/u.photon
             
-            #populate detector specifications to outspec
+            # populate detector specifications to outspec
             for att in inst.keys():
                 if att not in ['QE']:
                     dat = inst[att]
@@ -227,85 +237,43 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert syst.has_key('type') and isinstance(syst['type'],basestring),\
-                    "All starlight suppression systems must have key type."
-            #populate with values that may be filenames (interpolants)
-            syst['throughput'] = syst.get('throughput',throughput)
-            syst['contrast'] = syst.get('contrast',contrast)
+            assert syst.has_key('name') and isinstance(syst['name'],basestring),\
+                    "All starlight suppression systems must have key name."
+            # populate with values that may be filenames (interpolants)
+            syst['occ_trans'] = syst.get('occ_trans',occ_trans)
+            syst['core_thruput'] = syst.get('core_thruput',core_thruput)
+            syst['core_contrast'] = syst.get('core_contrast',core_contrast)
+            syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
+            syst['core_area'] = syst.get('core_area') # no default
             syst['PSF'] = syst.get('PSF',PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
-            #set an occulter, for an external or hybrid system
-            if syst['type'].lower() in ('external', 'hybrid'):
+            # set an occulter, for an external or hybrid system
+            syst['occulter'] = int(syst.get('occulter',0))
+            if syst['occulter'] == 1:
                 self.haveOcculter = True
             
-            #handle inf OWA
+            # handle inf OWA
             if syst.get('OWA') == 0:
                 syst['OWA'] = np.Inf
             
-            #check for throughput
-            if isinstance(syst['throughput'],basestring):
-                pth = os.path.normpath(os.path.expandvars(syst['throughput']))
-                assert os.path.isfile(pth),\
-                        "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong "\
-                        "throughput data shape."
-                WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
-                T = dat[1] if dat.shape[0] == 2 else dat[:,1]
-                assert np.all(T>=0), "Throughput must be positive."
-                Tinterp = scipy.interpolate.interp1d(WA, T, kind='cubic',\
-                        fill_value=np.nan, bounds_error=False)
-                syst['throughput'] = lambda lam, WA: Tinterp(WA)
-                
-                # Calculate max throughput
-                Tmax = scipy.optimize.minimize(lambda x:-syst['throughput'](lam,x),\
-                        WA[np.argmax(T)],bounds=((np.min(WA),np.max(WA)),) )
-                if Tmax.success:
-                    Tmax = -Tmax.fun[0]
-                else:
-                    print "Warning: failed to find maximum of throughput "\
-                            "interpolant for starlight suppression system "\
-                            "#%d"%(nsyst+1)
-                    Tmax = np.Tmax(T)
-                
-                # Calculate IWA and OWA, defined as angular separations
-                # corresponding to 50% of maximum throughput
-                WA_min = scipy.optimize.fsolve(lambda x:syst['throughput']\
-                        (lam,x)-Tmax/2.,np.min(WA))[0];
-                WA_max = np.max(WA)-scipy.optimize.fsolve(lambda x:syst['throughput']\
-                        (lam,np.max(WA)-x)-Tmax/2.,0.)[0];
-                syst['IWA'] = max(np.min(WA),syst.get('IWA',WA_min))
-                syst['OWA'] = min(np.max(WA),syst.get('OWA',WA_max))
+            # When provided, always use deltaLam instead of BW (bandwidth fraction)
+            syst['lam'] = float(syst.get('lam',lam))*u.nm       # central wavelength (nm)
+            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].value\
+                    *syst.get('BW',BW)))*u.nm                   # bandwidth (nm)
+            syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
+            # Default lam and BW updated with values from first instrument
+            if nsyst == 0:
+                lam, BW = syst.get('lam').value, syst.get('BW')
             
-            elif isinstance(syst['throughput'],numbers.Number):
-                assert syst['throughput']>0, "Throughput must be positive."
-                syst['throughput'] = lambda lam, WA, T=float(syst['throughput']): T
+            # Get coronagraph input parameters
+            syst = self.get_coro_param(syst, 'occ_trans')
+            syst = self.get_coro_param(syst, 'core_thruput')
+            syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
+            syst = self.get_coro_param(syst, 'core_mean_intensity')
+            syst = self.get_coro_param(syst, 'core_area')
             
-            #check for contrast
-            if isinstance(syst['contrast'],basestring):
-                pth = os.path.normpath(os.path.expandvars(syst['contrast']))
-                assert os.path.isfile(pth),\
-                        "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong "\
-                        "contrast data shape."
-                WA = dat[0] if dat.shape[0] == 2 else dat[:,0]
-                C = dat[1] if dat.shape[0] == 2 else dat[:,1]
-                assert np.all(C>=0), "Contrast must be positive."
-                Cinterp = scipy.interpolate.interp1d(WA, C, kind='cubic',\
-                        fill_value=np.nan, bounds_error=False)
-                syst['contrast'] = lambda lam, WA: Cinterp(WA)
-                
-                # Constraining IWA and OWA
-                syst['IWA'] = max(np.min(WA),syst.get('IWA',np.min(WA)))
-                syst['OWA'] = min(np.max(WA),syst.get('OWA',np.max(WA)))
-            
-            elif isinstance(syst['contrast'],numbers.Number):
-                assert syst['contrast']>0, "Contrast must be positive."
-                syst['contrast'] = lambda lam, WA, C=float(syst['contrast']): C
-            
-            #check for PSF
+            # Get PSF
             if isinstance(syst['PSF'],basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth),\
@@ -314,14 +282,14 @@ class OpticalSystem(object):
                 dat = fits.open(pth)[0].data
                 assert len(dat.shape) == 2, "Wrong PSF data shape."
                 assert np.any(dat), "PSF must be != 0"
-                syst['PSF'] = lambda lam, WA, P=dat: P
+                syst['PSF'] = lambda l, s, P=dat: P
                 if hdr.get('SAMPLING') is not None:
                     syst['samp'] = hdr.get('SAMPLING')
             else:
                 assert np.any(syst['PSF']), "PSF must be != 0"
-                syst['PSF'] = lambda lam, WA, P=np.array(syst['PSF']).astype(float): P
+                syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
             
-            #default IWA/OWA if not specified or calculated
+            # default IWA/OWA if not specified or calculated
             if not(syst.get('IWA')):
                 syst['IWA'] = IWA if IWA else 0.
             if not(syst.get('OWA')):
@@ -332,16 +300,62 @@ class OpticalSystem(object):
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
             syst['samp'] = float(syst.get('samp',samp))*u.arcsec    # PSF sampling
             syst['ohTime'] = float(syst.get('ohTime',ohTime))*u.d   # overhead time
-            # imaging and characterization time multipliers
-            syst['imagTimeMult'] = float(syst.get('imagTimeMult',imagTimeMult))
-            syst['charTimeMult'] = float(syst.get('charTimeMult',charTimeMult))
             
             #populate system specifications to outspec
             for att in syst.keys():
-                if att not in ['throughput','contrast','PSF']:
+                if att not in ['occ_trans','core_thruput','core_contrast',\
+                        'core_mean_intensity','core_area','PSF']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat,u.Quantity) else dat
+        
+        # loop through all observing modes
+        # if no observing mode defined, create a default mode:
+        if observingModes == None:
+            inst = self.scienceInstruments[0]
+            syst = self.starlightSuppressionSystems[0]
+            observingModes = [{'detection': 1,
+                               'instName': inst['name'],
+                               'systName': syst['name']}]
+        self.observingModes = observingModes
+        self._outspec['observingModes'] = []
+        for nmode,mode in enumerate(self.observingModes):
+            assert isinstance(mode,dict),\
+                    "Observing modes must be defined as dicts."
+            assert mode.has_key('instName') and mode.has_key('systName'),\
+                    "All observing modes must have key instName and systName."
+            self._outspec['observingModes'].append(mode.copy())
+            
+            # Loading mode specifications
+            mode['SNR'] = float(mode.get('SNR',SNR))
+            mode['timeMultiplier'] = float(mode.get('timeMultiplier',timeMultiplier))
+            mode['detection'] = int(mode.get('detection',0))
+            mode['inst'] = [inst for inst in self.scienceInstruments \
+                    if inst['name'] == mode['instName']][0]
+            mode['syst'] = [syst for syst in self.starlightSuppressionSystems \
+                    if syst['name'] == mode['systName']][0]
+            # get mode wavelength and bandwidth. If not specified, take system values.
+            # When provided, always use deltaLam instead of BW (bandwidth fraction)
+            syst_lam = mode['syst']['lam'].to('nm').value
+            syst_BW = mode['syst']['BW']
+            mode['lam'] = float(mode.get('lam',syst_lam))*u.nm
+            mode['deltaLam'] = float(mode.get('deltaLam',mode['lam'].value \
+                    *mode.get('BW',syst_BW)))*u.nm
+            mode['BW'] = float(mode['deltaLam']/mode['lam'])
+        
+        # check for only one detection mode
+        detectionModes = filter(lambda mode: mode['detection'] == 1, self.observingModes)
+        assert len(detectionModes) <= 1, 'More than one detection mode specified.'
+        # if not specified, default detection mode is first imager mode
+        if len(detectionModes) == 0:
+            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], self.observingModes)
+            if imagerModes:
+                imagerModes[0]['detection'] = 1
+            # if no imager mode, default detection mode is first observing mode
+            else:
+                self.observingModes[0]['detection'] = 1
+        # define detection mode
+        self.detectionMode = filter(lambda mode: mode['detection'] == 1, self.observingModes)[0]
         
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
@@ -367,15 +381,9 @@ class OpticalSystem(object):
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
             if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
-                    'Imager','ImagerSyst','Spectro','SpectroSyst']:
+                    'observingModes']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
-        
-        # default detectors and imagers
-        self.Imager = self.scienceInstruments[0]
-        self.ImagerSyst = self.starlightSuppressionSystems[0]
-        self.Spectro = self.scienceInstruments[-1]
-        self.SpectroSyst = self.starlightSuppressionSystems[-1]
 
     def __str__(self):
         """String representation of the Optical System object
@@ -388,67 +396,151 @@ class OpticalSystem(object):
         
         return 'Optical System class object attributes'
 
-    def Cp_Cb(self, TL, sInds, dMag, WA, fEZ, fZ, inst, syst, Npix):
-        """ Calculates electron count rates for planet signal and background noise.
+    def get_coro_param(self, syst, param_name, fill=0.):
+        """ For a given starlightSuppressionSystem, loads an input parameter that
+        depends on the angular separation and updates the system. Also updates the 
+        IWA and OWA of the system.
         
         Args:
-            TL (object):
+            syst (dict):
+                Dictionnary containing the parameters of one starlight suppression system
+            param_name (string):
+                Name of the parameter that must be loaded
+            fill (float):
+                Fill value for working angles outside of the input array definition
+        
+        Returns:
+            syst (dict):
+                Updated dictionnary of parameters
+        
+        """
+        
+        assert isinstance(param_name, basestring), "param_name must be a string."
+        if isinstance(syst[param_name], basestring):
+            pth = os.path.normpath(os.path.expandvars(syst[param_name]))
+            assert os.path.isfile(pth),\
+                    "%s is not a valid file."%pth
+            dat = fits.open(pth)[0].data
+            assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong "+param_name+" data shape."
+            WA,D = (dat[0],dat[1]) if dat.shape[0] == 2 else (dat[:,0],dat[:,1])
+            assert np.all(D>=0) and np.all(D<=1), \
+                    param_name+" must be positive and smaller than 1."
+            # parameter values outside of WA
+            Dinterp = scipy.interpolate.interp1d(WA, D, kind='cubic',\
+                    fill_value=fill, bounds_error=False)
+            syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),ndmin=1)
+            # update IWA and OWA
+            syst['IWA'] = max(np.min(WA), syst.get('IWA',np.min(WA)))
+            syst['OWA'] = min(np.max(WA), syst.get('OWA',np.max(WA)))
+            
+        elif isinstance(syst[param_name],numbers.Number):
+            assert syst[param_name]>=0 and syst[param_name]<=1, \
+                    param_name+" must be positive and smaller than 1."
+            syst[param_name] = lambda l, s, D=float(syst[param_name]): D
+            
+        else:
+            syst[param_name] = None
+        
+        return syst
+
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+        """ Calculates electron count rates for planet signal, background noise, 
+        and speckle residuals.
+        
+        Args:
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
                 Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            inst (dict):
-                Selected Science Instrument
-            syst (dict):
-                Selected Starlight Suppression System
-            Npix (float):
-                Number of noise pixels
+            mode (dict):
+                Selected observing mode
         
         Returns:
             C_p (astropy Quantity array):
                 Planet signal electron count rate in units of 1/s
             C_b (astropy Quantity array):
                 Background noise electron count rate in units of 1/s
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
         
         """
         
+        # get scienceInstrument and starlightSuppressionSystem
+        inst = mode['inst']
+        syst = mode['syst']
+        # get mode wavelength and bandwidth
+        lam = mode['lam']
+        deltaLam = mode['deltaLam']
+        BW = mode['BW']
+        
         # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
+        sInds = np.array(sInds,ndmin=1)
+        # get star magnitude
+        mV = TL.starMag(sInds,lam)
         
-        lam = inst['lam']                           # central wavelength
-        deltaLam = inst['deltaLam']                 # bandwidth
-        QE = inst['QE'](lam)                        # quantum efficiency
-        Q = syst['contrast'](lam, WA)               # contrast
-        T = syst['throughput'](lam, WA) / inst['Ns'] \
-                * self.attenuation                  # throughput
-        mV = TL.starMag(sInds,lam)                  # star visual magnitude
-        X = np.sqrt(2)/2                            # aperture photometry radius (in lam/D)
-        Theta = (X*lam/self.pupilDiam*u.rad).to('arcsec') # angular radius (in arcseconds)
-        Omega = np.pi*Theta**2                      # solid angle subtended by the aperture
+        # if the mode wavelength is different than the wavelength at which the system 
+        # is defined, we need to rescale the working angles
+        if mode['lam'] != syst['lam']:
+            WA = WA*mode['lam']/syst['lam']
         
-        # electron count rates [ s^-1 ]
-        C_F0 = self.F0(lam)*QE*T*self.pupilArea*deltaLam
-        C_p = C_F0*10.**(-0.4*(mV + dMag))          # planet signal
-        C_sr = C_F0*10.**(-0.4*mV)*Q                # residual suppressed starlight (coro)
-        C_zl = C_F0*(fZ+fEZ)*Omega                  # zodiacal light = local + exo
-        C_dc = Npix*inst['idark']                   # dark current
-        C_cc = Npix*inst['CIC']/inst['texp']        # clock-induced-charge
-        C_rn = Npix*(inst['sread']/inst['Gem'])**2/inst['texp'] # readout noise
-        C_b = inst['ENF']**2*(C_sr+C_zl+C_dc+C_cc)+C_rn   # total noise budget
+        # solid angle of photometric aperture, specified by core_area(optional), 
+        # otherwise obtained from (lambda/D)^2
+        Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
+                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+        # number of pixels in the photometric aperture = Omega / theta^2 
+        Npix = (Omega / (inst['pitch']/inst['focal']*u.rad)**2).decompose().value
         
-        return C_p, C_b
+        # get coronagraph input parameters
+        occ_trans = syst['occ_trans'](lam,WA)
+        core_thruput = syst['core_thruput'](lam,WA)
+        core_contrast = syst['core_contrast'](lam,WA)
+        
+        # get stellar residual intensity in the planet PSF core
+        # OPTION 1: specify contrast (only if mean_intensity is missing)
+        if syst['core_mean_intensity'] == None:
+            core_intensity = core_thruput * core_contrast
+        # OPTION 2: specify mean_intensity
+        else:
+            core_intensity = syst['core_mean_intensity'](lam,WA) * Npix
+        
+        # number of spectral elements in each band
+        Nspec = inst['Rs']*BW
+        # non-coronagraphic transmission
+        T = self.attenuation / Nspec
+        
+        # ELECTRON COUNT RATES [ s^-1 ]
+        # spectral flux density = F0 * A * Dlam * QE * T (including non-coro transmission)
+        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*T
+        # planet signal
+        C_p = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
+        # starlight residual
+        C_sr = C_F0*10.**(-0.4*mV)*core_intensity
+        # zodiacal light
+        C_z = C_F0*fZ*Omega*occ_trans
+        # exozodiacal light
+        C_ez = C_F0*fEZ*Omega*core_thruput
+        # dark current
+        C_dc = Npix*inst['idark']
+        # clock-induced-charge
+        C_cc = Npix*inst['CIC']/inst['texp']
+        # readout noise
+        C_rn = Npix*inst['sread']**2/inst['texp']
+        # background
+        C_b = inst['ENF']**2*(C_sr+C_z+C_ez+C_dc+C_cc)+C_rn 
+        # spatial structure to the speckle including post-processing contrast factor
+        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
+        
+        return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
-    def calc_intTime(self, TL, sInds, dMag, WA, fEZ, fZ):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration time for a specific target system 
         
         This method is called by a method in the SurveySimulation class object.
@@ -456,19 +548,20 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
                 Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+            mode (dict):
+                Selected observing mode
         
         Returns:
             intTime (astropy Quantity array):
@@ -477,61 +570,29 @@ class OpticalSystem(object):
         """
         
         # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
+        sInds = np.array(sInds,ndmin=1)
         intTime = np.ones(len(sInds))*u.day
         
         return intTime
 
-    def calc_charTime(self, TL, sInds, dMag, WA, fEZ, fZ):
-        """Finds characterization time for a specific target system 
-        
-        This method is called by a method in the SurveySimulation class object.
-        This method defines the data type expected, characterization time is 
-        determined by specific OpticalSystem classes.
-        
-        Args:
-            TL (object):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-        
-        Returns:
-            charTime (astropy Quantity array):
-                Characterization times in units of day
-        
-        """
-        
-        # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
-        
-        charTime = np.ones(len(sInds))*u.day
-        
-        return charTime
-
-    def calc_maxintTime(self, TL):
+    def calc_maxintTime(self, TL, sInds, fZ, fEZ, mode):
         """Finds maximum integration time for target systems 
         
-        This method is called in the __init__ method of the TargetList class
-        object. The working angle is set to the optical system IWA value, and
-        the planet inclination is set to 0.
+        This method is called in the run_sim() method of the SurveySimulation
+        class object. It calculates the default maximum integration time for a
+        fixed dMagLim, and at the optical system IWA.
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            mode (dict):
+                Selected observing mode
         
         Returns:
             maxintTime (astropy Quantity array):
@@ -539,15 +600,10 @@ class OpticalSystem(object):
         
         """
         
-        # generate sInds for the whole TargetList
-        sInds = np.array(range(TL.nStars))
-        
-        # set default max integration time to dMag = dMagLim, WA = IWA, fzodi = 0
-        dMag = np.array([self.dMagLim]*TL.nStars)
-        WA = np.array([self.IWA.value]*TL.nStars)*u.arcsec
-        fEZ = np.zeros(TL.nStars)/u.arcsec**2
-        fZ = np.zeros(TL.nStars)/u.arcsec**2
-        
-        maxintTime = self.calc_intTime(TL, sInds, dMag, WA, fEZ, fZ)
+        # calc integration time, for dMag = dMagLim, and WA = IWA
+        dMag = self.dMagLim
+        WA = self.IWA
+        mode = self.observingModes[0]
+        maxintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
         
         return maxintTime

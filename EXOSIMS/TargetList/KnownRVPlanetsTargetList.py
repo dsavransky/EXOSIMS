@@ -52,7 +52,7 @@ class KnownRVPlanetsTargetList(TargetList):
         Comp = self.Completeness
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        
+       
         tmp = PPop.allplanetdata[:]
         # filter out targets with planets outside of WA range 
         dist = tmp['st_dist'].filled()*u.pc
@@ -62,6 +62,7 @@ class KnownRVPlanetsTargetList(TargetList):
         tmp = tmp[mask]
         # filter out redundant targets
         tmp = tmp[np.unique(tmp['pl_hostname'].data,return_index=True)[1]]
+        
         # filter missing Vmag and BV , for OS.calc_maxintTime
         tmp = tmp[~tmp['st_vj'].mask]
         tmp = tmp[~tmp['st_bmvj'].mask]
@@ -90,14 +91,15 @@ class KnownRVPlanetsTargetList(TargetList):
         
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate maximum integration time
-        self.maxintTime = OS.calc_maxintTime(self)
+        # populate minimum integration time values, for minimum dMag
+        self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
+                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, OS.detectionMode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('maxintTime')
+        self.catalog_atts.append('tint0')
 
     def filter_target_list(self, **specs):
         """ Filtering is done as part of populating the table, so this helper function

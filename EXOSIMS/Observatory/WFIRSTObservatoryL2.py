@@ -49,37 +49,42 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
                 self.orbit_pos.value.T,kind='cubic')
 
-    def orbit(self, time):
-        """Finds WFIRST L2 Halo orbit position vector
+    def orbit(self, currentTime):
+        """Finds observatory orbit position vector in heliocentric equatorial frame.
         
-        This method finds the WFIRST L2 Halo rbit position 
-        vector as 1D numpy array (astropy Quantity with units of km) in the
-        heliocentric equatorial frame, stores this vector in self.r_sc,
-        and returns True if successful.
+        This method returns the WFIRST L2 Halo orbit position vector
+        in the heliocentric equatorial frame.
         
         Args:
-            time (Time):
-                current absolute time (astropy Time)
-            
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+        
         Returns:
-            success (bool):
-                True if successful, False if not
+            r_sc (astropy Quantity nx3 array):
+                Observatory (spacecraft) position vector in units of km
         
         """
         
-        #find time from mission start and interpolated position
-        deltime = (time - self.missionStart).to('year')
-        cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value)
+        # find time from mission start and interpolated position
+        deltime = (currentTime - self.missionStart).to('year')
+        cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value).T
         
-        #add L2 position to get current ecliptic coord
+        # add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi
-        cpos += np.array([np.cos(th),np.sin(th),0])*self.L2_dist.to('AU').value
+        cpos += np.array([np.cos(th),np.sin(th),np.zeros(th.size)]).T*self.L2_dist.to('AU').value
         
-        #finally, rotate into equatorial plane
-        obe = self.obe(self.cent(time))
-        cpos = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to('km')
+        # finally, rotate into equatorial plane
+        obe = self.obe(self.cent(currentTime))
         
-        self.r_sc = cpos
+        # if single currentTime value
+        if type(obe) == float:
+            r_sc = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to('km')
+        # else if several currentTime values
+        else:
+            r_sc = np.empty((obe.size, 3))*u.km
+            for i in range(obe.size):
+                r_sc[i] = (np.dot(self.rot(np.radians(-obe[i]),1),cpos[i])*u.AU).to('km')
         
-        return np.all(np.isfinite(self.r_sc))
-
+        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
+        
+        return r_sc.to('km').reshape(currentTime.size,3)

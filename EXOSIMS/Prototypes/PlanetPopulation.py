@@ -17,6 +17,8 @@ class PlanetPopulation(object):
             user specified values
             
     Attributes:
+        PlanetPhysicalModel (PlanetPhysicalModel module):
+            PlanetPhysicalModel class object
         arange (astropy Quantity 1x2 array):
             Semi-major axis range in untis of AU
         erange (1x2 ndarray):
@@ -42,8 +44,6 @@ class PlanetPopulation(object):
         eta (float)
             Global occurrence rate defined as expected number of planets 
             per star in a given universe
-        PlanetPhysicalModel (object):
-            PlanetPhysicalModel class object
         
     """
 
@@ -62,7 +62,7 @@ class PlanetPopulation(object):
         self.Orange = self.checkranges(Orange,'Orange')*u.deg
         self.wrange = self.checkranges(wrange,'wrange')*u.deg
         self.prange = self.checkranges(prange,'prange')
-        self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth
+        self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth.to('km')
         self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
         
         assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
@@ -115,6 +115,97 @@ class PlanetPopulation(object):
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Planet Population class object attributes'
+        
+    def dist_sma(self, x):
+        """Probability density function for semi-major axis in AU
+        
+        The prototype provides a log-uniform distribution between the minimum
+        and maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Semi-major axis value(s) in AU
+                
+        Returns:
+            f (ndarray):
+                Semi-major axis probability density
+        
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+            
+        f = ((x >= self.arange[0].to('AU').value) & (x <= self.arange[1].to('AU').value)).astype(int)\
+                /(x*(np.log(self.arange[1].to('AU').value) - np.log(self.arange[0].to('AU').value)))
+        
+        return f
+        
+    def dist_eccen(self, x):
+        """Probability density function for eccentricity
+        
+        The prototype provides a uniform distribution between the minimum and
+        maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Eccentricity value(s)
+        
+        Returns:
+            f (ndarray):
+                Eccentricity probability density
+        
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+            
+        f = ((x >= self.erange[0]) & (x <= self.erange[1])).astype(int)\
+                /(self.erange[1] - self.erange[0])
+        
+        return f
+        
+    def dist_albedo(self, x):
+        """Probability density function for albedo
+        
+        The prototype provides a uniform distribution between the minimum and
+        maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Albedo value(s)
+        
+        Returns:
+            f (ndarray):
+                Albedo probability density
+                
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+            
+        f = ((x >= self.prange[0]) & (x <= self.prange[1])).astype(int)/(self.prange[1] - self.prange[0])
+                
+        return f
+        
+    def dist_radius(self, x):
+        """Probability density function for planetary radius
+        
+        The prototype provides a log-uniform distribution between the minimum
+        and maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Planetary radius value(s)
+                
+        Returns:
+            f (ndarray):
+                Planetary radius probability density
+        
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+        
+        f = ((x >= self.Rprange[0].value) & (x <= self.Rprange[1].value)).astype(int)\
+                /(x*(np.log(self.Rprange[1].value) - np.log(self.Rprange[0].value)))
+        
+        return f
 
     def gen_input_check(self, n):
         """"
@@ -283,7 +374,7 @@ class PlanetPopulation(object):
                 Number of samples to generate
                 
         Returns:
-            R (astropy Quantity units m)
+            Rp (astropy Quantity units m)
         
         """
         n = self.gen_input_check(n)

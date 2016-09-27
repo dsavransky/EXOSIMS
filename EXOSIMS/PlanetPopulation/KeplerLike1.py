@@ -4,6 +4,7 @@ import astropy.units as u
 import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
+import scipy.interpolate as interpolate
 
 
 class KeplerLike1(PlanetPopulation):
@@ -25,7 +26,7 @@ class KeplerLike1(PlanetPopulation):
     Notes:  
     1. The gen_mass function samples the Radius and calculates the mass from
     there.  Any user-set mass limits are ignored.
-    2. The gen_abledo function samples the sma, and then calculates the albedos
+    2. The gen_albedo function samples the sma, and then calculates the albedos
     from there. Any user-set albedo limits are ignored.
     3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
     settings (the JSON input will be ignored) 
@@ -52,11 +53,15 @@ class KeplerLike1(PlanetPopulation):
         
         #define sma distribution
         self.smaknee = float(smaknee)
-        self.smadist = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-((x/s0)**2))
+        self.smadist1 = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-((x/s0)**2))
+        self.smanorm = integrate.quad(self.smadist1, self.arange.min().to('AU').value, self.arange.max().to('AU').value)[0]        
+        self.smadist = lambda x,s0=self.smaknee: (x**(-0.62)*np.exp(-((x/s0)**2)))/self.smanorm
         
         #define Rayleigh eccentricity distribution
         self.esigma = float(esigma)
-        self.edist = lambda x,sigma=self.esigma: (x/sigma**2)*np.exp(-x**2/(2.*sigma**2))
+        self.edist1 = lambda x,sigma=self.esigma: (x/sigma**2)*np.exp(-x**2/(2.*sigma**2))
+        self.enorm = integrate.quad(self.edist1, self.erange.min(), self.erange.max())[0]
+        self.edist = lambda x,sigma=self.esigma: ((x/sigma**2)*np.exp(-x**2/(2.0*sigma**2)))/self.enorm
         
         #define Kepler radius distribution
         Rs = np.array([1,1.4,2.0,2.8,4.0,5.7,8.0,11.3,16,22.6]) #Earth Radii
@@ -69,6 +74,104 @@ class KeplerLike1(PlanetPopulation):
         self.Rs = Rs
         self.Rvals = Rvals
         self.eta = np.sum(Rvals)
+        
+        self.dist_albedo_built = False
+        self.dist_radius_built = False
+                
+    def dist_sma(self, x):
+        """Probability density function for semi-major axis in AU
+        
+        Args:
+            x (float/ndarray):
+                Semi-major axis value(s) in AU
+                
+        Returns:
+            f (ndarray):
+                Semi-major axis probability density
+        
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+        
+        f = ((x >= self.arange[0].to('AU').value) & (x <= self.arange[1].to('AU').value)).astype(int)\
+                *self.smadist(x)
+        
+        return f
+        
+    def dist_eccen(self, x):
+        """Probability density function for eccentricity
+        
+        Args:
+            x (float/ndarray):
+                Eccentricity value(s)
+        
+        Returns:
+            f (ndarray):
+                Eccentricity probability density
+        
+        """
+        
+        x = np.array(x, ndmin=1, copy=False)
+        
+        f = ((x >= self.erange[0]) & (x <= self.erange[1])).astype(int)*self.edist(x)
+        
+        return f
+        
+    def dist_albedo(self, x):
+        """Probability density function for albedo
+        
+        Args:
+            x (float/ndarray):
+                Albedo value(s)
+        
+        Returns:
+            f (ndarray):
+                Albedo probability density
+                
+        """
+        
+        if self.dist_albedo_built:
+            f = self.dist_albedo(x)
+        else:
+            # define distribution for albedo
+            p = self.gen_albedo(int(1e6))
+            hp, pedges = np.histogram(p, bins=2000, range=(self.prange.min(),self.prange.max()), normed=True)
+            pedges = 0.5*(pedges[1:]+pedges[:-1])
+            pedges = np.hstack((self.prange.min(), pedges, self.prange.max()))
+            hp = np.hstack((0.0, hp, 0.0))
+            self.dist_albedo = interpolate.InterpolatedUnivariateSpline(pedges, hp, k=1, ext=1)
+            f = self.dist_albedo(x)
+            self.dist_albedo_built = True
+            
+        return f
+        
+    def dist_radius(self, x):
+        """Probability density function for planetary radius
+        
+        Args:
+            x (float/ndarray):
+                Planetary radius value(s)
+                
+        Returns:
+            f (ndarray):
+                Planetary radius probability density
+        
+        """
+        
+        if self.dist_radius_built:
+            f = self.dist_radius(x)
+        else:
+            # define distribution for radius
+            R = self.gen_radius(int(1e6))
+            hR, Redges = np.histogram(R.to('km').value, bins=2000, range=(self.Rprange.min().to('km').value, self.Rprange.max().to('km').value), normed=True)
+            Redges = 0.5*(Redges[1:]+Redges[:-1])
+            Redges = np.hstack((self.Rprange.min().to('km').value, Redges, self.Rprange.max().to('km').value))
+            hR = np.hstack((0.0, hR, 0.0))
+            self.dist_radius = interpolate.InterpolatedUnivariateSpline(Redges, hR, k=1, ext=1)
+            f = self.dist_radius(x)
+            self.dist_radius_built = True
+            
+        return f
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU

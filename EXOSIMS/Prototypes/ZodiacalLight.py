@@ -19,20 +19,23 @@ class ZodiacalLight(object):
             1 exo-zodi brightness magnitude (per arcsec2)
         varEZ (float):
             exo-zodiacal light variation (variance of log-normal distribution)
-        nEZ (float):
-            exo-zodiacal light level in zodi
+        fZ0 (astropy Quantity):
+            default surface brightness of zodiacal light in units of 1/arcsec2
+        fEZ0 (astropy Quantity):
+            default surface brightness of exo-zodiacal light in units of 1/arcsec2
         
     """
 
     _modtype = 'ZodiacalLight'
     _outspec = {}
 
-    def __init__(self, magZ=23, magEZ=22, varEZ=0, nEZ=1.5, **specs):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, **specs):
         
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
-        self.nEZ = float(nEZ)           # exo-zodi level in zodi
+        self.fZ0 = 10**(-0.4*self.magZ)/u.arcsec**2   # default zodi brightness
+        self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
         
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
@@ -56,42 +59,46 @@ class ZodiacalLight(object):
         """Returns surface brightness of local zodiacal light
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Integer indices of the stars of interest, with the length of 
-                the number of planets of interest
+                Integer indices of the stars of interest
             lam (astropy Quantity):
                 Central wavelength in units of nm
-            r_sc (astropy Quantity 1x3 array):
+            r_sc (astropy Quantity nx3 array):
                 Observatory (spacecraft) position vector in units of km
         
         Returns:
             fZ (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2
+        
+        Note: r_sc must be an array of shape = len(sInds)x3
+        
         """
         
         # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
+        sInds = np.array(sInds,ndmin=1)
+        
+        # check shape of r_sc
+        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
         
         nZ = np.ones(len(sInds))
         fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2
         
         return fZ
 
-    def fEZ(self, TL, sInds, I):
+    def fEZ(self, TL, sInds, I, r_orbit):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
-            TL (object):
+            TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
-                Numpy ndarray containing integer indices of the stars of interest, 
-                with the length of the number of planets of interest.
+                Integer indices of the stars of interest
             I (astropy Quantity array):
                 Inclination of the planets of interest in units of deg
+            r_orbit (astropy Quantity nx3 array):
+                Orbital radii of the planets of interest in units of AU
         
         Returns:
             fEZ (astropy Quantity array):
@@ -100,29 +107,27 @@ class ZodiacalLight(object):
         """
         
         # check type of sInds
-        sInds = np.array(sInds)
-        if not sInds.shape:
-            sInds = np.array([sInds])
+        sInds = np.array(sInds,ndmin=1)
         
         # assume log-normal distribution of variance
-        if self.varEZ == 0:
-            nEZ = np.array([self.nEZ]*len(sInds))
-        else:
-            mu = np.log(self.nEZ) - 0.5*np.log(1. + self.varEZ/self.nEZ**2)
-            v = np.sqrt(np.log(self.varEZ/self.nEZ**2 + 1.))
+        nEZ = np.ones(len(sInds))
+        if self.varEZ != 0:
+            mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
+            v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
             nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
         
         # supplementary angle for inclination > 90 degrees
-        mask = np.where(I.value > 90)[0]
-        I.value[mask] = 180 - I.value[mask]
-        beta = I.value
+        beta = I.to('deg').value
+        mask = np.where(beta > 90)[0]
+        beta[mask] = 180 - beta[mask]
         fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
         
-        # absolute V-band magnitude of the star
+        # apparent magnitude of the star (in the V band)
         MV = TL.MV[sInds]
-        # absolute V-band magnitude of the Sun
+        # apparent magnitude of the Sun (in the V band)
         MVsun = 4.83
         
-        fEZ = nEZ*10**(-0.4*self.magEZ) * 2*fbeta * 10.**(-0.4*(MV-MVsun))/u.arcsec**2
+        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV-MVsun))\
+                *2*fbeta/r_orbit.to('AU').value**2/u.arcsec**2
         
         return fEZ

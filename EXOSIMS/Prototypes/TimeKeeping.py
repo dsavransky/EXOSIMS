@@ -27,29 +27,28 @@ class TimeKeeping(object):
             user specified values
             
     Attributes:
-        missionStart (Time):
-            mission start time (default astropy Time in MJD)
-        missionLife (Quantity):
-            mission lifetime (default units of year)
-        extendedLife (Quantity):
-            extended mission time (default units of year)
+        missionStart (astropy Time):
+            Mission start time in MJD
+        missionLife (astropy Quantity):
+            Mission life time in units of year
+        extendedLife (astropy Quantity):
+            Extended mission time in units of year
         missionPortion (float):
-            portion of mission devoted to planet-finding
-        duration (Quantity):
-            duration of planet-finding operations (default units of day)
-        dtAlloc (Quantity):
-            default allocated temporal block (default units of day)
-        missionFinishAbs (Time):
-            mission finish absolute time (default astropy Time in MJD)
-        missionFinishNorm (Quantity):
-            mission finish normalized time (default units of day)
-        nextTimeAvail (Quantity):
-            next time available for planet-finding (default units of day)
-        currentTimeNorm (Quantity):
-            current mission time normalized to zero at mission start (default
-            units of day)
-        currentTimeAbs (Time):
-            current absolute mission time (default astropy Time in MJD)
+            Portion of mission devoted to planet-finding
+        duration (astropy Quantity):
+            Maximum duration of planet-finding operations in units of day
+        dtAlloc (astropy Quantity):
+            Default allocated temporal block in units of day
+        missionFinishAbs (astropy Time):
+            Mission finish absolute time in MJD
+        missionFinishNorm (astropy Quantity):
+            Mission finish normalized time in units of day
+        nextTimeAvail (astropy Quantity):
+            Next time available for planet-finding in units of day
+        currentTimeNorm (astropy Quantity):
+            Current mission time normalized to zero at mission start in units of day
+        currentTimeAbs (astropy Time):
+            Current absolute mission time in MJD
         
     """
 
@@ -57,7 +56,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
-                  missionPortion = 1/6., duration = 14, dtAlloc = 1, **specs):
+                  missionPortion = 1/6., intCutoff = 50, dtAlloc = 1, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -73,8 +72,9 @@ class TimeKeeping(object):
         self.missionLife = float(missionLife)*u.year
         self.extendedLife = float(extendedLife)*u.year
         self.missionPortion = float(missionPortion)
-        self.duration = float(duration)*u.day
         self.dtAlloc = float(dtAlloc)*u.day
+        # planet-finding operation duration is equal to Optical System intCutoff
+        self.duration = float(intCutoff)*u.day
         
         # set values derived from quantities above
         self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
@@ -116,11 +116,11 @@ class TimeKeeping(object):
         For now, we check for this condition at the top of the simulation loop and not here.
         
         Args:
-            dt (Quantity):
-                amount of time requested (units of time)
+            dt (astropy Quantity):
+                Amount of time requested in units of day
                 
         Returns:
-            success (Boolean):
+            success (boolean):
                 True if the requested time fits in the widest window, otherwise False.
         """
         

@@ -21,30 +21,32 @@ class MissionSim(object):
             user specified values
             
     Attributes:
+        PlanetPopulation (PlanetPopulation):
+            PlanetPopulation class object
+        PlanetPhysicalModel (PlanetPhysicalModel):
+            PlanetPhysicalModel class object
+        OpticalSystem (OpticalSystem):
+            OpticalSystem class object
+        ZodiacalLight (ZodiacalLight):
+            ZodiacalLight class object
+        BackgroundSources (BackgroundSources):
+            Background Source class object
+        PostProcessing (PostProcessing):
+            PostProcessing class object
+        Completeness (Completeness):
+            Completeness class object
+        TargetList (TargetList):
+            TargetList class object
         SimulatedUniverse (SimulatedUniverse):
             SimulatedUniverse class object
         Observatory (Observatory):
             Observatory class object
         TimeKeeping (TimeKeeping):
             TimeKeeping class object
-        TargetList (TargetList):
-            TargetList class object
-        PlanetPhysicalModel (PlanetPhysicalModel):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem):
-            OpticalSystem class object
-        PlanetPopulation (PlanetPopulation):
-            PlanetPopulation class object
-        ZodiacalLight (ZodiacalLight):
-            ZodiacalLight class object
-        PostProcessing (PostProcessing):
-            PostProcessing class object
-        Completeness (Completeness):
-            Completeness class object
-        BackgroundSources (BackgroundSources):
-            Background Source class object
+        SurveySimulation (SurveySimulation):
+            SurveySimulation class object
         SurveyEnsemble (SurveyEnsemble):
-            Survey Ensemble class object
+            SurveyEnsemble class object
     """
 
     _modtype = 'MissionSim'
@@ -97,7 +99,7 @@ class MissionSim(object):
         self._outspec['seed'] = seed
         
         #create the ensemble object first, before any specs are updated
-        SurveyEns = get_module(specs['modules']['SurveyEnsemble'], 'SurveyEnsemble')
+        SurveyEns = get_module(specs['modules']['SurveyEnsemble'],'SurveyEnsemble')
         sens = SurveyEns(**specs)
         
         #preserve star catalog name
@@ -114,13 +116,13 @@ class MissionSim(object):
         
         # collect sub-initializations
         SU = self.modules['SimulatedUniverse']
-        self.modules['OpticalSystem'] = SU.OpticalSystem
         self.modules['PlanetPopulation'] = SU.PlanetPopulation
+        self.modules['PlanetPhysicalModel'] = SU.PlanetPhysicalModel
+        self.modules['OpticalSystem'] = SU.OpticalSystem
         self.modules['ZodiacalLight'] = SU.ZodiacalLight
         self.modules['BackgroundSources'] = SU.BackgroundSources
-        self.modules['Completeness'] = SU.Completeness
-        self.modules['PlanetPhysicalModel'] = SU.PlanetPhysicalModel
         self.modules['PostProcessing'] = SU.PostProcessing
+        self.modules['Completeness'] = SU.Completeness
         self.modules['TargetList'] = SU.TargetList
         
         # replace modules dict with instantiated objects 

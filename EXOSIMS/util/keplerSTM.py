@@ -32,7 +32,7 @@ and continued fraction to solve the Kepler equation.
 
 '''
 class planSys:    
-    def __init__(self, x0, mu, epsmult = 2.0):
+    def __init__(self, x0, mu, epsmult = 4.0):
         #determine number of planets and validate input
         nplanets = x0.size/6.;
         if (nplanets - np.floor(nplanets) > 0):
@@ -64,11 +64,11 @@ class planSys:
         
 
     def takeStep(self,dt):
-        Phi = self.calcSTM(dt,epsmult=self.epsmult)
+        Phi = self.calcSTM(dt)
         self.updateState(np.dot(Phi,self.x0))
         
 
-    def calcSTM(self,dt,epsmult = 2.0):
+    def calcSTM(self,dt):
         #allocate
         u = np.zeros(self.nplanets)
         deltaU = np.zeros(self.beta.size)
@@ -100,7 +100,7 @@ class planSys:
             counter += 1
 
         if (counter == 1000):
-            raise ValueError('Failed to converge on t.');
+            raise ValueError('Failed to converge on t: %e/%e'%(np.max(np.abs(t-dt)), self.epsmult*np.spacing(dt)))
 
         #Kepler solution
         f = 1 - self.mu/self.r0norm*U2

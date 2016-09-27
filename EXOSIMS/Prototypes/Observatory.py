@@ -22,32 +22,26 @@ class Observatory(object):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
-        settlingTime (Quantity): 
-            instrument settling time after repoint (default with units of day)
-        thrust (Quantity): 
-            occulter slew thrust (default with units of mN)
-        slewIsp (Quantity): 
-            occulter slew specific impulse (default with units of s)
-        scMass (Quantity): 
-            occulter (maneuvering sc) wet mass (default with units of kg)
-        dryMass (Quantity): 
-            occulter (maneuvering sc) dry mass (default with units of kg)
-        coMass (Quantity): 
-            telescope (or non-maneuvering sc) mass (default with units of kg)
-        occulterSep (Quantity): 
-            occulter-telescope distance (default with units of km)
-        skIsp (Quantity): 
-            station-keeping specific impulse (default with units of s)
-        kogood (ndarray): 
-            1D numpy ndarray of booleans where True is observable target star 
-            in the target list
-        r_sc (Quantity): 
-            1D numpy ndarray of observatory postion vector (default with units 
-            of km)
-        currentSep (Quantity): 
-            current occulter separation (default with units of km)
-        flowRate (Quantity): 
-            slew flow rate (default with units of kg/day)
+        settlingTime (astropy Quantity): 
+            Instrument settling time after repoint in units of day
+        thrust (astropy Quantity): 
+            Occulter slew thrust in units of mN
+        slewIsp (astropy Quantity): 
+            Occulter slew specific impulse in units of s
+        scMass (astropy Quantity): 
+            Occulter (maneuvering sc) wet mass in units of kg
+        dryMass (astropy Quantity): 
+            Occulter (maneuvering sc) dry mass in units of kg
+        coMass (astropy Quantity): 
+            Telescope (non-maneuvering sc) mass in units of kg
+        occulterSep (astropy Quantity): 
+            Occulter-telescope distance in units of km
+        skIsp (astropy Quantity): 
+            Station-keeping specific impulse in units of s
+        defburnPortion (float):
+            Default burn portion
+        flowRate (astropy Quantity): 
+            Slew flow rate in units of kg/day
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -61,8 +55,8 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self, settlingTime=1., thrust=450., slewIsp=4160.,\
-                 scMass=6000., dryMass=3400., coMass=5800., skIsp=220.,\
+    def __init__(self, settlingTime=1., thrust=450., slewIsp=4160., scMass=6000.,\
+                 dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,\
                  defburnPortion=0.05, spkpath=None, forceStaticEphem=False,\
                  **specs):
         
@@ -79,13 +73,16 @@ class Observatory(object):
         self.dryMass = float(dryMass)*u.kg 
         # telescope (or non-maneuvering sc) mass (kg)
         self.coMass = float(coMass)*u.kg 
+        # occulter-telescope distance (km)
+        self.occulterSep = float(occulterSep)*u.km
         # station-keeping Isp (s)
         self.skIsp = float(skIsp)*u.s 
         # default burn portion
         self.defburnPortion = float(defburnPortion)
         
-        # occulter-telescope distance (km)
-        self.occulterSep = 55000.*u.km
+        # set values derived from quantities above
+        # slew flow rate (kg/day)
+        self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
         
         #if jplephem is available, we'll use that for propagating solar system bodies
         #otherwise, use static ephemeris
@@ -105,24 +102,12 @@ class Observatory(object):
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
         
-        # initialize values updated by functions
-        # observatory keepout booleans
-        self.kogood = np.array([]) 
-        # observatory orbit position vector (km)
-        self.r_sc = np.zeros(3)*u.km 
-        # current occulter separation
-        self.currentSep = self.occulterSep 
-        
-        # set values derived from quantities above
-        # slew flow rate (kg/day)
-        self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
-        
-        #define function for calculating obliquity of the ecliptic 
-        #(arg Julian centuries from J2000)
+        # define function for calculating obliquity of the ecliptic 
+        # (arg Julian centuries from J2000)
         self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + \
                 5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5) 
         
-        # if you have jplephem, load spice file. otherwise, load static ephem.
+        # if you have jplephem, load spice file, otherwise load static ephem
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
                 # if the path does not exist, load the default de432s.bsp
@@ -138,7 +123,7 @@ class Observatory(object):
             sma   eccentricity  inclination     long. ascending node    long. perihelion    mean longitude
             AU    N/A           deg             deg                     deg                 deg
             """
-
+            
             # Store Mercury ephemerides data (ecliptic)
             Mercurya = 0.387098310
             Mercurye = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
@@ -242,91 +227,96 @@ class Observatory(object):
         
         return 'Observatory class object attributes'
 
-    def orbit(self, time):
-        """Finds observatory orbit position vector, returns True if successful
+    def orbit(self, currentTime):
+        """Finds observatory orbit position vector in heliocentric equatorial frame.
         
-        This method finds the observatory position vector (heliocentric 
-        equatorial frame) as a 1D numpy array with astropy Quantity units of km 
-        and stores it in self.r_sc.
-        
-        This defines the data type expected, orbits are determined by specific
+        This method defines the data type expected, orbits are determined by specific
         instances of Observatory classes.
         
         Args:
-            time (Time):
-                absolute time
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
         
         Returns:
-            success (bool):
-                True if successful, False if not
+            r_sc (astropy Quantity nx3 array):
+                Observatory (spacecraft) position vector in units of km
         
         """
         
-        self.r_sc = np.array([float(time.mjd),float(time.mjd),float(time.mjd)])*u.km
-        b = np.isfinite(self.r_sc) # finds if all values are finite 
-        success = all(b) # returns True if all values of self.r_sc are finite
+        r_sc = np.array([(currentTime.mjd),(currentTime.mjd),(currentTime.mjd)]).T*u.km
         
-        return success
+        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
+        
+        return r_sc.to('km').reshape(currentTime.size,3)
 
-    def keepout(self, currentTime, TL, koangle):
-        """Finds keepout Boolean values, returns True if successful
+    def keepout(self, TL, sInds, currentTime, r_sc, koangle):
+        """Finds keepout Boolean values for stars of interest.
         
-        This method finds the keepout Boolean values for each target star where
-        True is an observable star and stores the 1D numpy array in self.kogood.
+        This method defines the data type expected, all values are True.
+        Note: currentTime and r_sc can be arrays of size = len(sInds)
         
         Args:
-            currentTime (Time):
-                absolute time
-            TL (TargetList or StarCatalog):
-                TargetList or StarCatalog class object
-            koangle (float):
-                telescope keepout angle in degrees
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            r_sc (astropy Quantity nx3 array):
+                Current observatory (spacecraft) position vector in units of km
+            koangle (astropy Quantity):
+                Telescope keepout angle in units of degree
                 
         Returns:
-            success (bool):
-                True if successful, False if not
+            kogood (boolean ndarray):
+                True is an observable star.
+        
+        Note: currentTime must be of size len(sInds), and r_sc of shape (len(sInds),3)
         
         """
         
-        # update spacecraft orbital position
-        a = self.orbit(currentTime) 
+        # check type of sInds
+        sInds = np.array(sInds,ndmin=1)
         
-        self.kogood = np.array([True for row in TL.Name])
+        # check shape of currentTime and r_sc
+        assert currentTime.size == len(sInds), 'currentTime must be of size len(sInds)'
+        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
+        
+        # reshape currentTime
+        currentTime = currentTime.reshape(currentTime.size)
+        
+        kogood = np.ones(len(sInds), dtype=bool)
         
         # check to make sure all elements in self.kogood are Boolean
-        b = [isinstance(element, np.bool_) for element in self.kogood]
-        c = [a, b]
-        # return True if orbital position is successful and all elements of 
-        # self.kogood are Boolean
-        success = all(c) 
+        trues = [isinstance(element, np.bool_) for element in kogood]
+        assert all(trues), 'An element of kogood is not Boolean'
         
-        return success
+        return kogood
 
-    def solarSystem_body_position(self, time, bodyname):
+    def solarSystem_body_position(self, currentTime, bodyname):
         """Finds position vector for solar system objects
         
         This passes all arguments to one of spk_body or keplerplanet, depending
         on the value of self.havejplephem.
         
         Args:
-            time (Time):
-                absolute time
-            bodyname (str):
-                solar system object name
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            bodyname (string):
+                Solar system object name
         
         Returns:
-            r_body (Quantity):
-                heliocentric equatorial position vector in 1D numpy ndarray
-                (units of km)
+            r_body (astropy Quantity 1x3 array):
+                Heliocentric equatorial position vector in units of km
         
         """
         
         if self.havejplephem:
-            return self.spk_body(time,bodyname)
+            return self.spk_body(currentTime, bodyname)
         else:
-            return self.keplerplanet(time,bodyname)
+            return self.keplerplanet(currentTime, bodyname)
 
-    def spk_body(self, time, bodyname):
+    def spk_body(self, currentTime, bodyname):
         """Finds position vector for solar system objects
         
         This method uses spice kernel from NAIF to find heliocentric
@@ -334,15 +324,14 @@ class Observatory(object):
         objects.
         
         Args:
-            time (Time):
-                absolute time
-            bodyname (str):
-                solar system object name
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            bodyname (string):
+                Solar system object name
         
         Returns:
-            r_body (Quantity):
-                heliocentric equatorial position vector in 1D numpy ndarray
-                (units of km)
+            r_body (astropy Quantity 1x3 array):
+                Heliocentric equatorial position vector in units of km
         
         """
         
@@ -363,28 +352,28 @@ class Observatory(object):
                  "%s is not a recognized body name."%(bodyname)
         
         if bodies[bodyname] == 199:
-            r_body = (self.kernel[0,1].compute(time.jd) + \
-                    self.kernel[1,199].compute(time.jd) - \
-                    self.kernel[0,10].compute(time.jd))*u.km
+            r_body = (self.kernel[0,1].compute(currentTime.jd) + \
+                    self.kernel[1,199].compute(currentTime.jd) - \
+                    self.kernel[0,10].compute(currentTime.jd))*u.km
         elif bodies[bodyname] == 299:
-            r_body = (self.kernel[0,2].compute(time.jd) + \
-                    self.kernel[2,299].compute(time.jd) - \
-                    self.kernel[0,10].compute(time.jd))*u.km
+            r_body = (self.kernel[0,2].compute(currentTime.jd) + \
+                    self.kernel[2,299].compute(currentTime.jd) - \
+                    self.kernel[0,10].compute(currentTime.jd))*u.km
         elif bodies[bodyname] == 399:
-            r_body = (self.kernel[0,3].compute(time.jd) + \
-                    self.kernel[3,399].compute(time.jd) - \
-                    self.kernel[0,10].compute(time.jd))*u.km
+            r_body = (self.kernel[0,3].compute(currentTime.jd) + \
+                    self.kernel[3,399].compute(currentTime.jd) - \
+                    self.kernel[0,10].compute(currentTime.jd))*u.km
         elif bodies[bodyname] == 301:
-            r_body = (self.kernel[0,3].compute(time.jd) + \
-                    self.kernel[3,301].compute(time.jd) - \
-                    self.kernel[0,10].compute(time.jd))*u.km
+            r_body = (self.kernel[0,3].compute(currentTime.jd) + \
+                    self.kernel[3,301].compute(currentTime.jd) - \
+                    self.kernel[0,10].compute(currentTime.jd))*u.km
         else:
-            r_body = (self.kernel[0,bodies[bodyname]].compute(time.jd) - \
-                    self.kernel[0,10].compute(time.jd))*u.km
+            r_body = (self.kernel[0,bodies[bodyname]].compute(currentTime.jd) - \
+                    self.kernel[0,10].compute(currentTime.jd))*u.km
         
         return r_body
 
-    def keplerplanet(self, time, bodyname):
+    def keplerplanet(self, currentTime, bodyname):
         """Finds position vector for solar system objects
         
         This method uses algorithms 2 and 10 from Vallado 2013 to find 
@@ -392,28 +381,27 @@ class Observatory(object):
         solar system objects.
         
         Args:
-            time (Time):
-                absolute time
-            bodyname (str):
-                solar system object name
-                
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            bodyname (string):
+                Solar system object name
+        
         Returns:
-            r_body (Quantity):
-                heliocentric equatorial position vector in 1D numpy ndarray 
-                (units of km)
+            r_body (astropy Quantity 1x3 array):
+                Heliocentric equatorial position vector in units of km
         
         """
         
         if bodyname == 'Moon':
-            r_Earth = self.keplerplanet(time, 'Earth')
-            return r_Earth + self.moon_earth(time)
+            r_Earth = self.keplerplanet(currentTime, 'Earth')
+            return r_Earth + self.moon_earth(currentTime)
         
         assert self.planets.has_key(bodyname),\
                 "%s is not a recognized body name."%(bodyname)
         
         planet = self.planets[bodyname] 
         # find Julian centuries from J2000
-        TDB = self.cent(time)
+        TDB = self.cent(currentTime)
         # update ephemeride data
         a = self.propeph(planet.a, TDB)
         e = self.propeph(planet.e, TDB)
@@ -431,34 +419,33 @@ class Observatory(object):
         # Find semiparameter
         p = a*(1 - e**2)
         # position vector (km) in orbital plane
-        r_planet = np.array([(p*np.cos(nu)/(1 + e*np.cos(nu))), (p*np.sin(nu))/(1 + e*np.cos(nu)), 0.])
+        r_body = np.array([(p*np.cos(nu)/(1 + e*np.cos(nu))), (p*np.sin(nu))/(1 + e*np.cos(nu)), 0.])
         # position vector (km) in ecliptic plane
-        r_planet = np.dot(np.dot(self.rot(-O,3),self.rot(-i,1)),np.dot(self.rot(-wp,3),r_planet))
+        r_body = np.dot(np.dot(self.rot(-O,3),self.rot(-i,1)),np.dot(self.rot(-wp,3),r_body))
         # find obliquity of the ecliptic
         obe = self.obe(TDB)
         # position vector (km) in heliocentric equatorial frame
-        r_planet = np.dot(self.rot(np.radians(-obe),1),r_planet)*u.km
+        r_body = np.dot(self.rot(np.radians(-obe),1),r_body)*u.km
         
-        return r_planet
+        return r_body
 
-    def moon_earth(self, time):
+    def moon_earth(self, currentTime):
         """Finds geocentric equatorial position vector (km) for Earth's moon
         
         This method uses Algorithm 31 from Vallado 2013 to find the geocentric
         equatorial position vector for Earth's moon.
         
         Args:
-            time (Time):
-                absolute time 
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
         
         Returns:
-            r_moon (Quantity):
-                geocentric equatorial position vector in 1D numpy array (units 
-                of km) 
+            r_moon (astropy Quantity 1x3 array):
+                Geocentric equatorial position vector in units of km
         
         """
         
-        TDB = self.cent(time)
+        TDB = self.cent(currentTime)
         la = np.radians(218.32 + 481267.8813*TDB + \
             6.29*np.sin(np.radians(134.9 + 477198.85*TDB)) - 
             1.27*np.sin(np.radians(259.2 - 413335.38*TDB)) + 
@@ -487,45 +474,49 @@ class Observatory(object):
         
         return r_moon
 
-    def starprop(self, currentTime, TL, sInd):
+    def starprop(self, TL, sInds, currentTime):
         """Finds target star position vector (km) for current time (MJD)
         
         Args:
-            currentTime (Time): 
-                absolute time
-            TL (TargetList or StarCatalog): 
-                TargetList or StarCatalog class object
-            sInd (int): 
-                index for star catalog information
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
         
         Returns:
-            r_star (Quantity): star position vector in heliocentric equatorial 
-                frame in 1D numpy ndarray (units of km)
+            r_star (astropy Quantity nx3 array): 
+                Position vectors of stars of interest in heliocentric 
+                equatorial frame in units of km
             
         """
-
+        
+        # check type of sInds
+        sInds = np.array(sInds,ndmin=1)
+        
         # right ascension and declination
-        ra = TL.coords.ra[sInd]
-        dec = TL.coords.dec[sInd]
+        ra = TL.coords.ra[sInds]
+        dec = TL.coords.dec[sInds]
         
         # set J2000 epoch
         j2000 = Time(2000., format='jyear')
         
         # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), 0.])
+        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(len(sInds))])
         q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
-        r0 = TL.coords[sInd].cartesian.xyz/TL.coords[sInd].distance
+        r0 = (TL.coords[sInds].cartesian.xyz/TL.coords[sInds].distance)
         
         # proper motion vector
-        mu0 = p0*TL.pmra[sInd] + q0*TL.pmdec[sInd]
+        mu0 = p0*TL.pmra[sInds] + q0*TL.pmdec[sInds]
         
         # space velocity vector
-        v = mu0/TL.parx[sInd]*u.AU + r0*TL.rv[0]
+        v = mu0/TL.parx[sInds]*u.AU + r0*TL.rv[sInds]
         
         # stellar position vector
-        r_star = TL.coords[sInd].cartesian.xyz + v*(currentTime.mjd - j2000.mjd)*u.day
+        r_star = TL.coords[sInds].cartesian.xyz + v*(currentTime.mjd - j2000.mjd)*u.day
         
-        return r_star.to('km')
+        return r_star.T.to('km')
 
     def cent(self, currentTime):
         """Finds time in Julian centuries since J2000 epoch
@@ -533,8 +524,8 @@ class Observatory(object):
         This quantity is needed for many algorithms from Vallado 2013.
         
         Args:
-            currentTime (Time):
-                absolute time
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
             
         Returns:
             TDB (float):
@@ -611,20 +602,22 @@ class Observatory(object):
                        [-np.sin(th), np.cos(th), 0.],
                        [0., 0., 1.]])
 
-    def distForces(self, TK, TL, sInd):
+    def distForces(self, TL, sInd, currentTime):
         """Finds lateral and axial disturbance forces on an occulter 
         
         Args:
-            TK (TimeKeeping):
-                TimeKeeping class object
-            TL (TargetList):
+            TL (TargetList module):
                 TargetList class object
-            sInd (int):
-                index of target star
+            sInd (integer ndarray):
+                Integer indices of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
                 
         Returns:
-            dF_lateral, dF_axial (Quantity, Quantity):
-                lateral and axial disturbance forces (units of N)
+            dF_lateral (astropy Quantity):
+                Lateral disturbance force in units of N
+            dF_axial (astropy Quantity):
+                Axial disturbance force in units of N
         
         """
         
@@ -632,12 +625,11 @@ class Observatory(object):
         occulterSep = self.occulterSep
         
         # get spacecraft position vector
-        self.orbit(TK.currentTimeAbs)
-        r_Ts = self.r_sc
+        r_Ts = self.orbit(currentTime)
         # sun -> earth position vector
-        r_Es = self.solarSystem_body_position(TK.currentTimeAbs, 'Earth')
+        r_Es = self.solarSystem_body_position(currentTime, 'Earth')
         # sun -> target star vector
-        r_ts = self.starprop(TK.currentTimeAbs, TL, sInd)
+        r_ts = self.starprop(TL, sInd, currentTime)[0]
         # Telescope -> target vector and unit vector
         r_tT = r_ts - r_Ts
         u_tT = r_tT/np.sqrt(np.sum(r_tT**2))
@@ -677,8 +669,8 @@ class Observatory(object):
         Args:
             dF_lateral (Quantity):
                 lateral force on occulter (units of force)
-            t_int (Quantity):
-                integration time (units of time)
+            t_int (astropy Quantity):
+                integration time in units of day
                 
         Returns:
             intMdot, mass_used, deltaV (Quantity, Quantity, Quantity):

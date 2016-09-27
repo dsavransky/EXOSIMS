@@ -42,9 +42,9 @@ class KnownRVPlanets(KeplerLike1):
         rvplanetfilepath (string):
             Full path to RV planet votable file from IPAC. If None,
             assumes default file in PlanetPopulation directory of EXOSIMS.
-        period (astropy Quantity array)
+        period (astropy Quantity array):
             Orbital period in units of day.  Error in perioderr.
-        tper (astropy Time)
+        tper (astropy Time):
             Periastron time in units of jd.  Error in tpererr.
         
     

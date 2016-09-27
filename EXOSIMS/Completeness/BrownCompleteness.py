@@ -25,18 +25,16 @@ class BrownCompleteness(Completeness):
             user specified values
     
     Attributes:
-        minComp (float): 
-            Minimum completeness level for detection
         Nplanets (integer):
             Number of planets for initial completeness Monte Carlo simulation
         classpath (string):
             Path on disk to Brown Completeness
         filename (string):
             Name of file where completeness interpolant is stored
-        visits (ndarray):
+        visits (integer ndarray):
             Number of observations corresponding to each star in the target list
             (initialized in gen_update)
-        updates (nx5 ndarray):
+        updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
         
@@ -61,18 +59,18 @@ class BrownCompleteness(Completeness):
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
 
-    def target_completeness(self, targlist):
+    def target_completeness(self, TL):
         """Generates completeness values for target stars
         
         This method is called from TargetList __init__ method.
         
         Args:
-            targlist (TargetList): 
+            TL (TargetList module):
                 TargetList class object
             
         Returns:
-            comp0 (ndarray): 
-                1D numpy array of completeness values for each target star
+            comp0 (float ndarray): 
+                Completeness values for each target star
         
         """
         
@@ -102,76 +100,77 @@ class BrownCompleteness(Completeness):
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
-
+        
         EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
         EVPOC = np.vectorize(EVPOCpdf.integral)
             
         # calculate separations based on IWA
-        smin = np.tan(targlist.OpticalSystem.IWA)*targlist.dist
-        if np.isinf(targlist.OpticalSystem.OWA):
+        OS = TL.OpticalSystem
+        smin = np.tan(OS.IWA)*TL.dist
+        if np.isinf(OS.OWA):
             smax = xedges[-1]*u.AU
         else:
-            smax = np.tan(targlist.OpticalSystem.OWA)*targlist.dist
-
+            smax = np.tan(OS.OWA)*TL.dist
+        
         # calculate dMags based on limiting dMag
-        dMagmax = targlist.OpticalSystem.dMagLim #np.array([targlist.OpticalSystem.dMagLim]*targlist.nStars)
+        dMagmax = OS.dMagLim #np.array([OS.dMagLim]*TL.nStars)
         dMagmin = ymin
         if self.PlanetPopulation.scaleOrbits:
-            L = np.where(targlist.L>0, targlist.L, 1e-10) #take care of zero/negative values
+            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
             
         comp0 = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMagmax)
-
+        
         return comp0
 
-    def gen_update(self, targlist):
+    def gen_update(self, TL):
         """Generates dynamic completeness values for multiple visits of each 
         star in the target list
         
         Args:
-            targlist (TargetList):
-                TargetList module
+            TL (TargetList module):
+                TargetList class object
         
         """
         
+        OS = TL.OpticalSystem
+        PPop = self.PlanetPopulation
+        
         print 'Beginning completeness update calculations'
-        self.visits = np.array([0]*targlist.nStars)
+        self.visits = np.array([0]*TL.nStars)
         self.updates = []
         # number of planets to simulate
         nplan = int(2e4)
         # normalization time
         dt = 1e9*u.day
         # sample quantities which do not change in time
-        a = self.PlanetPopulation.gen_sma(nplan) # AU
-        e = self.PlanetPopulation.gen_eccen(nplan)
-        I = self.PlanetPopulation.gen_I(nplan) # deg
-        O = self.PlanetPopulation.gen_O(nplan) # deg
-        w = self.PlanetPopulation.gen_w(nplan) # deg
-        p = self.PlanetPopulation.gen_albedo(nplan)
-        Rp = self.PlanetPopulation.gen_radius(nplan) # km
-        Mp = self.PlanetPopulation.gen_mass(nplan) # kg
+        a = PPop.gen_sma(nplan) # AU
+        e = PPop.gen_eccen(nplan)
+        I = PPop.gen_I(nplan) # deg
+        O = PPop.gen_O(nplan) # deg
+        w = PPop.gen_w(nplan) # deg
+        p = PPop.gen_albedo(nplan)
+        Rp = PPop.gen_radius(nplan) # km
+        Mp = PPop.gen_mass(nplan) # kg
         rmax = a*(1.+e)
-        rmin = a*(1.-e)
         # sample quantity which will be updated
         M = np.random.uniform(high=2.*np.pi,size=nplan)
         newM = np.zeros((nplan,))
         # population values
-        smin = (np.tan(targlist.OpticalSystem.IWA)*targlist.dist).to('AU')
-        if np.isfinite(targlist.OpticalSystem.OWA):
-            smax = (np.tan(targlist.OpticalSystem.OWA)*targlist.dist).to('AU')
+        smin = (np.tan(OS.IWA)*TL.dist).to('AU')
+        if np.isfinite(OS.OWA):
+            smax = (np.tan(OS.OWA)*TL.dist).to('AU')
         else:
-            smax = np.array([np.max(self.PlanetPopulation.arange.to('AU').value)*\
-                    (1.+np.max(self.PlanetPopulation.erange))]*targlist.nStars)*u.AU
+            smax = np.array([np.max(PPop.arange.to('AU').value)*\
+                    (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
         # fill dynamic completeness values
-        for sInd in xrange(targlist.nStars):
-            Mstar = targlist.MsTrue[sInd]*const.M_sun
-            # remove rmax < smin and rmin > smax
-            inside = np.where(rmax > smin[sInd])[0]
-            outside = np.where(rmin < smax[sInd])[0]
-            pInds = np.intersect1d(inside,outside)
+        for sInd in xrange(TL.nStars):
+            Mstar = TL.MsTrue[sInd]*const.M_sun
+            # remove rmax < smin 
+            pInds = np.where(rmax > smin[sInd])[0]
             dynamic = []
             # calculate for 5 successive observations
             for num in xrange(5):
@@ -210,13 +209,13 @@ class BrownCompleteness(Completeness):
                 dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
                 
                 toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                toremovedmag = np.where(dMag < targlist.OpticalSystem.dMagLim)[0]
+                toremovedmag = np.where(dMag < OS.dMagLim)[0]
                 toremove = np.intersect1d(toremoves, toremovedmag)
                 
                 pInds = np.delete(pInds, toremove)
                 
                 if num == 0:
-                    dynamic.append(targlist.comp0[sInd])
+                    dynamic.append(TL.comp0[sInd])
                 else:
                     dynamic.append(float(len(toremove))/nplan)
                 
@@ -228,19 +227,19 @@ class BrownCompleteness(Completeness):
             self.updates.append(dynamic)
                 
             if (sInd+1) % 50 == 0:
-                print 'stars: %r / %r' % (sInd+1,targlist.nStars)
+                print 'stars: %r / %r' % (sInd+1,TL.nStars)
         
         self.updates = np.array(self.updates)
         print 'Completeness update calculations finished'
 
-    def completeness_update(self, sInd, targlist, obsbegin, obsend, nexttime):
+    def completeness_update(self, TL, sInd, obsbegin, obsend, nexttime):
         """Updates completeness value for stars previously observed
         
         Args:
+            TL (TargetList module):
+                TargetList class object
             sInd (integer):
                 Index of star just observed
-            targlist (TargetList):
-                TargetList class module
             obsbegin (astropy Quantity):
                 Time of observation begin in units of day
             obsend (astropy Quantity):
@@ -249,7 +248,7 @@ class BrownCompleteness(Completeness):
                 Time of next observational period in units of day
         
         Returns:
-            comp0 (ndarray):
+            comp0 (float ndarray):
                 Completeness values for each star in the target list
         
         """
@@ -257,11 +256,11 @@ class BrownCompleteness(Completeness):
         self.visits[sInd] += 1
         
         if self.visits[sInd] > len(self.updates[sInd])-1:
-            targlist.comp0[sInd] = self.updates[sInd][-1]
+            TL.comp0[sInd] = self.updates[sInd][-1]
         else:
-            targlist.comp0[sInd] = self.updates[sInd][self.visits[sInd]]
+            TL.comp0[sInd] = self.updates[sInd][self.visits[sInd]]
         
-        return targlist.comp0
+        return TL.comp0
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness
@@ -275,16 +274,16 @@ class BrownCompleteness(Completeness):
                 path to 2D completeness value array
             nplan (float):
                 number of planets used in each simulation
-            xedges (ndarray):
-                1D numpy ndarray of x edge of 2d histogram (separation)
-            yedges (ndarray):
-                1D numpy ndarray of y edge of 2d histogram (dMag)
+            xedges (float ndarray):
+                x edge of 2d histogram (separation)
+            yedges (float ndarray):
+                y edge of 2d histogram (dMag)
             steps (integer):
                 number of simulations to perform
                 
         Returns:
-            H (ndarray):
-                2D numpy ndarray of completeness probability density values
+            H (float ndarray):
+                2D numpy ndarray containing completeness probability density values
         
         """
         
@@ -330,11 +329,11 @@ class BrownCompleteness(Completeness):
         
         Args:
             nplan (float):
-                Number of planets used
-            xedges (ndarray):
-                1D numpy ndarray of x edge of 2d histogram (separation)
-            yedges (ndarray):
-                1D numpy ndarray of y edge of 2d histogram (dMag)
+                number of planets used
+            xedges (float ndarray):
+                x edge of 2d histogram (separation)
+            yedges (float ndarray):
+                y edge of 2d histogram (dMag)
         
         Returns:
             h (ndarray):
@@ -363,34 +362,37 @@ class BrownCompleteness(Completeness):
                 Difference in brightness
         
         """
+        
+        PPop = self.PlanetPopulation
+        
         nplan = int(nplan)
         
         # sample uniform distribution of mean anomaly
         M = np.random.uniform(high=2.*np.pi,size=nplan)
-        # sample semi-major axis        
-        a = self.PlanetPopulation.gen_sma(nplan).to('AU').value
+        # sample semi-major axis
+        a = PPop.gen_sma(nplan).to('AU').value
         
         # sample other necessary orbital parameters
-        if np.sum(self.PlanetPopulation.erange) == 0:
+        if np.sum(PPop.erange) == 0:
             # all circular orbits
             r = a
             e = 0.
             E = M
         else:
             # sample eccentricity
-            if self.PlanetPopulation.constrainOrbits:
-                e = self.PlanetPopulation.gen_eccen_from_sma(nplan,a*u.AU)
+            if PPop.constrainOrbits:
+                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
             else:
-                e = self.PlanetPopulation.gen_eccen(nplan)   
+                e = PPop.gen_eccen(nplan)   
             # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
             r = a*(1-e*np.cos(E))
         
         # orbit angle sampling
-        O = self.PlanetPopulation.gen_O(nplan).to('rad').value
-        w = self.PlanetPopulation.gen_w(nplan).to('rad').value
-        I = self.PlanetPopulation.gen_I(nplan).to('rad').value
+        O = PPop.gen_O(nplan).to('rad').value
+        w = PPop.gen_w(nplan).to('rad').value
+        I = PPop.gen_I(nplan).to('rad').value
         
         r1 = r*(np.cos(E) - e)
         r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
@@ -413,8 +415,8 @@ class BrownCompleteness(Completeness):
         s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
         
         # sample albedo, planetary radius, phase function
-        p = self.PlanetPopulation.gen_albedo(nplan)
-        Rp = self.PlanetPopulation.gen_radius(nplan)
+        p = PPop.gen_albedo(nplan)
+        Rp = PPop.gen_radius(nplan)
         beta = np.arccos(r[:,2]/d)
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
         

@@ -230,11 +230,13 @@ class SimulatedUniverse(object):
         ZL = self.ZodiacalLight
         TL = self.TargetList
         
-        # planet indices
         assert np.isscalar(sInd), "Can only propagate one system at a time, \
                 sInd must be scalar."
+        # check for planets around this target
         pInds = np.where(self.plan2star == sInd)[0]
-        # calculate time increment
+        if not np.any(pInds):
+            return
+        # check for positive time increment
         dt = currentTimeNorm - self.planTime[pInds][0]
         assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
         if dt == 0:

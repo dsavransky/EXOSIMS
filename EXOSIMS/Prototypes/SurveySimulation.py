@@ -62,7 +62,8 @@ class SurveySimulation(object):
             the mission
         lastDetected (float nx4 ndarray):
             For each target, contains 4 lists with planets' detected status, exozodi 
-            brightness (in 1/arsec2), delta magnitude, and working angles (in mas)
+            brightness (in units of 1/arcsec2), delta magnitude, and working angles 
+            (in units of mas)
         DRM (list of dicts):
             Contains the results of survey simulation
         
@@ -226,8 +227,8 @@ class SurveySimulation(object):
         sInd = None
         while not TK.mission_is_over():
             
-            # Acquire the NEXT TARGET star index:
-            sInd, t_det, slewTime = self.next_target(sInd, detMode)
+            # Acquire the NEXT TARGET star index and create DRM
+            DRM, sInd, t_det = self.next_target(sInd, detMode)
             
             if sInd is not None:
                 # get the index of the selected target for the extended list
@@ -241,15 +242,16 @@ class SurveySimulation(object):
                 obsBegin = TK.currentTimeNorm.to('day')
                 Logger.info('current time is %r' % obsBegin)
                 print 'Current mission time: ', obsBegin
-                DRM = {}
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
                 
                 # PERFORM DETECTION and populate revisit list attribute
-                detBegin = TK.currentTimeNorm.to('day')
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
+                # Update the occulter wet mass and store all occulter 
+                if OS.haveOcculter == True:
+                    DRM = update_occulter_mass(DRM, sInd, t_det, 'det')
                 DRM['int_time_det'] = t_det.to('day').value
                 DRM['plan_detected'] = detected.tolist()
                 DRM['plan_det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
@@ -263,8 +265,10 @@ class SurveySimulation(object):
                     DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
-                charBegin = TK.currentTimeNorm.to('day')
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
+                # Update the occulter wet mass and store all occulter 
+                if OS.haveOcculter == True:
+                    DRM = update_occulter_mass(DRM, sInd, t_char,'char')
                 DRM['int_time_char'] = t_char.to('day').value
                 DRM['plan_characterized'] = characterized.tolist()
                 DRM['plan_char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
@@ -274,12 +278,6 @@ class SurveySimulation(object):
                 # store characterization mode in DRM, charModes must be a list of dictionaries
                 DRM['charModes'] = [dict(charMode)]
                 del DRM['charModes'][0]['inst'], DRM['charModes'][0]['syst']
-                
-                # Update the OCCULTER wet mass and store all occulter 
-                # related values in the DRM
-                if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, slewTime, t_det, t_char, \
-                            detBegin, charBegin)
                 
                 # update target time
                 self.starTimes[sInd] = TK.currentTimeNorm
@@ -312,13 +310,13 @@ class SurveySimulation(object):
                 Selected observing mode for detection
                 
         Returns:
+            DRM (dicts):
+                Contains the results of survey simulation
             sInd (integer):
                 Index of next target star. Defaults to None.
             t_det (astropy Quantity):
                 Selected star integration time for detection in units of day. 
                 Defaults to None.
-            slewTime (astropy Quantity):
-                Slew time to next target in units of day. Defaults to zero.
         
         """
         
@@ -327,6 +325,9 @@ class SurveySimulation(object):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        # Create DRM
+        DRM = {}
         
         # Allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
@@ -421,16 +422,24 @@ class SurveySimulation(object):
             
         else:
             Logger.info('Mission complete: no more time available')
-            return None, None, None
+            return DRM, None, None
         
         if OS.haveOcculter == True:
+            # find values related to slew time
+            DRM['slew_time'] = slewTime[sInd].to('day').value
+            DRM['slew_angle'] = sd[sInd].to('deg').value
+            slew_mass_used = slewTime*Obs.defburnPortion*Obs.flowRate
+            DRM['slew_dV'] = (slewTime*ao*Obs.defburnPortion).to('m/s').value
+            DRM['slew_mass_used'] = slew_mass_used.to('kg').value
+            Obs.scMass -= slew_mass_used
+            DRM['scMass'] = Obs.scMass.to('kg').value
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTime[sInd])
             if TK.mission_is_over():
                 Logger.info('Mission complete: no more time available')
-                return None, None, None
+                return DRM, None, None
         
-        return sInd, t_det, slewTime[sInd]
+        return DRM, sInd, t_det
 
     def observation_detection(self, sInd, t_det, mode):
         """Determines the detection status, and updates the last detected list 
@@ -453,7 +462,7 @@ class SurveySimulation(object):
                 Detection status for each planet orbiting the observed target star,
                 where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
             SNR (float ndarray):
-                Signal-to-noise ratio of the target's planets during detection
+                Detection signal-to-noise ratio of the observable planets
             FA (boolean):
                 False alarm (false positive) boolean
         
@@ -539,8 +548,11 @@ class SurveySimulation(object):
         Ms = TL.MsTrue[sInd]*const.M_sun
         if smin is not None:
             sp = smin
-            pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-            Mp = SU.Mp[pInd_smin]
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm + T/2.
@@ -572,10 +584,12 @@ class SurveySimulation(object):
         
         Returns:
             characterized (integer ndarray):
-                Characterization status for each planet orbiting the observed target
-                star, where 1 is full spectrum, 0 no spectrum, -1 partial spectrum
+                Characterization status for each planet orbiting the observed 
+                target star including False Alarm if any, where 1 is full spectrum, 
+                -1 partial spectrum, and 0 not characterized
             SNR (float ndarray):
-                Signal-to-noise ratio of the characterized planets. Defaults to None.
+                Characterization signal-to-noise ratio of the observable planets. 
+                Defaults to None.
             t_char (astropy Quantity):
                 Selected star characterization time in units of day. Defaults to None.
         
@@ -670,8 +684,8 @@ class SurveySimulation(object):
                 # Finally, merge SNRs from planet and FA into one array
                 SNR = np.append(SNR, SNR_FA)
                 
-                # Now, store characterization status: 0 for not characterized,
-                # -1 for partially characterized, 1 for fully characterized planets.
+                # Now, store characterization status: 1 for full spectrum, 
+                # -1 for partial spectrum, 0 for not characterized
                 if np.any(SNR):
                     char = (SNR > mode['SNR'])
                     if np.any(char):
@@ -743,23 +757,20 @@ class SurveySimulation(object):
         
         return Signal, Noise
 
-    def update_occulter_mass(self, DRM, slewTime, t_det, t_char, detBegin, charBegin):
+    def update_occulter_mass(self, DRM, sInd, t_int, skMode):
         """Updates the occulter wet mass in the Observatory module, and stores all 
         the occulter related values in the DRM array.
         
         Args:
             DRM (dicts):
                 Contains the results of survey simulation
-            slewTime (astropy Quantity):
-                Slew time to next target in units of day
-            t_det (astropy Quantity):
-                Selected star integration time for detection in units of day
-            t_char (astropy Quantity):
-                Selected star integration time for characterization in units of day
-            detBegin (astropy Time):
-                Absolute time of the beginning of detection in MJD
-            charBegin (astropy Time):
-                Absolute time of the beginning of characterization in MJD
+            sInd (integer):
+                Integer index of the star of interest
+            t_int (astropy Quantity):
+                Selected star integration time (for detection or characterization)
+                in units of day
+            skMode (string):
+                Station keeping observing mode type
                 
         Returns:
             DRM (dicts):
@@ -769,40 +780,18 @@ class SurveySimulation(object):
         
         TL = self.TargetList
         Obs = self.Observatory
+        TL = self.TimeKeeping
         
-        # find values related to slew time
-        DRM['slew_time'] = slewTime.to('day').value
-        ao = Obs.thrust/Obs.scMass
-        slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. \
-                - Obs.defburnPortion**2/4.)).decompose().to('d2')
-        sd = 2.*np.arcsin(slewTime**2/slewTime_fac)
-        DRM['slew_angle'] = sd.to('deg').value
-        slew_mass_used = slewTime*Obs.defburnPortion*Obs.flowRate
-        DRM['slew_dV'] = (slewTime*ao*Obs.defburnPortion).to('m/s').value
-        DRM['slew_mass_used'] = slew_mass_used.to('kg').value
-        
-        # DETECTION
         # find disturbance forces on occulter
-        dF_lateral, dF_axial = Obs.distForces(TL, sInd, detBegin)
+        dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)
         # decrement mass for station-keeping
-        _, det_mass_used, det_deltaV = Obs.mass_dec(dF_lateral, t_det)
-        DRM['det_dV'] = det_deltaV.to('m/s').value
-        DRM['det_mass_used'] = det_mass_used.to('kg').value
+        intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
+        DRM[skMode+'_dV'] = deltaV.to('m/s').value
+        DRM[skMode+'_mass_used'] = mass_used.to('kg').value
+        DRM[skMode+'_dF_lateral'] = dF_lateral.to('N').value
+        DRM[skMode+'_dF_axial'] = dF_axial.to('N').value
         # update spacecraft mass
-        Obs.scMass -= (slew_mass_used + det_mass_used)
-        DRM['det_scMass'] = Obs.scMass.to('kg').value
-        
-        # CHARACTERIZATION
-        # find disturbance forces on occulter
-        dF_lateral, dF_axial = Obs.distForces(TL, sInd, charBegin)
-        # decrement mass for station-keeping
-        intMdot, _, _ = Obs.mass_dec(dF_lateral, t_char)
-        char_deltaV = dF_lateral/Obs.scMass*t_char
-        char_mass_used = intMdot*t_char
-        DRM['char_dV'] = char_deltaV.to('m/s').value
-        DRM['char_mass_used'] = char_mass_used.to('kg').value
-        # update spacecraft mass
-        Obs.scMass -= mass_used_char
-        DRM['char_scMass'] = Obs.scMass.to('kg').value
+        Obs.scMass -= mass_used
+        DRM['scMass'] = Obs.scMass.to('kg').value
         
         return DRM

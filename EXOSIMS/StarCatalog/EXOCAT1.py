@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os, inspect
+import warnings
 import numpy as np
+import astropy
 import astropy.units as u
 from astropy.io.votable import parse
 from astropy.coordinates import SkyCoord
@@ -38,7 +40,13 @@ class EXOCAT1(StarCatalog):
             raise IOError('Catalog File %s Not Found.'%catalogpath)
         
         #read votable
-        votable = parse(catalogpath)
+        with warnings.catch_warnings():
+            # warnings for IPAC votables are out of control 
+            #   they are not moderated by pedantic=False
+            #   they all have to do with units, which we handle independently anyway
+            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableSpecWarning)
+            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableChangeWarning)
+            votable = parse(catalogpath)
         table = votable.get_first_table()
         data = table.array
         

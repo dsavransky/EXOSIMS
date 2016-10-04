@@ -91,9 +91,10 @@ class KnownRVPlanetsTargetList(TargetList):
         
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values, for minimum dMag
+        # populate minimum integration time values, for minimum dMag in detection mode
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
-                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, OS.detectionMode)
+                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

@@ -67,25 +67,23 @@ class Completeness(object):
         """
         pass
 
-    def completeness_update(self, TL, sInd, obsbegin, obsend, nexttime):
+    def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed
         
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInd (integer):
-                index of star just observed
-            obsbegin (astropy Quantity):
-                time of observation begin
-            obsend (astropy Quantity):
-                time of observation end
-            nexttime (astropy Quantity):
-                time of next observational period
+            sInds (integer array):
+                Indices of stars to update
+            dt (astropy Quantity):
+                Time since initial completeness
         
         Returns:
             comp0 (float ndarray):
-                Completeness values for each star in the target list
+                Completeness values for each star
         
         """
         # prototype returns the "virgin" completeness value
-        return TL.comp0
+        comp0 = TL.comp0[sInds]
+        
+        return comp0

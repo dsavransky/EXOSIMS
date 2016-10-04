@@ -74,16 +74,17 @@ class TargetList(object):
         
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)
-        self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
         self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
+        self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
         self.PostProcessing = get_module(specs['modules']['PostProcessing'],'PostProcessing')(**specs)
         self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
         Comp = self.Completeness
+        PPro = self.PostProcessing
         self.PlanetPopulation = Comp.PlanetPopulation
         self.PlanetPhysicalModel = Comp.PlanetPhysicalModel
-        self.BackgroundSources = self.PostProcessing.BackgroundSources
+        self.BackgroundSources = PPro.BackgroundSources
         
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -95,7 +96,7 @@ class TargetList(object):
         self.filter_target_list(**specs)
         
         # generate any completeness update data needed
-        self.Completeness.gen_update(self)
+        Comp.gen_update(self)
         
         # have target list, no need for catalog now
         if not keepStarCatalog:
@@ -130,9 +131,9 @@ class TargetList(object):
         """
         
         SC = self.StarCatalog
-        Comp = self.Completeness
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
+        Comp = self.Completeness
         
         # bring Star Catalog values to top level of Target List
         for att in self.catalog_atts:
@@ -147,9 +148,10 @@ class TargetList(object):
         self.nan_filter()
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values, for minimum dMag
+        # populate minimum integration time values, for minimum dMag in detection mode
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
-                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, OS.detectionMode)
+                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -273,8 +275,8 @@ class TargetList(object):
         
         """
         
-        OS = self.OpticalSystem
         PPop = self.PlanetPopulation
+        OS = self.OpticalSystem
         
         s = np.tan(OS.IWA)*self.dist
         L = np.sqrt(self.L) if PPop.scaleOrbits else 1. # stellar luminosity in Solar luminosities
@@ -286,9 +288,9 @@ class TargetList(object):
         
         """
         
-        OS = self.OpticalSystem
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
+        OS = self.OpticalSystem
         
         # s and beta arrays
         s = np.tan(OS.IWA)*self.dist
@@ -387,7 +389,7 @@ class TargetList(object):
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         
         Vmag = self.Vmag[sInds]

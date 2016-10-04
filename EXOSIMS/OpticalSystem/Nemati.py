@@ -38,7 +38,7 @@ class Nemati(OpticalSystem):
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
+                Working angles of the planets of interest in units of mas
             mode (dict):
                 Selected observing mode
         
@@ -51,8 +51,8 @@ class Nemati(OpticalSystem):
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
         # for characterization, Cb must include the planet
-        if mode['detection'] != 1:
-            C_b += C_p*mode['inst']['ENF']**2
+        if mode['detectionMode'] == False:
+            C_b = C_b + C_p*mode['inst']['ENF']**2
         
         # get SNR threshold
         SNR = mode['SNR']

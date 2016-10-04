@@ -54,8 +54,6 @@ class OpticalSystem(object):
             All starlight suppression system attributes (variable)
         observingModes (list of dicts):
             Mission observing modes attributes
-        detectionMode (dict):
-            Observing mode selected for detections.
         
     Common science instrument attributes:
         name (string):
@@ -118,9 +116,9 @@ class OpticalSystem(object):
             Sampling of PSF in units of arcsec (per pixel)
         ohTime (astropy Quantity):
             Overhead time in units of days
-        occulter (0 or 1):
-            Equals 1 if the system has an occulter (external or hybrid system), 
-            otherwise 0 (internal system)
+        occulter (boolean):
+            True if the system has an occulter (external or hybrid system), 
+            otherwise False (internal system)
         occulterDiameter (astropy Quantity):
             Occulter diameter in units of m. Measured petal tip-to-tip.
         NocculterDistances (integer):
@@ -145,8 +143,8 @@ class OpticalSystem(object):
             Selected instrument of the observing mode.
         syst (dict):
             Selected system of the observing mode.
-        detection (0 or 1):
-            Equals 1 if this observing mode is the detection mode, otherwise 0. 
+        detectionMode (boolean):
+            True if this observing mode is the detection mode, otherwise False. 
             Only one detection mode can be specified.
         SNR (float):
             Signal-to-noise ratio threshold
@@ -249,8 +247,8 @@ class OpticalSystem(object):
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
             # set an occulter, for an external or hybrid system
-            syst['occulter'] = int(syst.get('occulter',0))
-            if syst['occulter'] == 1:
+            syst['occulter'] = syst.get('occulter',False)
+            if syst['occulter'] == True:
                 self.haveOcculter = True
             
             # handle inf OWA
@@ -314,7 +312,7 @@ class OpticalSystem(object):
         if observingModes == None:
             inst = self.scienceInstruments[0]
             syst = self.starlightSuppressionSystems[0]
-            observingModes = [{'detection': 1,
+            observingModes = [{'detectionMode': True,
                                'instName': inst['name'],
                                'systName': syst['name']}]
         self.observingModes = observingModes
@@ -324,12 +322,18 @@ class OpticalSystem(object):
                     "Observing modes must be defined as dicts."
             assert mode.has_key('instName') and mode.has_key('systName'),\
                     "All observing modes must have key instName and systName."
+            assert np.any([mode['instName'] == inst['name'] for inst in \
+                    self.scienceInstruments]), "The mode's instrument name " + \
+                    mode['instName'] + " does not exist."
+            assert np.any([mode['systName'] == syst['name'] for syst in \
+                    self.starlightSuppressionSystems]), "The mode's system name " + \
+                    mode['systName'] + " does not exist."
             self._outspec['observingModes'].append(mode.copy())
             
             # Loading mode specifications
             mode['SNR'] = float(mode.get('SNR',SNR))
             mode['timeMultiplier'] = float(mode.get('timeMultiplier',timeMultiplier))
-            mode['detection'] = int(mode.get('detection',0))
+            mode['detectionMode'] = mode.get('detectionMode',False)
             mode['inst'] = [inst for inst in self.scienceInstruments \
                     if inst['name'] == mode['instName']][0]
             mode['syst'] = [syst for syst in self.starlightSuppressionSystems \
@@ -344,18 +348,16 @@ class OpticalSystem(object):
             mode['BW'] = float(mode['deltaLam']/mode['lam'])
         
         # check for only one detection mode
-        detectionModes = filter(lambda mode: mode['detection'] == 1, self.observingModes)
-        assert len(detectionModes) <= 1, 'More than one detection mode specified.'
+        detectionModes = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)
+        assert len(detectionModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detectionModes) == 0:
             imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], self.observingModes)
             if imagerModes:
-                imagerModes[0]['detection'] = 1
+                imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
             else:
-                self.observingModes[0]['detection'] = 1
-        # define detection mode
-        self.detectionMode = filter(lambda mode: mode['detection'] == 1, self.observingModes)[0]
+                self.observingModes[0]['detectionMode'] = True
         
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
@@ -459,7 +461,7 @@ class OpticalSystem(object):
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
+                Working angles of the planets of interest in units of mas
             mode (dict):
                 Selected observing mode
         
@@ -481,7 +483,7 @@ class OpticalSystem(object):
         deltaLam = mode['deltaLam']
         BW = mode['BW']
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         # get star magnitude
         mV = TL.starMag(sInds,lam)
@@ -559,7 +561,7 @@ class OpticalSystem(object):
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
+                Working angles of the planets of interest in units of mas
             mode (dict):
                 Selected observing mode
         
@@ -569,7 +571,7 @@ class OpticalSystem(object):
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         intTime = np.ones(len(sInds))*u.day
         

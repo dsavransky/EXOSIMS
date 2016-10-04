@@ -22,12 +22,10 @@ class KeplerLikeUniverse(SimulatedUniverse):
         
         SimulatedUniverse.__init__(self, **specs)
 
-    def gen_planetary_systems(self,**specs):
-        """
-        Generate the planetary systems for the current simulated universe.
-        This routine populates arrays of the orbital elements and physical 
-        characteristics of all planets, and generates indexes that map from 
-        planet to parent star.
+    def gen_physical_properties(self,**specs):
+        """Generates the planetary systems' physical properties. Populates arrays 
+        of the orbital elements, albedos, masses and radii of all planets, and 
+        generates indices that map from planet to parent star.
         
         All paramters except for albedo and mass are sampled, while those are
         calculated via the physical model.

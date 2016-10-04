@@ -35,14 +35,14 @@ class TimeKeeping(object):
             Extended mission time in units of year
         missionPortion (float):
             Portion of mission devoted to planet-finding
-        duration (astropy Quantity):
-            Maximum duration of planet-finding operations in units of day
         dtAlloc (astropy Quantity):
             Default allocated temporal block in units of day
-        missionFinishAbs (astropy Time):
-            Mission finish absolute time in MJD
+        duration (astropy Quantity):
+            Maximum duration of planet-finding operations in units of day
         missionFinishNorm (astropy Quantity):
             Mission finish normalized time in units of day
+        missionFinishAbs (astropy Time):
+            Mission finish absolute time in MJD
         nextTimeAvail (astropy Quantity):
             Next time available for planet-finding in units of day
         currentTimeNorm (astropy Quantity):
@@ -56,7 +56,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
-                  missionPortion = 1/6., intCutoff = 50, dtAlloc = 1, **specs):
+                  missionPortion = 1/6., dtAlloc = 1, intCutoff = 50, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -77,8 +77,8 @@ class TimeKeeping(object):
         self.duration = float(intCutoff)*u.day
         
         # set values derived from quantities above
-        self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
         self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')
+        self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
         
         # initialize values updated by functions
         self.nextTimeAvail = 0*u.day
@@ -173,4 +173,7 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        return (self.currentTimeNorm > self.missionFinishNorm)
+        is_over = (self.currentTimeNorm > self.missionFinishNorm)
+        
+        return is_over
+

@@ -28,13 +28,18 @@ class PostProcessing(object):
             for constant gain, or a two-column array for separation-dependent 
             gain, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
+        maxFAfluxratio (float, callable):
+            Maximum flux ratio that can be obtained by a false alarm: either a scalar 
+            for constant flux ratio, or a two-column array for separation-dependent 
+            flux ratio, where the first column contains the angular separation in 
+            units of arcsec. May be data or FITS filename.
             
     """
     
     _modtype = 'PostProcessing'
     _outspec = {}
 
-    def __init__(self,FAP=3e-7,MDP=1e-3,ppFact=1.0,**specs):
+    def __init__(self,FAP=3e-7,MDP=1e-3,ppFact=1.0,maxFAfluxratio=1e-6,**specs):
         
         self.FAP = float(FAP)       # false alarm probability
         self.MDP = float(MDP)       # missed detection probability
@@ -52,20 +57,38 @@ class PostProcessing(object):
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',\
                     fill_value=1., bounds_error=False)
             self.ppFact = lambda s: np.array(Ginterp(s.to('arcsec').value),ndmin=1)
-        
         elif isinstance(ppFact,numbers.Number):
             assert ppFact>0 and ppFact<=1, \
-                    "Contrast must be positive and smaller than 1."
+                    "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
+            
+        # check for max FA flux ratio, function of the working angle
+        if isinstance(maxFAfluxratio,basestring):
+            pth = os.path.normpath(os.path.expandvars(maxFAfluxratio))
+            assert os.path.isfile(pth), "%s is not a valid file."%pth
+            dat = fits.open(pth)[0].data
+            assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong max FA flux ratio data shape."
+            WA,G = (dat[0],dat[1]) if dat.shape[0] == 2 else (dat[:,0],dat[:,1])
+            assert np.all(G>0) and np.all(G<=1), \
+                    "Max FA flux ratio must be positive and smaller than 1."
+            # gain outside of WA values defaults to 1
+            Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',\
+                    fill_value=1., bounds_error=False)
+            self.maxFAfluxratio = lambda s: np.array(Ginterp(s.to('arcsec').value),ndmin=1)
+        elif isinstance(maxFAfluxratio,numbers.Number):
+            assert maxFAfluxratio>0 and maxFAfluxratio<=1, \
+                    "Max FA flux ratio must be positive and smaller than 1."
+            self.maxFAfluxratio = lambda s, G=float(maxFAfluxratio): G
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['ppFact']:
+            if att not in ['ppFact','maxFAfluxratio']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
         
         #instantiate background sources object
-        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],'BackgroundSources')(**specs)
+        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'], \
+                'BackgroundSources')(**specs)
 
     def __str__(self):
         """String representation of Post Processing object
@@ -114,3 +137,4 @@ class PostProcessing(object):
         MD[SNR <= zFA] = True
         
         return FA, MD
+

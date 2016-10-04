@@ -69,21 +69,24 @@ class WFIRSTObservatory(Observatory):
                 
         Returns:
             kogood (boolean ndarray):
-                True is an observable star.
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
         
-        Note: currentTime must be of size len(sInds), and r_sc of shape (len(sInds),3)
+        Note1: currentTime and r_sc must be of same size.
+        Note2: For multiple targets, currentTime/r_sc must be of size 1 or size of sInds.
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
-        
-        # check shape of currentTime and r_sc
-        assert currentTime.size == len(sInds), 'currentTime must be of size len(sInds)'
-        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
-        
         # reshape currentTime
         currentTime = currentTime.reshape(currentTime.size)
+        # check size of currentTime and r_sc
+        assert currentTime.size == r_sc.shape[0], 'CurrentTime and r_sc must be of same size.'
+        # check size of sInds
+        if (sInds.size > 1) & (currentTime.size > 1):
+            assert currentTime.size == sInds.size, \
+                    'For multiple targets, currentTime/r_sc must be of size 1 or size of sInds'
         
         # First, find unit vectors wrt spacecraft for stars of interest
         # position vectors wrt sun
@@ -95,7 +98,7 @@ class WFIRSTObservatory(Observatory):
         
         # Second, find unit vectors wrt spacecraft for bright objects
         # position vectors wrt sun
-        r_bright = np.array([np.zeros((len(sInds),3)), # sun
+        r_bright = np.array([np.zeros(r_sc.shape), # sun
             self.solarSystem_body_position(currentTime, 'Mercury').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Venus').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,

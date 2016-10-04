@@ -76,7 +76,7 @@ class ZodiacalLight(object):
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         
         # check shape of r_sc
@@ -106,7 +106,7 @@ class ZodiacalLight(object):
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         
         # assume log-normal distribution of variance

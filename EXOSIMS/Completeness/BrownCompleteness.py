@@ -232,35 +232,32 @@ class BrownCompleteness(Completeness):
         self.updates = np.array(self.updates)
         print 'Completeness update calculations finished'
 
-    def completeness_update(self, TL, sInd, obsbegin, obsend, nexttime):
+    def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed
         
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInd (integer):
-                Index of star just observed
-            obsbegin (astropy Quantity):
-                Time of observation begin in units of day
-            obsend (astropy Quantity):
-                Time of observation end in units of day
-            nexttime (astropy Quantity):
-                Time of next observational period in units of day
+            sInds (integer array):
+                Indices of stars to update
+            dt (astropy Quantity):
+                Time since initial completeness
         
         Returns:
             comp0 (float ndarray):
-                Completeness values for each star in the target list
+                Completeness values for each star
         
         """
         
-        self.visits[sInd] += 1
+        if dt < 100*u.d:
+            comp0 = TL.comp0[sInds]
+            return comp0
         
-        if self.visits[sInd] > len(self.updates[sInd])-1:
-            TL.comp0[sInd] = self.updates[sInd][-1]
-        else:
-            TL.comp0[sInd] = self.updates[sInd][self.visits[sInd]]
+        self.visits[sInds] += 1
+        self.visits[sInds][self.visits[sInds] > len(self.updates[sInds])-1] = 0
+        comp0 = self.updates[sInds][self.visits[sInds]]
         
-        return TL.comp0
+        return comp0
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness

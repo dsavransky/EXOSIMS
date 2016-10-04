@@ -253,7 +253,6 @@ class Observatory(object):
         """Finds keepout Boolean values for stars of interest.
         
         This method defines the data type expected, all values are True.
-        Note: currentTime and r_sc can be arrays of size = len(sInds)
         
         Args:
             TL (TargetList module):
@@ -269,23 +268,21 @@ class Observatory(object):
                 
         Returns:
             kogood (boolean ndarray):
-                True is an observable star.
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
         
-        Note: currentTime must be of size len(sInds), and r_sc of shape (len(sInds),3)
+        Note: currentTime and r_sc must be of same size.
         
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
-        
-        # check shape of currentTime and r_sc
-        assert currentTime.size == len(sInds), 'currentTime must be of size len(sInds)'
-        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
-        
         # reshape currentTime
         currentTime = currentTime.reshape(currentTime.size)
+        # check size of currentTime and r_sc
+        assert currentTime.size == r_sc.shape[0], 'currentTime and r_sc must be of same size.'
         
-        kogood = np.ones(len(sInds), dtype=bool)
+        kogood = np.ones(currentTime.size, dtype=bool)
         
         # check to make sure all elements in self.kogood are Boolean
         trues = [isinstance(element, np.bool_) for element in kogood]
@@ -312,9 +309,11 @@ class Observatory(object):
         """
         
         if self.havejplephem:
-            return self.spk_body(currentTime, bodyname)
+            r_body = self.spk_body(currentTime, bodyname)
         else:
-            return self.keplerplanet(currentTime, bodyname)
+            r_body = self.keplerplanet(currentTime, bodyname)
+        
+        return r_body.to('km')
 
     def spk_body(self, currentTime, bodyname):
         """Finds position vector for solar system objects
@@ -489,11 +488,19 @@ class Observatory(object):
             r_star (astropy Quantity nx3 array): 
                 Position vectors of stars of interest in heliocentric 
                 equatorial frame in units of km
-            
+        
+        Note: For multiple targets, currentTime must be of size 1 or size of sInds.
+        
         """
         
-        # check type of sInds
+        # reshape sInds
         sInds = np.array(sInds,ndmin=1)
+        # reshape currentTime
+        currentTime = currentTime.reshape(currentTime.size)
+        # check size of sInds
+        if (sInds.size > 1) & (currentTime.size > 1):
+            assert currentTime.size == sInds.size, \
+                    'For multiple targets, currentTime must be of size 1 or size of sInds'
         
         # right ascension and declination
         ra = TL.coords.ra[sInds]

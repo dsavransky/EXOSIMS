@@ -251,7 +251,7 @@ class SurveySimulation(object):
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                 # Update the occulter wet mass and store all occulter 
                 if OS.haveOcculter == True:
-                    DRM = update_occulter_mass(DRM, sInd, t_det, 'det')
+                    DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
                 DRM['int_time_det'] = t_det.to('day').value
                 DRM['plan_detected'] = detected.tolist()
                 DRM['plan_det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
@@ -268,7 +268,7 @@ class SurveySimulation(object):
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
                 # Update the occulter wet mass and store all occulter 
                 if OS.haveOcculter == True:
-                    DRM = update_occulter_mass(DRM, sInd, t_char,'char')
+                    DRM = self.update_occulter_mass(DRM, sInd, t_char,'char')
                 DRM['int_time_char'] = t_char.to('day').value
                 DRM['plan_characterized'] = characterized.tolist()
                 DRM['plan_char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
@@ -428,10 +428,10 @@ class SurveySimulation(object):
             # find values related to slew time
             DRM['slew_time'] = slewTime[sInd].to('day').value
             DRM['slew_angle'] = sd[sInd].to('deg').value
-            slew_mass_used = slewTime*Obs.defburnPortion*Obs.flowRate
-            DRM['slew_dV'] = (slewTime*ao*Obs.defburnPortion).to('m/s').value
+            slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
+            DRM['slew_dV'] = (slewTime[sInd]*ao*Obs.defburnPortion).to('m/s').value
             DRM['slew_mass_used'] = slew_mass_used.to('kg').value
-            Obs.scMass -= slew_mass_used
+            Obs.scMass = Obs.scMass - slew_mass_used
             DRM['scMass'] = Obs.scMass.to('kg').value
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTime[sInd])
@@ -780,7 +780,7 @@ class SurveySimulation(object):
         
         TL = self.TargetList
         Obs = self.Observatory
-        TL = self.TimeKeeping
+        TK = self.TimeKeeping
         
         # find disturbance forces on occulter
         dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)
@@ -791,7 +791,7 @@ class SurveySimulation(object):
         DRM[skMode+'_dF_lateral'] = dF_lateral.to('N').value
         DRM[skMode+'_dF_axial'] = dF_axial.to('N').value
         # update spacecraft mass
-        Obs.scMass -= mass_used
+        Obs.scMass = Obs.scMass - mass_used
         DRM['scMass'] = Obs.scMass.to('kg').value
         
         return DRM

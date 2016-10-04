@@ -632,7 +632,7 @@ class Observatory(object):
         occulterSep = self.occulterSep
         
         # get spacecraft position vector
-        r_Ts = self.orbit(currentTime)
+        r_Ts = self.orbit(currentTime)[0]
         # sun -> earth position vector
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')
         # sun -> target star vector

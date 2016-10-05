@@ -249,35 +249,41 @@ class SurveySimulation(object):
                 
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
-                # Update the occulter wet mass and store all occulter 
+                # Update the occulter wet mass
                 if OS.haveOcculter == True:
                     DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
-                DRM['int_time_det'] = t_det.to('day').value
-                DRM['plan_detected'] = detected.tolist()
-                DRM['plan_det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                DRM['plan_det_dMag'] = SU.dMag[pInds].tolist()
-                DRM['plan_det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                DRM['SNR_det'] = detSNR.tolist()
-                # false alarm delta magnitude and working angle
-                if FA == True:
-                    DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
-                    DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
-                    DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+                # Populate the DRM with detection results
+                DRM['det_time'] = t_det.to('day').value
+                DRM['det_status'] = detected
+                DRM['det_SNR'] = detSNR
+                if np.any(pInds):
+                    DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
+                    DRM['det_dMag'] = SU.dMag[pInds].tolist()
+                    DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
-                # Update the occulter wet mass and store all occulter 
+                # Update the occulter wet mass
                 if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, t_char,'char')
-                DRM['int_time_char'] = t_char.to('day').value
-                DRM['plan_characterized'] = characterized.tolist()
-                DRM['plan_char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                DRM['plan_char_dMag'] = SU.dMag[pInds].tolist()
-                DRM['plan_char_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                DRM['SNR_char'] = charSNR.tolist()
-                # store characterization mode in DRM, charModes must be a list of dictionaries
-                DRM['charModes'] = [dict(charMode)]
-                del DRM['charModes'][0]['inst'], DRM['charModes'][0]['syst']
+                    DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
+                # Store characterization mode in DRM
+                DRM['char_mode'] = dict(charMode)
+                del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+                # if any false alarm, store its characterization status, fEZ, dMag, and WA
+                if FA == True:
+                    DRM['FA_status'] = characterized.pop()
+                    DRM['FA_SNR'] = charSNR.pop()
+                    DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
+                    DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
+                    DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+                # Populate the DRM with characterization results
+                DRM['char_time'] = t_char.to('day').value
+                DRM['char_status'] = characterized
+                DRM['char_SNR'] = charSNR
+                if np.any(pInds):
+                    DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
+                    DRM['char_dMag'] = SU.dMag[pInds].tolist()
+                    DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 
                 # update target time
                 self.starTimes[sInd] = TK.currentTimeNorm
@@ -458,10 +464,10 @@ class SurveySimulation(object):
                 Selected observing mode for detection
         
         Returns:
-            detected (integer ndarray):
+            detected (integer list):
                 Detection status for each planet orbiting the observed target star,
                 where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
-            SNR (float ndarray):
+            SNR (float list):
                 Detection signal-to-noise ratio of the observable planets
             FA (boolean):
                 False alarm (false positive) boolean
@@ -571,7 +577,7 @@ class SurveySimulation(object):
         else:
             self.starRevisit = np.vstack((self.starRevisit, revisit))
         
-        return detected, SNR, FA
+        return detected.tolist(), SNR.tolist(), FA
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -583,11 +589,11 @@ class SurveySimulation(object):
                 Selected observing mode for characterization
         
         Returns:
-            characterized (integer ndarray):
+            characterized (integer list):
                 Characterization status for each planet orbiting the observed 
                 target star including False Alarm if any, where 1 is full spectrum, 
                 -1 partial spectrum, and 0 not characterized
-            SNR (float ndarray):
+            SNR (float list):
                 Characterization signal-to-noise ratio of the observable planets. 
                 Defaults to None.
             t_char (astropy Quantity):
@@ -708,7 +714,7 @@ class SurveySimulation(object):
                             full = full[:-1] if full[-1] == -1 else full
                             self.fullSpectra[full] += 1
         
-        return characterized, SNR, t_char
+        return characterized.tolist(), SNR.tolist(), t_char
 
     def calc_signal_noise(self, sInd, pInds, t_int, mode):
         """Calculates the signal and noise fluxes for a given time interval. Called

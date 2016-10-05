@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPopulation.EarthTwinHabZone1 &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.PlanetPopulation.EarthTwinHabZone1 &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,9 +39,9 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.PlanetPopulation.EarthTwinHabZone1</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.PlanetPopulation</span> <span class="kn">import</span> <span class="n">PlanetPopulation</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.PlanetPopulation</span> <span class="k">import</span> <span class="n">PlanetPopulation</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="EarthTwinHabZone1"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1">[docs]</a><span class="k">class</span> <span class="nc">EarthTwinHabZone1</span><span class="p">(</span><span class="n">PlanetPopulation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -61,8 +61,31 @@
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;prange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.367</span><span class="p">,</span><span class="mf">0.367</span><span class="p">]</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Rprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Mprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;scaleOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;scaleOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="EarthTwinHabZone1.dist_sma"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.dist_sma">[docs]</a>    <span class="k">def</span> <span class="nf">dist_sma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function of semi-major axis in AU</span>
+<span class="sd">        </span>
+<span class="sd">        The Earth-twin population assumes a uniform distribution between the minimum and</span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args: </span>
+<span class="sd">            x (float/ndarray):</span>
+<span class="sd">                Semi-major axis value(s) in AU</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            f (ndarray):</span>
+<span class="sd">                Semi-major axis probability density</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="n">f</span> <span class="o">=</span> <span class="p">((</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>\
+            <span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">f</span></div>
 
 <div class="viewcode-block" id="EarthTwinHabZone1.gen_sma"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.gen_sma">[docs]</a>    <span class="k">def</span> <span class="nf">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate semi-major axis values in AU</span>
@@ -118,7 +141,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

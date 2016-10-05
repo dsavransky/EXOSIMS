@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.SurveyEnsemble.IPClusterEnsemble &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.SurveyEnsemble.IPClusterEnsemble &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,9 +39,9 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.SurveyEnsemble.IPClusterEnsemble</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">ipyparallel</span> <span class="kn">import</span> <span class="n">Client</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SurveyEnsemble</span> <span class="kn">import</span> <span class="n">SurveyEnsemble</span> 
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span></span><span class="kn">from</span> <span class="nn">ipyparallel</span> <span class="k">import</span> <span class="n">Client</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SurveyEnsemble</span> <span class="k">import</span> <span class="n">SurveyEnsemble</span> 
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
 <span class="kn">import</span> <span class="nn">time</span>
 
 <div class="viewcode-block" id="IPClusterEnsemble"><a class="viewcode-back" href="../../../EXOSIMS.SurveyEnsemble.html#EXOSIMS.SurveyEnsemble.IPClusterEnsemble.IPClusterEnsemble">[docs]</a><span class="k">class</span> <span class="nc">IPClusterEnsemble</span><span class="p">(</span><span class="n">SurveyEnsemble</span><span class="p">):</span>
@@ -66,7 +66,7 @@
         <span class="c1"># access the cluster</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="n">Client</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dview</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="p">[:]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">sync_imports</span><span class="p">():</span> <span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span><span class="nn">EXOSIMS.util.get_module</span>
         <span class="n">r1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SurveySim = EXOSIMS.util.get_module.get_module(&#39;</span><span class="si">%s</span><span class="s2">&#39;, &#39;SurveySimulation&#39;)&quot;</span><span class="o">%</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveySimulation&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">specs</span><span class="o">=</span><span class="n">specs</span><span class="p">))</span>
@@ -80,11 +80,11 @@
             <span class="n">ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lview</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">run_one</span><span class="p">)</span>
             <span class="n">async_res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span>
 
-        <span class="k">print</span> <span class="s2">&quot;Submitted tasks: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;Submitted tasks: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
         <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">print</span> <span class="s2">&quot;Completed in </span><span class="si">%d</span><span class="s2"> sec&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">t2</span><span class="o">-</span><span class="n">t1</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;Completed in </span><span class="si">%d</span><span class="s2"> sec&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">t2</span><span class="o">-</span><span class="n">t1</span><span class="p">)</span>
 
         <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">ar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">ar</span> <span class="ow">in</span> <span class="n">async_res</span><span class="p">]</span>
 
@@ -127,7 +127,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

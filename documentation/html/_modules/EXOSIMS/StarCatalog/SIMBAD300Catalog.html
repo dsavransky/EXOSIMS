@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.StarCatalog.SIMBAD300Catalog &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.StarCatalog.SIMBAD300Catalog &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,7 +40,7 @@
             
   <h1>Source code for EXOSIMS.StarCatalog.SIMBAD300Catalog</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.StarCatalog.SIMBADCatalog</span> <span class="kn">import</span> <span class="n">SIMBADCatalog</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.StarCatalog.SIMBADCatalog</span> <span class="k">import</span> <span class="n">SIMBADCatalog</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
 
 <div class="viewcode-block" id="SIMBAD300Catalog"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBAD300Catalog.SIMBAD300Catalog">[docs]</a><span class="k">class</span> <span class="nc">SIMBAD300Catalog</span><span class="p">(</span><span class="n">SIMBADCatalog</span><span class="p">):</span>
@@ -59,15 +59,15 @@
         <span class="c1"># check if given filename exists as .pkl file already</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pklpath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">populatepkl</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-            <span class="k">print</span> <span class="s1">&#39;Loaded </span><span class="si">%s</span><span class="s1">.pkl star catalog&#39;</span> <span class="o">%</span><span class="n">filename</span>
+            <span class="nb">print</span> <span class="s1">&#39;Loaded </span><span class="si">%s</span><span class="s1">.pkl star catalog&#39;</span> <span class="o">%</span><span class="n">filename</span>
         <span class="c1"># check if given filename exists as a .mat file but not .pkl file</span>
         <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">matpath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">SIMBAD_mat2pkl</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="n">pklpath</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">populatepkl</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-            <span class="k">print</span> <span class="s1">&#39;Loaded </span><span class="si">%s</span><span class="s1">.mat star catalog&#39;</span> <span class="o">%</span><span class="n">filename</span>
+            <span class="nb">print</span> <span class="s1">&#39;Loaded </span><span class="si">%s</span><span class="s1">.mat star catalog&#39;</span> <span class="o">%</span><span class="n">filename</span>
         <span class="c1"># otherwise print error</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s1">&#39;Could not load SIMBAD300 star catalog&#39;</span></div>
+            <span class="nb">print</span> <span class="s1">&#39;Could not load SIMBAD300 star catalog&#39;</span></div>
 </pre></div>
 
           </div>
@@ -101,7 +101,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

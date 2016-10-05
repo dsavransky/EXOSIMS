@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.TargetList.KnownRVPlanetsTargetList &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.TargetList.KnownRVPlanetsTargetList &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,11 +40,11 @@
             
   <h1>Source code for EXOSIMS.TargetList.KnownRVPlanetsTargetList</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
-<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.TargetList</span> <span class="kn">import</span> <span class="n">TargetList</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.TargetList</span> <span class="k">import</span> <span class="n">TargetList</span>
 
 <div class="viewcode-block" id="KnownRVPlanetsTargetList"><a class="viewcode-back" href="../../../EXOSIMS.TargetList.html#EXOSIMS.TargetList.KnownRVPlanetsTargetList.KnownRVPlanetsTargetList">[docs]</a><span class="k">class</span> <span class="nc">KnownRVPlanetsTargetList</span><span class="p">(</span><span class="n">TargetList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -93,7 +93,7 @@
         <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
-        
+       
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">allplanetdata</span><span class="p">[:]</span>
         <span class="c1"># filter out targets with planets outside of WA range </span>
         <span class="n">dist</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;st_dist&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">filled</span><span class="p">()</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>
@@ -102,7 +102,8 @@
                 <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">sma</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">PPop</span><span class="o">.</span><span class="n">eccen</span><span class="p">)</span><span class="o">/</span><span class="n">dist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">OS</span><span class="o">.</span><span class="n">OWA</span><span class="p">)</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="c1"># filter out redundant targets</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;pl_hostname&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="bp">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;pl_hostname&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]]</span>
+        
         <span class="c1"># filter missing Vmag and BV , for OS.calc_maxintTime</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="o">~</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;st_vj&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="o">~</span><span class="n">tmp</span><span class="p">[</span><span class="s1">&#39;st_bmvj&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span>
@@ -131,14 +132,16 @@
         
         <span class="c1"># populate completeness values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c1"># populate maximum integration time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># populate minimum integration time values, for minimum dMag in detection mode</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tint0</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">),</span> <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> \
+                <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="mf">2.</span><span class="o">*</span><span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
         <span class="c1"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
         
         <span class="c1"># include new attributes to the target list catalog attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;comp0&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;maxintTime&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;tint0&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="KnownRVPlanetsTargetList.filter_target_list"><a class="viewcode-back" href="../../../EXOSIMS.TargetList.html#EXOSIMS.TargetList.KnownRVPlanetsTargetList.KnownRVPlanetsTargetList.filter_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">filter_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Filtering is done as part of populating the table, so this helper function</span>
@@ -178,7 +181,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

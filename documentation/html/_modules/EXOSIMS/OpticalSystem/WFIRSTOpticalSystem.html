@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.OpticalSystem.WFIRSTOpticalSystem &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.OpticalSystem.WFIRSTOpticalSystem &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,11 +40,11 @@
             
   <h1>Source code for EXOSIMS.OpticalSystem.WFIRSTOpticalSystem</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.OpticalSystem.KasdinBraems</span> <span class="kn">import</span> <span class="n">KasdinBraems</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">st</span>
-<span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">opt</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.OpticalSystem.KasdinBraems</span> <span class="k">import</span> <span class="n">KasdinBraems</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="k">as</span> <span class="nn">opt</span>
 
 <div class="viewcode-block" id="WFIRSTOpticalSystem"><a class="viewcode-back" href="../../../EXOSIMS.OpticalSystem.html#EXOSIMS.OpticalSystem.WFIRSTOpticalSystem.WFIRSTOpticalSystem">[docs]</a><span class="k">class</span> <span class="nc">WFIRSTOpticalSystem</span><span class="p">(</span><span class="n">KasdinBraems</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;WFIRST OpticalSystem class</span>
@@ -63,10 +63,10 @@
         
         <span class="n">KasdinBraems</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Imager</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Spectro</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ImagerSyst</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SpectroSyst</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scienceInstruments</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;imag&#39;</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
@@ -116,7 +116,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

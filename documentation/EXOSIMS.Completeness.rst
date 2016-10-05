@@ -12,6 +12,14 @@ EXOSIMS.Completeness.BrownCompleteness module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.Completeness.GarrettCompleteness module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.Completeness.GarrettCompleteness
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

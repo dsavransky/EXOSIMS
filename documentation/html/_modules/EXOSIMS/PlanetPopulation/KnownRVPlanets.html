@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPopulation.KnownRVPlanets &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.PlanetPopulation.KnownRVPlanets &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,16 +39,16 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.PlanetPopulation.KnownRVPlanets</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.KeplerLike1</span> <span class="kn">import</span> <span class="n">KeplerLike1</span>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.KeplerLike1</span> <span class="k">import</span> <span class="n">KeplerLike1</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">astropy</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">astropy.io.votable</span> <span class="kn">import</span> <span class="n">parse</span>
-<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util</span> <span class="kn">import</span> <span class="n">statsFun</span> 
+<span class="kn">from</span> <span class="nn">astropy.io.votable</span> <span class="k">import</span> <span class="n">parse</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util</span> <span class="k">import</span> <span class="n">statsFun</span> 
 
 
 <div class="viewcode-block" id="KnownRVPlanets"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets">[docs]</a><span class="k">class</span> <span class="nc">KnownRVPlanets</span><span class="p">(</span><span class="n">KeplerLike1</span><span class="p">):</span>
@@ -83,9 +83,9 @@
 <span class="sd">        rvplanetfilepath (string):</span>
 <span class="sd">            Full path to RV planet votable file from IPAC. If None,</span>
 <span class="sd">            assumes default file in PlanetPopulation directory of EXOSIMS.</span>
-<span class="sd">        period (astropy Quantity array)</span>
+<span class="sd">        period (astropy Quantity array):</span>
 <span class="sd">            Orbital period in units of day.  Error in perioderr.</span>
-<span class="sd">        tper (astropy Time)</span>
+<span class="sd">        tper (astropy Time):</span>
 <span class="sd">            Periastron time in units of jd.  Error in tpererr.</span>
 <span class="sd">        </span>
 <span class="sd">    </span>
@@ -93,14 +93,14 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smaknee</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">esigma</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">rvplanetfilepath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smaknee</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">esigma</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">rvplanetfilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;smaknee&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">smaknee</span><span class="p">)</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;esigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">esigma</span><span class="p">)</span>
         <span class="n">KeplerLike1</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1">#default file is ipac_2016-05-15</span>
-        <span class="k">if</span> <span class="n">rvplanetfilepath</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rvplanetfilepath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;RVplanets_ipac_2016-05-15.votable&#39;</span>
             <span class="n">rvplanetfilepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
@@ -174,7 +174,7 @@
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbtper&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
         <span class="n">tmp</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbtper&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span><span class="n">high</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span>\
                 <span class="n">size</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbtper&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tper</span> <span class="o">=</span>  <span class="n">Time</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="n">format</span><span class="o">=</span><span class="s1">&#39;jd&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tper</span> <span class="o">=</span>  <span class="n">Time</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jd&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tpererr</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbtpererr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tpererr</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pl_orbtpererr1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tpererr</span><span class="p">)</span>
         
@@ -261,7 +261,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

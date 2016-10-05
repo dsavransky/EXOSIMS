@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.Completeness &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.Completeness &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,8 +40,8 @@
             
   <h1>Source code for EXOSIMS.Prototypes.Completeness</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
 
 <div class="viewcode-block" id="Completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness">[docs]</a><span class="k">class</span> <span class="nc">Completeness</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Completeness class template</span>
@@ -73,7 +73,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Completeness class object attributes&#39;</span>
 
@@ -83,12 +83,12 @@
 <span class="sd">        This method is called from TargetList __init__ method.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList): </span>
+<span class="sd">            TL (TargetList module):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            comp0 (ndarray): </span>
-<span class="sd">                1D numpy array of completeness values for each target star</span>
+<span class="sd">            comp0 (float ndarray): </span>
+<span class="sd">                Completeness values for each target star</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -102,35 +102,32 @@
 <span class="sd">        target list)</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList):</span>
-<span class="sd">                TargetList module</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">obsbegin</span><span class="p">,</span> <span class="n">obsend</span><span class="p">,</span> <span class="n">nexttime</span><span class="p">):</span>
+<div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            sInd (int):</span>
-<span class="sd">                index of star just observed</span>
-<span class="sd">            TL (TargetList):</span>
-<span class="sd">                TargetList module</span>
-<span class="sd">            obsbegin (Quantity):</span>
-<span class="sd">                time of observation begin</span>
-<span class="sd">            obsend (Quantity):</span>
-<span class="sd">                time of observation end</span>
-<span class="sd">            nexttime (Quantity):</span>
-<span class="sd">                time of next observational period</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            sInds (integer array):</span>
+<span class="sd">                Indices of stars to update</span>
+<span class="sd">            dt (astropy Quantity):</span>
+<span class="sd">                Time since initial completeness</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            comp0 (ndarray):</span>
-<span class="sd">                1D numpy ndarray of completeness values for each star in the </span>
-<span class="sd">                target list</span>
+<span class="sd">            comp0 (float ndarray):</span>
+<span class="sd">                Completeness values for each star</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># prototype returns the &quot;virgin&quot; completeness value</span>
-        <span class="k">return</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span></div></div>
+        <span class="n">comp0</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">comp0</span></div></div>
 </pre></div>
 
           </div>
@@ -164,7 +161,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

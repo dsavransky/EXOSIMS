@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.BackgroundSources package &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.BackgroundSources package &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -65,11 +65,9 @@ arcminute, including galaxies and faint stars.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>coords</strong> (<em>astropy SkyCoord array</em>) &#8211; SkyCoord object containing right ascension, declination, and
 distance to star of the planets of interest in units of deg, deg and pc</li>
-<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to the V magnitude (in the detection
-band) of the dark hole to be produced for each target. it is the
-limiting planet magnitude (faintest planet/objects we can observe),
-which corresponds to dMagLim + Vmag of each specific target.
-Must be of same length as coords.</li>
+<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to the limiting planet magnitude
+(Vmag+dMagLim), i.e. the V magnitude of the dark hole to be
+produced for each target. Must be of same length as coords.</li>
 </ul>
 </td>
 </tr>
@@ -143,7 +141,7 @@ units of 1/arcmin2. Same length as inputs.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.TargetList &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.TargetList &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,12 +40,12 @@
             
   <h1>Source code for EXOSIMS.Prototypes.TargetList</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.deltaMag</span> <span class="kn">import</span> <span class="n">deltaMag</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.deltaMag</span> <span class="k">import</span> <span class="n">deltaMag</span>
 
 <div class="viewcode-block" id="TargetList"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList">[docs]</a><span class="k">class</span> <span class="nc">TargetList</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Target List class template</span>
@@ -61,112 +61,71 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        OpticalSystem (OpticalSystem):</span>
-<span class="sd">            OpticalSystem class object</span>
-<span class="sd">        PlanetPopulation (PlanetPopulation):</span>
-<span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        PlanetPhyiscalModel (PlanetPhysicalModel):</span>
-<span class="sd">            PlanetPhysicalModel class object</span>
-<span class="sd">        ZodiacalLight (ZodiacalLight):</span>
-<span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        Completeness (Completeness):</span>
-<span class="sd">            Completeness class object</span>
-<span class="sd">        BackgroundSources (BackgroundSources):</span>
-<span class="sd">            BackgroundSources class object</span>
-<span class="sd">        PostProcessing (PostProcessing):</span>
-<span class="sd">            PostProcessing class object</span>
-<span class="sd">        StarCatalog (StarCatalog):</span>
+<span class="sd">        (StarCatalog values)</span>
+<span class="sd">            Mission specific filtered star catalog values from StarCatalog class object:</span>
+<span class="sd">            Name, Spec, Umag, Bmag, Vmag, Rmag, Imag, Jmag, Hmag, Kmag, BV, MV,</span>
+<span class="sd">            BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</span>
+<span class="sd">        StarCatalog (StarCatalog module):</span>
 <span class="sd">            StarCatalog class object (only retained if keepStarCatalog is True)</span>
-<span class="sd">        Name (ndarray):</span>
-<span class="sd">            1D numpy ndarray of star names</span>
-<span class="sd">        Spec (ndarray):</span>
-<span class="sd">            1D numpy ndarray of star spectral types</span>
-<span class="sd">        Umag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of U magnitude</span>
-<span class="sd">        Bmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of B magnitude</span>
-<span class="sd">        Vmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of V magnitude</span>
-<span class="sd">        Rmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of R magnitude</span>
-<span class="sd">        Imag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of I magnitude</span>
-<span class="sd">        Jmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of J magnitude</span>
-<span class="sd">        Hmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of H magnitude</span>
-<span class="sd">        Kmag (ndarray):</span>
-<span class="sd">            1D numpy ndarray of K magnitude</span>
-<span class="sd">        BV (ndarray):</span>
-<span class="sd">            1D numpy ndarray of B-V Johnson magnitude</span>
-<span class="sd">        MV (ndarray):</span>
-<span class="sd">            1D numpy ndarray of absolute V magnitude</span>
-<span class="sd">        BC (ndarray):</span>
-<span class="sd">            1D numpy ndarray of bolometric correction</span>
-<span class="sd">        L (ndarray):</span>
-<span class="sd">            1D numpy ndarray of stellar luminosity in Solar luminosities</span>
-<span class="sd">        Binary_Cut (ndarray):</span>
-<span class="sd">            1D numpy ndarray of booleans where True is a star with a companion </span>
-<span class="sd">            closer than 10 arcsec</span>
-<span class="sd">        dist (Quantity):</span>
-<span class="sd">            1D numpy ndarray of distance to star (default units of parsecs)</span>
-<span class="sd">        parx (Quantity):</span>
-<span class="sd">            1D numpy ndarray of parallax (default units of milliarcseconds)</span>
-<span class="sd">        coords (SkyCoord):</span>
-<span class="sd">            numpy ndarray of astropy SkyCoord objects containing right ascension,</span>
-<span class="sd">            declination, and distance to star (default units of degree and parsecs)</span>
-<span class="sd">        pmra (Quantity):</span>
-<span class="sd">            1D numpy ndarray of proper motion in right ascension (default units of </span>
-<span class="sd">            milliarcseconds/year)</span>
-<span class="sd">        pmdec (Quantity):</span>
-<span class="sd">            1D numpy ndarray of proper motion in declination (default units of </span>
-<span class="sd">            milliarcseconds/year)</span>
-<span class="sd">        rv (Quantity):</span>
-<span class="sd">            1D numpy ndarray of radial velocity (default units of km/s)</span>
-<span class="sd">        maxintTime (Quantity):</span>
-<span class="sd">            1D numpy ndarray containing maximum integration time (units of time)</span>
+<span class="sd">        PlanetPopulation (PlanetPopulation module):</span>
+<span class="sd">            PlanetPopulation class object</span>
+<span class="sd">        PlanetPhysicalModel ( module):</span>
+<span class="sd">            PlanetPhysicalModel class object</span>
+<span class="sd">        OpticalSystem (OpticalSystem module):</span>
+<span class="sd">            OpticalSystem class object</span>
+<span class="sd">        ZodiacalLight (ZodiacalLight module):</span>
+<span class="sd">            ZodiacalLight class object</span>
+<span class="sd">        BackgroundSources (BackgroundSources module):</span>
+<span class="sd">            BackgroundSources class object</span>
+<span class="sd">        PostProcessing (PostProcessing module):</span>
+<span class="sd">            PostProcessing class object</span>
+<span class="sd">        Completeness (Completeness module):</span>
+<span class="sd">            Completeness class object</span>
+<span class="sd">        tint0 (astropy Quantity array):</span>
+<span class="sd">            Integration time for each target star in units of day, for a minimum </span>
+<span class="sd">            delta magnitude dMagLim</span>
 <span class="sd">        comp0 (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing completeness value for each target star</span>
-<span class="sd">        MsEst (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing &#39;approximate&#39; stellar mass in M_sun</span>
-<span class="sd">        MsTrue (ndarray):</span>
-<span class="sd">            1D numpy ndarray containing &#39;true&#39; stellar mass in M_sun</span>
-<span class="sd">        nStars (int):</span>
-<span class="sd">            number of target stars</span>
+<span class="sd">            Completeness value for each target star</span>
 <span class="sd">        minComp (float): </span>
-<span class="sd">            minimum completeness level for inclusion in target list</span>
-<span class="sd">            </span>
+<span class="sd">            Minimum completeness value for inclusion in target list</span>
+<span class="sd">        MsEst (float ndarray):</span>
+<span class="sd">            &#39;approximate&#39; stellar mass in M_sun</span>
+<span class="sd">        MsTrue (float ndarray):</span>
+<span class="sd">            &#39;true&#39; stellar mass in M_sun</span>
+<span class="sd">        nStars (int):</span>
+<span class="sd">            Number of target stars</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TargetList&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keepStarCatalog</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keepStarCatalog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes target list</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1">#validate inputs</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minComp</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">),</span>\
-                <span class="s2">&quot;minComp must be a number.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">,</span><span class="nb">bool</span><span class="p">),</span>\
                 <span class="s2">&quot;keepStarCatalog must be a boolean.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minComp</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">),</span>\
+                <span class="s2">&quot;minComp must be a number.&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minComp</span><span class="p">)</span>
         
         <span class="c1"># get desired module names (specific or prototype) and instantiate objects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">],</span><span class="s1">&#39;StarCatalog&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">],</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">],</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">],</span><span class="s1">&#39;ZodiacalLight&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">],</span><span class="s1">&#39;PostProcessing&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;Completeness&#39;</span><span class="p">],</span><span class="s1">&#39;Completeness&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1"># bring inherited class objects to top level of Simulated Universe</span>
         <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">PPro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span><span class="o">.</span><span class="n">BackgroundSources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">PPro</span><span class="o">.</span><span class="n">BackgroundSources</span>
         
         <span class="c1"># list of possible Star Catalog attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Spec&#39;</span><span class="p">,</span> <span class="s1">&#39;parx&#39;</span><span class="p">,</span> <span class="s1">&#39;Umag&#39;</span><span class="p">,</span> <span class="s1">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Rmag&#39;</span><span class="p">,</span> 
@@ -178,7 +137,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">filter_target_list</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1"># generate any completeness update data needed</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">gen_update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">Comp</span><span class="o">.</span><span class="n">gen_update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         
         <span class="c1"># have target list, no need for catalog now</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">keepStarCatalog</span><span class="p">:</span>
@@ -196,7 +155,7 @@
 <span class="sd">        will return the values contained in the object&quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Target List class object attributes&#39;</span>
 
@@ -213,9 +172,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">SC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">StarCatalog</span>
-        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         
         <span class="c1"># bring Star Catalog values to top level of Target List</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="p">:</span>
@@ -230,14 +189,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">()</span>
         <span class="c1"># populate completeness values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c1"># populate maximum integration time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># populate minimum integration time values, for minimum dMag in detection mode</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tint0</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">),</span> <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> \
+                <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="mf">2.</span><span class="o">*</span><span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
         <span class="c1"># calculate &#39;true&#39; and &#39;approximate&#39; stellar masses</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stellar_mass</span><span class="p">()</span>
         
         <span class="c1"># include new attributes to the target list catalog attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;comp0&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;maxintTime&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;tint0&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.filter_target_list"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.filter_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">filter_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; </span>
@@ -297,7 +258,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">==</span> <span class="bp">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">==</span> <span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.life_expectancy_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.life_expectancy_filter">[docs]</a>    <span class="k">def</span> <span class="nf">life_expectancy_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -330,9 +291,10 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">iF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">iG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">iK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Spec</span><span class="p">))</span>
+        <span class="n">iF</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">iG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">iK</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">defchararray</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iF</span><span class="p">,</span> <span class="n">iG</span><span class="p">),</span> <span class="n">iK</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
@@ -354,20 +316,12 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span>
         <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span> <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">scaleOrbits</span> <span class="k">else</span> <span class="mf">1.</span> <span class="c1"># stellar luminosity in Solar luminosities</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">s</span> <span class="o">&lt;</span> <span class="n">L</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">rrange</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="TargetList.int_cutoff_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">[docs]</a>    <span class="k">def</span> <span class="nf">int_cutoff_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Includes stars if calculated integration time is less than cutoff</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxintTime</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.max_dmag_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">[docs]</a>    <span class="k">def</span> <span class="nf">max_dmag_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -375,9 +329,9 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         
         <span class="c1"># s and beta arrays</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span>
@@ -397,6 +351,14 @@
         <span class="n">d</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">Phi</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">Rp</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">Phi</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TargetList.int_cutoff_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">[docs]</a>    <span class="k">def</span> <span class="nf">int_cutoff_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Includes stars if calculated integration time is less than cutoff</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tint0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.completeness_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.completeness_filter">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -419,7 +381,7 @@
        
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Target list filtered to empty.&quot;</span><span class="p">)</span>
-
+        
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;coords&#39;</span><span class="p">:</span>
                 <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
@@ -468,10 +430,8 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># check type of sInds</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
-            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInds</span><span class="p">])</span>
+        <span class="c1"># reshape sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         
         <span class="n">Vmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
         <span class="n">BV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BV</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
@@ -517,7 +477,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.SimulatedUniverse &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.SimulatedUniverse &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,14 +39,14 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.SimulatedUniverse</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.keplerSTM</span> <span class="kn">import</span> <span class="n">planSys</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.eccanom</span> <span class="kn">import</span> <span class="n">eccanom</span>
-<span class="kn">import</span> <span class="nn">EXOSIMS.util.statsFun</span> <span class="kn">as</span> <span class="nn">statsFun</span> 
-<span class="kn">import</span> <span class="nn">numbers</span>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">EXOSIMS.util.statsFun</span> <span class="k">as</span> <span class="nn">statsFun</span> 
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.keplerSTM</span> <span class="k">import</span> <span class="n">planSys</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.eccanom</span> <span class="k">import</span> <span class="n">eccanom</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.deltaMag</span> <span class="k">import</span> <span class="n">deltaMag</span>
 
 <div class="viewcode-block" id="SimulatedUniverse"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">[docs]</a><span class="k">class</span> <span class="nc">SimulatedUniverse</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Simulated Universe class template</span>
@@ -59,21 +59,21 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        PlanetPopulation (object):</span>
+<span class="sd">        PlanetPopulation (PlanetPopulation module):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        PlanetPhysicalModel (object):</span>
+<span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel module):</span>
 <span class="sd">            PlanetPhysicalModel class object</span>
-<span class="sd">        OpticalSystem (object):</span>
+<span class="sd">        OpticalSystem (OpticalSystem module):</span>
 <span class="sd">            OpticalSystem class object</span>
-<span class="sd">        ZodiacalLight (object):</span>
+<span class="sd">        ZodiacalLight (ZodiacalLight module):</span>
 <span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        BackgroundSources (object):</span>
+<span class="sd">        BackgroundSources (BackgroundSources module):</span>
 <span class="sd">            BackgroundSources class object</span>
-<span class="sd">        PostProcessing (object):</span>
+<span class="sd">        PostProcessing (BackgroundSources module):</span>
 <span class="sd">            PostProcessing class object</span>
-<span class="sd">        Completeness (object):</span>
+<span class="sd">        Completeness (Completeness module):</span>
 <span class="sd">            Completeness class object</span>
-<span class="sd">        TargetList (object):</span>
+<span class="sd">        TargetList (TargetList module):</span>
 <span class="sd">            TargetList class object</span>
 <span class="sd">        nPlans (integer):</span>
 <span class="sd">            Total number of planets</span>
@@ -91,6 +91,8 @@
 <span class="sd">            Planet right ascension of the ascending node in units of deg</span>
 <span class="sd">        w (astropy Quantity array):</span>
 <span class="sd">            Planet argument of perigee in units of deg</span>
+<span class="sd">        M0 (astropy Quantity array):</span>
+<span class="sd">            Initial mean anomaly in units of deg</span>
 <span class="sd">        p (float ndarray):</span>
 <span class="sd">            Planet albedo</span>
 <span class="sd">        Rp (astropy Quantity array):</span>
@@ -98,15 +100,24 @@
 <span class="sd">        Mp (astropy Quantity array):</span>
 <span class="sd">            Planet mass in units of kg</span>
 <span class="sd">        r (astropy Quantity nx3 array):</span>
-<span class="sd">            Planet position vector in units of km</span>
+<span class="sd">            Planet position vector in units of AU</span>
 <span class="sd">        v (astropy Quantity nx3 array):</span>
-<span class="sd">            Planet velocity vector in units of km/s</span>
-<span class="sd">        s (astropy Quantity array):</span>
-<span class="sd">            Planet-star apparent separations in units of km</span>
+<span class="sd">            Planet velocity vector in units of AU/day</span>
 <span class="sd">        d (astropy Quantity array):</span>
-<span class="sd">            Planet-star distances in units of km</span>
+<span class="sd">            Planet-star distances in units of AU</span>
+<span class="sd">        s (astropy Quantity array):</span>
+<span class="sd">            Planet-star apparent separations in units of AU</span>
+<span class="sd">        phi (float ndarray):</span>
+<span class="sd">            Planet phase function, given its phase angle</span>
 <span class="sd">        fEZ (astropy Quantity array):</span>
 <span class="sd">            Surface brightness of exozodiacal light in units of 1/arcsec2</span>
+<span class="sd">        dMag (float ndarray):</span>
+<span class="sd">            Differences in magnitude between planets and their host star</span>
+<span class="sd">        WA (astropy Quantity array)</span>
+<span class="sd">            Working angles of the planets of interest in units of mas</span>
+<span class="sd">        planTime (astropy Quantity array):</span>
+<span class="sd">            Contains the last time the planet was observed in units of day, </span>
+<span class="sd">            for planet position propagation</span>
 <span class="sd">    </span>
 <span class="sd">    Notes:</span>
 <span class="sd">        PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.</span>
@@ -123,15 +134,20 @@
         
         <span class="c1"># bring inherited class objects to top level of Simulated Universe</span>
         <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PlanetPopulation</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">ZodiacalLight</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">BackgroundSources</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">Completeness</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">PostProcessing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">Completeness</span> 
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">gen_planetary_systems</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="c1"># generate orbital elements, albedos, radii, and masses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gen_physical_properties</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+        <span class="c1"># find initial position-related parameters: position, velocity, planet-star </span>
+        <span class="c1"># distance, apparent separation, surface brightness of exo-zodiacal light</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_systems</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Simulated Universe object</span>
@@ -140,20 +156,18 @@
 <span class="sd">        this method will return the values contained in the object&quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Simulated Universe class object attributes&#39;</span>
 
-<div class="viewcode-block" id="SimulatedUniverse.gen_planetary_systems"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_planetary_systems">[docs]</a>    <span class="k">def</span> <span class="nf">gen_planetary_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generate the planetary systems for the current simulated universe.</span>
-<span class="sd">        This routine populates arrays of the orbital elements and physical </span>
-<span class="sd">        characteristics of all planets, and generates indexes that map from </span>
-<span class="sd">        planet to parent star.</span>
+<div class="viewcode-block" id="SimulatedUniverse.gen_physical_properties"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_physical_properties">[docs]</a>    <span class="k">def</span> <span class="nf">gen_physical_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates the planetary systems&#39; physical properties. Populates arrays </span>
+<span class="sd">        of the orbital elements, albedos, masses and radii of all planets, and </span>
+<span class="sd">        generates indices that map from planet to parent star.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         
         <span class="c1"># Map planets to target stars</span>
         <span class="c1">#this version only works for eta &lt; 1</span>
@@ -161,7 +175,7 @@
         <span class="c1">#self.plan2star = np.where(probs &gt; PPop.eta)[0]</span>
         <span class="c1">#self.sInds = np.unique(self.plan2star)</span>
         <span class="c1">#self.nPlans = len(self.plan2star)</span>
-
+        
         <span class="c1">#treat eta as the rate paramter of a Poisson distribution</span>
         <span class="n">targetSystems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">lam</span><span class="o">=</span><span class="n">PPop</span><span class="o">.</span><span class="n">eta</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
         <span class="n">plan2star</span> <span class="o">=</span> <span class="p">[]</span>
@@ -170,7 +184,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">=</span> <span class="n">plan2star</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">)</span>
-
+        
         <span class="c1">#sample all of the orbital and physical parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                  <span class="c1"># semi-major axis</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span> <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">constrainOrbits</span> \
@@ -178,157 +192,142 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_I</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># inclination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># longitude of ascending node</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># argument of periapsis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">360</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span> <span class="c1"># initial mean anomaly</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>              <span class="c1"># radius</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                <span class="c1"># mass</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>               <span class="c1"># albedo</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_pos_vel</span><span class="p">()</span>              <span class="c1"># initial position</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>         <span class="c1"># planet-star distance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># apparent separation</span>
-        
-        <span class="c1"># exo-zodi levels for systems with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>               <span class="c1"># albedo</span></div>
 
-<div class="viewcode-block" id="SimulatedUniverse.planet_pos_vel"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planet_pos_vel">[docs]</a>    <span class="k">def</span> <span class="nf">planet_pos_vel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">M</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Assigns each planet an initial position (km) and velocity (km/s)</span>
-<span class="sd">        </span>
-<span class="sd">        This method makes us of the planet orbital elements (a, e, I, O, w, E), </span>
-<span class="sd">        and the planet and star masses.</span>
-
-<span class="sd">        Inputs:</span>
-<span class="sd">            M (ndarray)</span>
-<span class="sd">                Initial Mean anomaly in radians.  If None (default) will be randomly</span>
-<span class="sd">                generated in U([0, 2\pi))</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            r (astropy Quantity nx3 array):</span>
-<span class="sd">                Initial position vector of each planet in units of km</span>
-<span class="sd">            v (astropy Quantity nx3 array):</span>
-<span class="sd">                Initial velocity vector of each planet in units of km/s</span>
-<span class="sd">        </span>
+<div class="viewcode-block" id="SimulatedUniverse.init_systems"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.init_systems">[docs]</a>    <span class="k">def</span> <span class="nf">init_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds initial time-dependant parameters. Assigns each planet an </span>
+<span class="sd">        initial position, velocity, planet-star distance, apparent separation, </span>
+<span class="sd">        phase function, surface brightness of exo-zodiacal light, delta magnitude, </span>
+<span class="sd">        working angle, and initializes the planet current times to zero. </span>
+<span class="sd">        This method makes us of the systems&#39; physical properties (masses, distances)</span>
+<span class="sd">         and their orbital elements (a, e, I, O, w, M0).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># planet orbital elements</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span>                              <span class="c1"># semi-major axis</span>
+        <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span>                  <span class="c1"># indices of target stars</span>
+        <span class="n">sDist</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>                  <span class="c1"># distances to target stars</span>
+        <span class="n">Ms</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span>       <span class="c1"># masses of target stars</span>
+        
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>               <span class="c1"># semi-major axis</span>
         <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span>                              <span class="c1"># eccentricity</span>
         <span class="n">I</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># inclinations</span>
         <span class="n">Omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>          <span class="c1"># right ascension of the ascending node</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>              <span class="c1"># argument of perigee</span>
-
-        <span class="k">if</span> <span class="n">M</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c1"># generate random mean anomaly</span>
-            <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span> 
+        <span class="n">M0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>            <span class="c1"># initial mean anomany</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M0</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>                      <span class="c1"># eccentric anomaly</span>
+        <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span>                            <span class="c1"># planet masses</span>
         
-        <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>                        <span class="c1"># eccentric anomaly</span>
-        <span class="c1"># planet and star masses</span>
-        <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span>
-        <span class="n">Ms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">]</span>
-        
-        
-        <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">a3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">a3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
-        
-        <span class="n">b1</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
-                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">b2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span>\
-                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">b3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>
-        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">b1</span><span class="p">,</span><span class="n">b2</span><span class="p">,</span><span class="n">b3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="n">a1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">a2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">a3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">a1</span><span class="p">,</span><span class="n">a2</span><span class="p">,</span><span class="n">a3</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Omega</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+        <span class="n">b3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">e</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">b1</span><span class="p">,</span><span class="n">b2</span><span class="p">,</span><span class="n">b3</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
         
         <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
-        <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r1</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="n">r2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
-        <span class="n">r2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r2</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">A</span><span class="o">*</span><span class="n">r1</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">r2</span>
-        
-        <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">)</span>
-        <span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mu</span><span class="o">/</span><span class="n">a</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;/s&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">v1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">v1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">v1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v1</span><span class="p">),</span><span class="mi">1</span><span class="p">)))</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="p">)</span>
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mu</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
         <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
-        <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">v2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v2</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">v2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v2</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span> <span class="n">v2</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v2</span><span class="p">),</span><span class="mi">1</span><span class="p">)))</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="n">v1</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">A</span><span class="o">*</span><span class="n">r2</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km/s&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span><span class="o">*</span><span class="n">r1</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">r2</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span>                       <span class="c1"># position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">v1</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">A</span><span class="o">*</span><span class="n">r2</span> <span class="o">+</span> <span class="n">B</span><span class="o">*</span><span class="n">v2</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU/day&#39;</span><span class="p">)</span>             <span class="c1"># velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>             <span class="c1"># planet-star distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>      <span class="c1"># apparent separation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">))</span>     <span class="c1"># planet phase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">)</span>            <span class="c1"># exozodi brightness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMag</span> <span class="o">=</span> <span class="n">deltaMag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span> <span class="c1"># delta magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="o">/</span><span class="n">sDist</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mas&#39;</span><span class="p">)</span>             <span class="c1"># working angle</span>
+        <span class="c1"># current time (normalized to zero at mission start) of planet positions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span></div>
 
-<div class="viewcode-block" id="SimulatedUniverse.prop_system"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.prop_system">[docs]</a>    <span class="k">def</span> <span class="nf">prop_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">Mp</span><span class="p">,</span> <span class="n">Ms</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Propagates planet state vectors (position and velocity) </span>
+<div class="viewcode-block" id="SimulatedUniverse.propag_system"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system">[docs]</a>    <span class="k">def</span> <span class="nf">propag_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">currentTimeNorm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Propagates planet time-dependant parameters: position, velocity, </span>
+<span class="sd">        planet-star distance, apparent separation, phase function, surface brightness </span>
+<span class="sd">        of exo-zodiacal light, delta magnitude, working angle, and the planet </span>
+<span class="sd">        current time array.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the Kepler state transition matrix to propagate a </span>
 <span class="sd">        planet&#39;s state (position and velocity vectors) forward in time using </span>
 <span class="sd">        the Kepler state transition matrix.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            r (astropy Quantity nx3 array):</span>
-<span class="sd">                Initial position vector of each planet in units of km</span>
-<span class="sd">            v (astropy Quantity nx3 array):</span>
-<span class="sd">                Initial velocity vector of each planet in units of km/s</span>
-<span class="sd">            Mp (astropy Quantity array):</span>
-<span class="sd">                Planet masses in units of kg</span>
-<span class="sd">            Ms (float ndarray):</span>
-<span class="sd">                Target star masses in M_sun</span>
-<span class="sd">            dt (astropy Quantity):</span>
-<span class="sd">                Time increment to propagate the system in units of day</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            rnew (astropy Quantity nx3 array):</span>
-<span class="sd">                Propagated position vectors in units of km</span>
-<span class="sd">            vnew (astropy Quantity nx3 array):</span>
-<span class="sd">                Propagated velocity vectors in units of km/s</span>
-<span class="sd">            snew (astropy Quantity array):</span>
-<span class="sd">                Propagated apparent separations in units of km</span>
-<span class="sd">            dnew (astropy Quantity array):</span>
-<span class="sd">                Propagated planet-star distances in units of km</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Index of the target system of interest</span>
+<span class="sd">            currentTimeNorm (astropy Quantity):</span>
+<span class="sd">                Current mission time normalized to zero at mission start in units of day</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
+        <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">sInd</span><span class="p">),</span> <span class="s2">&quot;Can only propagate one system at a time, </span><span class="se">\</span>
+<span class="s2">                sInd must be scalar.&quot;</span>
+        <span class="c1"># check for planets around this target</span>
+        <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">==</span> <span class="n">sInd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pInds</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="c1"># check for positive time increment</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">currentTimeNorm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">planTime</span><span class="p">[</span><span class="n">pInds</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">dt</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Time increment (dt) to propagate a planet must be positive.&quot;</span>
+        <span class="k">if</span> <span class="n">dt</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="c1"># Initial positions in AU and velocities in AU/day</span>
+        <span class="n">rold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">vold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU/day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="c1"># stack dimensionless positions and velocities</span>
         <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km/day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
-                
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rold</span><span class="p">)):</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">rold</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">vold</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        
+        <span class="c1"># calculate system&#39;s distance and masses</span>
+        <span class="n">sDist</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[[</span><span class="n">sInd</span><span class="p">]]</span>
+        <span class="n">Ms</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[[</span><span class="n">sInd</span><span class="p">]]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span>
+        <span class="n">Mp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span>
         <span class="c1"># calculate vector of gravitational parameter</span>
-        <span class="n">mu</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km3/day2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">mu</span><span class="p">):</span>
-            <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mu</span><span class="p">])</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU3/day2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        
         <span class="c1"># use keplerSTM.py to propagate the system</span>
-        <span class="n">prop</span> <span class="o">=</span> <span class="n">planSys</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">planSys</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">epsmult</span><span class="o">=</span><span class="mf">10.</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">prop</span><span class="o">.</span><span class="n">takeStep</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;planSys error&#39;</span><span class="p">)</span>
-            
+            <span class="c1">#try again with larger epsmult and two steps to force convergence </span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">planSys</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">epsmult</span><span class="o">=</span><span class="mf">100.</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">takeStep</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+                <span class="n">prop</span><span class="o">.</span><span class="n">takeStep</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;planSys error&#39;</span><span class="p">)</span>
+        
         <span class="c1"># split off position and velocity vectors</span>
-        <span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)))</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">rold</span><span class="p">)))</span>
         <span class="n">rind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">),</span><span class="mi">2</span><span class="p">))</span> <span class="c1"># even indices</span>
         <span class="n">vind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">),</span><span class="mi">2</span><span class="p">))</span> <span class="c1"># odd indices</span>
         
-        <span class="c1"># assign new position, velocity, apparent separation, and planet-star distance</span>
-        <span class="n">rnew</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[</span><span class="n">rind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
-        <span class="n">vnew</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[</span><span class="n">vind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="n">snew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rnew</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-        <span class="n">dnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">rnew</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-        
-        <span class="k">return</span> <span class="n">rnew</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">),</span> <span class="n">vnew</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km/s&#39;</span><span class="p">),</span> <span class="n">snew</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">),</span> <span class="n">dnew</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="SimulatedUniverse.get_current_WA"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.get_current_WA">[docs]</a>    <span class="k">def</span> <span class="nf">get_current_WA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pInds</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculate the current working angles for planets specified by the </span>
-<span class="sd">        given indices.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            pInds (integer ndarray):</span>
-<span class="sd">                Integer indices of the planets of interest</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            WA (astropy Quantity array):</span>
-<span class="sd">                Working angles in units of arcsec</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">starDists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">[</span><span class="n">pInds</span><span class="p">]]</span> <span class="c1"># distance to star</span>
-        <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">/</span><span class="n">starDists</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">WA</span></div></div>
+        <span class="c1"># update planets&#39; position, velocity, planet-star distance, apparent </span>
+        <span class="c1"># separation, phase function, exozodi surface brightness, delta magnitude, </span>
+        <span class="c1"># working angle, and current time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[</span><span class="n">rind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1</span><span class="p">[</span><span class="n">vind</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[</span><span class="n">pInds</span><span class="p">,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">pInds</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">pInds</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMag</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">deltaMag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">Rp</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">pInds</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">[</span><span class="n">pInds</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WA</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">/</span><span class="n">sDist</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mas&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planTime</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">currentTimeNorm</span></div></div>
 
 </pre></div>
 
@@ -363,7 +362,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

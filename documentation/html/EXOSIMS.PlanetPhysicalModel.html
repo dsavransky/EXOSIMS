@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPhysicalModel package &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.PlanetPhysicalModel package &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -45,8 +45,45 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="exosims-planetphysicalmodel-forecaster-module">
-<h2>EXOSIMS.PlanetPhysicalModel.Forecaster module<a class="headerlink" href="#exosims-planetphysicalmodel-forecaster-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.PlanetPhysicalModel.Forecaster">
+<span id="exosims-planetphysicalmodel-forecaster-module"></span><h2>EXOSIMS.PlanetPhysicalModel.Forecaster module<a class="headerlink" href="#module-EXOSIMS.PlanetPhysicalModel.Forecaster" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster">
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPhysicalModel.Forecaster.</code><code class="descname">Forecaster</code><span class="sig-paren">(</span><em>n_pop=4</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1</span></code></a></p>
+<p>Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.
+This module requires to download the following files:
+- forecaster_fitting_parameters.h5
+- forecaster_func.py
+from the FORECASTER GitHub repository at <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.calc_radius_from_mass">
+<code class="descname">calc_radius_from_mass</code><span class="sig-paren">(</span><em>Mp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster.calc_radius_from_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.calc_radius_from_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forecast the Radius distribution given the mass distribution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;     Planet radius in units of km</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1">
 <span id="exosims-planetphysicalmodel-fortneymarleycahoymix1-module"></span><h2>EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module<a class="headerlink" href="#module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1" title="Permalink to this headline">¶</a></h2>
@@ -179,7 +216,7 @@ and then things that can be giants.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.PlanetPhysicalModel package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#exosims-planetphysicalmodel-forecaster-module">EXOSIMS.PlanetPhysicalModel.Forecaster module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.Forecaster">EXOSIMS.PlanetPhysicalModel.Forecaster module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.forecaster_func">EXOSIMS.PlanetPhysicalModel.forecaster_func module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel">Module contents</a></li>
@@ -222,7 +259,7 @@ and then things that can be giants.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

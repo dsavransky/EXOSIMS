@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.SimulatedUniverse.KeplerLikeUniverse &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.SimulatedUniverse.KeplerLikeUniverse &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,10 +39,10 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.SimulatedUniverse.KeplerLikeUniverse</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SimulatedUniverse</span> <span class="kn">import</span> <span class="n">SimulatedUniverse</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SimulatedUniverse</span> <span class="k">import</span> <span class="n">SimulatedUniverse</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
 
 <div class="viewcode-block" id="KeplerLikeUniverse"><a class="viewcode-back" href="../../../EXOSIMS.SimulatedUniverse.html#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse">[docs]</a><span class="k">class</span> <span class="nc">KeplerLikeUniverse</span><span class="p">(</span><span class="n">SimulatedUniverse</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -63,20 +63,18 @@
         
         <span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="KeplerLikeUniverse.gen_planetary_systems"><a class="viewcode-back" href="../../../EXOSIMS.SimulatedUniverse.html#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.gen_planetary_systems">[docs]</a>    <span class="k">def</span> <span class="nf">gen_planetary_systems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generate the planetary systems for the current simulated universe.</span>
-<span class="sd">        This routine populates arrays of the orbital elements and physical </span>
-<span class="sd">        characteristics of all planets, and generates indexes that map from </span>
-<span class="sd">        planet to parent star.</span>
+<div class="viewcode-block" id="KeplerLikeUniverse.gen_physical_properties"><a class="viewcode-back" href="../../../EXOSIMS.SimulatedUniverse.html#EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse.gen_physical_properties">[docs]</a>    <span class="k">def</span> <span class="nf">gen_physical_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates the planetary systems&#39; physical properties. Populates arrays </span>
+<span class="sd">        of the orbital elements, albedos, masses and radii of all planets, and </span>
+<span class="sd">        generates indices that map from planet to parent star.</span>
 <span class="sd">        </span>
 <span class="sd">        All paramters except for albedo and mass are sampled, while those are</span>
 <span class="sd">        calculated via the physical model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         
         <span class="c1"># Generate distribution of radii first</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_radius_nonorm</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
@@ -93,14 +91,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_I</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># inclination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># longitude of ascending node</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># argument of periapsis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">360</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span> <span class="c1"># initial mean anomaly</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_albedo_from_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>         <span class="c1"># albedo</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_mass_from_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rp</span><span class="p">)</span>      <span class="c1"># mass</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">planet_pos_vel</span><span class="p">()</span>              <span class="c1"># initial position</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>         <span class="c1"># planet-star distance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># apparent separation</span>
-        
-        <span class="c1"># exo-zodi levels for systems with planets</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fEZ</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_mass_from_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rp</span><span class="p">)</span>      <span class="c1"># mass</span></div></div>
 
 </pre></div>
 
@@ -135,7 +128,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

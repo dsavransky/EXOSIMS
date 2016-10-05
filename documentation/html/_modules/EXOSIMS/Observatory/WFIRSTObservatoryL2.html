@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Observatory.WFIRSTObservatoryL2 &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Observatory.WFIRSTObservatoryL2 &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,14 +39,14 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Observatory.WFIRSTObservatoryL2</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Observatory.WFIRSTObservatory</span> <span class="kn">import</span> <span class="n">WFIRSTObservatory</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Observatory.WFIRSTObservatory</span> <span class="k">import</span> <span class="n">WFIRSTObservatory</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="kn">as</span> <span class="nn">interpolate</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">interpolate</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">cPickle</span> <span class="kn">as</span> <span class="nn">pickle</span>
+    <span class="kn">import</span> <span class="nn">cPickle</span> <span class="k">as</span> <span class="nn">pickle</span>
 <span class="k">except</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">pickle</span>
 
@@ -62,17 +62,17 @@
 <span class="sd">    which is then patched for the entire mission duration).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">orbit_datapath</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">orbit_datapath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c1">#Run prototype constructor __init__ </span>
         <span class="n">WFIRSTObservatory</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1">#set own missionStart value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">)</span>
         
         <span class="c1">#find and load halo orbit datat        </span>
         <span class="c1">#data is al in heliocentric ecliptic coords.  time is 2\pi = 1 sidreal year</span>
-        <span class="k">if</span> <span class="n">orbit_datapath</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">orbit_datapath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;L2_halo_orbit_six_month.p&#39;</span>
             <span class="n">orbit_datapath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
@@ -90,40 +90,45 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">orbit_interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">orbit_time</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>\
                 <span class="bp">self</span><span class="o">.</span><span class="n">orbit_pos</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="WFIRSTObservatoryL2.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds WFIRST L2 Halo orbit position vector</span>
+<div class="viewcode-block" id="WFIRSTObservatoryL2.orbit"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2.orbit">[docs]</a>    <span class="k">def</span> <span class="nf">orbit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds observatory orbit position vector in heliocentric equatorial frame.</span>
 <span class="sd">        </span>
-<span class="sd">        This method finds the WFIRST L2 Halo rbit position </span>
-<span class="sd">        vector as 1D numpy array (astropy Quantity with units of km) in the</span>
-<span class="sd">        heliocentric equatorial frame, stores this vector in self.r_sc,</span>
-<span class="sd">        and returns True if successful.</span>
+<span class="sd">        This method returns the WFIRST L2 Halo orbit position vector</span>
+<span class="sd">        in the heliocentric equatorial frame.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            time (Time):</span>
-<span class="sd">                current absolute time (astropy Time)</span>
-<span class="sd">            </span>
+<span class="sd">            currentTime (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            success (bool):</span>
-<span class="sd">                True if successful, False if not</span>
+<span class="sd">            r_sc (astropy Quantity nx3 array):</span>
+<span class="sd">                Observatory (spacecraft) position vector in units of km</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1">#find time from mission start and interpolated position</span>
-        <span class="n">deltime</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
-        <span class="n">cpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit_interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">deltime</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">orbit_period</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="c1"># find time from mission start and interpolated position</span>
+        <span class="n">deltime</span> <span class="o">=</span> <span class="p">(</span><span class="n">currentTime</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+        <span class="n">cpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit_interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">deltime</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">orbit_period</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c1">#add L2 position to get current ecliptic coord</span>
+        <span class="c1"># add L2 position to get current ecliptic coord</span>
         <span class="n">th</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">deltime</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="mf">1.</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-        <span class="n">cpos</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">th</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">th</span><span class="p">),</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L2_dist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">cpos</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">th</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">th</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">th</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">L2_dist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
-        <span class="c1">#finally, rotate into equatorial plane</span>
-        <span class="n">obe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>
-        <span class="n">cpos</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span><span class="n">cpos</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        <span class="c1"># finally, rotate into equatorial plane</span>
+        <span class="n">obe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obe</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">currentTime</span><span class="p">))</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span> <span class="o">=</span> <span class="n">cpos</span>
+        <span class="c1"># if single currentTime value</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obe</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span><span class="p">:</span>
+            <span class="n">r_sc</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">),</span><span class="mi">1</span><span class="p">),</span><span class="n">cpos</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        <span class="c1"># else if several currentTime values</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">obe</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obe</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">r_sc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="mi">1</span><span class="p">),</span><span class="n">cpos</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_sc</span><span class="p">))</span></div></div>
-
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_sc</span><span class="p">)),</span> <span class="s1">&#39;Observatory position vector r_sc has infinite value.&#39;</span>
+        
+        <span class="k">return</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>
@@ -157,7 +162,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

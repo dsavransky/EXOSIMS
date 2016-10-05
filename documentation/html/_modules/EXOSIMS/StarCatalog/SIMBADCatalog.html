@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.StarCatalog.SIMBADCatalog &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.StarCatalog.SIMBADCatalog &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -40,13 +40,13 @@
             
   <h1>Source code for EXOSIMS.StarCatalog.SIMBADCatalog</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.StarCatalog</span> <span class="kn">import</span> <span class="n">StarCatalog</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.StarCatalog</span> <span class="k">import</span> <span class="n">StarCatalog</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">cPickle</span> <span class="kn">as</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
-<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="kn">import</span> <span class="n">SkyCoord</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">cPickle</span> <span class="k">as</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="k">import</span> <span class="n">loadmat</span>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="SIMBADCatalog"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog">[docs]</a><span class="k">class</span> <span class="nc">SIMBADCatalog</span><span class="p">(</span><span class="n">StarCatalog</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;SIMBAD Catalog class</span>
@@ -87,13 +87,13 @@
                 <span class="c1"># astropy SkyCoord object</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">],</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg,deg,pc&#39;</span><span class="p">)</span>
                 
-                <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">pklpath</span>
-                <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="nb">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">pklpath</span>
+                <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">pklpath</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="nb">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">pklpath</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
         
         <span class="k">return</span> <span class="n">success</span></div>
     
@@ -129,23 +129,23 @@
             <span class="s1">&#39;MV&#39;</span><span class="p">:</span><span class="s1">&#39;MV&#39;</span><span class="p">,</span> <span class="s1">&#39;BC&#39;</span><span class="p">:</span><span class="s1">&#39;BC&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="s1">&#39;RADEG&#39;</span><span class="p">:</span><span class="s1">&#39;radeg&#39;</span><span class="p">,</span> <span class="s1">&#39;DECDEG&#39;</span><span class="p">:</span><span class="s1">&#39;decdeg&#39;</span><span class="p">,</span>
             <span class="s1">&#39;PMRA&#39;</span><span class="p">:</span><span class="s1">&#39;pmra&#39;</span><span class="p">,</span> <span class="s1">&#39;PMDEC&#39;</span><span class="p">:</span><span class="s1">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s1">&#39;RV&#39;</span><span class="p">:</span><span class="s1">&#39;rv&#39;</span><span class="p">,</span> <span class="s1">&#39;BINARY_CUT&#39;</span><span class="p">:</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">}</span>
             <span class="n">y</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># empty dictionary to be pickled </span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">struct_as_record</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">struct_as_record</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">mat2pkl</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">&#39;BINARY_CUT&#39;</span><span class="p">:</span>
                     <span class="n">bc</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">BINARY_CUT</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                    <span class="n">y</span><span class="p">[</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)):</span>
+                    <span class="n">y</span><span class="p">[</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bc</span><span class="p">)):</span>
                         <span class="k">if</span> <span class="n">bc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cut&#39;</span><span class="p">:</span>
-                            <span class="n">y</span><span class="p">[</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                            <span class="n">y</span><span class="p">[</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">y</span><span class="p">[</span><span class="n">mat2pkl</span><span class="p">[</span><span class="n">field</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="c1"># store pickled y dictionary in file</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> does not exist in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">matpath</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> does not exist in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">matpath</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
             
         <span class="k">return</span> <span class="n">success</span></div></div>
 </pre></div>
@@ -181,7 +181,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

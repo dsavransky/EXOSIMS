@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.PlanetPhysicalModel.Forecaster &#8212; EXOSIMS 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.PlanetPhysicalModel.Forecaster</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1</span> <span class="k">import</span> <span class="n">FortneyMarleyCahoyMix1</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPhysicalModel.forecaster_func</span> <span class="k">import</span> <span class="n">piece_linear</span><span class="p">,</span> <span class="n">ProbRGivenM</span><span class="p">,</span> <span class="n">classification</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">h5py</span> 
+
+
+<div class="viewcode-block" id="Forecaster"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster">[docs]</a><span class="k">class</span> <span class="nc">Forecaster</span><span class="p">(</span><span class="n">FortneyMarleyCahoyMix1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.</span>
+<span class="sd">    This module requires to download the following files:</span>
+<span class="sd">    - forecaster_fitting_parameters.h5</span>
+<span class="sd">    - forecaster_func.py</span>
+<span class="sd">    from the FORECASTER GitHub repository at https://github.com/chenjj2/forecaster</span>
+<span class="sd">    </span>
+<span class="sd">    Args: </span>
+<span class="sd">        \*\*specs: </span>
+<span class="sd">            user specified values</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_pop</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="n">FortneyMarleyCahoyMix1</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+        <span class="c1"># number of category</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)</span>
+        
+        <span class="c1"># read forecaster parameter file</span>
+        <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;forecaster_fitting_parameters.h5&#39;</span>
+        <span class="n">parampath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">h5</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">parampath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_hyper</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s1">&#39;hyper_posterior&#39;</span><span class="p">][:]</span>
+        <span class="n">h5</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Forecaster.calc_radius_from_mass"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.calc_radius_from_mass">[docs]</a>    <span class="k">def</span> <span class="nf">calc_radius_from_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Mp</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forecast the Radius distribution given the mass distribution.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Mp (astropy Quantity array):</span>
+<span class="sd">                Planet mass in units of kg</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planet radius in units of km</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">mass</span> <span class="o">=</span> <span class="p">(</span><span class="n">Mp</span><span class="o">/</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mass</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="n">e</span><span class="o">-</span><span class="mi">4</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mass</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="n">e5</span><span class="p">,</span> \
+                <span class="s2">&quot;Mass range out of model expectation. Returning None.&quot;</span>
+        
+        <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mass</span><span class="p">)</span>
+        <span class="n">logm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">mass</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="n">logr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">logm</span><span class="p">)</span>
+        <span class="n">hyper_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_hyper</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="n">hyper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hyper</span><span class="p">[</span><span class="n">hyper_ind</span><span class="p">,:]</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sample_size</span><span class="p">):</span>
+            <span class="n">logr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">piece_linear</span><span class="p">(</span><span class="n">hyper</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">logm</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">prob</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        
+        <span class="n">Rp</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="n">logr</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">Rp</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

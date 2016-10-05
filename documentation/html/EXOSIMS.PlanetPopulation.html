@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPopulation package &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.PlanetPopulation package &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -56,6 +56,26 @@ On circular Habitable zone orbits (0.7 to 1.5 AU)</p>
 <p>Note that these values may not be overwritten by user inputs.
 This implementation is intended to enforce this population regardless
 of JSON inputs.</p>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.dist_sma">
+<code class="descname">dist_sma</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1.dist_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.dist_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function of semi-major axis in AU</p>
+<p>The Earth-twin population assumes a uniform distribution between the minimum and
+maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Semi-major axis value(s) in AU</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     Semi-major axis probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.gen_sma">
 <code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/EarthTwinHabZone1.html#EarthTwinHabZone1.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.EarthTwinHabZone1.EarthTwinHabZone1.gen_sma" title="Permalink to this definition">¶</a></dt>
@@ -124,7 +144,7 @@ distribution with exponential decay.</p>
 <p>Notes:
 1. The gen_mass function samples the Radius and calculates the mass from
 there.  Any user-set mass limits are ignored.
-2. The gen_abledo function samples the sma, and then calculates the albedos
+2. The gen_albedo function samples the sma, and then calculates the albedos
 from there. Any user-set albedo limits are ignored.
 3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
 settings (the JSON input will be ignored)
@@ -136,6 +156,78 @@ population. The latter assumes a poisson distribution for occurences in each
 bin.
 5.  Eccentricity is assumed to be Rayleigh distributed with a user-settable
 sigma parameter (defaults to 0.25).</p>
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_albedo">
+<code class="descname">dist_albedo</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.dist_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_albedo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for albedo</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Albedo value(s)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     Albedo probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_eccen">
+<code class="descname">dist_eccen</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.dist_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_eccen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for eccentricity</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Eccentricity value(s)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     Eccentricity probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_radius">
+<code class="descname">dist_radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.dist_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary radius</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Planetary radius value(s)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     Planetary radius probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_sma">
+<code class="descname">dist_sma</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.dist_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for semi-major axis in AU</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Semi-major axis value(s) in AU</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;     Semi-major axis probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_albedo">
 <code class="descname">gen_albedo</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.gen_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.gen_albedo" title="Permalink to this definition">¶</a></dt>
@@ -510,7 +602,7 @@ Cumming et al. 2010</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

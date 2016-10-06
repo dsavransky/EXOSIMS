@@ -120,7 +120,8 @@ class WFIRSTObservatory(Observatory):
         # observed, thus ko associated with this target becomes False
         kogood = np.array([True]*len(u_targ))
         for i in xrange(len(u_targ)):
-            angles = np.arccos(np.dot(u_bright[:,i,:], u_targ[i]))
+            u_b = u_bright[:,0,:] if currentTime.size == 1 else u_bright[:,i,:]
+            angles = np.arccos(np.dot(u_b, u_targ[i]))
             if any(angles < np.radians(koangle).value):
                 kogood[i] = False
         

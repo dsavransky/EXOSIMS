@@ -23,14 +23,15 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
 
     def __init__(self, missionStart=60634., orbit_datapath=None, **specs):
         
-        #Run prototype constructor __init__ 
+        # Run prototype constructor __init__ 
         WFIRSTObservatory.__init__(self,**specs)
         
-        #set own missionStart value
+        # Set own missionStart value
         self.missionStart = Time(float(missionStart), format='mjd')
         
-        #find and load halo orbit datat        
-        #data is al in heliocentric ecliptic coords.  time is 2\pi = 1 sidreal year
+        # Find and load halo orbit data
+        # data is in heliocentric ecliptic coords
+        # time is 2\pi = 1 sideral year
         if orbit_datapath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             filename = 'L2_halo_orbit_six_month.p'
@@ -39,13 +40,13 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
             raise Exception("Orbit data file not found.")
         halo = pickle.load( open( orbit_datapath, "rb" ) )
         
-        #unpack orbit properties
+        # unpack orbit properties
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year
         self.L2_dist = halo['x_lpoint'][0][0]*u.AU
         self.orbit_pos = halo['state'][:,0:3]*u.AU #this is in rotating frame wrt the sun
         self.orbit_pos[:,0] -= self.L2_dist #now with respect to L2, still in rotating frame
         self.orbit_time = halo['t'].flatten()/(2*np.pi)*u.year
-        #create interpolant (years & AU units)
+        # create interpolant (years & AU units)
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
                 self.orbit_pos.value.T,kind='cubic')
 

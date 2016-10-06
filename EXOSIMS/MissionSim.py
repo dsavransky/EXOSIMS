@@ -273,6 +273,16 @@ def array_encoder(obj):
     if isinstance(obj, (complex, np.complex)):
         # complex -> (real, imag) pair
         return [obj.real, obj.imag]
+    if callable(obj):
+        # this case occurs for interpolants like PSF and QE
+        # We cannot simply "write" the function to JSON, so we make up a string
+        # to keep from throwing an error.
+        # The fix is simple: when generating the interpolant, add a _outspec attribute
+        # to the function (or the lambda), containing (e.g.) the fits filename, or the
+        # explicit number -- whatever string was used.  Then, here, check for that 
+        # attribute and write it out instead of this dummy string.  (Attributes can
+        # be transparently attached to python functions, even lambda's.)
+        return 'interpolant_function'
     if isinstance(obj, set):
         return list(obj)
     if isinstance(obj, bytes):

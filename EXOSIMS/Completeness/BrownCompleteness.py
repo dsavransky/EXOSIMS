@@ -254,8 +254,11 @@ class BrownCompleteness(Completeness):
             return comp0
         
         self.visits[sInds] += 1
-        self.visits[sInds][self.visits[sInds] > len(self.updates[sInds])-1] = 0
-        comp0 = self.updates[sInds][self.visits[sInds]]
+        updates = self.updates[sInds]
+        reset = sInds[self.visits[sInds] > len(updates.T)-1]
+        self.visits[reset] = 0
+        
+        comp0 = np.array([updates[i,j] for i, j in enumerate(self.visits[sInds])])
         
         return comp0
 

@@ -351,7 +351,7 @@ class SurveySimulation(object):
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             t_dets = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
-            sInds = np.array(range(TL.nStars))
+            sInds = np.arange(TL.nStars)
             
             # 1/ find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.

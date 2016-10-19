@@ -27,7 +27,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         WFIRSTObservatory.__init__(self,**specs)
         
         # Set own missionStart value
-        self.missionStart = Time(float(missionStart), format='mjd')
+        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')
         
         # Find and load halo orbit data
         # data is in heliocentric ecliptic coords

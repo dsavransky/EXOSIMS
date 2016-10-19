@@ -1,4 +1,4 @@
-import sys, json, inspect
+import sys, json, inspect, subprocess
 import copy
 import re
 import logging
@@ -219,11 +219,14 @@ class MissionSim(object):
         Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
         """
+        
         # start with a copy of our own module's _outspec
         out = copy.copy(self._outspec)
+        
         # add in all module _outspec's
         for module in self.modules.values():
             out.update(module._outspec)
+        
         # add in the specific module names used
         out['modules'] = {}
         for (mod_name, module) in self.modules.items():
@@ -237,6 +240,23 @@ class MissionSim(object):
                 mod_name_short = re.sub('\.pyc$', '.py', inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         
+        # add in the SVN revision
+        path = os.path.split(inspect.getfile(self.__class__))[0]
+        rev = subprocess.Popen("svn info "+path+"| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+        (svnRev, err) = rev.communicate()
+        if isinstance(svnRev, basestring) & (len(svnRev) > 0):
+            out['Revision'] = "SVN revision is " + svnRev[:-1]
+            print out['Revision']
+        # if not an SVN repository, add in the Github last commit
+        else:
+            rev = subprocess.Popen("git log -1 "+path+"| grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+            (gitRev, err) = rev.communicate()
+            if isinstance(gitRev, basestring) & (len(gitRev) > 0):
+                out['Revision'] = "Github last commit " + gitRev[:-1]
+                print out['Revision']
+            else: 
+                out['Revision'] = "Not a valid SVN or Github revision."
+        
         # preserve star catalog name
         # TODO: why is this special-cased?
         out['modules']['StarCatalog'] = self.StarCatalog
@@ -246,8 +266,8 @@ class MissionSim(object):
             with open(tofile, 'w') as outfile:
                 json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False, separators=(',', ': '),
                           default=array_encoder)
-        # return it as well
         
+        # return it as well
         return out
 
 def array_encoder(obj):

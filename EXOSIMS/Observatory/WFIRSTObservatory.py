@@ -71,6 +71,9 @@ class WFIRSTObservatory(Observatory):
             kogood (boolean ndarray):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
+            culprit (boolean nx11 ndarray):
+                True indicates a target that is in the keepout region of a specific body,
+                False when it isn't.
         
         Note1: currentTime and r_sc must be of same size.
         Note2: For multiple targets, currentTime/r_sc must be of size 1 or size of sInds.
@@ -99,34 +102,44 @@ class WFIRSTObservatory(Observatory):
         # Second, find unit vectors wrt spacecraft for bright objects
         # position vectors wrt sun
         r_bright = np.array([np.zeros(r_sc.shape), # sun
+            self.solarSystem_body_position(currentTime, 'Moon').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Mercury').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Venus').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Mars').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Jupiter').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Saturn').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Uranus').T.to('km').value,
             self.solarSystem_body_position(currentTime, 'Neptune').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Pluto').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Moon').T.to('km').value])*u.km
+            self.solarSystem_body_position(currentTime, 'Pluto').T.to('km').value])*u.km
         # position vectors wrt spacecraft
         r_bright -= r_sc
         # unit vectors wrt spacecraft
         u_bright = (r_bright.value.T/np.linalg.norm(r_bright, axis=-1).T).T
-            
+        
+        # Create koangles for all bodies. By default other planets have 
+        # half the koangle of Sun, Moon, and Earth.
+        nBodies = u_bright.shape[0]
+        koangles = np.ones(nBodies)*koangle
+        koangles[3:] = 1*u.deg
+        
         # Find angles and make angle comparisons for kogood
         # if bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False
         kogood = np.array([True]*len(u_targ))
+        culprit = np.zeros([len(u_targ), nBodies])
         for i in xrange(len(u_targ)):
             u_b = u_bright[:,0,:] if currentTime.size == 1 else u_bright[:,i,:]
             angles = np.arccos(np.dot(u_b, u_targ[i]))
-            if any(angles < np.radians(koangle).value):
+            culprit[i,:] = (angles < koangles.to('rad').value)
+            if np.any(culprit[i,:]):
                 kogood[i] = False
         
         # check to make sure all elements in kogood are Boolean
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), 'An element of kogood is not Boolean'
         
+#        return kogood, culprit
         return kogood
+

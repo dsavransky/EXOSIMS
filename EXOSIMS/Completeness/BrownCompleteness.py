@@ -184,10 +184,9 @@ class BrownCompleteness(Completeness):
                 else:
                     E = eccanom(newM[pInds],e[pInds])
                 
-                r = a[pInds]*(1.-e[pInds]*np.cos(E))
-                r1 = r*(np.cos(E) - e[pInds])
+                r1 = a[pInds]*(np.cos(E) - e[pInds])
                 r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-                r2 = (r*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
+                r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
                 r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
                 
                 a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
@@ -394,9 +393,9 @@ class BrownCompleteness(Completeness):
         w = PPop.gen_w(nplan).to('rad').value
         I = PPop.gen_I(nplan).to('rad').value
         
-        r1 = r*(np.cos(E) - e)
+        r1 = a*(np.cos(E) - e)
         r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-        r2 = r*np.sin(E)*np.sqrt(1. -  e**2)
+        r2 = a*np.sin(E)*np.sqrt(1. -  e**2)
         r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
         
         a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.sin(w)*np.cos(I)

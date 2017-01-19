@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.TimeKeeping &#8212; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.TimeKeeping &mdash; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -39,16 +39,16 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TimeKeeping</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="c1"># the EXOSIMS logger</span>
+<span class="c"># the EXOSIMS logger</span>
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TimeKeeping"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">[docs]</a><span class="k">class</span> <span class="nc">TimeKeeping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -93,55 +93,55 @@
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TimeKeeping&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;TimeKeeping&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">missionLife</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span> <span class="n">extendedLife</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>\
                   <span class="n">missionPortion</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mf">6.</span><span class="p">,</span> <span class="n">dtAlloc</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">intCutoff</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c1"># illegal value checks</span>
-        <span class="k">assert</span> <span class="n">missionLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Need missionLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">missionLife</span>
-        <span class="k">assert</span> <span class="n">extendedLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Need extendedLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">extendedLife</span>
-        <span class="c1"># arithmetic on missionPortion fails if it is outside the legal range</span>
+        <span class="c"># illegal value checks</span>
+        <span class="k">assert</span> <span class="n">missionLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Need missionLife &gt;= 0, got </span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">missionLife</span>
+        <span class="k">assert</span> <span class="n">extendedLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Need extendedLife &gt;= 0, got </span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">extendedLife</span>
+        <span class="c"># arithmetic on missionPortion fails if it is outside the legal range</span>
         <span class="k">assert</span> <span class="n">missionPortion</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">missionPortion</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> \
-          <span class="s2">&quot;Require missionPortion in the interval ]0,1], got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">missionPortion</span>
+          <span class="s">&quot;Require missionPortion in the interval ]0,1], got </span><span class="si">%f</span><span class="s">&quot;</span><span class="o">%</span><span class="n">missionPortion</span>
         
-        <span class="c1"># set up state variables</span>
-        <span class="c1"># tai scale specified because the default, utc, requires accounting for leap</span>
-        <span class="c1"># seconds, causing warnings from astropy.time when time-deltas are added</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">&#39;tai&#39;</span><span class="p">)</span>
+        <span class="c"># set up state variables</span>
+        <span class="c"># tai scale specified because the default, utc, requires accounting for leap</span>
+        <span class="c"># seconds, causing warnings from astropy.time when time-deltas are added</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">missionStart</span><span class="p">),</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;mjd&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s">&#39;tai&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">extendedLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionPortion</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtAlloc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dtAlloc</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c1"># planet-finding operation duration is equal to Optical System intCutoff</span>
+        <span class="c"># planet-finding operation duration is equal to Optical System intCutoff</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">intCutoff</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
-        <span class="c1"># set values derived from quantities above</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+        <span class="c"># set values derived from quantities above</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;day&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;day&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span>
         
-        <span class="c1"># initialize values updated by functions</span>
+        <span class="c"># initialize values updated by functions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">=</span> <span class="mi">0</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span>
         
-        <span class="c1"># populate outspec</span>
+        <span class="c"># populate outspec</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,(</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span><span class="n">Time</span><span class="p">))</span> <span class="k">else</span> <span class="n">dat</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TimeKeeping.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;String representation of the TimeKeeping object.</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the TimeKeeping object, this </span>
 <span class="sd">        method prints the values contained in the object.&quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s1">&#39;TimeKeeping instance at </span><span class="si">%.6f</span><span class="s1"> days&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-
+        <span class="k">return</span> <span class="s">&#39;TimeKeeping instance at </span><span class="si">%.6f</span><span class="s"> days&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+</div>
 <div class="viewcode-block" id="TimeKeeping.allocate_time"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">[docs]</a>    <span class="k">def</span> <span class="nf">allocate_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Allocate a temporal block of width dt, advancing the observation window if needed.</span>
 <span class="sd">        </span>
@@ -165,42 +165,42 @@
 <span class="sd">                True if the requested time fits in the widest window, otherwise False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># get caller info</span>
+        <span class="c"># get caller info</span>
         <span class="n">_</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">line_number</span><span class="p">,</span><span class="n">function_name</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">location</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">line_number</span><span class="p">,</span> <span class="n">function_name</span><span class="p">)</span>
-        <span class="c1"># if no issues, we will advance to this time</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">(</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">line_number</span><span class="p">,</span> <span class="n">function_name</span><span class="p">)</span>
+        <span class="c"># if no issues, we will advance to this time</span>
         <span class="n">provisional_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">+</span> <span class="n">dt</span>
-        <span class="n">window_advance</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">window_advance</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="k">if</span> <span class="n">dt</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!too long&#39;</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;!too long&#39;</span>
         <span class="k">elif</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!negative allocation&#39;</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;!negative allocation&#39;</span>
         <span class="k">elif</span> <span class="n">provisional_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-            <span class="c1"># advance to the next observation window:</span>
-            <span class="c1">#   add &quot;duration&quot; (time for our instrument&#39;s observations)</span>
-            <span class="c1">#   also add a term for other observations based on fraction-available</span>
+            <span class="c"># advance to the next observation window:</span>
+            <span class="c">#   add &quot;duration&quot; (time for our instrument&#39;s observations)</span>
+            <span class="c">#   also add a term for other observations based on fraction-available</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> \
                     <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
-            <span class="c1"># set current time to dt units beyond start of next window</span>
+            <span class="c"># set current time to dt units beyond start of next window</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+</span> <span class="n">dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span>
-            <span class="n">window_advance</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;+window&#39;</span>
+            <span class="n">window_advance</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;+window&#39;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># simply advance by dt</span>
+            <span class="c"># simply advance by dt</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="n">provisional_time</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;ok&#39;</span>
-        <span class="c1"># Log a message for the time allocation</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;TK [</span><span class="si">%s</span><span class="s2">]: alloc: </span><span class="si">%.2f</span><span class="s2"> day</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s">&#39;ok&#39;</span>
+        <span class="c"># Log a message for the time allocation</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;TK [</span><span class="si">%s</span><span class="s">]: alloc: </span><span class="si">%.2f</span><span class="s"> day</span><span class="se">\t</span><span class="s">[</span><span class="si">%s</span><span class="s">]</span><span class="se">\t</span><span class="s">[</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
         <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">success</span></div>
-
+        <span class="k">return</span> <span class="n">success</span>
+</div>
 <div class="viewcode-block" id="TimeKeeping.mission_is_over"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over">[docs]</a>    <span class="k">def</span> <span class="nf">mission_is_over</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">r&quot;&quot;&quot;Is the time allocated for the mission used up?</span>
 <span class="sd">        </span>
@@ -216,9 +216,8 @@
         
         <span class="n">is_over</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">is_over</span></div></div>
-
-</pre></div>
+        <span class="k">return</span> <span class="n">is_over</span>
+</pre></div></div></div>
 
           </div>
         </div>
@@ -236,11 +235,14 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -251,7 +253,7 @@
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPhysicalModel package &#8212; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.PlanetPhysicalModel package &mdash; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -74,7 +74,8 @@ from the FORECASTER GitHub repository at <a class="reference external" href="htt
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;     Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;<p>Planet radius in units of km</p>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
@@ -84,6 +85,9 @@ from the FORECASTER GitHub repository at <a class="reference external" href="htt
 
 </dd></dl>
 
+</div>
+<div class="section" id="exosims-planetphysicalmodel-forecaster-func-module">
+<h2>EXOSIMS.PlanetPhysicalModel.Forecaster_func module<a class="headerlink" href="#exosims-planetphysicalmodel-forecaster-func-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1">
 <span id="exosims-planetphysicalmodel-fortneymarleycahoymix1-module"></span><h2>EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module<a class="headerlink" href="#module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1" title="Permalink to this headline">¶</a></h2>
@@ -117,7 +121,8 @@ of metallicities, and then interpolate the grid from Cahoy et al. 2010.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>astropy Quanitity array</em>) &#8211; Semi-major axis values</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;     Albedo values</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;<p>Albedo values</p>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -137,7 +142,8 @@ and then things that can be giants.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of km</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Mp</strong> &#8211;     Planet mass in units of kg</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Mp</strong> &#8211;<p>Planet mass in units of kg</p>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
@@ -157,7 +163,8 @@ and then things that can be giants.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;     Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;<p>Planet radius in units of km</p>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
@@ -165,39 +172,6 @@ and then things that can be giants.</p>
 </table>
 </dd></dl>
 
-</dd></dl>
-
-</div>
-<div class="section" id="module-EXOSIMS.PlanetPhysicalModel.forecaster_func">
-<span id="exosims-planetphysicalmodel-forecaster-func-module"></span><h2>EXOSIMS.PlanetPhysicalModel.forecaster_func module<a class="headerlink" href="#module-EXOSIMS.PlanetPhysicalModel.forecaster_func" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="EXOSIMS.PlanetPhysicalModel.forecaster_func.ProbRGivenM">
-<code class="descclassname">EXOSIMS.PlanetPhysicalModel.forecaster_func.</code><code class="descname">ProbRGivenM</code><span class="sig-paren">(</span><em>radii</em>, <em>M</em>, <em>hyper</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/forecaster_func.html#ProbRGivenM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.forecaster_func.ProbRGivenM" title="Permalink to this definition">¶</a></dt>
-<dd><p>p(radii|M)</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="EXOSIMS.PlanetPhysicalModel.forecaster_func.classification">
-<code class="descclassname">EXOSIMS.PlanetPhysicalModel.forecaster_func.</code><code class="descname">classification</code><span class="sig-paren">(</span><em>logm</em>, <em>trans</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/forecaster_func.html#classification"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.forecaster_func.classification" title="Permalink to this definition">¶</a></dt>
-<dd><p>classify as four worlds</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="EXOSIMS.PlanetPhysicalModel.forecaster_func.indicate">
-<code class="descclassname">EXOSIMS.PlanetPhysicalModel.forecaster_func.</code><code class="descname">indicate</code><span class="sig-paren">(</span><em>M</em>, <em>trans</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/forecaster_func.html#indicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.forecaster_func.indicate" title="Permalink to this definition">¶</a></dt>
-<dd><p>indicate which M belongs to population i given transition parameter</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="EXOSIMS.PlanetPhysicalModel.forecaster_func.piece_linear">
-<code class="descclassname">EXOSIMS.PlanetPhysicalModel.forecaster_func.</code><code class="descname">piece_linear</code><span class="sig-paren">(</span><em>hyper</em>, <em>M</em>, <em>prob_R</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/forecaster_func.html#piece_linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.forecaster_func.piece_linear" title="Permalink to this definition">¶</a></dt>
-<dd><p>model: straight line</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="EXOSIMS.PlanetPhysicalModel.forecaster_func.split_hyper_linear">
-<code class="descclassname">EXOSIMS.PlanetPhysicalModel.forecaster_func.</code><code class="descname">split_hyper_linear</code><span class="sig-paren">(</span><em>hyper</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/forecaster_func.html#split_hyper_linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.forecaster_func.split_hyper_linear" title="Permalink to this definition">¶</a></dt>
-<dd><p>split hyper and derive c</p>
 </dd></dl>
 
 </div>
@@ -217,8 +191,8 @@ and then things that can be giants.</p>
 <li><a class="reference internal" href="#">EXOSIMS.PlanetPhysicalModel package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.Forecaster">EXOSIMS.PlanetPhysicalModel.Forecaster module</a></li>
+<li><a class="reference internal" href="#exosims-planetphysicalmodel-forecaster-func-module">EXOSIMS.PlanetPhysicalModel.Forecaster_func module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel.forecaster_func">EXOSIMS.PlanetPhysicalModel.forecaster_func module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPhysicalModel">Module contents</a></li>
 </ul>
 </li>
@@ -244,11 +218,14 @@ and then things that can be giants.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -259,7 +236,7 @@ and then things that can be giants.</p>
       &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

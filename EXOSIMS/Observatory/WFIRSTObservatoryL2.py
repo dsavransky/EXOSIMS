@@ -1,6 +1,7 @@
 from EXOSIMS.Observatory.WFIRSTObservatory import WFIRSTObservatory
 import astropy.units as u
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
 import numpy as np
 import os, inspect
 import scipy.interpolate as interpolate
@@ -32,9 +33,10 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         # Find and load halo orbit data
         # data is in heliocentric ecliptic coords
         # time is 2\pi = 1 sideral year
+        
         if orbit_datapath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'L2_halo_orbit_six_month.p'
+            filename = 'L2_halo_orbit_six_month_v2.p'
             orbit_datapath = os.path.join(classpath, filename)
         if not os.path.exists(orbit_datapath):
             raise Exception("Orbit data file not found.")
@@ -44,11 +46,15 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year
         self.L2_dist = halo['x_lpoint'][0][0]*u.AU
         self.orbit_pos = halo['state'][:,0:3]*u.AU #this is in rotating frame wrt the sun
+        self.orbit_vel = halo['state'][:,3:6]*u.AU/u.year*(2*np.pi) #velocity in rotating frame
         self.orbit_pos[:,0] -= self.L2_dist #now with respect to L2, still in rotating frame
         self.orbit_time = halo['t'].flatten()/(2*np.pi)*u.year
         # create interpolant (years & AU units)
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
                 self.orbit_pos.value.T,kind='cubic')
+        # create interpolant for orbital velocity (years & AU/yr units)
+        self.orbit_V_interp = interpolate.interp1d(self.orbit_time.value,\
+                self.orbit_vel.value.T,kind='cubic')
 
     def orbit(self, currentTime):
         """Finds observatory orbit position vector in heliocentric equatorial frame.
@@ -66,13 +72,27 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         
         """
         
-        # find time from mission start and interpolated position
-        deltime = (currentTime - self.missionStart).to('year')
-        cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value).T
+        # reshape currentTime
+        currentTime = currentTime.reshape(currentTime.size)
+        
+        # find time from Earth equinox and interpolated position
+        equinox = Time(60575.25,format='mjd')
+        deltime = (currentTime - equinox).to('year')
+        
+        # calculating Earth position
+        r_Earth = self.solarSystem_body_position(currentTime, 'Earth').T
+        dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
+        
+        # weighting L2 position with Earth-Sun distance
+        L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist * dist_Earth.to('AU').value
+#         # alternatively, just add the Earth distance fluctuation
+#         L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
         
         # add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi
-        cpos += np.array([np.cos(th),np.sin(th),np.zeros(th.size)]).T*self.L2_dist.to('AU').value
+        cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value)
+        cpos += np.array([np.cos(th),np.sin(th),np.zeros(th.size)])*L2_corr_dist.to('AU').value
+        cpos = cpos.T
         
         # finally, rotate into equatorial plane
         obe = self.obe(self.cent(currentTime))
@@ -85,7 +105,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
             r_sc = np.empty((obe.size, 3))*u.km
             for i in range(obe.size):
                 r_sc[i] = (np.dot(self.rot(np.radians(-obe[i]),1),cpos[i])*u.AU).to('km')
-        
+      
         assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
         
         return r_sc.to('km').reshape(currentTime.size,3)

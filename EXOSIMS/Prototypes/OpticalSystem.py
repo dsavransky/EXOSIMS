@@ -91,6 +91,10 @@ class OpticalSystem(object):
             Bandwidth in units of nm
         BW (float):
             Bandwidth fraction
+        IWA (astropy Quantity):
+            Inner working angle in units of arcsec
+        OWA (astropy Quantity):
+            Outer working angle in units of arcsec
         occ_trans (float, callable):
             Intensity transmission of extended background sources such as zodiacal light.
             Includes pupil mask, occulter, Lyot stop and polarizer.
@@ -104,10 +108,8 @@ class OpticalSystem(object):
             then the total core intensity is equal to core_contrast * core_thruput.
         core_area (astropy Quantity, callable):
             Area of the FWHM region of the planet PSF, in units of arcsec^2
-        IWA (astropy Quantity):
-            Inner working angle in units of arcsec
-        OWA (astropy Quantity):
-            Outer working angle in units of arcsec
+        platescale (float):
+            Platescale used for this set of coronagraph parameters.
         PSF (float, callable):
             Point spread function - 2D ndarray of values, normalized to 1 at
             the core. Note: normalization means that all throughput effects 
@@ -166,8 +168,9 @@ class OpticalSystem(object):
             attenuation=0.5,intCutoff=50,Ndark=10,dMagLim=22.5,scienceInstruments=None,\
             pitch=1e-5,focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,\
             QE=0.9,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
-            core_thruput=1e-2,core_contrast=1e-9,PSF=np.ones((3,3)),samp=10,ohTime=1,\
-            observingModes=None,SNR=5,timeMultiplier=1,IWA=None,OWA=None,**specs):
+            core_thruput=1e-2,core_contrast=1e-9,platescale=None,PSF=np.ones((3,3)),\
+            samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
+            OWA=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
@@ -270,6 +273,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
+            syst['platescale'] = syst.get('platescale',platescale)
             
             # Get PSF
             if isinstance(syst['PSF'],basestring):
@@ -346,6 +350,13 @@ class OpticalSystem(object):
             mode['deltaLam'] = float(mode.get('deltaLam',mode['lam'].value \
                     *mode.get('BW',syst_BW)))*u.nm
             mode['BW'] = float(mode['deltaLam']/mode['lam'])
+            # get mode IWA and OWA: rescale if the mode wavelength is different than 
+            # the wavelength at which the system is defined
+            mode['IWA'] = mode['syst']['IWA']
+            mode['OWA'] = mode['syst']['OWA']
+            if mode['lam'] != mode['syst']['lam']:
+                mode['IWA'] = mode['IWA']*mode['lam']/mode['syst']['lam']
+                mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
         
         # check for only one detection mode
         detectionModes = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)
@@ -360,8 +371,7 @@ class OpticalSystem(object):
                 self.observingModes[0]['detectionMode'] = True
         
         # populate fundamental IWA and OWA as required
-        IWAs = [x.get('IWA') for x in self.starlightSuppressionSystems \
-                if x.get('IWA') is not None]
+        IWAs = [x.get('IWA') for x in self.observingModes if x.get('IWA') is not None]
         if IWA is not None:
             self.IWA = float(IWA)*u.arcsec
         elif IWAs:
@@ -369,8 +379,7 @@ class OpticalSystem(object):
         else:
             raise ValueError("Could not determine fundamental IWA.")
         
-        OWAs = [x.get('OWA') for x in self.starlightSuppressionSystems \
-                if x.get('OWA') is not None]
+        OWAs = [x.get('OWA') for x in self.observingModes if x.get('OWA') is not None]
         if OWA is not None:
             self.OWA = float(OWA)*u.arcsec if OWA != 0 else np.inf*u.arcsec
         elif OWAs:
@@ -438,14 +447,15 @@ class OpticalSystem(object):
         elif isinstance(syst[param_name],numbers.Number):
             assert syst[param_name]>=0 and syst[param_name]<=1, \
                     param_name+" must be positive and smaller than 1."
-            syst[param_name] = lambda l, s, D=float(syst[param_name]): D
+            syst[param_name] = lambda l, s, D = float(syst[param_name]): \
+                    ((s >= syst['IWA']) & (s <= syst['OWA']))*(D-fill)+fill
             
         else:
             syst[param_name] = None
         
         return syst
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
         
@@ -464,6 +474,8 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of mas
             mode (dict):
                 Selected observing mode
+            returnExtra (boolean):
+                Optional flag, default False, set True to return additional rates for validation
         
         Returns:
             C_p (astropy Quantity array):
@@ -478,20 +490,20 @@ class OpticalSystem(object):
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']
-        # get mode wavelength and bandwidth
-        lam = mode['lam']
-        deltaLam = mode['deltaLam']
-        BW = mode['BW']
         
-        # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
-        # get star magnitude
-        mV = TL.starMag(sInds,lam)
+        # get mode wavelength
+        lam = mode['lam']
+        # get mode bandwidth (including any IFS spectral resolving power)
+        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
         # if the mode wavelength is different than the wavelength at which the system 
         # is defined, we need to rescale the working angles
-        if mode['lam'] != syst['lam']:
-            WA = WA*mode['lam']/syst['lam']
+        if lam != syst['lam']:
+            WA = WA*lam/syst['lam']
+        
+        # get star magnitude
+        sInds = np.array(sInds,ndmin=1)
+        mV = TL.starMag(sInds,lam)
         
         # solid angle of photometric aperture, specified by core_area(optional), 
         # otherwise obtained from (lambda/D)^2
@@ -506,21 +518,21 @@ class OpticalSystem(object):
         core_contrast = syst['core_contrast'](lam,WA)
         
         # get stellar residual intensity in the planet PSF core
-        # OPTION 1: specify contrast (only if mean_intensity is missing)
+        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
-            core_intensity = core_thruput * core_contrast
-        # OPTION 2: specify mean_intensity
+            core_intensity = core_contrast * core_thruput
+        # OPTION 2: otherwise use core_mean_intensity
         else:
-            core_intensity = syst['core_mean_intensity'](lam,WA) * Npix
-        
-        # number of spectral elements in each band
-        Nspec = inst['Rs']*BW
-        # non-coronagraphic transmission
-        T = self.attenuation / Nspec
+            core_mean_intensity = syst['core_mean_intensity'](lam,WA)
+            # if a platesale was specified with the coro parameters, apply correction
+            if syst['platescale'] != None:
+                platescale = inst['pitch']/inst['focal']/(lam/self.pupilDiam)
+                core_mean_intensity *= platescale/syst['platescale']
+            core_intensity = core_mean_intensity * Npix
         
         # ELECTRON COUNT RATES [ s^-1 ]
-        # spectral flux density = F0 * A * Dlam * QE * T (including non-coro transmission)
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*T
+        # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
+        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*self.attenuation
         # planet signal
         C_p = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
         # starlight residual
@@ -540,7 +552,19 @@ class OpticalSystem(object):
         # spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)
         
-        return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
+        # organize components into an optional fourth result
+        C_extra = dict(
+            C_sr = C_sr.to('1/s'),
+            C_z  = C_z.to('1/s'),
+            C_ez = C_ez.to('1/s'),
+            C_dc = C_dc.to('1/s'),
+            C_cc = C_cc.to('1/s'),
+            C_rn = C_rn.to('1/s'))
+
+        if returnExtra:
+            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
+        else:
+            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration time for a specific target system 

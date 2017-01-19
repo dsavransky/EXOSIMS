@@ -247,7 +247,12 @@ class SurveySimulation(object):
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
                 
-                # PERFORM DETECTION and populate revisit list attribute
+                # PERFORM DETECTION and populate revisit list attribute.
+                # First store fEZ, dMag, WA
+                if np.any(pInds):
+                    DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
+                    DRM['det_dMag'] = SU.dMag[pInds].tolist()
+                    DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                 # Update the occulter wet mass
                 if OS.haveOcculter == True:
@@ -256,19 +261,19 @@ class SurveySimulation(object):
                 DRM['det_time'] = t_det.to('day').value
                 DRM['det_status'] = detected
                 DRM['det_SNR'] = detSNR
-                if np.any(pInds):
-                    DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                    DRM['det_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 
-                # PERFORM CHARACTERIZATION and populate spectra list attribute
+                # PERFORM CHARACTERIZATION and populate spectra list attribute.
+                # First store fEZ, dMag, WA, and characterization mode
+                if np.any(pInds):
+                    DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
+                    DRM['char_dMag'] = SU.dMag[pInds].tolist()
+                    DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
+                DRM['char_mode'] = dict(charMode)
+                del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
                 # Update the occulter wet mass
                 if OS.haveOcculter == True:
                     DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
-                # Store characterization mode in DRM
-                DRM['char_mode'] = dict(charMode)
-                del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 # if any false alarm, store its characterization status, fEZ, dMag, and WA
                 if FA == True:
                     DRM['FA_status'] = characterized.pop()
@@ -280,10 +285,6 @@ class SurveySimulation(object):
                 DRM['char_time'] = t_char.to('day').value
                 DRM['char_status'] = characterized
                 DRM['char_SNR'] = charSNR
-                if np.any(pInds):
-                    DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                    DRM['char_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 
                 # update target time
                 self.starTimes[sInd] = TK.currentTimeNorm
@@ -488,8 +489,8 @@ class SurveySimulation(object):
         observable = np.ones(len(pInds), dtype=int)
         if np.any(observable):
             WA = SU.WA[pInds]
-            observable[WA < OS.IWA] = -1
-            observable[WA > OS.OWA] = -2
+            observable[WA < mode['IWA']] = -1
+            observable[WA > mode['OWA']] = -2
         
         # Now, calculate SNR for any observable planet (within IWA-OWA range)
         obs = (observable == 1)
@@ -516,7 +517,7 @@ class SurveySimulation(object):
         
         # Find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred, and populate detection status array
-        FA, MD = PPro.det_occur(SNRobs)
+        FA, MD = PPro.det_occur(SNRobs, mode['SNR'])
         detected = observable
         SNR = np.zeros(len(pInds))
         if np.any(obs):
@@ -538,7 +539,7 @@ class SurveySimulation(object):
         # In case of a FA, generate a random delta mag (between maxFAfluxratio and
         # dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
-            WA = np.random.uniform(OS.IWA.to('mas'), np.minimum(OS.OWA, \
+            WA = np.random.uniform(mode['IWA'].to('mas'), np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('mas'))
             dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA*u.mas)), OS.dMagLim)
             fEZ = ZL.fEZ0.to('1/arcsec2').value
@@ -546,7 +547,7 @@ class SurveySimulation(object):
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], fEZ)
             self.lastDetected[sInd,2] = np.append(self.lastDetected[sInd,2], dMag)
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
-            sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
+            sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
             Logger.info('False Alarm at target %r with WA %r and dMag %r' % (sInd, WA, dMag))
             print 'False Alarm at target', sInd, 'with WA', WA, 'and dMag', dMag
@@ -619,9 +620,9 @@ class SurveySimulation(object):
             pInds = np.append(pInds,-1)
         
         # Initialize outputs, and check if any planet to characterize
-        characterized = np.zeros(det.size)
+        characterized = np.zeros(det.size, dtype=int)
         SNR = np.zeros(det.size)
-        t_char = 0*u.d
+        t_char = 0.0*u.d
         if not np.any(pInds):
             return characterized.tolist(), SNR.tolist(), t_char
         
@@ -643,12 +644,13 @@ class SurveySimulation(object):
         if kogoodStart and np.any(tochar):
             # Propagate the whole system to match up with current time
             SU.propag_system(sInd, TK.currentTimeNorm)
-            # Calculate characterization times
+            # Calculate characterization times at the detected fEZ, dMag, and WA
             fZ = ZL.fZ(TL, sInd, mode['lam'], r_sc)
-            dMag = self.lastDetected[sInd,1][tochar]
-            WA = self.lastDetected[sInd,2][tochar]
+            fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
+            dMag = self.lastDetected[sInd,2][tochar]
+            WA = self.lastDetected[sInd,3][tochar]*u.mas
             t_chars = np.zeros(len(pInds))*u.d
-            t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, ZL.fEZ0, dMag, WA, mode)
+            t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             t_tots = t_chars*(mode['timeMultiplier'])
             # Filter out planets with t_tots > integration cutoff
             tochar = (t_tots > 0) & (t_tots < OS.intCutoff)
@@ -700,14 +702,14 @@ class SurveySimulation(object):
                 # -1 for partial spectrum, 0 for not characterized
                 if np.any(SNRobs):
                     SNR[tochar] = SNRobs
-                    char = (SNR > mode['SNR'])
+                    char = (SNR >= mode['SNR'])
                     if np.any(SNR):
                         # initialize with partial spectra
                         characterized[char] = -1
                         # check for full spectra
                         WA = self.lastDetected[sInd,3]*u.mas
-                        IWA_max = OS.IWA*(1+mode['BW']/2.)
-                        OWA_min = OS.OWA*(1-mode['BW']/2.)
+                        IWA_max = mode['IWA']*(1+mode['BW']/2.)
+                        OWA_min = mode['OWA']*(1-mode['BW']/2.)
                         char[char] = (WA[char] > IWA_max) & (WA[char] < OWA_min)
                         characterized[char] = 1
                         # encode results in spectra lists

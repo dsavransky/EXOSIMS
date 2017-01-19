@@ -101,7 +101,7 @@ class PostProcessing(object):
         
         return 'Post Processing class object attributes'
 
-    def det_occur(self, SNR):
+    def det_occur(self, SNR, SNRmin):
         """Determines if a detection has occurred and returns booleans 
         
         This method returns two booleans where True gives the case.
@@ -109,6 +109,8 @@ class PostProcessing(object):
         Args:
             SNR (float ndarray):
                 signal-to-noise ratio of the planets around the selected target
+            SNRmin (float):
+                signal-to-noise ratio threshold for detection
         
         Returns:
             FA (boolean):
@@ -125,16 +127,13 @@ class PostProcessing(object):
         FA = False
         MD = np.array([False]*len(SNR))
         
-        # set the False Alarm probability threshold
-        zFA = st.norm.ppf(1-self.FAP)
-        
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p = np.random.rand()
-        if p > st.norm.cdf(zFA):
+        if p <= self.FAP:
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?
-        MD[SNR <= zFA] = True
+        MD[SNR < SNRmin] = True
         
         return FA, MD
 

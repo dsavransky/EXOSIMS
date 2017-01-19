@@ -248,7 +248,7 @@ class BrownCompleteness(Completeness):
         
         """
         
-        if dt < 100*u.d:
+        if True:#dt < 100*u.d:
             comp0 = TL.comp0[sInds]
             return comp0
         

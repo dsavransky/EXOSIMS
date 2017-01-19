@@ -71,9 +71,6 @@ class WFIRSTObservatory(Observatory):
             kogood (boolean ndarray):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
-            culprit (boolean nx11 ndarray):
-                True indicates a target that is in the keepout region of a specific body,
-                False when it isn't.
         
         Note1: currentTime and r_sc must be of same size.
         Note2: For multiple targets, currentTime/r_sc must be of size 1 or size of sInds.

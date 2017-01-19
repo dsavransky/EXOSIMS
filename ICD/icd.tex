@@ -615,13 +615,14 @@ The specific set of inputs to this module will vary based on the simulation appr
         \item[lam (float)] \hfill \\ Central wavelength $\lambda$ in units of $ nm $. Default value is 500. 
         \item[deltaLam (float)] \hfill \\ Bandwidth $ \Delta\lambda $ in units of $ nm $. Defaults to lambda $ \times $ BW (defined hereunder).
         \item[BW (float)] \hfill \\ Bandwidth fraction $(\Delta\lambda/\lambda)$. Only applies when deltaLam is not specified. Default value is 0.2.
+        \item[IWA (float)] \hfill \\ Inner Working Angle of this system in units of $ arcsec $. If not set, or if too small for this system contrast/throughput definitions, defaults to smallest WA of contrast/throughput definitions.
+        \item[OWA (float)] \hfill \\ Specific Outer Working Angle of this system in units of $ arcsec $. Set to $ Inf $ for no OWA. If not set, or if too large for this system contrast/throughput definitions, defaults to largest WA of contrast/throughput definitions.  JSON values of $ 0 $ will be interpreted as $ Inf $.
         \item[occ\_trans (float, callable)] \hfill \\ Intensity transmission of extended background sources such as zodiacal light. Includes pupil mask, occulter, Lyot stop and polarizer. Default is scalar 0.2.
         \item[core\_thruput (float, callable)] \hfill \\ System throughput in the FWHM region of the planet PSF core. Default is scalar 1e-2.
         \item[core\_contrast (float, callable)] \hfill \\ System contrast defined as the starlight residual normalized intensity in the PSF core, divided by the core throughput. Default is scalar 1e-9.
         \item[core\_mean\_intensity (float, callable)] \hfill \\ Mean starlight residual normalized intensity per pixel, required to calculate the total core intensity as $core\_mean\_intensity \times Npix$. If not specified, then the total core intensity is equal to $core\_contrast \times core\_thruput$.
         \item[core\_area (float, callable)] \hfill \\ Area of the FWHM region of the planet PSF, in units of $ arcsec^2 $. If not specified, the default core area is equal to $\pi\left(\frac{\sqrt 2}{2}\frac{\lambda}{D}\right)^2$.
-        \item[IWA (float)] \hfill \\ Inner Working Angle of this system in units of $ arcsec $. If not set, or if too small for this system contrast/throughput definitions, defaults to smallest WA of contrast/throughput definitions.
-        \item[OWA (float)] \hfill \\ Specific Outer Working Angle of this system in units of $ arcsec $. Set to $ Inf $ for no OWA. If not set, or if too large for this system contrast/throughput definitions, defaults to largest WA of contrast/throughput definitions.  JSON values of $ 0 $ will be interpreted as $ Inf $.
+        \item[platescale (float)] \hfill \\ Platescale used for this set of coronagraph parameters.
         \item[PSF (float, callable)] \hfill \\ Point spread function. Either a 2D array of a single-PSF, or a 3D array of wavelength-dependent PSFs. May be data or FITS filename. Default is numpy.ones((3,3)).
         \item[samp (float)] \hfill \\ Sampling of the PSF in units of $ arcsec $ per pixel. Default value is 10.
         \item[ohTime (float)] \hfill \\ Optical system overhead time in units of $ day $.  Default value is $ 1 $ day.  This is the (assumed constant) amount of time required to set up the optical system (i.e., dig the dark hole or do fine alignment with the occulter).  It is added to every observation, and is separate from the observatory overhead defined in the observatory module, which represents the observatory's settling time.  Both overheads are added to the integration time to determine the full duration of each detection observation.
@@ -916,6 +917,7 @@ The \verb+det_occur+ method determines if a planet detection has occurred.
 \item 
 \begin{description}
     \item[SNR (float ndarray)] \hfill \\ Signal-to-noise ratio of the planets around the selected target
+    \item[SNRmin (float)] \hfill \\ Signal-to-noise ratio threshold for detection
 \end{description}
 \end{itemize}
 
@@ -1557,7 +1559,7 @@ The \verb+run_sim+ method performs the survey simulation and populates the resul
         \item[det\_dV (float)] \hfill \\ (if occulter) Detection station-keeping $\Delta$V in units of $ m/s $
         \item[det\_mass\_used (float)] \hfill \\ (if occulter) Detection station-keeping fuel mass used in units of $ kg $
         \item[det\_dF\_lateral (float)] \hfill \\ (if occulter) Detection station-keeping lateral disturbance force on occulter in units of $ N $
-        \item[det\_dF\_axial (float)] \hfill \\ Detection station-keeping axial disturbance force on occulter in units of $ N $
+        \item[det\_dF\_axial (float)] \hfill \\ (if occulter) Detection station-keeping axial disturbance force on occulter in units of $ N $
         \item[char\_dV (float)] \hfill \\ (if occulter) Characterization station-keeping $\Delta$V in units of $ m/s $
         \item[char\_mass\_used (float)] \hfill \\ (if occulter) Characterization station-keeping fuel mass used in units of $ kg $
         \item[char\_dF\_lateral (float)] \hfill \\ (if occulter) Characterization station-keeping lateral disturbance force on occulter in units of $ N $

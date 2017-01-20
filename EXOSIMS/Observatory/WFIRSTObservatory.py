@@ -99,16 +99,16 @@ class WFIRSTObservatory(Observatory):
         # Second, find unit vectors wrt spacecraft for bright objects
         # position vectors wrt sun
         r_bright = np.array([np.zeros(r_sc.shape), # sun
-            self.solarSystem_body_position(currentTime, 'Moon').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Mercury').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Venus').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Mars').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Jupiter').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Saturn').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Uranus').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Neptune').T.to('km').value,
-            self.solarSystem_body_position(currentTime, 'Pluto').T.to('km').value])*u.km
+            self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Earth').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Mercury').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Venus').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Mars').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Jupiter').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Saturn').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Uranus').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Neptune').to('km').value,
+            self.solarSystem_body_position(currentTime, 'Pluto').to('km').value])*u.km
         # position vectors wrt spacecraft
         r_bright -= r_sc
         # unit vectors wrt spacecraft

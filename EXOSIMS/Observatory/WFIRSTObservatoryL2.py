@@ -80,13 +80,13 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         deltime = (currentTime - equinox).to('year')
         
         # calculating Earth position
-        r_Earth = self.solarSystem_body_position(currentTime, 'Earth').T
+        r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
         dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
         
         # weighting L2 position with Earth-Sun distance
-        L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist * dist_Earth.to('AU').value
+        L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
 #         # alternatively, just add the Earth distance fluctuation
-#         L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
+#         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
         
         # add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi

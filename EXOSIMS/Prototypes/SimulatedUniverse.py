@@ -176,18 +176,18 @@ class SimulatedUniverse(object):
         a = self.a.to('AU').value               # semi-major axis
         e = self.e                              # eccentricity
         I = self.I.to('rad').value              # inclinations
-        Omega = self.O.to('rad').value          # right ascension of the ascending node
+        O = self.O.to('rad').value              # right ascension of the ascending node
         w = self.w.to('rad').value              # argument of perigee
         M0 = self.M0.to('rad').value            # initial mean anomany
         E = eccanom(M0, e)                      # eccentric anomaly
         Mp = self.Mp                            # planet masses
         
-        a1 = np.cos(Omega)*np.cos(w) - np.sin(Omega)*np.cos(I)*np.sin(w)
-        a2 = np.sin(Omega)*np.cos(w) + np.cos(Omega)*np.cos(I)*np.sin(w)
+        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
+        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
         a3 = np.sin(I)*np.sin(w)
         A = a*np.vstack((a1,a2,a3))*u.AU
-        b1 = -np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(w) + np.sin(Omega)*np.cos(I)*np.cos(w))
-        b2 = np.sqrt(1.-e**2)*(-np.sin(Omega)*np.sin(w) + np.cos(Omega)*np.cos(I)*np.cos(w))
+        b1 = -np.sqrt(1.-e**2)*(np.cos(O)*np.sin(w) + np.sin(O)*np.cos(I)*np.cos(w))
+        b2 = np.sqrt(1.-e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
         b3 = np.sqrt(1.-e**2)*np.sin(I)*np.cos(w)
         B = a*np.vstack((b1,b2,b3))*u.AU
         

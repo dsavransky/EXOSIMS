@@ -1,0 +1,12 @@
+# ignore pyc files, anywhere in the tree
+*.pyc
+*.pyo
+
+# mac metadata
+.DS_Store
+
+# ignore "coverage" tool data-dump (.coverage) and summary (htmlcov/*)
+.coverage
+.coverage.*
+.cache
+htmlcov/**

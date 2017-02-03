@@ -181,8 +181,10 @@
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         
         <span class="k">print</span> <span class="s">&#39;Beginning completeness update calculations&#39;</span>
+        <span class="c"># initialize number of visits</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">visits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c"># dynamic completeness values: rows are stars, columns are number of visits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
         <span class="c"># number of planets to simulate</span>
         <span class="n">nplan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">2e4</span><span class="p">)</span>
         <span class="c"># normalization time</span>
@@ -212,11 +214,11 @@
             <span class="n">Mstar</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span>
             <span class="c"># remove rmax &lt; smin </span>
             <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rmax</span> <span class="o">&gt;</span> <span class="n">smin</span><span class="p">[</span><span class="n">sInd</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">dynamic</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="c"># calculate for 5 successive observations</span>
             <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span> <span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">pInds</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-                    <span class="n">dynamic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
                     <span class="k">break</span>
                 <span class="c"># find Eccentric anomaly</span>
                 <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -255,25 +257,23 @@
                 <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">pInds</span><span class="p">,</span> <span class="n">toremove</span><span class="p">)</span>
                 
                 <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">dynamic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInd</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span> <span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">dynamic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">toremove</span><span class="p">))</span><span class="o">/</span><span class="n">nplan</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span> <span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">toremove</span><span class="p">))</span><span class="o">/</span><span class="n">nplan</span>
                 
                 <span class="c"># update M</span>
                 <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mstar</span><span class="o">+</span><span class="n">Mp</span><span class="p">[</span><span class="n">pInds</span><span class="p">])</span>
                 <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mu</span><span class="o">/</span><span class="n">a</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
                 <span class="n">newM</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">newM</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">*</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-            
-            <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dynamic</span><span class="p">)</span>
-                
+                            
             <span class="k">if</span> <span class="p">(</span><span class="n">sInd</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&#39;stars: </span><span class="si">%r</span><span class="s"> / </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sInd</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">)</span>
         <span class="k">print</span> <span class="s">&#39;Completeness update calculations finished&#39;</span>
 </div>
 <div class="viewcode-block" id="BrownCompleteness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>
+        <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed by selecting</span>
+<span class="sd">        the appropriate value from the updates array</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            TL (TargetList module):</span>
@@ -289,18 +289,14 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="k">if</span> <span class="bp">True</span><span class="p">:</span><span class="c">#dt &lt; 100*u.d:</span>
-            <span class="n">comp0</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">comp0</span>
+        <span class="c"># number of visits for each star</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c"># if visited more than five times, return 5th stored dynamic </span>
+        <span class="c"># completeness value</span>
+        <span class="n">cols</span><span class="p">[</span><span class="n">cols</span><span class="o">&gt;</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="c"># return value from the updates array</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="n">reset</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">updates</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">reset</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        
-        <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">updates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">sInds</span><span class="p">])])</span>
-        
-        <span class="k">return</span> <span class="n">comp0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">sInds</span><span class="p">,</span> <span class="n">cols</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="BrownCompleteness.genC"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.genC">[docs]</a>    <span class="k">def</span> <span class="nf">genC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Cpath</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets completeness interpolant for initial completeness</span>

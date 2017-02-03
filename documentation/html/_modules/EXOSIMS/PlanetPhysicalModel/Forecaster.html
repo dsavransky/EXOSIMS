@@ -40,20 +40,19 @@
             
   <h1>Source code for EXOSIMS.PlanetPhysicalModel.Forecaster</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1</span> <span class="kn">import</span> <span class="n">FortneyMarleyCahoyMix1</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPhysicalModel.forecaster_func</span> <span class="kn">import</span> <span class="n">piece_linear</span><span class="p">,</span> <span class="n">ProbRGivenM</span><span class="p">,</span> <span class="n">classification</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="kn">as</span> <span class="nn">const</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">h5py</span> 
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">h5py</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span><span class="p">,</span> <span class="n">truncnorm</span>
 
 
 <div class="viewcode-block" id="Forecaster"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster">[docs]</a><span class="k">class</span> <span class="nc">Forecaster</span><span class="p">(</span><span class="n">FortneyMarleyCahoyMix1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.</span>
-<span class="sd">    This module requires to download the following files:</span>
-<span class="sd">    - forecaster_fitting_parameters.h5</span>
-<span class="sd">    - forecaster_func.py</span>
-<span class="sd">    from the FORECASTER GitHub repository at https://github.com/chenjj2/forecaster</span>
+<span class="sd">    This module requires to download the fitting_parameters.h5 file from the </span>
+<span class="sd">    FORECASTER GitHub repository at https://github.com/chenjj2/forecaster</span>
+<span class="sd">    and add it to the PlanetPhysicalModel directory.</span>
 <span class="sd">    </span>
 <span class="sd">    Args: </span>
 <span class="sd">        \*\*specs: </span>
@@ -70,7 +69,7 @@
         
         <span class="c"># read forecaster parameter file</span>
         <span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;forecaster_fitting_parameters.h5&#39;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;fitting_parameters.h5&#39;</span>
         <span class="n">parampath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
         <span class="n">h5</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">parampath</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_hyper</span> <span class="o">=</span> <span class="n">h5</span><span class="p">[</span><span class="s">&#39;hyper_posterior&#39;</span><span class="p">][:]</span>
@@ -102,12 +101,79 @@
         <span class="n">hyper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_hyper</span><span class="p">[</span><span class="n">hyper_ind</span><span class="p">,:]</span>
         
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sample_size</span><span class="p">):</span>
-            <span class="n">logr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">piece_linear</span><span class="p">(</span><span class="n">hyper</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">logm</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">prob</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">logr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">piece_linear</span><span class="p">(</span><span class="n">hyper</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">logm</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">prob</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         
-        <span class="n">Rp</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="n">logr</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="n">logr</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span>
         
-        <span class="k">return</span> <span class="n">Rp</span>
-</pre></div></div></div>
+        <span class="k">return</span> <span class="n">Rp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span>
+
+<span class="c">#####################################################################################</span>
+<span class="c"># The following functions where adapted from the func.py file from the FORECASTER   #</span>
+<span class="c"># GitHub repository at https://github.com/chenjj2/forecaster (Chen &amp; Kippling 2016) #</span>
+<span class="c">#####################################################################################</span>
+</div>
+<div class="viewcode-block" id="Forecaster.indicate"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.indicate">[docs]</a>    <span class="k">def</span> <span class="nf">indicate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">trans</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        indicate which M belongs to population i given transition parameter</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">trans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">M</span><span class="o">&gt;=</span><span class="n">ts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">M</span><span class="o">&lt;</span><span class="n">ts</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">ind</span>
+</div>
+<div class="viewcode-block" id="Forecaster.split_hyper_linear"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.split_hyper_linear">[docs]</a>    <span class="k">def</span> <span class="nf">split_hyper_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hyper</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        split hyper and derive c</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">c0</span><span class="p">,</span> <span class="n">slope</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span> <span class="n">trans</span> <span class="o">=</span> \
+        <span class="n">hyper</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hyper</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="p">],</span> <span class="n">hyper</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="p">:</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="p">],</span> <span class="n">hyper</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="p">:]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">slope</span><span class="p">)</span>
+        <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">c0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span><span class="p">):</span>
+            <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">trans</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">slope</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">slope</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">slope</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">trans</span>
+</div>
+<div class="viewcode-block" id="Forecaster.piece_linear"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPhysicalModel.html#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.piece_linear">[docs]</a>    <span class="k">def</span> <span class="nf">piece_linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hyper</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">prob_R</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        model: straight line</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">c</span><span class="p">,</span> <span class="n">slope</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">trans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_hyper_linear</span><span class="p">(</span><span class="n">hyper</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">indicate</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">trans</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">mu</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">M</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">*</span><span class="n">slope</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">R</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">prob_R</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">R</span>
+
+<span class="c">#     # Unused functions</span>
+<span class="c">#     def classification(self, logm, trans ):</span>
+<span class="c">#         &#39;&#39;&#39;</span>
+<span class="c">#         classify as four worlds</span>
+<span class="c">#         &#39;&#39;&#39;</span>
+<span class="c">#         count = np.zeros(4)</span>
+<span class="c">#         sample_size = len(logm)</span>
+<span class="c">#         for iclass in range(4):</span>
+<span class="c">#             for isample in range(sample_size):</span>
+<span class="c">#                 ind = self.indicate( logm[isample], trans[isample], iclass)</span>
+<span class="c">#                 count[iclass] = count[iclass] + ind</span>
+<span class="c">#         prob = count / np.sum(count) * 100.</span>
+<span class="c">#         print &#39;Terran %(T).1f %%, Neptunian %(N).1f %%, Jovian %(J).1f %%, Star %(S).1f %%&#39; \</span>
+<span class="c">#                 % {&#39;T&#39;: prob[0], &#39;N&#39;: prob[1], &#39;J&#39;: prob[2], &#39;S&#39;: prob[3]}</span>
+<span class="c">#         return None</span>
+<span class="c"># </span>
+<span class="c">#     def ProbRGivenM(self, radii, M, hyper):</span>
+<span class="c">#         &#39;&#39;&#39;</span>
+<span class="c">#         p(radii|M)</span>
+<span class="c">#         &#39;&#39;&#39;</span>
+<span class="c">#         c, slope, sigma, trans = self.split_hyper_linear(hyper)</span>
+<span class="c">#         prob = np.zeros_like(M)</span>
+<span class="c">#         for i in range(4):</span>
+<span class="c">#             ind = self.indicate(M, trans, i)</span>
+<span class="c">#             mu = c[i] + M[ind]*slope[i]</span>
+<span class="c">#             sig = sigma[i]</span>
+<span class="c">#             prob[ind] = norm.pdf(radii, mu, sig)</span>
+<span class="c">#         prob = prob/np.sum(prob)</span>
+<span class="c">#         return prob</span></div></div>
+</pre></div>
 
           </div>
         </div>

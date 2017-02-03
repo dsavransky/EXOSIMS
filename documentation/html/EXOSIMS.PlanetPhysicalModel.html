@@ -52,10 +52,9 @@
 <em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPhysicalModel.Forecaster.</code><code class="descname">Forecaster</code><span class="sig-paren">(</span><em>n_pop=4</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1</span></code></a></p>
 <p>Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.
-This module requires to download the following files:
-- forecaster_fitting_parameters.h5
-- forecaster_func.py
-from the FORECASTER GitHub repository at <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a></p>
+This module requires to download the fitting_parameters.h5 file from the
+FORECASTER GitHub repository at <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a>
+and add it to the PlanetPhysicalModel directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -81,6 +80,24 @@ from the FORECASTER GitHub repository at <a class="reference external" href="htt
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.indicate">
+<code class="descname">indicate</code><span class="sig-paren">(</span><em>M</em>, <em>trans</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster.indicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.indicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>indicate which M belongs to population i given transition parameter</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.piece_linear">
+<code class="descname">piece_linear</code><span class="sig-paren">(</span><em>hyper</em>, <em>M</em>, <em>prob_R</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster.piece_linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.piece_linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>model: straight line</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.split_hyper_linear">
+<code class="descname">split_hyper_linear</code><span class="sig-paren">(</span><em>hyper</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster.split_hyper_linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster.split_hyper_linear" title="Permalink to this definition">¶</a></dt>
+<dd><p>split hyper and derive c</p>
 </dd></dl>
 
 </dd></dl>

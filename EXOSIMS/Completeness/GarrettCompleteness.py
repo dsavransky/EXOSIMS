@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from EXOSIMS.Prototypes.Completeness import Completeness
+from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 
 import numpy as np
 import os, inspect
@@ -14,7 +14,7 @@ try:
 except ImportError:
     import pickle
 
-class GarrettCompleteness(Completeness):
+class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
     
     This class contains all variables and methods necessary to perform 
@@ -37,7 +37,7 @@ class GarrettCompleteness(Completeness):
     
     def __init__(self, **specs):
         # bring in inherited Completeness prototype __init__ values
-        Completeness.__init__(self, **specs)
+        BrownCompleteness.__init__(self, **specs)
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
         self.filename = specs['modules']['PlanetPopulation']

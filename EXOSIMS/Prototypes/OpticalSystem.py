@@ -560,7 +560,7 @@ class OpticalSystem(object):
             C_dc = C_dc.to('1/s'),
             C_cc = C_cc.to('1/s'),
             C_rn = C_rn.to('1/s'))
-
+        
         if returnExtra:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:

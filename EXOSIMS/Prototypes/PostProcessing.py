@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from builtins import object
 import numpy as np
+import six
 import astropy.units as u
 import scipy.stats as st
 import scipy.interpolate
@@ -45,7 +48,7 @@ class PostProcessing(object):
         self.MDP = float(MDP)       # missed detection probability
         
         # check for post-processing factor, function of the working angle
-        if isinstance(ppFact,basestring):
+        if isinstance(ppFact,six.string_types):
             pth = os.path.normpath(os.path.expandvars(ppFact))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             dat = fits.open(pth)[0].data
@@ -63,7 +66,7 @@ class PostProcessing(object):
             self.ppFact = lambda s, G=float(ppFact): G
             
         # check for max FA flux ratio, function of the working angle
-        if isinstance(maxFAfluxratio,basestring):
+        if isinstance(maxFAfluxratio,six.string_types):
             pth = os.path.normpath(os.path.expandvars(maxFAfluxratio))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             dat = fits.open(pth)[0].data
@@ -81,7 +84,7 @@ class PostProcessing(object):
             self.maxFAfluxratio = lambda s, G=float(maxFAfluxratio): G
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in list(self.__dict__.keys()):
             if att not in ['ppFact','maxFAfluxratio']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
@@ -96,8 +99,8 @@ class PostProcessing(object):
         When the command 'print' is used on the Post Processing object, 
         this method will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'
 

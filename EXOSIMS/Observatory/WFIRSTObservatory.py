@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from EXOSIMS.Prototypes.Observatory import Observatory
 import astropy.units as u
 import numpy as np
@@ -94,25 +97,25 @@ class WFIRSTObservatory(Observatory):
         # position vectors wrt spacecraft
         r_targ -= r_sc
         # unit vectors wrt spacecraft
-        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
+        u_targ = (old_div(r_targ.value.T,np.linalg.norm(r_targ, axis=-1))).T
         
         # Second, find unit vectors wrt spacecraft for bright objects
         # position vectors wrt sun
         r_bright = np.array([np.zeros(r_sc.shape), # sun
-            self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Earth').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Mercury').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Venus').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Mars').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Jupiter').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Saturn').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Uranus').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Neptune').to('km').value,
-            self.solarSystem_body_position(currentTime, 'Pluto').to('km').value])*u.km
+            self.solarSystem_body_position(currentTime, 'Moon').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Earth').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Mercury').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Venus').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Mars').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Jupiter').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Saturn').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Uranus').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Neptune').T.to('km').value,
+            self.solarSystem_body_position(currentTime, 'Pluto').T.to('km').value])*u.km
         # position vectors wrt spacecraft
         r_bright -= r_sc
         # unit vectors wrt spacecraft
-        u_bright = (r_bright.value.T/np.linalg.norm(r_bright, axis=-1).T).T
+        u_bright = (old_div(r_bright.value.T,np.linalg.norm(r_bright, axis=-1).T)).T
         
         # Create koangles for all bodies. By default other planets have 
         # half the koangle of Sun, Moon, and Earth.
@@ -126,7 +129,7 @@ class WFIRSTObservatory(Observatory):
         # observed, thus ko associated with this target becomes False
         kogood = np.array([True]*len(u_targ))
         culprit = np.zeros([len(u_targ), nBodies])
-        for i in xrange(len(u_targ)):
+        for i in range(len(u_targ)):
             u_b = u_bright[:,0,:] if currentTime.size == 1 else u_bright[:,i,:]
             angles = np.arccos(np.dot(u_b, u_targ[i]))
             culprit[i,:] = (angles < koangles.to('rad').value)

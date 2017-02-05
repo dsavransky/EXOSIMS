@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from builtins import object
 import numpy as np
 from EXOSIMS.util.get_module import get_module
 
@@ -31,8 +33,8 @@ class Completeness(object):
         
         """
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Completeness class object attributes'
 
@@ -65,9 +67,7 @@ class Completeness(object):
                 TargetList class object
         
         """
-        
-        # initialize number of visits per star
-        self.visits = np.array([0]*TL.nStars)
+        pass
 
     def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed

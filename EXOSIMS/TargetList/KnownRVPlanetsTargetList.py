@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from builtins import filter
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -70,7 +74,7 @@ class KnownRVPlanetsTargetList(TargetList):
         self.nStars = len(tmp)
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
         
-        for att in self.atts_mapping.keys():
+        for att in list(self.atts_mapping.keys()):
             ma = tmp[self.atts_mapping[att]]
             if type(ma.fill_value) == np.float64:
                 setattr(self, att, ma.filled(np.nanmedian(ma)))
@@ -93,8 +97,8 @@ class KnownRVPlanetsTargetList(TargetList):
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values, for minimum dMag in detection mode
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
-        self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
-                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
+        self.tint0 = OS.calc_intTime(self, list(range(self.nStars)), old_div(0.,u.arcsec**2), \
+                old_div(0.,u.arcsec**2), OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

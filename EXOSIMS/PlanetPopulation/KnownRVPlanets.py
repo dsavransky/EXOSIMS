@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 import warnings
 import astropy
@@ -94,14 +96,14 @@ class KnownRVPlanets(KeplerLike1):
         mask = data['pl_orbsmax'].mask
         Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
         T = data['pl_orbper'].data[mask]*u.d
-        self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
+        self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(old_div(1,3.))).to('AU')
         assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
         #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
         mask = data['pl_orbsmaxerr1'].mask
         Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
         T = data['pl_orbpererr1'].data[mask]*u.d
-        self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
+        self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(old_div(1,3.))).to('AU')
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
         
         #save eccentricities
@@ -122,8 +124,7 @@ class KnownRVPlanets(KeplerLike1):
 
         #save the periastron time and period 
         tmp = data['pl_orbper'].data*u.d
-        tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
-                /(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun)).decompose().to(u.d)
+        tmp[data['pl_orbper'].mask] = np.sqrt(old_div((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3),(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun))).decompose().to(u.d)
         self.period = tmp
         self.perioderr = data['pl_orbpererr1'].data*u.d
         mask = data['pl_orbpererr1'].mask
@@ -182,8 +183,8 @@ class KnownRVPlanets(KeplerLike1):
         
         """
         n = self.gen_input_check(n)
-        Mmin = (self.Mprange[0]/const.M_jup).decompose().value
-        Mmax = (self.Mprange[1]/const.M_jup).decompose().value
+        Mmin = (old_div(self.Mprange[0],const.M_jup)).decompose().value
+        Mmax = (old_div(self.Mprange[1],const.M_jup)).decompose().value
         Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
         
         return Mp

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from past.builtins import basestring
+from builtins import object
 import sys, json, inspect, subprocess
 import copy
 import re
@@ -71,13 +74,13 @@ class MissionSim(object):
                 script = open(scriptfile).read()
                 specs_from_file = json.loads(script)
             except ValueError as err:
-                print "Error: %s: Input file `%s' improperly formatted." % (self._modtype, scriptfile)
-                print "Error: JSON error was: ", err
+                print("Error: %s: Input file `%s' improperly formatted." % (self._modtype, scriptfile))
+                print("Error: JSON error was: ", err)
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
             except:
-                print "Error: %s: %s", (self._modtype, sys.exc_info()[0])
+                print("Error: %s: %s", (self._modtype, sys.exc_info()[0]))
                 raise
         else:
             specs_from_file = {}
@@ -85,7 +88,7 @@ class MissionSim(object):
         # extend given specs with file specs
         specs.update(specs_from_file)
         
-        if 'modules' not in specs.keys():
+        if 'modules' not in list(specs.keys()):
             raise ValueError("No modules field found in script.")
         
         # set up log file, if it was desired
@@ -135,7 +138,7 @@ class MissionSim(object):
         self.modules['SurveyEnsemble'] = sens
         
         # make all objects accessible from the top level
-        for modName in specs['modules'].keys():
+        for modName in list(specs['modules'].keys()):
             setattr(self, modName, specs['modules'][modName])
 
     def start_logging(self, specs):
@@ -166,7 +169,7 @@ class MissionSim(object):
                 f = open(logfile, 'w')
                 f.close()
             except (IOError, OSError) as e:
-                print '%s: Failed to open logfile "%s"' % (__file__, logfile)
+                print('%s: Failed to open logfile "%s"' % (__file__, logfile))
                 return None
         # get the logging level
         if 'loglevel' in specs:
@@ -193,7 +196,7 @@ class MissionSim(object):
         root_logger.addHandler(handler)
         
         # use the logger
-        print '%s: Beginning logging to "%s" at level %s' % (os.path.basename(__file__), logfile, loglevel)
+        print('%s: Beginning logging to "%s" at level %s' % (os.path.basename(__file__), logfile, loglevel))
         logger = logging.getLogger(__name__)
         logger.info('Starting log.')
         return logfile
@@ -208,7 +211,7 @@ class MissionSim(object):
             seed = specs['seed']
         else:
             seed = py_random.randint(1,1e9)
-        print 'MissionSim: Seed is: ', seed
+        print('MissionSim: Seed is: ', seed)
         # give this seed to numpy
         np.random.seed(seed)
         
@@ -224,12 +227,12 @@ class MissionSim(object):
         out = copy.copy(self._outspec)
         
         # add in all module _outspec's
-        for module in self.modules.values():
+        for module in list(self.modules.values()):
             out.update(module._outspec)
         
         # add in the specific module names used
         out['modules'] = {}
-        for (mod_name, module) in self.modules.items():
+        for (mod_name, module) in list(self.modules.items()):
             # find the module file 
             mod_name_full = module.__module__
             if mod_name_full.startswith('EXOSIMS'):

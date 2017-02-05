@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import astropy.units as u
 
@@ -34,13 +38,13 @@ class ZodiacalLight(object):
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
-        self.fZ0 = 10**(-0.4*self.magZ)/u.arcsec**2   # default zodi brightness
-        self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
+        self.fZ0 = old_div(10**(-0.4*self.magZ),u.arcsec**2)   # default zodi brightness
+        self.fEZ0 = old_div(10**(-0.4*self.magEZ),u.arcsec**2) # default exo-zodi brightness
         
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in list(self.__dict__.keys()):
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
 
@@ -50,8 +54,8 @@ class ZodiacalLight(object):
         When the command 'print' is used on the Zodiacal Light object, this 
         method will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Zodiacal Light class object attributes'
 
@@ -112,8 +116,8 @@ class ZodiacalLight(object):
         # assume log-normal distribution of variance
         nEZ = np.ones(len(sInds))
         if self.varEZ != 0:
-            mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
-            v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
+            mu = np.log(nEZ) - 0.5*np.log(1. + old_div(self.varEZ,nEZ**2))
+            v = np.sqrt(np.log(old_div(self.varEZ,nEZ**2) + 1.))
             nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
         
         # supplementary angle for inclination > 90 degrees

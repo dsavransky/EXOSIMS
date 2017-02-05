@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 
 def deltaMag(p,Rp,d,Phi):
@@ -20,6 +22,6 @@ def deltaMag(p,Rp,d,Phi):
             Planet delta magnitudes
     
     """
-    dMag = -2.5*np.log10(p*(Rp/d)**2*Phi).value
+    dMag = -2.5*np.log10(p*(old_div(Rp,d))**2*Phi).value
     
     return dMag

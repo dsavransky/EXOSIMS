@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b
 
@@ -42,7 +45,7 @@ def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
         raise Exception("Failed to converge.")
     
     if verb:
-        print 'Finished in '+repr(numIter)+' iterations.'
+        print('Finished in '+repr(numIter)+' iterations.')
     
     return X
 
@@ -62,6 +65,6 @@ def eqLogSample(f, numTest, xMin, xMax, bins=10):
     out = np.array([])
     bounds = np.logspace(np.log10(xMin),np.log10(xMax),bins+1)
     for j in np.arange(1,bins+1):
-        out = np.concatenate((out,simpSample(f,numTest/bins,bounds[j-1],bounds[j])))
+        out = np.concatenate((out,simpSample(f,old_div(numTest,bins),bounds[j-1],bounds[j])))
     
     return out

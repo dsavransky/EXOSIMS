@@ -1,3 +1,6 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 from EXOSIMS.Observatory.WFIRSTObservatory import WFIRSTObservatory
 import astropy.units as u
 from astropy.time import Time
@@ -6,7 +9,7 @@ import numpy as np
 import os, inspect
 import scipy.interpolate as interpolate
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except:
     import pickle
 
@@ -40,7 +43,12 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
             orbit_datapath = os.path.join(classpath, filename)
         if not os.path.exists(orbit_datapath):
             raise Exception("Orbit data file not found.")
-        halo = pickle.load( open( orbit_datapath, "rb" ) )
+        try:
+            with open(orbit_datapath, 'rb') as f:
+                halo = pickle.load(f, encoding='latin1') 
+        except TypeError:
+             halo = pickle.load( open( orbit_datapath, "rb" ) )
+        #halo = pickle.load( open( orbit_datapath, "rb" ) )
         
         # unpack orbit properties
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year
@@ -80,13 +88,13 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         deltime = (currentTime - equinox).to('year')
         
         # calculating Earth position
-        r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
+        r_Earth = self.solarSystem_body_position(currentTime, 'Earth').T
         dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
         
         # weighting L2 position with Earth-Sun distance
-        L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
+        L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist * dist_Earth.to('AU').value
 #         # alternatively, just add the Earth distance fluctuation
-#         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
+#         L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
         
         # add L2 position to get current ecliptic coord
         th = np.mod(deltime.value,1.)*2*np.pi

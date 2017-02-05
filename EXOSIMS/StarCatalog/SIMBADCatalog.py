@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import os
-import cPickle as pickle
+import pickle as pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
@@ -35,23 +39,23 @@ class SIMBADCatalog(StarCatalog):
                 ntargs = len(x['Name'])
                 StarCatalog.__init__(self, ntargs=ntargs, **specs)
                 
-                for att in x.keys():
+                for att in list(x.keys()):
                     # list of astropy attributes
                     if att in ('dist','parx','pmra','pmdec','rv'):
                         unit = getattr(self,att).unit
                         setattr(self, att, np.array(x[att])*unit)
                     # list of non-astropy attributes
-                    elif att in self.__dict__.keys():
+                    elif att in list(self.__dict__.keys()):
                         setattr(self, att, np.array(x[att]))
                 # astropy SkyCoord object
                 self.coords = SkyCoord(x['radeg'],x['decdeg'],x['dist'],unit='deg,deg,pc')
                 
                 success = True
             else:
-                print "pickled dictionary file %s must contain key 'Name'" % pklpath
+                print("pickled dictionary file %s must contain key 'Name'" % pklpath)
                 success = False
         else:
-            print 'Star catalog pickled dictionary file %s not in StarCatalog directory' % pklpath
+            print('Star catalog pickled dictionary file %s not in StarCatalog directory' % pklpath)
             success = False
         
         return success
@@ -94,7 +98,7 @@ class SIMBADCatalog(StarCatalog):
                 if field == 'BINARY_CUT':
                     bc = x.BINARY_CUT.tolist()
                     y['Binary_Cut'] = [False]*len(bc)
-                    for i in xrange(len(bc)):
+                    for i in range(len(bc)):
                         if bc[i] == 'cut':
                             y['Binary_Cut'][i] = True
                 else:
@@ -103,7 +107,7 @@ class SIMBADCatalog(StarCatalog):
             pickle.dump(y, open(pklpath, 'wb'))
             success = True
         else:
-            print '%s does not exist in StarCatalog directory' % matpath
+            print('%s does not exist in StarCatalog directory' % matpath)
             success = False
             
         return success

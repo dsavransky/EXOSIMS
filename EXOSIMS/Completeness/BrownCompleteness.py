@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import time
 import numpy as np
 from scipy import interpolate
@@ -6,7 +13,7 @@ import astropy.units as u
 import astropy.constants as const
 import os, inspect
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except:
     import pickle
 import hashlib
@@ -85,17 +92,17 @@ class BrownCompleteness(Completeness):
         
         # yedges is array of delta magnitude values for interpolant
         ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*\
-                (self.PlanetPopulation.Rprange[1]/(self.PlanetPopulation.rrange[0]))\
+                (old_div(self.PlanetPopulation.Rprange[1],(self.PlanetPopulation.rrange[0])))\
                 .decompose().value**2)))
         ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange[0]*\
-                (self.PlanetPopulation.Rprange[0]/(self.PlanetPopulation.rrange[1]))\
+                (old_div(self.PlanetPopulation.Rprange[0],(self.PlanetPopulation.rrange[1])))\
                 .decompose().value**2*1e-11)))
         yedges = np.linspace(ymin, ymax, bins)
         
         # number of planets for each Monte Carlo simulation
         nplan = int(np.min([1e6,self.Nplanets]))
         # number of simulations to perform (must be integer)
-        steps = int(self.Nplanets/nplan)
+        steps = int(old_div(self.Nplanets,nplan))
         
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
@@ -117,8 +124,8 @@ class BrownCompleteness(Completeness):
         dMagmin = ymin
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
-            smin = smin/np.sqrt(L)
-            smax = smax/np.sqrt(L)
+            smin = old_div(smin,np.sqrt(L))
+            smax = old_div(smax,np.sqrt(L))
             dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
             
@@ -139,11 +146,9 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = self.PlanetPopulation
         
-        print 'Beginning completeness update calculations'
-        # initialize number of visits
+        print('Beginning completeness update calculations')
         self.visits = np.array([0]*TL.nStars)
-        # dynamic completeness values: rows are stars, columns are number of visits
-        self.updates = np.zeros((TL.nStars, 5))
+        self.updates = []
         # number of planets to simulate
         nplan = int(2e4)
         # normalization time
@@ -169,15 +174,15 @@ class BrownCompleteness(Completeness):
             smax = np.array([np.max(PPop.arange.to('AU').value)*\
                     (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
         # fill dynamic completeness values
-        for sInd in xrange(TL.nStars):
+        for sInd in range(TL.nStars):
             Mstar = TL.MsTrue[sInd]*const.M_sun
             # remove rmax < smin 
             pInds = np.where(rmax > smin[sInd])[0]
+            dynamic = []
             # calculate for 5 successive observations
-            for num in xrange(5):
-                if num == 0:
-                    self.updates[sInd, num] = TL.comp0[sInd]
+            for num in range(5):
                 if not pInds.any():
+                    dynamic.append(0.)
                     break
                 # find Eccentric anomaly
                 if num == 0:
@@ -205,7 +210,7 @@ class BrownCompleteness(Completeness):
                 r = (A*r1 + B*r2)*u.AU # position vector
                 d = np.sqrt(np.sum(r**2, axis=1)) # planet-star distance
                 s = np.sqrt(np.sum(r[:,0:2]**2, axis=1)) # apparent separation
-                beta = np.arccos(r[:,2]/d) # phase angle
+                beta = np.arccos(old_div(r[:,2],d)) # phase angle
                 Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                 dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
                 
@@ -216,23 +221,25 @@ class BrownCompleteness(Completeness):
                 pInds = np.delete(pInds, toremove)
                 
                 if num == 0:
-                    self.updates[sInd, num] = TL.comp0[sInd]
+                    dynamic.append(TL.comp0[sInd])
                 else:
-                    self.updates[sInd, num] = float(len(toremove))/nplan
+                    dynamic.append(old_div(float(len(toremove)),nplan))
                 
                 # update M
                 mu = const.G*(Mstar+Mp[pInds])
-                n = np.sqrt(mu/a[pInds]**3)
+                n = np.sqrt(old_div(mu,a[pInds]**3))
                 newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-                            
+            
+            self.updates.append(dynamic)
+                
             if (sInd+1) % 50 == 0:
-                print 'stars: %r / %r' % (sInd+1,TL.nStars)
+                print('stars: %r / %r' % (sInd+1,TL.nStars))
         
-        print 'Completeness update calculations finished'
+        self.updates = np.array(self.updates)
+        print('Completeness update calculations finished')
 
     def completeness_update(self, TL, sInds, dt):
-        """Updates completeness value for stars previously observed by selecting
-        the appropriate value from the updates array
+        """Updates completeness value for stars previously observed
         
         Args:
             TL (TargetList module):
@@ -248,14 +255,18 @@ class BrownCompleteness(Completeness):
         
         """
         
-        # number of visits for each star
-        cols = self.visits[sInds]
-        # if visited more than five times, return 5th stored dynamic 
-        # completeness value
-        cols[cols>4] = 4
-        # return value from the updates array
+        if True:#dt < 100*u.d:
+            comp0 = TL.comp0[sInds]
+            return comp0
         
-        return self.updates[sInds, cols]
+        self.visits[sInds] += 1
+        updates = self.updates[sInds]
+        reset = sInds[self.visits[sInds] > len(updates.T)-1]
+        self.visits[reset] = 0
+        
+        comp0 = np.array([updates[i,j] for i, j in enumerate(self.visits[sInds])])
+        
+        return comp0
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness
@@ -284,23 +295,23 @@ class BrownCompleteness(Completeness):
         
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
-            print 'Loading cached completeness file from "%s".' % Cpath
+            print('Loading cached completeness file from "%s".' % Cpath)
             H = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness loaded from cache.'
+            print('Completeness loaded from cache.')
             #h, xedges, yedges = self.hist(nplan, xedges, yedges)
         else:
             # run Monte Carlo simulation and pickle the resulting array
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Beginning Monte Carlo completeness calculations.'
+            print('Cached completeness file not found at "%s".' % Cpath)
+            print('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
-            for i in xrange(steps):
+            for i in range(steps):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                print 'Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg)
+                print('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:
@@ -308,12 +319,12 @@ class BrownCompleteness(Completeness):
                 else:
                     H += h
             
-            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))            
+            H = old_div(H,(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0])))            
                         
             # store 2D completeness pdf array as .comp file
             pickle.dump(H, open(Cpath, 'wb'))
-            print 'Monte Carlo completeness calculations finished'
-            print '2D completeness array stored in %r' % Cpath
+            print('Monte Carlo completeness calculations finished')
+            print('2D completeness array stored in %r' % Cpath)
         
         return H, xedges, yedges
 
@@ -412,7 +423,7 @@ class BrownCompleteness(Completeness):
         # sample albedo, planetary radius, phase function
         p = PPop.gen_albedo(nplan)
         Rp = PPop.gen_radius(nplan)
-        beta = np.arccos(r[:,2]/d)
+        beta = np.arccos(old_div(r[:,2],d))
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
         
         # calculate dMag

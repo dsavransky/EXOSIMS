@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
@@ -81,5 +83,5 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         # calculate initial mean anomaly
         tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
                 *PPop.tpererr[planinds]).to('day').value,format='jd')
-        self.M0 = np.mod(((missionStart - tper)/T).decompose().value*360,360)*u.deg
+        self.M0 = np.mod((old_div((missionStart - tper),T)).decompose().value*360,360)*u.deg
 

@@ -56,11 +56,8 @@ class Nemati(OpticalSystem):
         
         # get SNR threshold
         SNR = mode['SNR']
-        # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore',invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
-        # NAN and negative values correspond to infinity
-        intTime[np.isnan(intTime)] = np.inf*u.day
-        intTime[intTime < 0] = np.inf*u.day
+        intTime = SNR**2*C_b / (C_p**2 - (SNR*C_sp)**2)
+        # integration times (negative values correspond to infinity)
+        intTime[intTime < 0] = np.inf
         
         return intTime.to('day')

@@ -1,8 +1,10 @@
+from __future__ import print_function
+from builtins import object
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b
 import numbers
 
-class RejectionSampler():
+class RejectionSampler(object):
     '''
     Simple Rejection Sampler for arbitrary distributions defined 
     via a PDF encoded as a function (or lambda function)
@@ -79,7 +81,7 @@ class RejectionSampler():
             raise Exception("Failed to converge.")
         
         if verb:
-            print 'Finished in '+repr(numIter)+' iterations.'
+            print('Finished in '+repr(numIter)+' iterations.')
         
         return X
 

@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 from EXOSIMS.util import statsFun 
 import astropy.units as u
@@ -53,22 +56,22 @@ class KeplerLike1(PlanetPopulation):
         
         #define sma distribution
         self.smaknee = float(smaknee)
-        self.smadist1 = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-((x/s0)**2))
+        self.smadist1 = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-((old_div(x,s0))**2))
         self.smanorm = integrate.quad(self.smadist1, self.arange.min().to('AU').value, self.arange.max().to('AU').value)[0]        
-        self.smadist = lambda x,s0=self.smaknee: (x**(-0.62)*np.exp(-((x/s0)**2)))/self.smanorm
+        self.smadist = lambda x,s0=self.smaknee: old_div((x**(-0.62)*np.exp(-((old_div(x,s0))**2))),self.smanorm)
         
         #define Rayleigh eccentricity distribution
         self.esigma = float(esigma)
-        self.edist1 = lambda x,sigma=self.esigma: (x/sigma**2)*np.exp(-x**2/(2.*sigma**2))
+        self.edist1 = lambda x,sigma=self.esigma: (old_div(x,sigma**2))*np.exp(old_div(-x**2,(2.*sigma**2)))
         self.enorm = integrate.quad(self.edist1, self.erange.min(), self.erange.max())[0]
-        self.edist = lambda x,sigma=self.esigma: ((x/sigma**2)*np.exp(-x**2/(2.0*sigma**2)))/self.enorm
+        self.edist = lambda x,sigma=self.esigma: old_div(((old_div(x,sigma**2))*np.exp(old_div(-x**2,(2.0*sigma**2)))),self.enorm)
         
         #define Kepler radius distribution
         Rs = np.array([1,1.4,2.0,2.8,4.0,5.7,8.0,11.3,16,22.6]) #Earth Radii
         Rvals85 = np.array([0.1555, 0.1671, 0.1739, 0.0609, 0.0187, 0.0071, 0.0102, 0.0049, 0.0014])
-        a85 = (((85*u.day/2/np.pi)**2*const.M_sun*const.G)**(1./3)).to('AU') #sma of 85 days
+        a85 = (((85*u.day/2/np.pi)**2*const.M_sun*const.G)**(old_div(1.,3))).to('AU') #sma of 85 days
         fac1 = integrate.quad(self.smadist,0,a85.value)[0]
-        Rvals = integrate.quad(self.smadist,0,self.arange[1].to('AU').value)[0]*(Rvals85/fac1)
+        Rvals = integrate.quad(self.smadist,0,self.arange[1].to('AU').value)[0]*(old_div(Rvals85,fac1))
         Rvals[5:] *= 2.5 #account for longer orbital baseline data
         
         self.Rs = Rs
@@ -261,7 +264,7 @@ class KeplerLike1(PlanetPopulation):
                     np.random.uniform(size=nsamp))))
         
         if len(R) > n:
-            R = R[np.random.choice(range(len(R)),size=n,replace=False)]
+            R = R[np.random.choice(list(range(len(R))),size=n,replace=False)]
         Rp = R*const.R_earth.to('km')
         
         return Rp

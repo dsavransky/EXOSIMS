@@ -15,7 +15,7 @@ Environment and Package Dependencies
 Optional Packages
 ---------------------
 * ``cPickle`` is used preferentially, but ``pickle`` will be loaded if ``cPickle`` is not installed
-* ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  It can be installed through pip or from source.  An SPK ephemeris file is needed - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432.bsp and should be placed in the Observatory subdirectory of EXOSIMS. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
+* ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  It can be installed through pip or from source.  An SPK ephemeris file is needed - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp and should be placed in the Observatory subdirectory of EXOSIMS. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
 * ``fitting_parameters.h5`` is used by the Forecaster module (an implementation of ``PlanetPhysicalModel``). It can be downloaded from https://github.com/chenjj2/forecaster and must be added to the PlanetPhysicalModel directory.  If using Forecaster, you must also have ``h5py`` installed.
 
 

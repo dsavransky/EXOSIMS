@@ -75,8 +75,8 @@ Nstars_V1.xlsx
 EXOCATXLS.py*
 ToyCat1.py*
 de432s.bsp
+fitting_parameters.h5
 *.comp
-forecaster_*
 *.so
 *.acomp
 statsFun_C

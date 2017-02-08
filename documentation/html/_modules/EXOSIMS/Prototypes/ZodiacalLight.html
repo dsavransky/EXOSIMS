@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.ZodiacalLight &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.ZodiacalLight &#8212; EXOSIMS 1.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,18 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.1',
+        VERSION:     '1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
-    <link rel="up" title="Module code" href="../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,9 +40,9 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.ZodiacalLight</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 
 <div class="viewcode-block" id="ZodiacalLight"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight">[docs]</a><span class="k">class</span> <span class="nc">ZodiacalLight</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Zodiacal Light class template</span>
@@ -67,35 +68,35 @@
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;ZodiacalLight&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;ZodiacalLight&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magZ</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">magEZ</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">varEZ</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">magZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magZ</span><span class="p">)</span>         <span class="c"># 1 zodi brightness (per arcsec2)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magEZ</span><span class="p">)</span>       <span class="c"># 1 exo-zodi brightness (per arcsec2)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">varEZ</span><span class="p">)</span>       <span class="c"># exo-zodi variation (variance of log-normal dist)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fZ0</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>   <span class="c"># default zodi brightness</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ0</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span> <span class="c"># default exo-zodi brightness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magZ</span><span class="p">)</span>         <span class="c1"># 1 zodi brightness (per arcsec2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">magEZ</span><span class="p">)</span>       <span class="c1"># 1 exo-zodi brightness (per arcsec2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">varEZ</span><span class="p">)</span>       <span class="c1"># exo-zodi variation (variance of log-normal dist)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fZ0</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>   <span class="c1"># default zodi brightness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fEZ0</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># default exo-zodi brightness</span>
         
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Exozodi variation must be &gt;= 0&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Exozodi variation must be &gt;= 0&quot;</span>
         
-        <span class="c"># populate outspec</span>
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+        <span class="c1"># populate outspec</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
 
-<div class="viewcode-block" id="ZodiacalLight.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Zodiacal Light object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Zodiacal Light object, this </span>
 <span class="sd">        method will return the values contained in the object&quot;&quot;&quot;</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Zodiacal Light class object attributes&#39;</span>
-</div>
+        <span class="k">return</span> <span class="s1">&#39;Zodiacal Light class object attributes&#39;</span>
+
 <div class="viewcode-block" id="ZodiacalLight.fZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
@@ -117,17 +118,17 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># reshape sInds</span>
+        <span class="c1"># reshape sInds</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         
-        <span class="c"># check shape of r_sc</span>
-        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span> <span class="s">&#39;r_sc must be of shape (len(sInds),3)&#39;</span>
+        <span class="c1"># check shape of r_sc</span>
+        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (len(sInds),3)&#39;</span>
         
         <span class="n">nZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         <span class="n">fZ</span> <span class="o">=</span> <span class="n">nZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
         
-        <span class="k">return</span> <span class="n">fZ</span>
-</div>
+        <span class="k">return</span> <span class="n">fZ</span></div>
+
 <div class="viewcode-block" id="ZodiacalLight.fEZ"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ">[docs]</a>    <span class="k">def</span> <span class="nf">fEZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">r_orbit</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of exo-zodiacal light</span>
 <span class="sd">        </span>
@@ -147,29 +148,29 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># reshape sInds</span>
+        <span class="c1"># reshape sInds</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         
-        <span class="c"># assume log-normal distribution of variance</span>
+        <span class="c1"># assume log-normal distribution of variance</span>
         <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">nEZ</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varEZ</span><span class="o">/</span><span class="n">nEZ</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))</span>
             <span class="n">nEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         
-        <span class="c"># supplementary angle for inclination &gt; 90 degrees</span>
-        <span class="n">beta</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;deg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># supplementary angle for inclination &gt; 90 degrees</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">beta</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">beta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">beta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">fbeta</span> <span class="o">=</span> <span class="mf">2.44</span> <span class="o">-</span> <span class="mf">0.0403</span><span class="o">*</span><span class="n">beta</span> <span class="o">+</span> <span class="mf">0.000269</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span>
         
-        <span class="c"># absolute magnitude of the star (in the V band)</span>
+        <span class="c1"># absolute magnitude of the star (in the V band)</span>
         <span class="n">MV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MV</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="c"># absolute magnitude of the Sun (in the V band)</span>
+        <span class="c1"># absolute magnitude of the Sun (in the V band)</span>
         <span class="n">MVsun</span> <span class="o">=</span> <span class="mf">4.83</span>
         
         <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="p">(</span><span class="n">MV</span><span class="o">-</span><span class="n">MVsun</span><span class="p">))</span>\
-                <span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">fbeta</span><span class="o">/</span><span class="n">r_orbit</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+                <span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">fbeta</span><span class="o">/</span><span class="n">r_orbit</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
         
         <span class="k">return</span> <span class="n">fEZ</span></div></div>
 </pre></div>
@@ -190,14 +191,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -205,10 +203,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015, SIOSlab.
+      &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

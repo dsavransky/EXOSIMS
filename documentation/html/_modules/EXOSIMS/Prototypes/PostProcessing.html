@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.PostProcessing &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Prototypes.PostProcessing &#8212; EXOSIMS 1.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,18 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.1',
+        VERSION:     '1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
-    <link rel="up" title="Module code" href="../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,13 +40,13 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.PostProcessing</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">st</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">st</span>
 <span class="kn">import</span> <span class="nn">scipy.interpolate</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="kn">import</span> <span class="n">get_module</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
 
 <div class="viewcode-block" id="PostProcessing"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing">[docs]</a><span class="k">class</span> <span class="nc">PostProcessing</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Post Processing class template</span>
@@ -77,71 +78,71 @@
 <span class="sd">            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="n">_modtype</span> <span class="o">=</span> <span class="s">&#39;PostProcessing&#39;</span>
+    <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;PostProcessing&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">FAP</span><span class="o">=</span><span class="mf">3e-7</span><span class="p">,</span><span class="n">MDP</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">ppFact</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">maxFAfluxratio</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">FAP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">FAP</span><span class="p">)</span>       <span class="c"># false alarm probability</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MDP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">MDP</span><span class="p">)</span>       <span class="c"># missed detection probability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FAP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">FAP</span><span class="p">)</span>       <span class="c1"># false alarm probability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MDP</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">MDP</span><span class="p">)</span>       <span class="c1"># missed detection probability</span>
         
-        <span class="c"># check for post-processing factor, function of the working angle</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ppFact</span><span class="p">,</span><span class="nb">basestring</span><span class="p">):</span>
+        <span class="c1"># check for post-processing factor, function of the working angle</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ppFact</span><span class="p">,</span><span class="n">basestring</span><span class="p">):</span>
             <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">ppFact</span><span class="p">))</span>
-            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
             <span class="n">dat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">pth</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s">&quot;Wrong post-processing gain data shape.&quot;</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;Wrong post-processing gain data shape.&quot;</span>
             <span class="n">WA</span><span class="p">,</span><span class="n">G</span> <span class="o">=</span> <span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="p">(</span><span class="n">dat</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">dat</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">G</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">G</span><span class="o">&lt;=</span><span class="mi">1</span><span class="p">),</span> \
-                    <span class="s">&quot;Post-processing gain must be positive and smaller than 1.&quot;</span>
-            <span class="c"># gain outside of WA values defaults to 1</span>
-            <span class="n">Ginterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s">&#39;cubic&#39;</span><span class="p">,</span>\
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ppFact</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Ginterp</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="s2">&quot;Post-processing gain must be positive and smaller than 1.&quot;</span>
+            <span class="c1"># gain outside of WA values defaults to 1</span>
+            <span class="n">Ginterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>\
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ppFact</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Ginterp</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ppFact</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
             <span class="k">assert</span> <span class="n">ppFact</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">ppFact</span><span class="o">&lt;=</span><span class="mi">1</span><span class="p">,</span> \
-                    <span class="s">&quot;Post-processing gain must be positive and smaller than 1.&quot;</span>
+                    <span class="s2">&quot;Post-processing gain must be positive and smaller than 1.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ppFact</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">ppFact</span><span class="p">):</span> <span class="n">G</span>
             
-        <span class="c"># check for max FA flux ratio, function of the working angle</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maxFAfluxratio</span><span class="p">,</span><span class="nb">basestring</span><span class="p">):</span>
+        <span class="c1"># check for max FA flux ratio, function of the working angle</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maxFAfluxratio</span><span class="p">,</span><span class="n">basestring</span><span class="p">):</span>
             <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">maxFAfluxratio</span><span class="p">))</span>
-            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pth</span><span class="p">),</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a valid file.&quot;</span><span class="o">%</span><span class="n">pth</span>
             <span class="n">dat</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">pth</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s">&quot;Wrong max FA flux ratio data shape.&quot;</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">2</span> <span class="ow">in</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">&quot;Wrong max FA flux ratio data shape.&quot;</span>
             <span class="n">WA</span><span class="p">,</span><span class="n">G</span> <span class="o">=</span> <span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">dat</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">dat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="p">(</span><span class="n">dat</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">dat</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">G</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">G</span><span class="o">&lt;=</span><span class="mi">1</span><span class="p">),</span> \
-                    <span class="s">&quot;Max FA flux ratio must be positive and smaller than 1.&quot;</span>
-            <span class="c"># gain outside of WA values defaults to 1</span>
-            <span class="n">Ginterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s">&#39;cubic&#39;</span><span class="p">,</span>\
-                    <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">maxFAfluxratio</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Ginterp</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="s2">&quot;Max FA flux ratio must be positive and smaller than 1.&quot;</span>
+            <span class="c1"># gain outside of WA values defaults to 1</span>
+            <span class="n">Ginterp</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">WA</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>\
+                    <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxFAfluxratio</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Ginterp</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maxFAfluxratio</span><span class="p">,</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
             <span class="k">assert</span> <span class="n">maxFAfluxratio</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">maxFAfluxratio</span><span class="o">&lt;=</span><span class="mi">1</span><span class="p">,</span> \
-                    <span class="s">&quot;Max FA flux ratio must be positive and smaller than 1.&quot;</span>
+                    <span class="s2">&quot;Max FA flux ratio must be positive and smaller than 1.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">maxFAfluxratio</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">maxFAfluxratio</span><span class="p">):</span> <span class="n">G</span>
         
-        <span class="c"># populate outspec</span>
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;ppFact&#39;</span><span class="p">,</span><span class="s">&#39;maxFAfluxratio&#39;</span><span class="p">]:</span>
-                <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+        <span class="c1"># populate outspec</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ppFact&#39;</span><span class="p">,</span><span class="s1">&#39;maxFAfluxratio&#39;</span><span class="p">]:</span>
+                <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
         
-        <span class="c">#instantiate background sources object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s">&#39;modules&#39;</span><span class="p">][</span><span class="s">&#39;BackgroundSources&#39;</span><span class="p">],</span> \
-                <span class="s">&#39;BackgroundSources&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="c1">#instantiate background sources object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;BackgroundSources&#39;</span><span class="p">],</span> \
+                <span class="s1">&#39;BackgroundSources&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="PostProcessing.__str__"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Post Processing object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the Post Processing object, </span>
 <span class="sd">        this method will return the values contained in the object&quot;&quot;&quot;</span>
         
-        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%r</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
         
-        <span class="k">return</span> <span class="s">&#39;Post Processing class object attributes&#39;</span>
-</div>
+        <span class="k">return</span> <span class="s1">&#39;Post Processing class object attributes&#39;</span>
+
 <div class="viewcode-block" id="PostProcessing.det_occur"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">[docs]</a>    <span class="k">def</span> <span class="nf">det_occur</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SNR</span><span class="p">,</span> <span class="n">SNRmin</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Determines if a detection has occurred and returns booleans </span>
 <span class="sd">        </span>
@@ -164,20 +165,21 @@
 <span class="sd">            TODO: Add backgroundsources hook</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># initialize</span>
-        <span class="n">FA</span> <span class="o">=</span> <span class="bp">False</span>
-        <span class="n">MD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">SNR</span><span class="p">))</span>
+        <span class="c1"># initialize</span>
+        <span class="n">FA</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">MD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">SNR</span><span class="p">))</span>
         
-        <span class="c"># 1/ For the whole system: is there a False Alarm (false positive)?</span>
+        <span class="c1"># 1/ For the whole system: is there a False Alarm (false positive)?</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FAP</span><span class="p">:</span>
-            <span class="n">FA</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">FA</span> <span class="o">=</span> <span class="kc">True</span>
         
-        <span class="c"># 2/ For each planet: is there a Missed Detection (false negative)?</span>
-        <span class="n">MD</span><span class="p">[</span><span class="n">SNR</span> <span class="o">&lt;</span> <span class="n">SNRmin</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c1"># 2/ For each planet: is there a Missed Detection (false negative)?</span>
+        <span class="n">MD</span><span class="p">[</span><span class="n">SNR</span> <span class="o">&lt;</span> <span class="n">SNRmin</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         
-        <span class="k">return</span> <span class="n">FA</span><span class="p">,</span> <span class="n">MD</span>
-</pre></div></div></div>
+        <span class="k">return</span> <span class="n">FA</span><span class="p">,</span> <span class="n">MD</span></div></div>
+
+</pre></div>
 
           </div>
         </div>
@@ -195,14 +197,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -210,10 +209,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015, SIOSlab.
+      &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

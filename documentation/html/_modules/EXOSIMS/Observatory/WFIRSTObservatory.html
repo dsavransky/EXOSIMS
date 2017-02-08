@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Observatory.WFIRSTObservatory &mdash; EXOSIMS 0.1 documentation</title>
+    <title>EXOSIMS.Observatory.WFIRSTObservatory &#8212; EXOSIMS 1.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,18 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '0.1',
+        VERSION:     '1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
-    <link rel="up" title="Module code" href="../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -39,10 +40,10 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Observatory.WFIRSTObservatory</h1><div class="highlight"><pre>
-<span class="c"># -*- coding: utf-8 -*-</span>
-<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.Observatory</span> <span class="kn">import</span> <span class="n">Observatory</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="kn">as</span> <span class="nn">u</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.Observatory</span> <span class="k">import</span> <span class="n">Observatory</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="WFIRSTObservatory"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory">[docs]</a><span class="k">class</span> <span class="nc">WFIRSTObservatory</span><span class="p">(</span><span class="n">Observatory</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;WFIRST Observatory class</span>
@@ -67,29 +68,29 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">28.5</span><span class="p">)</span> <span class="c"># orbital inclination in degrees</span>
-        <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">228.</span><span class="p">)</span> <span class="c"># right ascension of the ascending node in degrees</span>
-        <span class="c"># orbital period is one sidereal day</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="c"># orbital frequency (2*pi/period)</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="mf">42164.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> <span class="c"># orbital height in km</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">28.5</span><span class="p">)</span> <span class="c1"># orbital inclination in degrees</span>
+        <span class="n">O</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">228.</span><span class="p">)</span> <span class="c1"># right ascension of the ascending node in degrees</span>
+        <span class="c1"># orbital period is one sidereal day</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="c1"># orbital frequency (2*pi/period)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="mf">42164.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span> <span class="c1"># orbital height in km</span>
         
-        <span class="c"># Find Earth position vector (km in heliocentric equatorial frame)</span>
-        <span class="n">r_earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Earth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># Find Earth position vector (km in heliocentric equatorial frame)</span>
+        <span class="n">r_earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c"># Find spacecraft position vector with respect to Earth in orbital plane</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span> <span class="c"># gives percent of day</span>
+        <span class="c1"># Find spacecraft position vector with respect to Earth in orbital plane</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span> <span class="c1"># gives percent of day</span>
         <span class="n">r_scearth</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">t</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">t</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c"># Find spacecraft position vector with respect to Earth in equatorial frame</span>
+        <span class="c1"># Find spacecraft position vector with respect to Earth in equatorial frame</span>
         <span class="n">r_scearth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">O</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span><span class="n">r_scearth</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c"># Find spacecraft position vector with respect to sun (heliocentric equatorial)</span>
+        <span class="c1"># Find spacecraft position vector with respect to sun (heliocentric equatorial)</span>
         <span class="n">r_sc</span> <span class="o">=</span> <span class="n">r_earth</span> <span class="o">+</span> <span class="n">r_scearth</span>
         
-        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_sc</span><span class="p">)),</span> <span class="s">&#39;Observatory position vector r_sc has infinite value.&#39;</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_sc</span><span class="p">)),</span> <span class="s1">&#39;Observatory position vector r_sc has infinite value.&#39;</span>
         
-        <span class="k">return</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
-</div>
+        <span class="k">return</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="WFIRSTObservatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds keepout Boolean values for stars of interest.</span>
 <span class="sd">        </span>
@@ -118,69 +119,70 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c"># reshape sInds</span>
+        <span class="c1"># reshape sInds</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c"># reshape currentTime</span>
+        <span class="c1"># reshape currentTime</span>
         <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="c"># check size of currentTime and r_sc</span>
-        <span class="k">assert</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;CurrentTime and r_sc must be of same size.&#39;</span>
-        <span class="c"># check size of sInds</span>
+        <span class="c1"># check size of currentTime and r_sc</span>
+        <span class="k">assert</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;CurrentTime and r_sc must be of same size.&#39;</span>
+        <span class="c1"># check size of sInds</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">assert</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> \
-                    <span class="s">&#39;For multiple targets, currentTime/r_sc must be of size 1 or size of sInds&#39;</span>
+                    <span class="s1">&#39;For multiple targets, currentTime/r_sc must be of size 1 or size of sInds&#39;</span>
         
-        <span class="c"># First, find unit vectors wrt spacecraft for stars of interest</span>
-        <span class="c"># position vectors wrt sun</span>
+        <span class="c1"># First, find unit vectors wrt spacecraft for stars of interest</span>
+        <span class="c1"># position vectors wrt sun</span>
         <span class="n">r_targ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">)</span> 
-        <span class="c"># position vectors wrt spacecraft</span>
+        <span class="c1"># position vectors wrt spacecraft</span>
         <span class="n">r_targ</span> <span class="o">-=</span> <span class="n">r_sc</span>
-        <span class="c"># unit vectors wrt spacecraft</span>
+        <span class="c1"># unit vectors wrt spacecraft</span>
         <span class="n">u_targ</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_targ</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_targ</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c"># Second, find unit vectors wrt spacecraft for bright objects</span>
-        <span class="c"># position vectors wrt sun</span>
-        <span class="n">r_bright</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="c"># sun</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Moon&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Earth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Mercury&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Venus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Mars&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Jupiter&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Saturn&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Uranus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Neptune&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s">&#39;Pluto&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
-        <span class="c"># position vectors wrt spacecraft</span>
+        <span class="c1"># Second, find unit vectors wrt spacecraft for bright objects</span>
+        <span class="c1"># position vectors wrt sun</span>
+        <span class="n">r_bright</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="c1"># sun</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Moon&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Mercury&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Venus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Mars&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Jupiter&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Saturn&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Uranus&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Neptune&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Pluto&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="c1"># position vectors wrt spacecraft</span>
         <span class="n">r_bright</span> <span class="o">-=</span> <span class="n">r_sc</span>
-        <span class="c"># unit vectors wrt spacecraft</span>
+        <span class="c1"># unit vectors wrt spacecraft</span>
         <span class="n">u_bright</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_bright</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_bright</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         
-        <span class="c"># Create koangles for all bodies. By default other planets have </span>
-        <span class="c"># half the koangle of Sun, Moon, and Earth.</span>
+        <span class="c1"># Create koangles for all bodies. By default other planets have </span>
+        <span class="c1"># half the koangle of Sun, Moon, and Earth.</span>
         <span class="n">nBodies</span> <span class="o">=</span> <span class="n">u_bright</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">koangles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nBodies</span><span class="p">)</span><span class="o">*</span><span class="n">koangle</span>
         <span class="n">koangles</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>
         
-        <span class="c"># Find angles and make angle comparisons for kogood</span>
-        <span class="c"># if bright objects have an angle with the target vector less than koangle </span>
-        <span class="c"># (e.g. pi/4) they are in the field of view and the target star may not be</span>
-        <span class="c"># observed, thus ko associated with this target becomes False</span>
-        <span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">u_targ</span><span class="p">))</span>
+        <span class="c1"># Find angles and make angle comparisons for kogood</span>
+        <span class="c1"># if bright objects have an angle with the target vector less than koangle </span>
+        <span class="c1"># (e.g. pi/4) they are in the field of view and the target star may not be</span>
+        <span class="c1"># observed, thus ko associated with this target becomes False</span>
+        <span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">True</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">u_targ</span><span class="p">))</span>
         <span class="n">culprit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">u_targ</span><span class="p">),</span> <span class="n">nBodies</span><span class="p">])</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">u_targ</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">u_targ</span><span class="p">)):</span>
             <span class="n">u_b</span> <span class="o">=</span> <span class="n">u_bright</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span> <span class="k">if</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">u_bright</span><span class="p">[:,</span><span class="n">i</span><span class="p">,:]</span>
             <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_b</span><span class="p">,</span> <span class="n">u_targ</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
-            <span class="n">culprit</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">angles</span> <span class="o">&lt;</span> <span class="n">koangles</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">culprit</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">angles</span> <span class="o">&lt;</span> <span class="n">koangles</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;rad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">culprit</span><span class="p">[</span><span class="n">i</span><span class="p">,:]):</span>
-                <span class="n">kogood</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">kogood</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         
-        <span class="c"># check to make sure all elements in kogood are Boolean</span>
+        <span class="c1"># check to make sure all elements in kogood are Boolean</span>
         <span class="n">trues</span> <span class="o">=</span> <span class="p">[</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">kogood</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">trues</span><span class="p">),</span> <span class="s">&#39;An element of kogood is not Boolean&#39;</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">trues</span><span class="p">),</span> <span class="s1">&#39;An element of kogood is not Boolean&#39;</span>
         
-<span class="c">#        return kogood, culprit</span>
-        <span class="k">return</span> <span class="n">kogood</span>
-</pre></div></div></div>
+<span class="c1">#        return kogood, culprit</span>
+        <span class="k">return</span> <span class="n">kogood</span></div></div>
+
+</pre></div>
 
           </div>
         </div>
@@ -198,14 +200,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -213,10 +212,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015, SIOSlab.
+      &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

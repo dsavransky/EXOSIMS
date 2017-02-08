@@ -12,6 +12,14 @@ EXOSIMS.PlanetPhysicalModel.Forecaster module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.PlanetPhysicalModel.Forecaster_func module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.Forecaster_func
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
 ---------------------------------------------------------
 

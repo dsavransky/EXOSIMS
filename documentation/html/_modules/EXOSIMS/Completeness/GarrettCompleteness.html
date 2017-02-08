@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Completeness.GarrettCompleteness &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Completeness.GarrettCompleteness &#8212; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,19 +14,18 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -42,7 +41,7 @@
   <h1>Source code for EXOSIMS.Completeness.GarrettCompleteness</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
-<span class="kn">from</span> <span class="nn">EXOSIMS.Completeness.BrownCompleteness</span> <span class="k">import</span> <span class="n">BrownCompleteness</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.Completeness</span> <span class="k">import</span> <span class="n">Completeness</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
@@ -56,7 +55,7 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">pickle</span>
 
-<div class="viewcode-block" id="GarrettCompleteness"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness">[docs]</a><span class="k">class</span> <span class="nc">GarrettCompleteness</span><span class="p">(</span><span class="n">BrownCompleteness</span><span class="p">):</span>
+<div class="viewcode-block" id="GarrettCompleteness"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness">[docs]</a><span class="k">class</span> <span class="nc">GarrettCompleteness</span><span class="p">(</span><span class="n">Completeness</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Analytical Completeness class</span>
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform </span>
@@ -79,9 +78,9 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="c1"># bring in inherited Completeness prototype __init__ values</span>
-        <span class="n">BrownCompleteness</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="n">Completeness</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         <span class="c1"># get path to completeness interpolant stored in a pickled .comp file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">]</span>
         <span class="c1"># get unitless values of population parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">amin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
@@ -165,7 +164,7 @@
         <span class="n">dMagmax</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span> <span class="c1">#np.array([targlist.OpticalSystem.dMagLim]*targlist.nStars)</span>
         <span class="n">dMagmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">smin</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
-            <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="c1">#take care of zero/negative values</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span> <span class="c1">#take care of zero/negative values</span>
             <span class="n">smin</span> <span class="o">=</span> <span class="n">smin</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
             <span class="n">smax</span> <span class="o">=</span> <span class="n">smax</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
             <span class="n">dMagmin</span> <span class="o">-=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
@@ -679,10 +678,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

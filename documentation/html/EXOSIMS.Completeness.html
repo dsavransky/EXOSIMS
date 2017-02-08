@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Completeness package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Completeness package &mdash; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,19 +14,18 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="next" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
     <link rel="prev" title="EXOSIMS.BackgroundSources package" href="EXOSIMS.BackgroundSources.html" />
    
@@ -66,40 +65,44 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets">
 <code class="descname">Nplanets</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer</em> &#8211; Number of planets for initial completeness Monte Carlo simulation</p>
+<dd><p><em>integer</em></p>
+<p>Number of planets for initial completeness Monte Carlo simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath">
 <code class="descname">classpath</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Path on disk to Brown Completeness</p>
+<dd><p><em>string</em></p>
+<p>Path on disk to Brown Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename">
 <code class="descname">filename</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Name of file where completeness interpolant is stored</p>
+<dd><p><em>string</em></p>
+<p>Name of file where completeness interpolant is stored</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits">
 <code class="descname">visits</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.visits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer ndarray</em> &#8211; Number of observations corresponding to each star in the target list
+<dd><p><em>integer ndarray</em></p>
+<p>Number of observations corresponding to each star in the target list
 (initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates">
 <code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float nx5 ndarray</em> &#8211; Completeness values of successive observations of each star in the
+<dd><p><em>float nx5 ndarray</em></p>
+<p>Completeness values of successive observations of each star in the
 target list (initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update">
 <code class="descname">completeness_update</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.completeness_update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates completeness value for stars previously observed by selecting
-the appropriate value from the updates array</p>
+<dd><p>Updates completeness value for stars previously observed</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -111,10 +114,12 @@ the appropriate value from the updates array</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Completeness values for each star</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>comp0</strong> &#8211;</p>
+<p>Completeness values for each star</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.comp0" title="EXOSIMS.Prototypes.TargetList.TargetList.comp0">comp0</a> (float ndarray)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -141,10 +146,12 @@ the 2D completeness values needed for interpolation.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2D numpy ndarray containing completeness probability density values</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>H</strong> &#8211;</p>
+<p>2D numpy ndarray containing completeness probability density values</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">H (float ndarray)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -176,12 +183,15 @@ star in the target list</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>integer</em>) &#8211; Number of planets</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet apparent separations in units of AU
-dMag (ndarray):<blockquote>
-<div>Difference in brightness</div></blockquote>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>s</strong> &#8211;<blockquote>
+<div>Planet apparent separations in units of AU</div></blockquote>
+<dl class="docutils">
+<dt>dMag (ndarray):</dt>
+<dd>Difference in brightness</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s">s</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -203,10 +213,12 @@ dMag (ndarray):<blockquote>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2D numpy ndarray containing completeness histogram</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>h</strong> &#8211;</p>
+<p>2D numpy ndarray containing completeness histogram</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">h (ndarray)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -224,403 +236,10 @@ dMag (ndarray):<blockquote>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Completeness values for each target star</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.comp0" title="EXOSIMS.Prototypes.TargetList.TargetList.comp0">comp0</a> (float ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-EXOSIMS.Completeness.GarrettCompleteness">
-<span id="exosims-completeness-garrettcompleteness-module"></span><h2>EXOSIMS.Completeness.GarrettCompleteness module<a class="headerlink" href="#module-EXOSIMS.Completeness.GarrettCompleteness" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Completeness.GarrettCompleteness.</code><code class="descname">GarrettCompleteness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness" title="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness</span></code></a></p>
-<p>Analytical Completeness class</p>
-<p>This class contains all variables and methods necessary to perform
-Completeness Module calculations based on Garrett and Savransky 2016
-in exoplanet mission simulation.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.visits">
-<code class="descname">visits</code><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.visits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> &#8211; Number of observations corresponding to each star in the target list
-(initialized in gen_update)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.updates">
-<code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.updates" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>nx5 ndarray</em> &#8211; Completeness values of successive observations of each star in the
-target list (initialized in gen_update)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.Jac">
-<code class="descname">Jac</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.Jac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.Jac" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates determinant of the Jacobian transformation matrix to get
-the joint probability density of dMag and s</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> (<em>ndarray</em>) &#8211; Phase angles</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Determinant of Jacobian transformation matrix</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.dist_b">
-<code class="descname">dist_b</code><span class="sig-paren">(</span><em>b</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.dist_b"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.dist_b" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the probability density of phase angle</p>
-<p>The phase angle is sinusoidally distributed.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> (<em>ndarray/float</em>) &#8211; Value(s) of phase angle (rad)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Value(s) of probability density</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray/float)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmags">
-<code class="descname">f_dmags</code><span class="sig-paren">(</span><em>dmag</em>, <em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.f_dmags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmags" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the joint probability density of dMag and projected
-separation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dmag</strong> (<em>float</em>) &#8211; Value of dMag</li>
-<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation (AU)</li>
-</ul>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>comp0</strong> &#8211;<p>Completeness values for each target star</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of joint probability density</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmagsz">
-<code class="descname">f_dmagsz</code><span class="sig-paren">(</span><em>z</em>, <em>dmag</em>, <em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.f_dmagsz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmagsz" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the joint probability density of albedo times planetary
-radius squared, dMag, and projected separation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>z</strong> (<em>ndarray</em>) &#8211; Values of albedo times planetary radius squared</li>
-<li><strong>dmag</strong> (<em>float</em>) &#8211; Value of dMag</li>
-<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Values of joint probability density</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_r">
-<code class="descname">f_r</code><span class="sig-paren">(</span><em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.f_r"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_r" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the probability density of orbital radius</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>r</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Value of probability density</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_s">
-<code class="descname">f_s</code><span class="sig-paren">(</span><em>s</em>, <em>dmaglim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.f_s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_s" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates probability density of projected separation marginalized
-up to dmaglim</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation</li>
-<li><strong>dmaglim</strong> (<em>float</em>) &#8211; Value of limiting dMag</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Probability density</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_z">
-<code class="descname">f_z</code><span class="sig-paren">(</span><em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.f_z"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_z" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates probability density of albedo times planetary radius
-squared</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>z</strong> (<em>float</em>) &#8211; Value of albedo times planetary radius squared</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Probability density</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.genComp">
-<code class="descname">genComp</code><span class="sig-paren">(</span><em>Cpath</em>, <em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.genComp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.genComp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates function to get completeness values</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Cpath</strong> (<em>str</em>) &#8211; Path to pickled dictionary containing interpolant function</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Marginalized to dMagLim probability density function for
-projected separation</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dist_s (callable(<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.s">s</a>))</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.maxdmag">
-<code class="descname">maxdmag</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.maxdmag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.maxdmag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the maximum value of dMag for projected separation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>ndarray</em>) &#8211; Projected separations (AU)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Maximum value of dMag</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.maxdmag" title="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.maxdmag">maxdmag</a> (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.mindmag">
-<code class="descname">mindmag</code><span class="sig-paren">(</span><em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.mindmag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.mindmag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the minimum value of dMag for projected separation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>ndarray</em>) &#8211; Projected separations (AU)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Minimum value of dMag</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.mindmag" title="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.mindmag">mindmag</a> (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.pgrand">
-<code class="descname">pgrand</code><span class="sig-paren">(</span><em>p</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.pgrand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.pgrand" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates integrand for determining probability density of albedo
-times planetary radius squared</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>p</strong> (<em>ndarray</em>) &#8211; Values of albedo</li>
-<li><strong>z</strong> (<em>float</em>) &#8211; Value of albedo times planetary radius squared</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Values of integrand</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand1">
-<code class="descname">rgrand1</code><span class="sig-paren">(</span><em>e</em>, <em>a</em>, <em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.rgrand1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates first integrand for determinining probability density of
-orbital radius</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>e</strong> (<em>ndarray</em>) &#8211; Values of eccentricity</li>
-<li><strong>a</strong> (<em>ndarray</em>) &#8211; Values of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>ndarray</em>) &#8211; Values of orbital radius in AU</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Values of first integrand</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand2">
-<code class="descname">rgrand2</code><span class="sig-paren">(</span><em>a</em>, <em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.rgrand2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates second integrand for determining probability density of
-orbital radius</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of second integrand</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandac">
-<code class="descname">rgrandac</code><span class="sig-paren">(</span><em>e</em>, <em>a</em>, <em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.rgrandac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandac" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates integrand for determining probability density of orbital
-radius when semi-major axis is constant</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>e</strong> (<em>ndarray</em>) &#8211; Values of eccentricity</li>
-<li><strong>a</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of integrand</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandec">
-<code class="descname">rgrandec</code><span class="sig-paren">(</span><em>a</em>, <em>e</em>, <em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.rgrandec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates integrand for determining probability density of orbital
-radius when eccentricity is constant</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> (<em>ndarray</em>) &#8211; Values of semi-major axis in AU</li>
-<li><strong>e</strong> (<em>float</em>) &#8211; Value of eccentricity</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of integrand</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.target_completeness">
-<code class="descname">target_completeness</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.target_completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.target_completeness" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates completeness values for target stars</p>
-<p>This method is called from TargetList __init__ method.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array of completeness values for each target star</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.comp0" title="EXOSIMS.Prototypes.TargetList.TargetList.comp0">comp0</a> (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -645,7 +264,6 @@ radius when eccentricity is constant</p>
 <li><a class="reference internal" href="#">EXOSIMS.Completeness package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Completeness.BrownCompleteness">EXOSIMS.Completeness.BrownCompleteness module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Completeness.GarrettCompleteness">EXOSIMS.Completeness.GarrettCompleteness module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Completeness">Module contents</a></li>
 </ul>
 </li>
@@ -664,18 +282,21 @@ radius when eccentricity is constant</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/EXOSIMS.Completeness.rst.txt"
+      <li><a href="_sources/EXOSIMS.Completeness.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -683,14 +304,14 @@ radius when eccentricity is constant</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/EXOSIMS.Completeness.rst.txt"
+      <a href="_sources/EXOSIMS.Completeness.txt"
           rel="nofollow">Page source</a>
     </div>
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPopulation package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.PlanetPopulation package &mdash; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,19 +14,18 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="next" title="EXOSIMS.Prototypes package" href="EXOSIMS.Prototypes.html" />
     <link rel="prev" title="EXOSIMS.PlanetPhysicalModel package" href="EXOSIMS.PlanetPhysicalModel.html" />
    
@@ -69,9 +68,10 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Semi-major axis value(s) in AU</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>Semi-major axis probability density</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -89,9 +89,10 @@ maximum values.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>a</strong> &#8211;<p>Semi-major axis in units of AU</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -133,13 +134,15 @@ distribution with exponential decay.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).</p>
+<dd><p><em>float</em></p>
+<p>Location (in AU) of semi-major axis decay point (knee).</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma">
 <code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+<dd><p><em>float</em></p>
+<p>Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <p>Notes:
@@ -167,9 +170,10 @@ sigma parameter (defaults to 0.25).</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Albedo value(s)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Albedo probability density</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>Albedo probability density</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -185,9 +189,10 @@ sigma parameter (defaults to 0.25).</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Eccentricity value(s)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Eccentricity probability density</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>Eccentricity probability density</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -203,9 +208,10 @@ sigma parameter (defaults to 0.25).</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Planetary radius value(s)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary radius probability density</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>Planetary radius probability density</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -221,9 +227,10 @@ sigma parameter (defaults to 0.25).</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Semi-major axis value(s) in AU</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>f</strong> &#8211;<p>Semi-major axis probability density</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -241,9 +248,10 @@ and then calculating the albedo from the physical model.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet albedo</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>p</strong> &#8211;<p>Planet albedo</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p">p</a> (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -260,9 +268,10 @@ and then calculating the albedo from the physical model.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet eccentricity</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>e</strong> &#8211;<p>Planet eccentricity</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.e" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.e">e</a> (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -280,9 +289,10 @@ mass from the physical model.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of kg</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Mp</strong> &#8211;<p>Planet mass in units of kg</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -300,9 +310,10 @@ with fixed occurrence rates.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;<p>Planet radius in units of km</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -321,9 +332,10 @@ occurrence rates of all planets.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;<p>Planet radius in units of km</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -341,97 +353,10 @@ determined by class attribute smaknee</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>a</strong> &#8211;<p>Semi-major axis in units of AU</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-EXOSIMS.PlanetPopulation.KeplerLike2">
-<span id="exosims-planetpopulation-keplerlike2-module"></span><h2>EXOSIMS.PlanetPopulation.KeplerLike2 module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.KeplerLike2" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2">
-<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.KeplerLike2.</code><code class="descname">KeplerLike2</code><span class="sig-paren">(</span><em>smaknee=30</em>, <em>esigma=0.25</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike2.html#KeplerLike2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1" title="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1</span></code></a></p>
-<p>Population based on Kepler radius distribution with RV-like semi-major axis
-distribution with exponential decay.</p>
-<p>NOTE: This is an exact clone of KeplerLike1, but uses (approximate)
-inverse transform sampling instead of simple rejection sampling for
-performance improvements.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.smaknee">
-<code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.esigma">
-<code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
-</dd></dl>
-
-<p>Notes:
-1. The gen_mass function samples the Radius and calculates the mass from
-there.  Any user-set mass limits are ignored.
-2. The gen_abledo function samples the sma, and then calculates the albedos
-from there. Any user-set albedo limits are ignored.
-3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
-settings (the JSON input will be ignored)
-4. The radius piece-wise distribution provides the normalization required to
-get the proper overall eta.  The gen_radius method provided here normalizes
-in order to return exactly the number of samples requested.  A second method
-(gen_radius_nonorm) is provided for generating the simulated universe
-population. The latter assumes a poisson distribution for occurences in each
-bin.
-5.  Eccentricity is assumed to be Rayleigh distributed with a user-settable
-sigma parameter (defaults to 0.25).</p>
-<dl class="method">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.gen_eccen">
-<code class="descname">gen_eccen</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike2.html#KeplerLike2.gen_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.gen_eccen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate eccentricity values</p>
-<p>Rayleigh distribution, as in Kipping et. al (2013)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet eccentricity</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.e" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.e">e</a> (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.gen_sma">
-<code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike2.html#KeplerLike2.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.gen_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate semi-major axis values in AU</p>
-<p>Samples a power law distribution with exponential turn-off
-determined by class attribute smaknee</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -472,32 +397,37 @@ Columns&#8217; and &#8216;Download Currently Filtered Rows&#8217;.
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).</p>
+<dd><p><em>float</em></p>
+<p>Location (in AU) of semi-major axis decay point (knee).</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma">
 <code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+<dd><p><em>float</em></p>
+<p>Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath">
 <code class="descname">rvplanetfilepath</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Full path to RV planet votable file from IPAC. If None,
+<dd><p><em>string</em></p>
+<p>Full path to RV planet votable file from IPAC. If None,
 assumes default file in PlanetPopulation directory of EXOSIMS.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.period">
 <code class="descname">period</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.period" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Orbital period in units of day.  Error in perioderr.</p>
+<dd><p><em>astropy Quantity array</em></p>
+<p>Orbital period in units of day.  Error in perioderr.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.tper">
 <code class="descname">tper</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.tper" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Time</em> &#8211; Periastron time in units of jd.  Error in tpererr.</p>
+<dd><p><em>astropy Time</em></p>
+<p>Periastron time in units of jd.  Error in tpererr.</p>
 </dd></dl>
 
 <p>Notes:</p>
@@ -513,9 +443,10 @@ Cumming et al. 2010</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of kg</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Mp</strong> &#8211;<p>Planet mass in units of kg</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -532,9 +463,10 @@ Cumming et al. 2010</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>Rp</strong> &#8211;<p>Planet radius in units of km</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity array</td>
 </tr>
 </tbody>
 </table>
@@ -561,7 +493,6 @@ Cumming et al. 2010</p>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1">EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2">EXOSIMS.PlanetPopulation.EarthTwinHabZone2 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.KeplerLike1">EXOSIMS.PlanetPopulation.KeplerLike1 module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.KeplerLike2">EXOSIMS.PlanetPopulation.KeplerLike2 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation.KnownRVPlanets">EXOSIMS.PlanetPopulation.KnownRVPlanets module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.PlanetPopulation">Module contents</a></li>
 </ul>
@@ -581,18 +512,21 @@ Cumming et al. 2010</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/EXOSIMS.PlanetPopulation.rst.txt"
+      <li><a href="_sources/EXOSIMS.PlanetPopulation.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -600,14 +534,14 @@ Cumming et al. 2010</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/EXOSIMS.PlanetPopulation.rst.txt"
+      <a href="_sources/EXOSIMS.PlanetPopulation.txt"
           rel="nofollow">Page source</a>
     </div>
 

@@ -20,6 +20,14 @@ EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.PlanetPhysicalModel.forecaster_func module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.forecaster_func
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

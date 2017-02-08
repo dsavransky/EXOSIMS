@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.util package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.util package &mdash; EXOSIMS 0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,19 +14,18 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="up" title="EXOSIMS package" href="EXOSIMS.html" />
     <link rel="prev" title="EXOSIMS.ZodiacalLight package" href="EXOSIMS.ZodiacalLight.html" />
    
   
@@ -44,83 +43,6 @@
 <h1>EXOSIMS.util package<a class="headerlink" href="#exosims-util-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="module-EXOSIMS.util.InverseTransformSampler">
-<span id="exosims-util-inversetransformsampler-module"></span><h2>EXOSIMS.util.InverseTransformSampler module<a class="headerlink" href="#module-EXOSIMS.util.InverseTransformSampler" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.util.InverseTransformSampler.InverseTransformSampler">
-<em class="property">class </em><code class="descclassname">EXOSIMS.util.InverseTransformSampler.</code><code class="descname">InverseTransformSampler</code><span class="sig-paren">(</span><em>f</em>, <em>xMin</em>, <em>xMax</em>, <em>nints=10000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/InverseTransformSampler.html#InverseTransformSampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.InverseTransformSampler.InverseTransformSampler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Approximate Inverse Transform Sampler for arbitrary distributions
-defined via a PDF encoded as a function (or lambda function)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>f</strong> (<em>function</em>) &#8211; Probability density function.  Must be able to operate
-on numpy ndarrays.  Function does not need to be
-normalized over the sampling interval.</li>
-<li><strong>xMin</strong> (<em>float</em>) &#8211; Minimum of interval to sample (inclusive).</li>
-<li><strong>xMax</strong> (<em>float</em>) &#8211; Maximum of interval to sample (inclusive).</li>
-<li><strong>nints</strong> (<em>int</em>) &#8211; Number of intervals to use in approximating CDF.
-Defaults to 10000</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt>
-<code class="descname">f, xMin, xMax</code></dt>
-<dd><p>As above</p>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p>If xMin == xMax, return values will all exactly equal xMin.
-To sample call the object with the desired number of samples.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-EXOSIMS.util.RejectionSampler">
-<span id="exosims-util-rejectionsampler-module"></span><h2>EXOSIMS.util.RejectionSampler module<a class="headerlink" href="#module-EXOSIMS.util.RejectionSampler" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.util.RejectionSampler.RejectionSampler">
-<em class="property">class </em><code class="descclassname">EXOSIMS.util.RejectionSampler.</code><code class="descname">RejectionSampler</code><span class="sig-paren">(</span><em>f</em>, <em>xMin</em>, <em>xMax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/RejectionSampler.html#RejectionSampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.RejectionSampler.RejectionSampler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simple Rejection Sampler for arbitrary distributions defined
-via a PDF encoded as a function (or lambda function)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>f</strong> (<em>function</em>) &#8211; Probability density function.  Must be able to operate
-on numpy ndarrays.  Function does not need to be
-normalized over the sampling interval.</li>
-<li><strong>xMin</strong> (<em>float</em>) &#8211; Minimum of interval to sample (inclusive).</li>
-<li><strong>xMax</strong> (<em>float</em>) &#8211; Maximum of interval to sample (inclusive).</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt>
-<code class="descname">f, xMin, xMax</code></dt>
-<dd><p>As above</p>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p>If xMin == xMax, return values will all exactly equal xMin.
-To sample call the object with the desired number of samples.</p>
-<dl class="method">
-<dt id="EXOSIMS.util.RejectionSampler.RejectionSampler.calcM">
-<code class="descname">calcM</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/RejectionSampler.html#RejectionSampler.calcM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.RejectionSampler.RejectionSampler.calcM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the maximum bound of the distribution over the
-sampling interval.</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="module-EXOSIMS.util.deltaMag">
 <span id="exosims-util-deltamag-module"></span><h2>EXOSIMS.util.deltaMag module<a class="headerlink" href="#module-EXOSIMS.util.deltaMag" title="Permalink to this headline">¶</a></h2>
@@ -141,10 +63,12 @@ radius, and position with respect to host star.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Planet delta magnitudes</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>dMag</strong> &#8211;</p>
+<p>Planet delta magnitudes</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag">dMag</a> (ndarray)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -165,16 +89,18 @@ from mean anomaly and eccentricity.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>M</strong> (<em>float</em><em> or </em><em>ndarray</em>) &#8211; mean anomaly</li>
-<li><strong>e</strong> (<em>float</em><em> or </em><em>ndarray</em>) &#8211; eccentricity (eccentricity may be a scalar if M is given as
+<li><strong>M</strong> (<em>float or ndarray</em>) &#8211; mean anomaly</li>
+<li><strong>e</strong> (<em>float or ndarray</em>) &#8211; eccentricity (eccentricity may be a scalar if M is given as
 an array, but otherwise must match the size of M.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">eccentric anomaly</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>E</strong> &#8211;</p>
+<p>eccentric anomaly</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">E (float or ndarray)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float or ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -224,10 +150,12 @@ folder housing the desired class.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">module (class) that was requested</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>desired_module</strong> &#8211;</p>
+<p>module (class) that was requested</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">desired_module (module)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">module</p>
 </td>
 </tr>
 </tbody>
@@ -279,10 +207,12 @@ EXOSIMS module to fetch.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">module (class) that was requested</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>desired_module</strong> &#8211;</p>
+<p>module (class) that was requested</p>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">desired_module (module)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">module</p>
 </td>
 </tr>
 </tbody>
@@ -441,8 +371,6 @@ this value.</p>
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.util package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.util.InverseTransformSampler">EXOSIMS.util.InverseTransformSampler module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.util.RejectionSampler">EXOSIMS.util.RejectionSampler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.deltaMag">EXOSIMS.util.deltaMag module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.eccanom">EXOSIMS.util.eccanom module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.get_module">EXOSIMS.util.get_module module</a></li>
@@ -466,18 +394,21 @@ this value.</p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/EXOSIMS.util.rst.txt"
+      <li><a href="_sources/EXOSIMS.util.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -485,14 +416,14 @@ this value.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/EXOSIMS.util.rst.txt"
+      <a href="_sources/EXOSIMS.util.txt"
           rel="nofollow">Page source</a>
     </div>
 

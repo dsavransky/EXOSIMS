@@ -63,7 +63,7 @@ class PlanetPopulation(object):
         self.wrange = self.checkranges(wrange,'wrange')*u.deg
         self.prange = self.checkranges(prange,'prange')
         self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth.to('km')
-        self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth.to('kg')
+        self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth
         
         assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
@@ -88,9 +88,9 @@ class PlanetPopulation(object):
             dat = copy.copy(self.__dict__[att])
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
             if att == 'Mprange':
-                self._outspec[att] /= const.M_earth.to('kg').value
+                self._outspec[att] /= const.M_earth.value
             elif att == 'Rprange':
-                self._outspec[att] /= const.R_earth.to('km').value
+                self._outspec[att] /= const.R_earth.value
         
         # import PlanetPhysicalModel
         self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'], \

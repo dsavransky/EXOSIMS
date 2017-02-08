@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import numpy as np
 import astropy.units as u
@@ -41,8 +43,7 @@ class EarthTwinHabZone1(PlanetPopulation):
         
         x = np.array(x, ndmin=1, copy=False)
         
-        f = ((x >= self.arange[0].value) & (x <= self.arange[1].value)).astype(int)\
-            /(self.arange[1].value - self.arange[0].value)
+        f = old_div(((x >= self.arange[0].value) & (x <= self.arange[1].value)).astype(int),(self.arange[1].value - self.arange[0].value))
             
         return f
 

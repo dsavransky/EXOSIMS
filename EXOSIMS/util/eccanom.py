@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 
 def eccanom(M, e):
@@ -32,9 +34,9 @@ def eccanom(M, e):
     assert np.all((e>=0)&(e<1)), "e defined outside [0,1)"
 
     #initial values for E
-    E = M/(1-e)
+    E = old_div(M,(1-e))
     mask = e*E**2 > 6*(1-e)
-    E[mask] = (6*M[mask]/e[mask])**(1./3)
+    E[mask] = (6*M[mask]/e[mask])**(old_div(1.,3))
     
     # Newton-Raphson setup
     tolerance = np.finfo(float).eps*4.01
@@ -42,7 +44,7 @@ def eccanom(M, e):
     maxIter = 200
     err = 1.
     while err > tolerance and numIter < maxIter:
-        E = E - (M - E + e*np.sin(E))/(e*np.cos(E)-1)
+        E = E - old_div((M - E + e*np.sin(E)),(e*np.cos(E)-1))
         err = np.max(abs(M - (E - e*np.sin(E))))
         numIter += 1
     

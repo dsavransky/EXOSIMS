@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 from ipyparallel import Client
 from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
 from EXOSIMS.util.get_module import get_module
@@ -39,11 +41,11 @@ class IPClusterEnsemble(SurveyEnsemble):
             ar = self.lview.apply_async(run_one)
             async_res.append(ar)
 
-        print "Submitted tasks: ", len(async_res)
+        print("Submitted tasks: ", len(async_res))
         
         self.rc.wait(async_res)
         t2 = time.time()
-        print "Completed in %d sec" %(t2-t1)
+        print("Completed in %d sec" %(t2-t1))
 
         res = [ar.get() for ar in async_res]
 

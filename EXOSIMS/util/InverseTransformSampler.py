@@ -1,8 +1,11 @@
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import numpy as np
 from scipy.interpolate import interp1d
 import numbers
 
-class InverseTransformSampler():
+class InverseTransformSampler(object):
     '''
     Approximate Inverse Transform Sampler for arbitrary distributions 
     defined via a PDF encoded as a function (or lambda function)
@@ -45,7 +48,7 @@ class InverseTransformSampler():
                 "f must be callable."
 
         ints = np.linspace(self.xMin,self.xMax, nints+1) #interval edges
-        x = np.diff(ints)/2. + ints[:-1] #interval midpoints
+        x = old_div(np.diff(ints),2.) + ints[:-1] #interval midpoints
         fX = f(x)
         F = np.hstack([0,np.cumsum(fX)])
         F /= F[-1]

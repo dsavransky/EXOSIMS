@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -27,8 +31,8 @@ class BackgroundSources(object):
         """String representation of Background Sources module
         """
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Background Sources class object attributes'
 
@@ -62,4 +66,4 @@ class BackgroundSources(object):
         
         dN = np.zeros(len(intDepths))
         
-        return dN/u.arcmin**2
+        return old_div(dN,u.arcmin**2)

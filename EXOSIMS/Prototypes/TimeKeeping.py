@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import sys
 import os
 import logging
@@ -56,7 +60,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
-                  missionPortion = 1/6., dtAlloc = 1, intCutoff = 50, **specs):
+                  missionPortion = old_div(1,6.), dtAlloc = 1, intCutoff = 50, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -86,7 +90,7 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in list(self.__dict__.keys()):
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat,(u.Quantity,Time)) else dat
 
@@ -96,8 +100,8 @@ class TimeKeeping(object):
         When the command 'print' is used on the TimeKeeping object, this 
         method prints the values contained in the object."""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
@@ -142,7 +146,7 @@ class TimeKeeping(object):
             #   add "duration" (time for our instrument's observations)
             #   also add a term for other observations based on fraction-available
             self.nextTimeAvail += (self.duration + \
-                    ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
+                    (old_div((1.0 - self.missionPortion),self.missionPortion)) * self.duration)
             # set current time to dt units beyond start of next window
             self.currentTimeNorm = self.nextTimeAvail + dt
             self.currentTimeAbs = self.missionStart + self.currentTimeNorm

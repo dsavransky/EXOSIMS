@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import division
+from builtins import map
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import numbers
 import astropy.units as u
@@ -113,8 +119,8 @@ class TargetList(object):
         When the command 'print' is used on the Target List object, this method
         will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
 
@@ -149,9 +155,9 @@ class TargetList(object):
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values, for minimum dMag in detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
-        self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
-                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
+        mode = list([mode for mode in OS.observingModes if mode['detectionMode'] == True])[0]
+        self.tint0 = OS.calc_intTime(self, list(range(self.nStars)), old_div(0.,u.arcsec**2), \
+                old_div(0.,u.arcsec**2), OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -202,6 +208,9 @@ class TargetList(object):
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
                 i = np.where(getattr(self, att) != float('nan'))[0]
                 self.revise_lists(i)
+            elif (isinstance(getattr(self, att)[0], bytes)):
+                i = np.where(getattr(self, att)[0].decode("utf-8") != float('nan'))[0]
+
             # exclude non-numerical types
             elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
                 if att == 'coords':
@@ -211,6 +220,7 @@ class TargetList(object):
                 else:
                     i = np.where(~np.isnan(getattr(self, att)))[0]
                 self.revise_lists(i)
+                
 
     def binary_filter(self):
         """Removes stars which have attribute Binary_Cut == True
@@ -250,7 +260,7 @@ class TargetList(object):
         
         """
         
-        spec = np.array(map(str, self.Spec))
+        spec = np.array(list(map(str, self.Spec)))
         iF = np.where(np.core.defchararray.startswith(spec, 'F'))[0]
         iG = np.where(np.core.defchararray.startswith(spec, 'G'))[0]
         iK = np.where(np.core.defchararray.startswith(spec, 'K'))[0]
@@ -302,12 +312,12 @@ class TargetList(object):
         below = np.where(s < np.min(PPop.rrange)*np.sin(beta))[0]
         above = np.where(s > np.max(PPop.rrange)*np.sin(beta))[0]
         s[below] = np.sin(beta[below])*np.min(PPop.rrange)
-        beta[above] = np.arcsin(s[above]/np.max(PPop.rrange))
+        beta[above] = np.arcsin(old_div(s[above],np.max(PPop.rrange)))
         
         # calculate delta mag
         p = np.max(PPop.prange)
         Rp = np.max(PPop.Rprange)
-        d = s/np.sin(beta)
+        d = old_div(s,np.sin(beta))
         Phi = PPMod.calc_Phi(beta)
         i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
         self.revise_lists(i)
@@ -400,6 +410,6 @@ class TargetList(object):
             b = 2.20
         else:
             b = 1.54
-        mV = Vmag + b*BV*(1/lam_um - 1.818)
+        mV = Vmag + b*BV*(old_div(1,lam_um) - 1.818)
         
         return mV

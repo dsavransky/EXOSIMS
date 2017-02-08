@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
+from past.utils import old_div
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 import astropy.units as u
 import numpy as np
@@ -59,14 +61,14 @@ class KasdinBraems(OpticalSystem):
         syst = mode['syst']                         # starlightSuppressionSystem
         lam = mode['lam']
         PSF = syst['PSF'](lam, WA)  # this is the only place where PSF is used!
-        Pbar = PSF/np.max(PSF)
+        Pbar = old_div(PSF,np.max(PSF))
         P1 = np.sum(Pbar)
-        Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
-        Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3
+        Psi = old_div(np.sum(Pbar**2),(np.sum(Pbar))**2)
+        Xi = old_div(np.sum(Pbar**3),(np.sum(Pbar))**3)
         PPro = TL.PostProcessing                    # post-processing module
         K = st.norm.ppf(1-PPro.FAP)                 # false alarm threshold
         gamma = st.norm.ppf(1-PPro.MDP)             # missed detection threshold
-        deltaAlphaBar = ((inst['pitch']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
+        deltaAlphaBar = (old_div((old_div(inst['pitch'],inst['focal']))**2, (old_div(lam,self.pupilDiam))**2))\
                 .decompose()                        # dimensionless pixel size
         Tcore = syst['core_thruput'](lam, WA)
         Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput

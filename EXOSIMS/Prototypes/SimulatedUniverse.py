@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -114,8 +119,8 @@ class SimulatedUniverse(object):
         When the command 'print' is used on the Simulated Universe object, 
         this method will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Simulated Universe class object attributes'
 
@@ -176,35 +181,35 @@ class SimulatedUniverse(object):
         a = self.a.to('AU').value               # semi-major axis
         e = self.e                              # eccentricity
         I = self.I.to('rad').value              # inclinations
-        O = self.O.to('rad').value              # right ascension of the ascending node
+        Omega = self.O.to('rad').value          # right ascension of the ascending node
         w = self.w.to('rad').value              # argument of perigee
         M0 = self.M0.to('rad').value            # initial mean anomany
         E = eccanom(M0, e)                      # eccentric anomaly
         Mp = self.Mp                            # planet masses
         
-        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
-        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
+        a1 = np.cos(Omega)*np.cos(w) - np.sin(Omega)*np.cos(I)*np.sin(w)
+        a2 = np.sin(Omega)*np.cos(w) + np.cos(Omega)*np.cos(I)*np.sin(w)
         a3 = np.sin(I)*np.sin(w)
         A = a*np.vstack((a1,a2,a3))*u.AU
-        b1 = -np.sqrt(1.-e**2)*(np.cos(O)*np.sin(w) + np.sin(O)*np.cos(I)*np.cos(w))
-        b2 = np.sqrt(1.-e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
+        b1 = -np.sqrt(1.-e**2)*(np.cos(Omega)*np.sin(w) + np.sin(Omega)*np.cos(I)*np.cos(w))
+        b2 = np.sqrt(1.-e**2)*(-np.sin(Omega)*np.sin(w) + np.cos(Omega)*np.cos(I)*np.cos(w))
         b3 = np.sqrt(1.-e**2)*np.sin(I)*np.cos(w)
         B = a*np.vstack((b1,b2,b3))*u.AU
         
         r1 = np.cos(E) - e
         r2 = np.sin(E)
         mu = const.G*(Mp + Ms)
-        v1 = np.sqrt(mu/self.a**3)/(1. - e*np.cos(E))
+        v1 = old_div(np.sqrt(old_div(mu,self.a**3)),(1. - e*np.cos(E)))
         v2 = np.cos(E)
         
         self.r = (A*r1 + B*r2).T.to('AU')                       # position
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')             # velocity
         self.d = np.sqrt(np.sum(self.r**2, axis=1))             # planet-star distance
         self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))      # apparent separation
-        self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))     # planet phase
+        self.phi = PPMod.calc_Phi(np.arcsin(old_div(self.s,self.d)))     # planet phase
         self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)            # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi) # delta magnitude
-        self.WA = np.arctan(self.s/sDist).to('mas')             # working angle
+        self.WA = np.arctan(old_div(self.s,sDist)).to('mas')             # working angle
         # current time (normalized to zero at mission start) of planet positions
         self.planTime = np.zeros(self.nPlans)*u.day
 
@@ -247,7 +252,7 @@ class SimulatedUniverse(object):
         vold = self.v[pInds].to('AU/day').value
         # stack dimensionless positions and velocities
         x0 = np.array([])
-        for i in xrange(len(rold)):
+        for i in range(len(rold)):
             x0 = np.hstack((x0, rold[i], vold[i]))
         
         # calculate system's distance and masses
@@ -265,15 +270,15 @@ class SimulatedUniverse(object):
             #try again with larger epsmult and two steps to force convergence 
             prop = planSys(x0, mu, epsmult=100.)
             try:
-                prop.takeStep(dt.to('day').value/2.)
-                prop.takeStep(dt.to('day').value/2.)
+                prop.takeStep(old_div(dt.to('day').value,2.))
+                prop.takeStep(old_div(dt.to('day').value,2.))
             except ValueError:
                 raise ValueError('planSys error')
         
         # split off position and velocity vectors
         x1 = np.array(np.hsplit(prop.x0, 2*len(rold)))
-        rind = np.array(range(0,len(x1),2)) # even indices
-        vind = np.array(range(1,len(x1),2)) # odd indices
+        rind = np.array(list(range(0,len(x1),2))) # even indices
+        vind = np.array(list(range(1,len(x1),2))) # odd indices
         
         # update planets' position, velocity, planet-star distance, apparent 
         # separation, phase function, exozodi surface brightness, delta magnitude, 
@@ -282,9 +287,9 @@ class SimulatedUniverse(object):
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.sqrt(np.sum(self.r[pInds]**2, axis=1))
         self.s[pInds] = np.sqrt(np.sum(self.r[pInds,0:2]**2, axis=1))
-        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
+        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(old_div(self.s[pInds],self.d[pInds])))
         self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/sDist).to('mas')
+        self.WA[pInds] = np.arctan(old_div(self.s[pInds],sDist)).to('mas')
         self.planTime[pInds] = currentTimeNorm
 

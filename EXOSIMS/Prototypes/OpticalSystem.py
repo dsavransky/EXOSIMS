@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from __future__ import division
+from past.builtins import basestring
+from builtins import object
+from past.utils import old_div
 import astropy.units as u
 import numpy as np
 import os.path
@@ -164,7 +169,7 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
+    def __init__(self,obscurFac=0.1,shapeFac=old_div(np.pi,4),pupilDiam=4,telescopeKeepout=45,\
             attenuation=0.5,intCutoff=50,Ndark=10,dMagLim=22.5,scienceInstruments=None,\
             pitch=1e-5,focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,\
             QE=0.9,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
@@ -187,7 +192,7 @@ class OpticalSystem(object):
         
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
-        self.F0 = lambda l: 1e4*10**(4.01-(l.to('nm').value-550)/770)*u.ph/u.s/u.m**2/u.nm 
+        self.F0 = lambda l: 1e4*10**(4.01-old_div((l.to('nm').value-550),770))*u.ph/u.s/u.m**2/u.nm 
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
@@ -195,7 +200,7 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst,inst in enumerate(self.scienceInstruments):
             assert isinstance(inst,dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('name') and isinstance(inst['name'],basestring),\
+            assert 'name' in inst and isinstance(inst['name'],basestring),\
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE',QE)
@@ -204,7 +209,7 @@ class OpticalSystem(object):
             # Loading detector specifications
             inst['pitch'] = float(inst.get('pitch',pitch))*u.m  # pixel pitch
             inst['focal'] = float(inst.get('focal',focal))*u.m  # focal length
-            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
+            inst['idark'] = old_div(float(inst.get('idark',idark)),u.s)  # dark-current rate
             inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
             inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
             inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
@@ -213,7 +218,7 @@ class OpticalSystem(object):
                     .lower() else 1.                            # spectral resolving power
             
             # quantum efficiency
-            if inst.has_key('QE'):
+            if 'QE' in inst:
                 if isinstance(inst['QE'],basestring):
                     assert os.path.isfile(inst['QE']),\
                             "%s is not a valid file."%inst['QE']
@@ -221,10 +226,10 @@ class OpticalSystem(object):
                     #basic validation here for size and wavelength
                     #inst['QE'] = lambda or interp
                 elif isinstance(inst['QE'],numbers.Number):
-                    inst['QE'] = lambda l, QE=float(inst['QE']): QE/u.photon
+                    inst['QE'] = lambda l, QE=float(inst['QE']): old_div(QE,u.photon)
             
             # populate detector specifications to outspec
-            for att in inst.keys():
+            for att in list(inst.keys()):
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
@@ -238,7 +243,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert syst.has_key('name') and isinstance(syst['name'],basestring),\
+            assert 'name' in syst and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans',occ_trans)
@@ -262,7 +267,7 @@ class OpticalSystem(object):
             syst['lam'] = float(syst.get('lam',lam))*u.nm       # central wavelength (nm)
             syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].value\
                     *syst.get('BW',BW)))*u.nm                   # bandwidth (nm)
-            syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
+            syst['BW'] = float(old_div(syst['deltaLam'],syst['lam']))    # bandwidth fraction
             # Default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
@@ -304,7 +309,7 @@ class OpticalSystem(object):
             syst['ohTime'] = float(syst.get('ohTime',ohTime))*u.d   # overhead time
             
             #populate system specifications to outspec
-            for att in syst.keys():
+            for att in list(syst.keys()):
                 if att not in ['occ_trans','core_thruput','core_contrast',\
                         'core_mean_intensity','core_area','PSF']:
                     dat = syst[att]
@@ -324,7 +329,7 @@ class OpticalSystem(object):
         for nmode,mode in enumerate(self.observingModes):
             assert isinstance(mode,dict),\
                     "Observing modes must be defined as dicts."
-            assert mode.has_key('instName') and mode.has_key('systName'),\
+            assert 'instName' in mode and 'systName' in mode,\
                     "All observing modes must have key instName and systName."
             assert np.any([mode['instName'] == inst['name'] for inst in \
                     self.scienceInstruments]), "The mode's instrument name " + \
@@ -349,7 +354,7 @@ class OpticalSystem(object):
             mode['lam'] = float(mode.get('lam',syst_lam))*u.nm
             mode['deltaLam'] = float(mode.get('deltaLam',mode['lam'].value \
                     *mode.get('BW',syst_BW)))*u.nm
-            mode['BW'] = float(mode['deltaLam']/mode['lam'])
+            mode['BW'] = float(old_div(mode['deltaLam'],mode['lam']))
             # get mode IWA and OWA: rescale if the mode wavelength is different than 
             # the wavelength at which the system is defined
             mode['IWA'] = mode['syst']['IWA']
@@ -359,11 +364,11 @@ class OpticalSystem(object):
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
         
         # check for only one detection mode
-        detectionModes = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)
+        detectionModes = [mode for mode in self.observingModes if mode['detectionMode'] == True]
         assert len(detectionModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detectionModes) == 0:
-            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], self.observingModes)
+            imagerModes = [mode for mode in self.observingModes if 'imag' in mode['inst']['name']]
             if imagerModes:
                 imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
@@ -390,7 +395,7 @@ class OpticalSystem(object):
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
         # populate outspec with all OpticalSystem scalar attributes
-        for att in self.__dict__.keys():
+        for att in list(self.__dict__.keys()):
             if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
                     'observingModes']:
                 dat = self.__dict__[att]
@@ -402,8 +407,8 @@ class OpticalSystem(object):
         When the command 'print' is used on the Optical System object, this 
         method will print the attribute values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Optical System class object attributes'
 
@@ -494,7 +499,7 @@ class OpticalSystem(object):
         # get mode wavelength
         lam = mode['lam']
         # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
+        deltaLam = old_div(lam,inst['Rs']) if 'spec' in inst['name'].lower() else mode['deltaLam']
         
         # if the mode wavelength is different than the wavelength at which the system 
         # is defined, we need to rescale the working angles
@@ -510,7 +515,7 @@ class OpticalSystem(object):
         Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
                 np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = (Omega / (inst['pitch']/inst['focal']*u.rad)**2).decompose().value
+        Npix = (old_div(Omega, (inst['pitch']/inst['focal']*u.rad)**2)).decompose().value
         
         # get coronagraph input parameters
         occ_trans = syst['occ_trans'](lam,WA)
@@ -526,8 +531,8 @@ class OpticalSystem(object):
             core_mean_intensity = syst['core_mean_intensity'](lam,WA)
             # if a platesale was specified with the coro parameters, apply correction
             if syst['platescale'] != None:
-                platescale = inst['pitch']/inst['focal']/(lam/self.pupilDiam)
-                core_mean_intensity *= platescale/syst['platescale']
+                platescale = inst['pitch']/inst['focal']/(old_div(lam,self.pupilDiam))
+                core_mean_intensity *= old_div(platescale,syst['platescale'])
             core_intensity = core_mean_intensity * Npix
         
         # ELECTRON COUNT RATES [ s^-1 ]

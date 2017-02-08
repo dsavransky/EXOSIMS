@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
@@ -84,7 +88,7 @@ class PlanetPopulation(object):
                 self.arange[1].value*(1.+self.erange[1])]*u.AU
         
         #populate all attributes to outspec
-        for att in self.__dict__.keys():
+        for att in list(self.__dict__.keys()):
             dat = copy.copy(self.__dict__[att])
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
             if att == 'Mprange':
@@ -111,8 +115,8 @@ class PlanetPopulation(object):
         When the command 'print' is used on the Planet Population object, this 
         method will print the attribute values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Population class object attributes'
         
@@ -134,8 +138,7 @@ class PlanetPopulation(object):
         
         x = np.array(x, ndmin=1, copy=False)
             
-        f = ((x >= self.arange[0].to('AU').value) & (x <= self.arange[1].to('AU').value)).astype(int)\
-                /(x*(np.log(self.arange[1].to('AU').value) - np.log(self.arange[0].to('AU').value)))
+        f = old_div(((x >= self.arange[0].to('AU').value) & (x <= self.arange[1].to('AU').value)).astype(int),(x*(np.log(self.arange[1].to('AU').value) - np.log(self.arange[0].to('AU').value))))
         
         return f
         
@@ -157,8 +160,7 @@ class PlanetPopulation(object):
         
         x = np.array(x, ndmin=1, copy=False)
             
-        f = ((x >= self.erange[0]) & (x <= self.erange[1])).astype(int)\
-                /(self.erange[1] - self.erange[0])
+        f = old_div(((x >= self.erange[0]) & (x <= self.erange[1])).astype(int),(self.erange[1] - self.erange[0]))
         
         return f
         
@@ -180,7 +182,7 @@ class PlanetPopulation(object):
         
         x = np.array(x, ndmin=1, copy=False)
             
-        f = ((x >= self.prange[0]) & (x <= self.prange[1])).astype(int)/(self.prange[1] - self.prange[0])
+        f = old_div(((x >= self.prange[0]) & (x <= self.prange[1])).astype(int),(self.prange[1] - self.prange[0]))
                 
         return f
         
@@ -202,8 +204,7 @@ class PlanetPopulation(object):
         
         x = np.array(x, ndmin=1, copy=False)
         
-        f = ((x >= self.Rprange[0].value) & (x <= self.Rprange[1].value)).astype(int)\
-                /(x*(np.log(self.Rprange[1].value) - np.log(self.Rprange[0].value)))
+        f = old_div(((x >= self.Rprange[0].value) & (x <= self.Rprange[1].value)).astype(int),(x*(np.log(self.Rprange[1].value) - np.log(self.Rprange[0].value))))
         
         return f
 
@@ -277,8 +278,8 @@ class PlanetPopulation(object):
         n = self.gen_input_check(n)
         assert len(a) == n, "a input must be of size n."
         
-        elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
-                (self.arange[1]/a).decompose().value - 1)),axis=0)
+        elim = np.min(np.vstack((1 - (old_div(self.arange[0],a)).decompose().value,\
+                (old_div(self.arange[1],a)).decompose().value - 1)),axis=0)
         
         vals = self.erange[0] +(elim - self.erange[0])*np.random.uniform(size=n)
         

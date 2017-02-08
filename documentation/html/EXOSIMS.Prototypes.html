@@ -294,7 +294,7 @@ here: <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/gene
 and should be placed in the Observatory subdirectory of EXOSIMS.</p>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph">
-<em class="property">class </em><code class="descname">SolarEph</code><span class="sig-paren">(</span><em>a</em>, <em>e</em>, <em>i</em>, <em>O</em>, <em>w</em>, <em>lM</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.SolarEph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">SolarEph</code><span class="sig-paren">(</span><em>a</em>, <em>e</em>, <em>I</em>, <em>O</em>, <em>w</em>, <em>lM</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.SolarEph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solar system ephemerides class</p>
 <p>This class takes the constants in Appendix D.4 of Vallado as inputs
 and stores them for use in defining solar system ephemerides at a
@@ -306,7 +306,7 @@ given time.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>a</strong> (<em>list</em>) &#8211; semimajor axis list (in AU)</li>
 <li><strong>e</strong> (<em>list</em>) &#8211; eccentricity list</li>
-<li><strong>i</strong> (<em>list</em>) &#8211; inclination list</li>
+<li><strong>I</strong> (<em>list</em>) &#8211; inclination list</li>
 <li><strong>O</strong> (<em>list</em>) &#8211; right ascension of the ascending node list</li>
 <li><strong>w</strong> (<em>list</em>) &#8211; longitude of periapsis list</li>
 <li><strong>lM</strong> (<em>list</em>) &#8211; mean longitude list</li>
@@ -333,8 +333,8 @@ ephemerides for a specific solar system planet.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.i">
-<code class="descname">i</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.i" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.I">
+<code class="descname">I</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.I" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>list</em></p>
 <p>list of inclination</p>
 </dd></dl>
@@ -395,7 +395,7 @@ will print the attribute values contained in the object</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>TDB</strong> &#8211;<p>time in Julian centuries since the J2000 epoch</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -489,7 +489,7 @@ solar system objects.</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity 1x3 array</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity nx3 array</p>
 </td>
 </tr>
 </tbody>
@@ -507,20 +507,27 @@ mass for station-keeping.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dF_lateral</strong> (<em>Quantity</em>) &#8211; lateral force on occulter (units of force)</li>
-<li><strong>t_int</strong> (<em>astropy Quantity</em>) &#8211; integration time in units of day</li>
+<li><strong>dF_lateral</strong> (<em>astropy Quantity</em>) &#8211; Lateral disturbance force in units of N</li>
+<li><strong>t_int</strong> (<em>astropy Quantity</em>) &#8211; Integration time in units of day</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>intMdot, mass_used, deltaV</strong> &#8211;</p>
-<p>mass flow rate (units like kg/day),
-mass used in station-keeping (units of mass),
-change in velocity required for station-keeping (velocity units
-like km/s)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>intMdot</strong> &#8211;</p>
+<blockquote>
+<div><p>Mass flow rate in units of kg/s</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>mass_used (astropy Quantity):</dt>
+<dd><p class="first last">Mass used in station-keeping units of kg</p>
+</dd>
+<dt>deltaV (astropy Quantity):</dt>
+<dd><p class="first last">Change in velocity required for station-keeping in units of km/s</p>
+</dd>
+</dl>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Quantity, Quantity, Quantity</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity</p>
 </td>
 </tr>
 </tbody>
@@ -542,7 +549,7 @@ equatorial position vector for Earth&#8217;s moon.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>r_moon</strong> &#8211;<p>Geocentric equatorial position vector in units of km</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity 1x3 array</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">astropy Quantity nx3 array</td>
 </tr>
 </tbody>
 </table>
@@ -590,7 +597,7 @@ time.</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -606,17 +613,17 @@ time.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>th</strong> (<em>float</em>) &#8211; rotation angle in radians</li>
-<li><strong>axis</strong> (<em>int</em>) &#8211; integer value denoting rotation axis (1,2, or 3)</li>
+<li><strong>th</strong> (<em>float</em>) &#8211; Rotation angle in radians</li>
+<li><strong>axis</strong> (<em>int</em>) &#8211; Integer value denoting rotation axis (1,2, or 3)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>matrix</strong> &#8211;</p>
-<p>rotation matrix defined as numpy ndarray</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p><strong>rot_th</strong> &#8211;</p>
+<p>Rotation matrix</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float 3x3 ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -644,7 +651,7 @@ on the value of self.havejplephem.</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity 1x3 array</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity nx3 array</p>
 </td>
 </tr>
 </tbody>
@@ -673,7 +680,7 @@ objects.</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity 1x3 array</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy Quantity nx3 array</p>
 </td>
 </tr>
 </tbody>

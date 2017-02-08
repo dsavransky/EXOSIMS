@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import zip
+from past.utils import old_div
 from EXOSIMS.Prototypes.BackgroundSources import BackgroundSources
 import os, inspect
 import numpy as np
@@ -59,12 +62,12 @@ class GalaxiesFaintStars(BackgroundSources):
         lat_pts = np.array([0.,5,10,20,30,60,90]) # deg
         mag_pts = np.array([15.,16,17,18,19,20,21,22,23,24,25])
         y_pts, x_pts = np.meshgrid(mag_pts, lat_pts)
-        points = np.array(zip(np.concatenate(x_pts), np.concatenate(y_pts)))
+        points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
         # create data values
         values = table.reshape(table.size)
         # interpolates 2D
-        C_st = griddata(points,values,zip(lat,mag)) # log values
-        C_st = 10**C_st / 3600
+        C_st = griddata(points,values,list(zip(lat,mag))) # log values
+        C_st = old_div(10**C_st, 3600)
         
         # Galaxy count per square arcmin, from Windhorst et al 2011 
         # who derived numbers based on Deep Field HST data
@@ -73,4 +76,4 @@ class GalaxiesFaintStars(BackgroundSources):
         # total counts
         dN = C_st + C_gal
         
-        return dN/u.arcmin**2
+        return old_div(dN,u.arcmin**2)

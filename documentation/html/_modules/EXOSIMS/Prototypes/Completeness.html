@@ -106,7 +106,9 @@
 <span class="sd">                TargetList class object</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+        
+        <span class="c"># initialize number of visits per star</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>

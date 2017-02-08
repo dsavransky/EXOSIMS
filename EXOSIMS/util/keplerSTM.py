@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import numpy as np
 pi = np.pi
 
@@ -31,10 +34,10 @@ Algorithm from Shepperd, 1984, using Goodyear's universal variables
 and continued fraction to solve the Kepler equation.
 
 '''
-class planSys:    
+class planSys(object):    
     def __init__(self, x0, mu, epsmult = 4.0):
         #determine number of planets and validate input
-        nplanets = x0.size/6.;
+        nplanets = old_div(x0.size,6.);
         if (nplanets - np.floor(nplanets) > 0):
             raise Exception('The length of x0 must be a multiple of 6.');
 
@@ -78,9 +81,9 @@ class planSys:
         #For elliptic orbits, calculate period effects
         eorbs = self.beta > 0
         if any(eorbs):
-            P = 2*pi*self.mu[eorbs]*self.beta[eorbs]**(-3./2.)
-            n = np.floor((dt + P/2 - 2*self.nu0[eorbs]/self.beta[eorbs])/P)
-            deltaU[eorbs] = 2*pi*n*self.beta[eorbs]**(-5./2.)
+            P = 2*pi*self.mu[eorbs]*self.beta[eorbs]**(old_div(-3.,2.))
+            n = np.floor(old_div((dt + old_div(P,2) - 2*self.nu0[eorbs]/self.beta[eorbs]),P))
+            deltaU[eorbs] = 2*pi*n*self.beta[eorbs]**(old_div(-5.,2.))
 
 
         #loop until convergence of the time array to the time step
@@ -96,7 +99,7 @@ class planSys:
             U3 = self.beta*U + U1*U2/3.
             r = self.r0norm*U0 + self.nu0*U1 + self.mu*U2
             t = self.r0norm*U1 + self.nu0*U2 + self.mu*U3
-            u = u - (t-dt)/(4.*(1.-q)*r)
+            u = u - old_div((t-dt),(4.*(1.-q)*r))
             counter += 1
 
         if (counter == 1000):
@@ -115,7 +118,7 @@ class planSys:
 
         return Phi
 
-    def contFrac(self, x, a = 5., b = 0., c = 5./2.):
+    def contFrac(self, x, a = 5., b = 0., c = old_div(5.,2.)):
         #initialize
         k = 1 - 2*(a-b)
         l = 2*(c-1)
@@ -133,7 +136,7 @@ class planSys:
             l = l+2.
             d = d+4.*l
             n = n+(1.+k)*l
-            A = d/(d - n*A*x)
+            A = old_div(d,(d - n*A*x))
             B = (A-1.)*B
             Gprev = G
             G = G + B

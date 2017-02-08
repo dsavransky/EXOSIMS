@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCahoyMix1
 from EXOSIMS.PlanetPhysicalModel.forecaster_func import piece_linear, ProbRGivenM, classification
 import astropy.units as u
@@ -49,7 +52,7 @@ class Forecaster(FortneyMarleyCahoyMix1):
         
         """
         
-        mass = (Mp/const.M_earth).decompose().value
+        mass = (old_div(Mp,const.M_earth)).decompose().value
         assert np.min(mass) > 3e-4 and np.max(mass) < 3e5, \
                 "Mass range out of model expectation. Returning None."
         

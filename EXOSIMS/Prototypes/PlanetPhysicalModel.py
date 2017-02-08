@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -27,8 +31,8 @@ class PlanetPhysicalModel(object):
         When the command 'print' is used on the Planet Physical Model object, 
         this method will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Physical Model class object attributes'
 
@@ -68,7 +72,7 @@ class PlanetPhysicalModel(object):
         """
         
         rho = 1000*u.kg/u.m**3.
-        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).decompose()
+        Rp = ((3.*Mp/rho/np.pi/4.)**(old_div(1.,3.))).decompose()
         
         return Rp.to('km')
 
@@ -104,7 +108,7 @@ class PlanetPhysicalModel(object):
             Phi (astropy Quantity array):
                 Planet phase function
         """
-        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        Phi = old_div((np.sin(beta) + (np.pi - beta.value)*np.cos(beta)),np.pi)
         
         return Phi
 

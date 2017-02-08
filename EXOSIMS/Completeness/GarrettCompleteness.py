@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 
 import numpy as np
@@ -10,7 +17,7 @@ import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import astropy.units as u
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -74,13 +81,13 @@ class GarrettCompleteness(BrownCompleteness):
         # get numerical derivative of phase function
         dPhis = np.zeros(beta.shape)
         db = beta[1].value - beta[0].value
-        dPhis[0:1] = (-25.0*Phis[0:1]+48.0*Phis[1:2]-36.0*Phis[2:3]+16.0*Phis[3:4]-3.0*Phis[4:5])/(12.0*db)
-        dPhis[-2:-1] = (25.0*Phis[-2:-1]-48.0*Phis[-3:-2]+36.0*Phis[-4:-3]-16.0*Phis[-5:-4]+3.0*Phis[-6:-5])/(12.0*db)
-        dPhis[2:-2] = (Phis[0:-4]-8.0*Phis[1:-3]+8.0*Phis[3:-1]-Phis[4:])/(12.0*db)
+        dPhis[0:1] = old_div((-25.0*Phis[0:1]+48.0*Phis[1:2]-36.0*Phis[2:3]+16.0*Phis[3:4]-3.0*Phis[4:5]),(12.0*db))
+        dPhis[-2:-1] = old_div((25.0*Phis[-2:-1]-48.0*Phis[-3:-2]+36.0*Phis[-4:-3]-16.0*Phis[-5:-4]+3.0*Phis[-6:-5]),(12.0*db))
+        dPhis[2:-2] = old_div((Phis[0:-4]-8.0*Phis[1:-3]+8.0*Phis[3:-1]-Phis[4:]),(12.0*db))
         self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=3,ext=1)
         # solve for bstar        
         f = lambda b: 2.0*np.sin(b)*np.cos(b)*self.Phi(b) + np.sin(b)**2*self.dPhi(b)
-        self.bstar = optimize.root(f,np.pi/3.0).x
+        self.bstar = optimize.root(f,old_div(np.pi,3.0)).x
                 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -124,8 +131,8 @@ class GarrettCompleteness(BrownCompleteness):
         dMagmin = self.mindmag(smin)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
-            smin = smin/np.sqrt(L)
-            smax = smax/np.sqrt(L)
+            smin = old_div(smin,np.sqrt(L))
+            smax = old_div(smax,np.sqrt(L))
             dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
         
@@ -151,15 +158,15 @@ class GarrettCompleteness(BrownCompleteness):
         
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
-            print 'Loading cached completeness file from %s' % Cpath
+            print('Loading cached completeness file from %s' % Cpath)
             H = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness loaded from cache.'
+            print('Completeness loaded from cache.')
             dist_s = H['dist_s']
         else:
             # generate dist_s interpolant and pickle it
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Generating completeness.'
-            print 'Creating preliminary functions.'
+            print('Cached completeness file not found at "%s".' % Cpath)
+            print('Generating completeness.')
+            print('Creating preliminary functions.')
             # vectorize integrand
             self.rgrand2v = np.vectorize(self.rgrand2)
             # threshold value used later
@@ -172,34 +179,34 @@ class GarrettCompleteness(BrownCompleteness):
             b2val = np.sin(b2)**2*self.Phi(b2)
             # b > bstar
             self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=3, ext=1)
-            print 'Generating pdf of orbital radius'            
+            print('Generating pdf of orbital radius')            
             # get pdf of r
             r = np.linspace(self.rmin, self.rmax, 1000)
             fr = np.zeros(r.shape)
-            for i in xrange(len(r)):
+            for i in range(len(r)):
                 fr[i] = self.f_r(r[i])
             self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
-            print 'Finished pdf of orbital radius'
-            print 'Generating pdf of albedo times planetary radius squared'
+            print('Finished pdf of orbital radius')
+            print('Generating pdf of albedo times planetary radius squared')
             # get pdf of p*R**2
             z = np.linspace(self.pmin*self.Rmin**2, self.pmax*self.Rmax**2, 1000)
             fz = np.zeros(z.shape)
-            for i in xrange(len(z)):
+            for i in range(len(z)):
                 fz[i] = self.f_z(z[i])
             self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
-            print 'Finished pdf of albedo times planetary radius squared'
+            print('Finished pdf of albedo times planetary radius squared')
             self.f_dmagsv = np.vectorize(self.f_dmags)
-            print 'Marginalizing joint pdf of separation and dMag up to dMagLim'
+            print('Marginalizing joint pdf of separation and dMag up to dMagLim')
             # get pdf of s up to dmaglim
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
-            for i in xrange(len(s)):
+            for i in range(len(s)):
                 fs[i] = self.f_s(s[i],TL.OpticalSystem.dMagLim)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
-            print 'Finished marginalization'
+            print('Finished marginalization')
             H = {'dist_s': dist_s}
             pickle.dump(H, open(Cpath, 'wb'))
-            print 'Completeness data stored in %s' % Cpath
+            print('Completeness data stored in %s' % Cpath)
             
         return dist_s
             
@@ -253,7 +260,7 @@ class GarrettCompleteness(BrownCompleteness):
         if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)):
             f = 0.0
         else:
-            ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
+            ztest = (old_div(s,self.x))**2*10.**(-0.4*dmag)/self.val
             if ztest >= self.zmax:
                 f = 0.0
             elif (self.pconst & self.Rconst):
@@ -285,14 +292,14 @@ class GarrettCompleteness(BrownCompleteness):
         
         z = np.array(z, ndmin=1, copy=False)
 
-        vals = (s/self.x)**2*10.**(-0.4*dmag)/z
+        vals = (old_div(s,self.x))**2*10.**(-0.4*dmag)/z
         
         if vals.max() > self.val:
             f = np.zeros(z.shape)
             b1 = self.binv1(vals[vals<self.val])
             b2 = self.binv2(vals[vals<self.val])
-            r1 = s/np.sin(b1)
-            r2 = s/np.sin(b2)
+            r1 = old_div(s,np.sin(b1))
+            r2 = old_div(s,np.sin(b2))
             if (self.pconst & self.Rconst):
                 f[vals<self.val] = self.dist_b(b1)*self.dist_r(r1)/np.abs(self.Jac(b1))
                 f[vals<self.val] += self.dist_b(b2)*self.dist_r(r2)/np.abs(self.Jac(b2))
@@ -303,8 +310,8 @@ class GarrettCompleteness(BrownCompleteness):
             f = np.zeros(z.shape)
             b1 = self.binv1(vals)
             b2 = self.binv2(vals)
-            r1 = s/np.sin(b1)
-            r2 = s/np.sin(b2)
+            r1 = old_div(s,np.sin(b1))
+            r2 = old_div(s,np.sin(b2))
             if (self.pconst & self.Rconst):
                 f = self.dist_b(b1)*self.dist_r(r1)/np.abs(self.Jac(b1))
                 f+= self.dist_b(b2)*self.dist_r(r2)/np.abs(self.Jac(b2))
@@ -330,8 +337,8 @@ class GarrettCompleteness(BrownCompleteness):
         s = np.array(s, ndmin=1, copy=False)
 
         mindmag = -2.5*np.log10(self.pmax*(self.Rmax*self.x*np.sin(self.bstar)/s)**2*self.Phi(self.bstar))
-        mindmag[s < self.rmin*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2*self.Phi(np.arcsin(s[s < self.rmin*np.sin(self.bstar)]/self.rmin)))
-        mindmag[s > self.rmax*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.arcsin(s[s > self.rmax*np.sin(self.bstar)]/self.rmax)))
+        mindmag[s < self.rmin*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2*self.Phi(np.arcsin(old_div(s[s < self.rmin*np.sin(self.bstar)],self.rmin))))
+        mindmag[s > self.rmax*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.arcsin(old_div(s[s > self.rmax*np.sin(self.bstar)],self.rmax))))
         
         return mindmag
 
@@ -348,7 +355,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        maxdmag = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi - np.arcsin(s/self.rmax)))
+        maxdmag = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi - np.arcsin(old_div(s,self.rmax))))
 
         return maxdmag
 
@@ -411,7 +418,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        emin1 = np.abs(1.0 - r/a)
+        emin1 = np.abs(1.0 - old_div(r,a))
         if emin1 < self.emin:
             emin1 = self.emin
     
@@ -486,12 +493,12 @@ class GarrettCompleteness(BrownCompleteness):
                     f = self.PlanetPopulation.dist_sma(r)
                 else:
                     if r > self.amin*(1.0-self.emin):
-                        f = (r/(np.pi*self.amin*np.sqrt((self.amin*self.emin)**2-(self.amin-r)**2)))
+                        f = (old_div(r,(np.pi*self.amin*np.sqrt((self.amin*self.emin)**2-(self.amin-r)**2))))
                     else:
                         f = 0.0
             elif self.aconst:
-                etest1 = 1.0 - r/self.amin
-                etest2 = r/self.amin - 1.0
+                etest1 = 1.0 - old_div(r,self.amin)
+                etest2 = old_div(r,self.amin) - 1.0
                 if self.emax < etest1:
                     f = 0.0
                 else:
@@ -510,8 +517,8 @@ class GarrettCompleteness(BrownCompleteness):
                 if self.emin == 0.0:
                     f = self.dist_sma(r)
                 else:
-                    atest1 = r/(1.0-self.emin)
-                    atest2 = r/(1.0+self.emin)
+                    atest1 = old_div(r,(1.0-self.emin))
+                    atest2 = old_div(r,(1.0+self.emin))
                     if self.amax < atest1:
                         high = self.amax
                     else:
@@ -522,8 +529,8 @@ class GarrettCompleteness(BrownCompleteness):
                         low = self.amin
                     f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=200)[0]
             else:
-                a1 = r/(1.0+self.emax)
-                a2 = r/(1.0-self.emax)
+                a1 = old_div(r,(1.0+self.emax))
+                a2 = old_div(r,(1.0-self.emax))
                 if a1 < self.amin:
                     a1 = self.amin
                 if a2 > self.amax:
@@ -548,7 +555,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        f = 1.0/(2.0*np.sqrt(z*p))*self.dist_radius(np.sqrt(z/p))*self.dist_albedo(p)
+        f = 1.0/(2.0*np.sqrt(z*p))*self.dist_radius(np.sqrt(old_div(z,p)))*self.dist_albedo(p)
         
         return f
         
@@ -573,12 +580,12 @@ class GarrettCompleteness(BrownCompleteness):
             if (self.pconst & self.Rconst):
                 f = 1.0
             elif self.pconst:
-                f = 1.0/(2.0*np.sqrt(self.pmin*z))*self.dist_radius(np.sqrt(z/self.pmin))
+                f = 1.0/(2.0*np.sqrt(self.pmin*z))*self.dist_radius(np.sqrt(old_div(z,self.pmin)))
             elif self.Rconst:
-                f = 1.0/self.Rmin**2*self.dist_albedo(z/self.Rmin**2)
+                f = 1.0/self.Rmin**2*self.dist_albedo(old_div(z,self.Rmin**2))
             else:
-                p1 = z/self.Rmax**2
-                p2 = z/self.Rmin**2
+                p1 = old_div(z,self.Rmax**2)
+                p2 = old_div(z,self.Rmin**2)
                 if p1 < self.pmin:
                     p1 = self.pmin
                 if p2 > self.pmax:

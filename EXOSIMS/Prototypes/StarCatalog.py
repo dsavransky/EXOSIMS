@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+from builtins import object
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -93,7 +95,7 @@ class StarCatalog(object):
         When the command 'print' is used on the StarCatalog object, this method
         will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+        for att in list(self.__dict__.keys()):
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Star Catalog class object attributes'

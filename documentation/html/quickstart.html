@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Quick Start Guide &mdash; EXOSIMS 0.1 documentation</title>
+    <title>Quick Start Guide &#8212; EXOSIMS 1.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,17 +14,19 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1',
+        VERSION:     '1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="EXOSIMS 0.1 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installing and Configuring EXOSIMS" href="install.html" />
     <link rel="prev" title="Welcome to EXOSIMS’s documentation!" href="index.html" />
    
@@ -50,14 +52,14 @@
 <div class="section" id="creating-a-mission-simulation-object">
 <h2>Creating a Mission Simulation Object<a class="headerlink" href="#creating-a-mission-simulation-object" title="Permalink to this headline">¶</a></h2>
 <p>The entry point to all <code class="docutils literal"><span class="pre">EXOSIMS</span></code> runs is via the survey simulation object, which is created via an input script file specifying the modules to be used and setting various input parameters.  The instantiation of this object, in turn, causes the instantiation of all other module objects.  Here is a quick example using a provided sample script:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span><span class="nn">os.path</span>
-<span class="n">scriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">EXOSIMS</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;Scripts&#39;</span><span class="p">,</span><span class="s">&#39;sampleScript_coron.json&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span><span class="nn">os.path</span>
+<span class="n">scriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">EXOSIMS</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;Scripts&#39;</span><span class="p">,</span><span class="s1">&#39;sampleScript_coron.json&#39;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">EXOSIMS.MissionSim</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">MissionSim</span><span class="o">.</span><span class="n">MissionSim</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., <code class="docutils literal"><span class="pre">sim.Observatory</span></code>) as well as a dictionary of the modules (<code class="docutils literal"><span class="pre">sim.modules</span></code>).  A run simulation can be kicked off via the <code class="docutils literal"><span class="pre">run_sim</span></code> method of the SurveySimulation class:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -89,21 +91,18 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/quickstart.txt"
+      <li><a href="_sources/quickstart.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -111,14 +110,14 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2015, SIOSlab.
+      &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/quickstart.txt"
+      <a href="_sources/quickstart.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

@@ -28,6 +28,14 @@ EXOSIMS.PlanetPopulation.KeplerLike1 module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.PlanetPopulation.KeplerLike2 module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.KeplerLike2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.PlanetPopulation.KnownRVPlanets module
 ----------------------------------------------
 

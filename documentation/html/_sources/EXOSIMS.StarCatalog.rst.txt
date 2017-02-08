@@ -12,14 +12,6 @@ EXOSIMS.StarCatalog.EXOCAT1 module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.StarCatalog.EXOCATXLS module
-------------------------------------
-
-.. automodule:: EXOSIMS.StarCatalog.EXOCATXLS
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.StarCatalog.SIMBAD300Catalog module
 -------------------------------------------
 
@@ -32,14 +24,6 @@ EXOSIMS.StarCatalog.SIMBADCatalog module
 ----------------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.SIMBADCatalog
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.StarCatalog.ToyCat1 module
-----------------------------------
-
-.. automodule:: EXOSIMS.StarCatalog.ToyCat1
     :members:
     :undoc-members:
     :show-inheritance:

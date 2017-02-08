@@ -20,14 +20,6 @@ EXOSIMS.OpticalSystem.Nemati module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.OpticalSystem.WFIRSTOpticalSystem module
-------------------------------------------------
-
-.. automodule:: EXOSIMS.OpticalSystem.WFIRSTOpticalSystem
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

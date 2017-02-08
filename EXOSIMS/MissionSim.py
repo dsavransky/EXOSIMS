@@ -70,6 +70,7 @@ class MissionSim(object):
             try:
                 script = open(scriptfile).read()
                 specs_from_file = json.loads(script)
+                specs_from_file.update(specs)
             except ValueError as err:
                 print "Error: %s: Input file `%s' improperly formatted." % (self._modtype, scriptfile)
                 print "Error: JSON error was: ", err
@@ -242,18 +243,19 @@ class MissionSim(object):
         
         # add in the SVN revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
-        rev = subprocess.Popen("svn info "+path+"| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
-        (svnRev, err) = rev.communicate()
-        if isinstance(svnRev, basestring) & (len(svnRev) > 0):
-            out['Revision'] = "SVN revision is " + svnRev[:-1]
+        rev = subprocess.Popen("git log -1 "+path+"| grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+        (gitRev, err) = rev.communicate()
+        if isinstance(gitRev, basestring) & (len(gitRev) > 0):
+            out['Revision'] = "Github last commit " + gitRev[:-1]
         # if not an SVN repository, add in the Github last commit
         else:
-            rev = subprocess.Popen("git log -1 "+path+"| grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
-            (gitRev, err) = rev.communicate()
-            if isinstance(gitRev, basestring) & (len(gitRev) > 0):
-                out['Revision'] = "Github last commit " + gitRev[:-1]
+            rev = subprocess.Popen("svn info "+path+"| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+            (svnRev, err) = rev.communicate()
+            if isinstance(svnRev, basestring) & (len(svnRev) > 0):
+                out['Revision'] = "SVN revision is " + svnRev[:-1]
             else: 
-                out['Revision'] = "Not a valid SVN or Github revision."
+                out['Revision'] = "Not a valid Github or SVN revision."
+        print out['Revision']
         
         # preserve star catalog name
         # TODO: why is this special-cased?

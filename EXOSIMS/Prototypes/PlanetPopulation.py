@@ -90,7 +90,7 @@ class PlanetPopulation(object):
             if att == 'Mprange':
                 self._outspec[att] /= const.M_earth.value
             elif att == 'Rprange':
-                self._outspec[att] /= const.R_earth.value
+                self._outspec[att] /= const.R_earth.to('km').value
         
         # import PlanetPhysicalModel
         self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'], \

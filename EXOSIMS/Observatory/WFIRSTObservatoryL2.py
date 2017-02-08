@@ -36,7 +36,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         
         if orbit_datapath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'L2_halo_orbit_six_month_v2.p'
+            filename = 'L2_halo_orbit_six_month_v3.p'
             orbit_datapath = os.path.join(classpath, filename)
         if not os.path.exists(orbit_datapath):
             raise Exception("Orbit data file not found.")

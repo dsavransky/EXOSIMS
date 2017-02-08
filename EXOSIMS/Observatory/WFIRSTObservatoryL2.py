@@ -48,7 +48,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
                 halo = pickle.load(f, encoding='latin1') 
         except TypeError:
              halo = pickle.load( open( orbit_datapath, "rb" ) )
-        #halo = pickle.load( open( orbit_datapath, "rb" ) )
+        
         
         # unpack orbit properties
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year
@@ -92,7 +92,9 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
         
         # weighting L2 position with Earth-Sun distance
-        L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist * dist_Earth.to('AU').value
+        L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
+        
+        
 #         # alternatively, just add the Earth distance fluctuation
 #         L2_corr_dist = np.ones(len(r_Earth))*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
         

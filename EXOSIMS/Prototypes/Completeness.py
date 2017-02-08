@@ -67,7 +67,9 @@ class Completeness(object):
                 TargetList class object
         
         """
-        pass
+        
+        # initialize number of visits per star
+        self.visits = np.array([0]*TL.nStars)
 
     def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed

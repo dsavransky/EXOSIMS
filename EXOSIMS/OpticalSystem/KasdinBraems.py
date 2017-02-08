@@ -65,17 +65,21 @@ class KasdinBraems(OpticalSystem):
         P1 = np.sum(Pbar)
         Psi = old_div(np.sum(Pbar**2),(np.sum(Pbar))**2)
         Xi = old_div(np.sum(Pbar**3),(np.sum(Pbar))**3)
-        Qbar = C_p/C_b*P1
         PPro = TL.PostProcessing                    # post-processing module
         K = st.norm.ppf(1-PPro.FAP)                 # false alarm threshold
         gamma = st.norm.ppf(1-PPro.MDP)             # missed detection threshold
         deltaAlphaBar = (old_div((old_div(inst['pitch'],inst['focal']))**2, (old_div(lam,self.pupilDiam))**2))\
                 .decompose()                        # dimensionless pixel size
         Tcore = syst['core_thruput'](lam, WA)
-        Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput 
-        beta = old_div(C_p,Tcore)
-        intTime = 1./beta*(K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2/(Qbar*Ta*Psi)
-        # integration times (negative values correspond to infinity)
-        intTime[intTime < 0] = np.inf
+        Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput
+        # calculate integration time based on Kasdin&Braems2006
+        with np.errstate(divide='ignore',invalid='ignore'):
+            Qbar = np.true_divide(C_p*P1,C_b)
+            beta = np.true_divide(C_p,Tcore)
+            intTime = np.true_divide((K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2, \
+                    (beta*Qbar*Ta*Psi))
+        # integration times (NAN and negative values correspond to infinity)
+        intTime[np.isnan(intTime)] = np.inf*u.day
+        intTime[intTime < 0] = np.inf*u.day
         
         return intTime.to('day')

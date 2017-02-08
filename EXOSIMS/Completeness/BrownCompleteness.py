@@ -147,8 +147,10 @@ class BrownCompleteness(Completeness):
         PPop = self.PlanetPopulation
         
         print('Beginning completeness update calculations')
+        # initialize number of visits
         self.visits = np.array([0]*TL.nStars)
-        self.updates = []
+        # dynamic completeness values: rows are stars, columns are number of visits
+        self.updates = np.zeros((TL.nStars, 5))
         # number of planets to simulate
         nplan = int(2e4)
         # normalization time
@@ -178,11 +180,11 @@ class BrownCompleteness(Completeness):
             Mstar = TL.MsTrue[sInd]*const.M_sun
             # remove rmax < smin 
             pInds = np.where(rmax > smin[sInd])[0]
-            dynamic = []
             # calculate for 5 successive observations
             for num in range(5):
+                if num == 0:
+                    self.updates[sInd, num] = TL.comp0[sInd]
                 if not pInds.any():
-                    dynamic.append(0.)
                     break
                 # find Eccentric anomaly
                 if num == 0:
@@ -221,25 +223,23 @@ class BrownCompleteness(Completeness):
                 pInds = np.delete(pInds, toremove)
                 
                 if num == 0:
-                    dynamic.append(TL.comp0[sInd])
+                    self.updates[sInd, num] = TL.comp0[sInd]
                 else:
-                    dynamic.append(old_div(float(len(toremove)),nplan))
+                    self.updates[sInd, num] = old_div(float(len(toremove)),nplan)
                 
                 # update M
                 mu = const.G*(Mstar+Mp[pInds])
                 n = np.sqrt(old_div(mu,a[pInds]**3))
                 newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-            
-            self.updates.append(dynamic)
-                
+                            
             if (sInd+1) % 50 == 0:
                 print('stars: %r / %r' % (sInd+1,TL.nStars))
         
-        self.updates = np.array(self.updates)
         print('Completeness update calculations finished')
 
     def completeness_update(self, TL, sInds, dt):
-        """Updates completeness value for stars previously observed
+        """Updates completeness value for stars previously observed by selecting
+        the appropriate value from the updates array
         
         Args:
             TL (TargetList module):
@@ -255,18 +255,14 @@ class BrownCompleteness(Completeness):
         
         """
         
-        if True:#dt < 100*u.d:
-            comp0 = TL.comp0[sInds]
-            return comp0
+        # number of visits for each star
+        cols = self.visits[sInds]
+        # if visited more than five times, return 5th stored dynamic 
+        # completeness value
+        cols[cols>4] = 4
+        # return value from the updates array
         
-        self.visits[sInds] += 1
-        updates = self.updates[sInds]
-        reset = sInds[self.visits[sInds] > len(updates.T)-1]
-        self.visits[reset] = 0
-        
-        comp0 = np.array([updates[i,j] for i, j in enumerate(self.visits[sInds])])
-        
-        return comp0
+        return self.updates[sInds, cols]
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness

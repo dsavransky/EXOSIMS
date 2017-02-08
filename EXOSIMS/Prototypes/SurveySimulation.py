@@ -4,9 +4,9 @@ from __future__ import division
 from builtins import filter
 from builtins import next
 from builtins import range
+from past.builtins import basestring
 from builtins import object
 from past.utils import old_div
-import six
 import numpy as np
 import sys, logging
 import astropy.units as u
@@ -129,7 +129,8 @@ class SurveySimulation(object):
                 raise ValueError("No modules field found in script.")
         
         #if any of the modules is a string, assume that they are all strings and we need to initalize
-        if isinstance(next(iter(specs['modules'].values())),six.string_types):
+        if isinstance(next(iter(specs['modules'].values())),basestring):
+            
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules'] \
                     ['SimulatedUniverse'],'SimulatedUniverse')(**specs)
@@ -149,7 +150,6 @@ class SurveySimulation(object):
             self.Completeness = SU.Completeness
             self.TargetList = SU.TargetList
         else:
-
             #these are the modules that must be present if passing instantiated objects
             neededObjMods = ['PlanetPopulation',
                           'PlanetPhysicalModel',
@@ -337,6 +337,7 @@ class SurveySimulation(object):
         
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
+        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -419,13 +420,15 @@ class SurveySimulation(object):
             # 5/ choose best target from remaining
             if np.any(sInds):
                 # prototype version choose sInd among targets with highest completeness
-                comp = TL.comp0[sInds]
+                comps = TL.comp0[sInds]
                 updated = (self.starVisits[sInds] > 0)
-                comp[updated] =  self.Completeness.completeness_update(TL, \
+                comps[updated] =  self.Completeness.completeness_update(TL, \
                         sInds[updated], TK.currentTimeNorm)
-                sInd = np.random.choice(sInds[comp == max(comp)])
+                sInd = np.random.choice(sInds[comps == max(comps)])
                 # update visited list for current star
                 self.starVisits[sInd] += 1
+                # update visited list for Completeness for current star
+                Comp.visits[sInd] += 1
                 # store relevant values
                 t_det = t_dets[sInd]
                 break
@@ -513,7 +516,9 @@ class SurveySimulation(object):
                 Signal[i,:] = s
                 Noise[i,:] = n
             # calculate SNRobs
-            SNRobs = old_div(Signal.sum(0), Noise.sum(0))
+            with np.errstate(divide='ignore',invalid='ignore'):
+                SNRobs = old_div(Signal.sum(0), Noise.sum(0))
+            SNRobs[np.isnan(SNRobs)] = 0.
             # allocate extra time for timeMultiplier
             t_extra = t_det*(mode['timeMultiplier'] - 1)
             TK.allocate_time(t_extra)
@@ -643,13 +648,13 @@ class SurveySimulation(object):
         else:
             tochar[det] = np.array([True])
         
-        # Also, find spacecraft orbital START position and check keepout angle
-        startTime = TK.currentTimeAbs
-        r_sc = Obs.orbit(startTime)
-        kogoodStart = Obs.keepout(TL, sInd, startTime, r_sc, OS.telescopeKeepout)
-        
-        # If kogood, and any planet to characterize, find the characterization times
-        if kogoodStart and np.any(tochar):
+        # Find spacecraft orbital START position and check keepout angle
+        if np.any(tochar):
+            startTime = TK.currentTimeAbs
+            r_sc = Obs.orbit(startTime)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime, r_sc, OS.telescopeKeepout)
+        # If any planet to characterize, find the characterization times
+        if np.any(tochar):
             # Propagate the whole system to match up with current time
             SU.propag_system(sInd, TK.currentTimeNorm)
             # Calculate characterization times at the detected fEZ, dMag, and WA
@@ -662,73 +667,76 @@ class SurveySimulation(object):
             t_tots = t_chars*(mode['timeMultiplier'])
             # Filter out planets with t_tots > integration cutoff
             tochar = (t_tots > 0) & (t_tots < OS.intCutoff)
-            # Is target still observable at the end of any char time?
-            if np.any(tochar):
-                endTime = TK.currentTimeAbs + t_tots[tochar]
-                r_sc = Obs.orbit(endTime)
-                tochar[tochar] = Obs.keepout(TL, sInd, endTime, r_sc, OS.telescopeKeepout)
-            # If yes, perform the characterization for the maximum char time
-            if np.any(tochar):
-                t_char = np.max(t_chars[tochar])
-                pIndsChar = pInds[tochar]
-                Logger.info('Characterized planet(s) %r of target %r' % (pIndsChar, sInd))
-                print('Characterized planet(s)', pIndsChar, 'of target', sInd)
-                
-                # SNR CALCULATION:
-                # First, calculate SNR for observable planets (without false alarm)
-                planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
-                if np.any(planinds):
-                    Signal = np.zeros((self.nt_flux, len(planinds)))
-                    Noise = np.zeros((self.nt_flux, len(planinds)))
-                    # integrate the signal (planet flux) and noise
-                    dt = old_div(t_char,self.nt_flux)
-                    for i in range(self.nt_flux):
-                        s,n = self.calc_signal_noise(sInd, planinds, dt, mode)
-                        Signal[i,:] = s
-                        Noise[i,:] = n
-                    # calculate SNRobs
+        # Is target still observable at the end of any char time?
+        if np.any(tochar):
+            endTime = TK.currentTimeAbs + t_tots[tochar]
+            r_sc = Obs.orbit(endTime)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTime, r_sc, OS.telescopeKeepout)
+        # If yes, perform the characterization for the maximum char time
+        if np.any(tochar):
+            t_char = np.max(t_chars[tochar])
+            pIndsChar = pInds[tochar]
+            Logger.info('Characterized planet(s) %r of target %r' % (pIndsChar, sInd))
+            print('Characterized planet(s)', pIndsChar, 'of target', sInd)
+            
+            # SNR CALCULATION:
+            # First, calculate SNR for observable planets (without false alarm)
+            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+            if np.any(planinds):
+                Signal = np.zeros((self.nt_flux, len(planinds)))
+                Noise = np.zeros((self.nt_flux, len(planinds)))
+                # integrate the signal (planet flux) and noise
+                dt = old_div(t_char,self.nt_flux)
+                for i in range(self.nt_flux):
+                    s,n = self.calc_signal_noise(sInd, planinds, dt, mode)
+                    Signal[i,:] = s
+                    Noise[i,:] = n
+                # calculate SNRobs
+                with np.errstate(divide='ignore',invalid='ignore'):
                     SNRobs = old_div(Signal.sum(0), Noise.sum(0))
-                    # allocate extra time for timeMultiplier
-                    t_extra = t_char*(mode['timeMultiplier'] - 1)
-                    TK.allocate_time(t_extra)
-                # if no planet (only false alarm), just observe for t_tot (including time multiplier)
-                else:
-                    SNRobs = np.array([])
-                    t_tot = t_char*(mode['timeMultiplier'])
-                    TK.allocate_time(t_tot)
-                
-                # append the false alarm SNR (if any)
-                if pIndsChar[-1] == -1:
-                    fEZ = old_div(self.lastDetected[sInd,1][-1],u.arcsec**2)
-                    dMag = self.lastDetected[sInd,2][-1]
-                    WA = self.lastDetected[sInd,3][-1]*u.mas
-                    C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
-                    SNRobs = np.append(SNRobs, (C_p*t_char/np.sqrt(C_b*t_char + \
-                            (C_sp*t_char)**2)).decompose().value)
-                
-                # Now, store characterization status: 1 for full spectrum, 
-                # -1 for partial spectrum, 0 for not characterized
-                if np.any(SNRobs):
-                    SNR[tochar] = SNRobs
-                    char = (SNR >= mode['SNR'])
-                    if np.any(SNR):
-                        # initialize with partial spectra
-                        characterized[char] = -1
-                        # check for full spectra
-                        WA = self.lastDetected[sInd,3]*u.mas
-                        IWA_max = mode['IWA']*(1+old_div(mode['BW'],2.))
-                        OWA_min = mode['OWA']*(1-old_div(mode['BW'],2.))
-                        char[char] = (WA[char] > IWA_max) & (WA[char] < OWA_min)
-                        characterized[char] = 1
-                        # encode results in spectra lists
-                        partial = pInds[characterized == -1]
-                        if np.any(partial != -1):
-                            partial = partial[:-1] if partial[-1] == -1 else partial
-                            self.partialSpectra[partial] += 1
-                        full = pInds[np.where(characterized == 1)[0]]
-                        if np.any(full != -1):
-                            full = full[:-1] if full[-1] == -1 else full
-                            self.fullSpectra[full] += 1
+                # allocate extra time for timeMultiplier
+                t_extra = t_char*(mode['timeMultiplier'] - 1)
+                TK.allocate_time(t_extra)
+            # if no planet (only false alarm), just observe for t_tot (including time multiplier)
+            else:
+                SNRobs = np.array([])
+                t_tot = t_char*(mode['timeMultiplier'])
+                TK.allocate_time(t_tot)
+            
+            # append the false alarm SNR (if any)
+            if pIndsChar[-1] == -1:
+                fEZ = old_div(self.lastDetected[sInd,1][-1],u.arcsec**2)
+                dMag = self.lastDetected[sInd,2][-1]
+                WA = self.lastDetected[sInd,3][-1]*u.mas
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                SNRfa = (C_p*t_char).decompose().value
+                SNRfa[SNRfa > 0] /= np.sqrt(C_b*t_char + (C_sp*t_char)**2)\
+                        .decompose().value[SNRfa > 0]
+                SNRobs = np.append(SNRobs, SNRfa)
+            
+            # Now, store characterization status: 1 for full spectrum, 
+            # -1 for partial spectrum, 0 for not characterized
+            if np.any(SNRobs):
+                SNR[tochar] = SNRobs
+                char = (SNR >= mode['SNR'])
+                if np.any(SNR):
+                    # initialize with partial spectra
+                    characterized[char] = -1
+                    # check for full spectra
+                    WA = self.lastDetected[sInd,3]*u.mas
+                    IWA_max = mode['IWA']*(1+old_div(mode['BW'],2.))
+                    OWA_min = mode['OWA']*(1-old_div(mode['BW'],2.))
+                    char[char] = (WA[char] > IWA_max) & (WA[char] < OWA_min)
+                    characterized[char] = 1
+                    # encode results in spectra lists
+                    partial = pInds[characterized == -1]
+                    if np.any(partial != -1):
+                        partial = partial[:-1] if partial[-1] == -1 else partial
+                        self.partialSpectra[partial] += 1
+                    full = pInds[np.where(characterized == 1)[0]]
+                    if np.any(full != -1):
+                        full = full[:-1] if full[-1] == -1 else full
+                        self.fullSpectra[full] += 1
         
         return characterized.tolist(), SNR.tolist(), t_char
 

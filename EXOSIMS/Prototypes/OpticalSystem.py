@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from __future__ import division
+from past.builtins import basestring
 from builtins import object
 from past.utils import old_div
-import six
 import astropy.units as u
 import numpy as np
 import os.path
@@ -200,7 +200,7 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst,inst in enumerate(self.scienceInstruments):
             assert isinstance(inst,dict), "Science instruments must be defined as dicts."
-            assert 'name' in inst and isinstance(inst['name'],six.string_types),\
+            assert 'name' in inst and isinstance(inst['name'],basestring),\
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE',QE)
@@ -219,7 +219,7 @@ class OpticalSystem(object):
             
             # quantum efficiency
             if 'QE' in inst:
-                if isinstance(inst['QE'],six.string_types):
+                if isinstance(inst['QE'],basestring):
                     assert os.path.isfile(inst['QE']),\
                             "%s is not a valid file."%inst['QE']
                     tmp = fits.open(inst['QE'])
@@ -243,7 +243,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert 'name' in syst and isinstance(syst['name'],six.string_types),\
+            assert 'name' in syst and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans',occ_trans)
@@ -281,7 +281,7 @@ class OpticalSystem(object):
             syst['platescale'] = syst.get('platescale',platescale)
             
             # Get PSF
-            if isinstance(syst['PSF'],six.string_types):
+            if isinstance(syst['PSF'],basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth),\
                         "%s is not a valid file."%pth
@@ -364,7 +364,7 @@ class OpticalSystem(object):
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
         
         # check for only one detection mode
-        detectionModes = list([mode for mode in self.observingModes if mode['detectionMode'] == True])
+        detectionModes = [mode for mode in self.observingModes if mode['detectionMode'] == True]
         assert len(detectionModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detectionModes) == 0:
@@ -431,8 +431,8 @@ class OpticalSystem(object):
         
         """
         
-        assert isinstance(param_name, six.string_types), "param_name must be a string."
-        if isinstance(syst[param_name], six.string_types):
+        assert isinstance(param_name, basestring), "param_name must be a string."
+        if isinstance(syst[param_name], basestring):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
             assert os.path.isfile(pth),\
                     "%s is not a valid file."%pth
@@ -565,7 +565,7 @@ class OpticalSystem(object):
             C_dc = C_dc.to('1/s'),
             C_cc = C_cc.to('1/s'),
             C_rn = C_rn.to('1/s'))
-
+        
         if returnExtra:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:

@@ -47,7 +47,7 @@ class Observatory(object):
         For finding positions of solar system bodies, this routine will attempt to 
         use the jplephem module and a local SPK file on disk.  The module can be 
         installed via pip or from source.  The default SPK file can be downloaded from
-        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp
+        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
         and should be placed in the Observatory subdirectory of EXOSIMS.
     
     """

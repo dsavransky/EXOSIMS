@@ -8,6 +8,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
+from scipy.io import loadmat
 
 
 class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
@@ -67,9 +68,13 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename = 'Fortney_etal_2007_table4.p'
         datapath = os.path.join(classpath, filename)
-        if not os.path.exists(datapath):
-            raise Exception("Gas giant data file not found.")
-        self.ggdat = pickle.load( open( datapath, "rb" ) )
+        if os.path.exists(datapath):
+            self.ggdat = pickle.load( open( datapath, "rb" ) )
+        else:
+            matpath = os.path.join(classpath,'fortney_table4.mat')
+            self.ggdat = loadmat(matpath, squeeze_me=True, struct_as_record=False)
+            pickle.dump( self.ggdat, open( datapath, 'wb' ) )
+        
         self.ggdat['dist'] = self.ggdat['dist']*u.AU
         self.ggdat['planet_mass'] = self.ggdat['planet_mass']*const.M_earth
         

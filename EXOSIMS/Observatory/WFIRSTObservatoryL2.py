@@ -9,6 +9,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
+from scipy.io import loadmat
 
 class WFIRSTObservatoryL2(WFIRSTObservatory):
     """ WFIRST Observatory at L2 implementation. 
@@ -36,11 +37,18 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         
         if orbit_datapath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'L2_halo_orbit_six_month_v3.p'
+            filename = 'L2_halo_orbit_six_month.p'
             orbit_datapath = os.path.join(classpath, filename)
         if not os.path.exists(orbit_datapath):
-            raise Exception("Orbit data file not found.")
-        halo = pickle.load( open( orbit_datapath, "rb" ) )
+            matname = 'L2_halo_orbit_six_month.mat'
+            mat_datapath = os.path.join(classpath, matname)
+            if not os.path.exists(mat_datapath):
+                raise Exception("Orbit data file not found.")
+            else:
+                halo = loadmat( mat_datapath )
+                pickle.dump( halo, open(orbit_datapath, 'wb'))
+        else:
+            halo = pickle.load( open( orbit_datapath, "rb" ) )
         
         # unpack orbit properties
         self.orbit_period = halo['te'].flatten()[0]/(2*np.pi)*u.year

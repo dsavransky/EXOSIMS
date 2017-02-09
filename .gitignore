@@ -80,3 +80,5 @@ fitting_parameters.h5
 *.so
 *.acomp
 statsFun_C
+*.p
+*.pkl

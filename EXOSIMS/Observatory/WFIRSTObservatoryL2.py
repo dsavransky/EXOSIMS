@@ -59,10 +59,10 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         self.orbit_time = halo['t'].flatten()/(2*np.pi)*u.year
         # create interpolant (years & AU units)
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
-                self.orbit_pos.value.T,kind='cubic')
+                self.orbit_pos.value.T,kind='linear')#using linear resolves conflicts with ubuntu scipy.interp1d singular matrix
         # create interpolant for orbital velocity (years & AU/yr units)
         self.orbit_V_interp = interpolate.interp1d(self.orbit_time.value,\
-                self.orbit_vel.value.T,kind='cubic')
+                self.orbit_vel.value.T,kind='linear')
 
     def orbit(self, currentTime):
         """Finds observatory orbit position vector in heliocentric equatorial frame.

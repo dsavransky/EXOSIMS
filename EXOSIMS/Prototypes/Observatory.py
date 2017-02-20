@@ -681,7 +681,7 @@ class Observatory(object):
         
         # differential forces
         dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to('N')
-        dF_axial = np.dot(dF.to('N'), u_tT)*u.N
+        dF_axial = np.dot(dF.to('N'), u_tT)
         dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_tT)**2))
         dF_axial = np.abs(dF_axial)
         

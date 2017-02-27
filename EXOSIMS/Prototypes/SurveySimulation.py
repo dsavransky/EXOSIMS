@@ -376,13 +376,13 @@ class SurveySimulation(object):
             
             startTime = TK.currentTimeAbs + slewTime
             r_sc = Obs.orbit(startTime)
-            kogoodStart = Obs.keepout(TL, sInds, startTime, r_sc, OS.telescopeKeepout)
+            kogoodStart = Obs.keepout(TL, sInds, startTime, OS.telescopeKeepout)
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 2/ calculate integration times for the preselected targets, 
             # and filter out t_tot > integration cutoff
             if np.any(sInds):
-                fZ = ZL.fZ(TL, sInds, mode['lam'], r_sc[sInds])
+                fZ = ZL.fZ(TL, sInds, mode['lam'], r_sc[:,sInds])
                 fEZ = ZL.fEZ0
                 t_dets[sInds] = OS.calc_maxintTime(TL, sInds, fZ, fEZ, mode)
                 # include integration time multiplier
@@ -395,7 +395,7 @@ class SurveySimulation(object):
             if np.any(sInds):
                 endTime = startTime[sInds] + t_dets[sInds]
                 r_sc = Obs.orbit(endTime)
-                kogoodEnd = Obs.keepout(TL, sInds, endTime, r_sc, OS.telescopeKeepout)
+                kogoodEnd = Obs.keepout(TL, sInds, endTime, OS.telescopeKeepout)
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 4/ filter out all previously (more-)visited targets, unless in 
@@ -644,7 +644,7 @@ class SurveySimulation(object):
         if np.any(tochar):
             startTime = TK.currentTimeAbs
             r_sc = Obs.orbit(startTime)
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, r_sc, OS.telescopeKeepout)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime, OS.telescopeKeepout)
         # If any planet to characterize, find the characterization times
         if np.any(tochar):
             # Propagate the whole system to match up with current time
@@ -663,7 +663,7 @@ class SurveySimulation(object):
         if np.any(tochar):
             endTime = TK.currentTimeAbs + t_tots[tochar]
             r_sc = Obs.orbit(endTime)
-            tochar[tochar] = Obs.keepout(TL, sInd, endTime, r_sc, OS.telescopeKeepout)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTime, OS.telescopeKeepout)
         # If yes, perform the characterization for the maximum char time
         if np.any(tochar):
             t_char = np.max(t_chars[tochar])

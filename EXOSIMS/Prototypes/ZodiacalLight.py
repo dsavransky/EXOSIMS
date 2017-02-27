@@ -65,22 +65,21 @@ class ZodiacalLight(object):
                 Integer indices of the stars of interest
             lam (astropy Quantity):
                 Central wavelength in units of nm
-            r_sc (astropy Quantity nx3 array):
+            r_sc (astropy Quantity 3xn array):
                 Observatory (spacecraft) position vector in units of km
         
         Returns:
             fZ (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
-        Note: r_sc must be an array of shape = len(sInds)x3
+        Note: r_sc must be an array of shape (3 x sInds.size)
         
         """
         
         # reshape sInds
         sInds = np.array(sInds,ndmin=1)
-        
         # check shape of r_sc
-        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
+        assert r_sc.shape == (3,sInds.size), 'r_sc must be of shape (3 x sInds.size)'
         
         nZ = np.ones(len(sInds))
         fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2

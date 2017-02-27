@@ -24,32 +24,31 @@ class Stark(ZodiacalLight):
                 Integer indices of the stars of interest
             lam (astropy Quantity):
                 Central wavelength in units of nm
-            r_sc (astropy Quantity nx3 array):
+            r_sc (astropy Quantity 3xn array):
                 Observatory (spacecraft) position vector in units of km
         
         Returns:
             fZ (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
-        Note: r_sc must be an array of shape = len(sInds)x3
+        Note: r_sc must be an array of shape (3 x sInds.size)
         
         """
         
         # reshape sInds
         sInds = np.array(sInds,ndmin=1)
-        
         # check shape of r_sc
-        assert r_sc.shape == (len(sInds),3), 'r_sc must be of shape (len(sInds),3)'
+        assert r_sc.shape == (3,sInds.size), 'r_sc must be of shape (3 x sInds.size)'
         
         # observatory coordinates wrt Sun
-        rsc = SkyCoord(r_sc[:,0],r_sc[:,1],r_sc[:,2],representation='cartesian').heliocentrictrueecliptic
+        rsc = SkyCoord(r_sc[0,:],r_sc[1,:],r_sc[2,:],representation='cartesian').heliocentrictrueecliptic
         # longitude of the sun
         lon0 = rsc.lon.value + 180
         
         # target coordinates wrt observatory
-        x = TL.coords[sInds].represent_as('cartesian').x - r_sc[:,0]
-        y = TL.coords[sInds].represent_as('cartesian').y - r_sc[:,1]
-        z = TL.coords[sInds].represent_as('cartesian').z - r_sc[:,2]
+        x = TL.coords[sInds].represent_as('cartesian').x - r_sc[0,:]
+        y = TL.coords[sInds].represent_as('cartesian').y - r_sc[1,:]
+        z = TL.coords[sInds].represent_as('cartesian').z - r_sc[2,:]
         rt = SkyCoord(x,y,z,representation='cartesian').heliocentrictrueecliptic
         # longitudes and latitudes of targets
         lon = rt.lon.value - lon0

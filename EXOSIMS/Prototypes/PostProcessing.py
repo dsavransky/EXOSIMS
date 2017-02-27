@@ -57,12 +57,10 @@ class PostProcessing(object):
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',\
                     fill_value=1., bounds_error=False)
             self.ppFact = lambda s: np.array(Ginterp(s.to('arcsec').value),ndmin=1)
-            self._outspec['ppFact'] = ppFact
         elif isinstance(ppFact,numbers.Number):
             assert ppFact>0 and ppFact<=1, \
                     "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
-            self._outspec['ppFact'] = ppFact
             
         # check for max FA flux ratio, function of the working angle
         if isinstance(maxFAfluxratio,basestring):
@@ -77,14 +75,15 @@ class PostProcessing(object):
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',\
                     fill_value=1., bounds_error=False)
             self.maxFAfluxratio = lambda s: np.array(Ginterp(s.to('arcsec').value),ndmin=1)
-            self._outspec['maxFAfluxratio'] = maxFAfluxratio
         elif isinstance(maxFAfluxratio,numbers.Number):
             assert maxFAfluxratio>0 and maxFAfluxratio<=1, \
                     "Max FA flux ratio must be positive and smaller than 1."
             self.maxFAfluxratio = lambda s, G=float(maxFAfluxratio): G
-            self._outspec['maxFAfluxratio'] = maxFAfluxratio
         
         # populate outspec
+        # populate with value which may be interpolants
+        self._outspec['ppFact'] = ppFact
+        self._outspec['maxFAfluxratio'] = maxFAfluxratio
         for att in self.__dict__.keys():
             if att not in ['ppFact','maxFAfluxratio']:
                 dat = self.__dict__[att]

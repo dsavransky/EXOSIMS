@@ -59,10 +59,10 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         self.orbit_time = halo['t'].flatten()/(2*np.pi)*u.year
         # create interpolant (years & AU units)
         self.orbit_interp = interpolate.interp1d(self.orbit_time.value,\
-                self.orbit_pos.value.T,kind='cubic')
+                self.orbit_pos.value.T,kind='linear')
         # create interpolant for orbital velocity (years & AU/yr units)
         self.orbit_V_interp = interpolate.interp1d(self.orbit_time.value,\
-                self.orbit_vel.value.T,kind='cubic')
+                self.orbit_vel.value.T,kind='linear')
 
     def orbit(self, currentTime):
         """Finds observatory orbit position vector in heliocentric equatorial frame.
@@ -75,21 +75,20 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
                 Current absolute mission time in MJD
         
         Returns:
-            r_sc (astropy Quantity nx3 array):
+            r_sc (astropy Quantity 3xn array):
                 Observatory (spacecraft) position vector in units of km
         
         """
         
         # reshape currentTime
         currentTime = currentTime.reshape(currentTime.size)
-        
         # find time from Earth equinox and interpolated position
         equinox = Time(60575.25,format='mjd')
-        deltime = (currentTime - equinox).to('year')
+        deltime = (currentTime - equinox)
         
         # calculating Earth position
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
-        dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
+        dist_Earth = SkyCoord(r_Earth[0,:],r_Earth[1,:],r_Earth[2,:],representation='cartesian').heliocentrictrueecliptic.icrs.distance
         
         # weighting L2 position with Earth-Sun distance
         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
@@ -97,23 +96,18 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
 #         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
         
         # add L2 position to get current ecliptic coord
-        th = np.mod(deltime.value,1.)*2*np.pi
-        cpos = self.orbit_interp(np.mod(deltime,self.orbit_period).value)
-        cpos += np.array([np.cos(th),np.sin(th),np.zeros(th.size)])*L2_corr_dist.to('AU').value
-        cpos = cpos.T
+        th = 2*np.pi*np.mod(deltime.to('yr'),1.*u.yr).value
+        cpos = self.orbit_interp(np.mod(deltime.to('yr'),self.orbit_period).to('year').value)
+        cpos += np.vstack((np.cos(th),np.sin(th),np.zeros(th.size)))*L2_corr_dist.to('AU').value
+#        cpos = cpos.T
         
         # finally, rotate into equatorial plane
-        obe = self.obe(self.cent(currentTime))
-        
-        # if single currentTime value
-        if type(obe) == float:
-            r_sc = (np.dot(self.rot(np.radians(-obe),1),cpos)*u.AU).to('km')
-        # else if several currentTime values
-        else:
-            r_sc = np.empty((obe.size, 3))*u.km
-            for i in range(obe.size):
-                r_sc[i] = (np.dot(self.rot(np.radians(-obe[i]),1),cpos[i])*u.AU).to('km')
+        TDB = self.cent(currentTime)
+        obe = np.array(np.radians(self.obe(TDB)),ndmin=1)
+        r_sc = np.empty((3,obe.size))*u.km
+        for i in range(obe.size):
+            r_sc[:,i] = (np.dot(self.rot(-obe[i],1),cpos[:,i])*u.AU).to('km')
       
         assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
         
-        return r_sc.to('km').reshape(currentTime.size,3)
+        return r_sc.to('km')

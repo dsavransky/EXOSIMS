@@ -21,7 +21,7 @@ class WFIRSTObservatory(Observatory):
                 Current absolute mission time in MJD
         
         Returns:
-            r_sc (astropy Quantity 3xn array):
+            r_sc (astropy Quantity nx3 array):
                 Observatory (spacecraft) position vector in units of km
         
         """
@@ -37,7 +37,7 @@ class WFIRSTObservatory(Observatory):
         t = currentTime.mjd - np.floor(currentTime.mjd) # gives percent of day
         r_scearth = r*np.vstack((np.cos(f*t), np.sin(f*t), np.zeros(t.size)))
         # position vector wrt Earth in equatorial frame
-        r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth)
+        r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth).T
         # position vector in heliocentric equatorial frame
         r_sc = r_earth + r_scearth
         
@@ -83,7 +83,7 @@ class WFIRSTObservatory(Observatory):
         # Observatory position
         r_sc = self.orbit(currentTime)
         # Position vectors wrt sun, for targets and bright bodies
-        r_targ = self.starprop(TL, sInds, currentTime) 
+        r_targ = self.starprop(TL, sInds, currentTime)
         r_body = np.array([np.zeros(r_sc.shape), # sun
             self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
             self.solarSystem_body_position(currentTime, 'Earth').to('km').value,
@@ -98,10 +98,9 @@ class WFIRSTObservatory(Observatory):
         # position vectors wrt spacecraft
         r_targ -= r_sc
         r_body -= r_sc
-        r_body = r_body.reshape(nBodies,nTimes,3)
         # unit vectors wrt spacecraft
-        u_targ = r_targ.value/np.linalg.norm(r_targ, axis=0)
-        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=2).T).T
+        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
+        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
         # Create koangles for all bodies, set by telescope keepout angle for brighter 
         # objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
@@ -112,11 +111,13 @@ class WFIRSTObservatory(Observatory):
         # If bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
-        kogood = np.array([True]*nStars)
-        culprit = np.zeros([nStars, nBodies])
-        for i in xrange(nStars):
+        nkogood = np.maximum(nStars,nTimes)
+        kogood = np.array([True]*nkogood)
+        culprit = np.zeros([nkogood, nBodies])
+        for i in xrange(nkogood):
             u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
-            angles = np.arccos(np.dot(u_b, u_targ[:,i]))
+            u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
+            angles = np.arccos(np.dot(u_b, u_t))
             culprit[i,:] = (angles < koangles.to('rad').value)
             if np.any(culprit[i,:]):
                 kogood[i] = False

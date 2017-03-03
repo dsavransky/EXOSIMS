@@ -238,12 +238,12 @@ class Observatory(object):
                 Current absolute mission time in MJD
         
         Returns:
-            r_sc (astropy Quantity 3xn array):
+            r_sc (astropy Quantity nx3 array):
                 Observatory (spacecraft) position vector in units of km
         
         """
         
-        r_sc = np.vstack((currentTime.mjd, currentTime.mjd, currentTime.mjd))*u.km
+        r_sc = np.vstack((currentTime.mjd, currentTime.mjd, currentTime.mjd)).T*u.km
         assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
         
         return r_sc.to('km')
@@ -268,18 +268,19 @@ class Observatory(object):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
         
-        Note: currentTime must be of size 1, or size of sInds.
+        Note: If multiple times and targets, currentTime and sInds sizes must match.
         
         """
         
-        # reshape sInds
+        # check size of arrays
         sInds = np.array(sInds,ndmin=1)
-        # check size of currentTime
-        assert (currentTime.size == 1) or currentTime.size == sInds.size, \
-                    'CurrentTime must be of size 1, or size of sInds'
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
+                currentTime and sInds sizes must match'
         
         # build "keepout good" array, check if all elements are Boolean
-        kogood = np.ones(sInds.size, dtype=bool)
+        kogood = np.ones(nStars, dtype=bool)
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), 'An element of kogood is not Boolean'
         
@@ -297,7 +298,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
         
         Returns:
-            r_star (astropy Quantity 3xn array): 
+            r_star (astropy Quantity nx3 array): 
                 Position vectors of stars of interest in heliocentric 
                 equatorial frame in units of km
         
@@ -311,6 +312,7 @@ class Observatory(object):
         nTimes = currentTime.size
         assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
                 currentTime and sInds sizes must match'
+        
         # right ascension and declination
         ra = TL.coords.ra[sInds]
         dec = TL.coords.dec[sInds]
@@ -326,7 +328,7 @@ class Observatory(object):
         v = mu0/TL.parx[sInds]*u.AU + r0*TL.rv[sInds]
         # stellar position vector
         dr = (v*(currentTime.mjd - j2000.mjd)*u.day).decompose()
-        r_star = TL.coords[sInds].cartesian.xyz + dr
+        r_star = (TL.coords[sInds].cartesian.xyz + dr).T
         
         return r_star.to('km')
 
@@ -343,7 +345,7 @@ class Observatory(object):
                 Solar system object name
         
         Returns:
-            r_body (astropy Quantity 3xn array):
+            r_body (astropy Quantity nx3 array):
                 Heliocentric equatorial position vector in units of km
         
         """
@@ -369,7 +371,7 @@ class Observatory(object):
                 Solar system object name
         
         Returns:
-            r_body (astropy Quantity 3xn array):
+            r_body (astropy Quantity nx3 array):
                 Heliocentric equatorial position vector in units of km
         
         """
@@ -386,7 +388,6 @@ class Observatory(object):
                   'Pluto':9,
                   'Sun':10,
                   'Moon':301}
-        
         assert bodies.has_key(bodyname),\
                  "%s is not a recognized body name."%(bodyname)
         
@@ -409,8 +410,9 @@ class Observatory(object):
         else:
             r_body = (self.kernel[0,bodies[bodyname]].compute(currentTime.jd) - \
                     self.kernel[0,10].compute(currentTime.jd))*u.km
+        r_body = r_body.reshape(currentTime.size,3)
         
-        return r_body.to('km').reshape(3,currentTime.size)
+        return r_body.to('km')
 
     def keplerplanet(self, currentTime, bodyname):
         """Finds position vector for solar system objects
@@ -426,7 +428,7 @@ class Observatory(object):
                 Solar system object name
         
         Returns:
-            r_body (astropy Quantity 3xn array):
+            r_body (astropy Quantity nx3 array):
                 Heliocentric equatorial position vector in units of km
         
         """
@@ -469,7 +471,7 @@ class Observatory(object):
         obe = np.array(np.radians(self.obe(TDB)),ndmin=1)
         # position vector (km) in heliocentric equatorial frame
         r_body = np.array([np.dot(self.rot(-obe[x],1),r_body[:,x])\
-                for x in range(currentTime.size)]).T*u.km
+                for x in range(currentTime.size)])*u.km
         
         return r_body.to('km')
 
@@ -484,7 +486,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
         
         Returns:
-            r_moon (astropy Quantity 3xn array):
+            r_moon (astropy Quantity nx3 array):
                 Geocentric equatorial position vector in units of km
         
         """
@@ -497,24 +499,19 @@ class Observatory(object):
             0.21*np.sin(np.radians(269.9 + 954397.70*TDB)) - 
             0.19*np.sin(np.radians(357.5 + 35999.05*TDB)) - 
             0.11*np.sin(np.radians(186.6 + 966404.05*TDB)))
-        
         phi = np.radians(5.13*np.sin(np.radians(93.3 + 483202.03*TDB)) + 
             0.28*np.sin(np.radians(228.2 + 960400.87*TDB)) - 
             0.28*np.sin(np.radians(318.3 + 6003.18*TDB)) - 
             0.17*np.sin(np.radians(217.6 - 407332.20*TDB)))
-        
         P = np.radians(0.9508 + 0.0518*np.cos(np.radians(134.9 + 477198.85*TDB)) + 
             0.0095*np.cos(np.radians(259.2 - 413335.38*TDB)) + 
             0.0078*np.cos(np.radians(235.7 + 890534.23*TDB)) + 
             0.0028*np.cos(np.radians(269.9 + 954397.70*TDB)))
-        
         e = np.radians(23.439291 - 0.0130042*TDB - 1.64e-7*TDB**2 + 5.04e-7*TDB**3)
-        
         r = 1./np.sin(P)*6378.137 # km
-        
-        r_moon = r*np.vstack((np.cos(phi)*np.cos(la),
+        r_moon = (r*np.vstack((np.cos(phi)*np.cos(la),
             np.cos(e)*np.cos(phi)*np.sin(la) - np.sin(e)*np.sin(phi),
-            np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)))*u.km
+            np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)))).T*u.km
         
         return r_moon.to('km')
 
@@ -627,7 +624,6 @@ class Observatory(object):
         
         # occulter separation distance
         occulterSep = self.occulterSep
-        
         # get spacecraft position vector
         r_Ts = self.orbit(currentTime)[0]
         # sun -> earth position vector
@@ -642,18 +638,15 @@ class Observatory(object):
         # Earth-Moon barycenter -> spacecraft vectors
         r_TE = r_Ts - r_Es
         r_OE = r_Os - r_Es
-        
         # force on occulter
         F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to('N')
         mEMB = const.M_sun/328900.56
         F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to('N')
         F_O = F_sO + F_EO
-        
         # force on telescope
         F_sT = (-const.G*const.M_sun*self.coMass*r_Ts/np.sqrt(np.sum(r_Ts**2))**3).to('N')
         F_ET = (-const.G*mEMB*self.coMass*r_TE/np.sqrt(np.sum(r_TE**2))**3).to('N')
         F_T = F_sT + F_ET
-        
         # differential forces
         dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to('N')
         dF_axial = np.dot(dF.to('N'), u_tT)

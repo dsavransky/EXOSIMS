@@ -375,14 +375,13 @@ class SurveySimulation(object):
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
             startTime = TK.currentTimeAbs + slewTime
-            r_sc = Obs.orbit(startTime)
             kogoodStart = Obs.keepout(TL, sInds, startTime, OS.telescopeKeepout)
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 2/ calculate integration times for the preselected targets, 
             # and filter out t_tot > integration cutoff
             if np.any(sInds):
-                fZ = ZL.fZ(TL, sInds, mode['lam'], r_sc[:,sInds])
+                fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
                 fEZ = ZL.fEZ0
                 t_dets[sInds] = OS.calc_maxintTime(TL, sInds, fZ, fEZ, mode)
                 # include integration time multiplier
@@ -394,7 +393,6 @@ class SurveySimulation(object):
             # and filter out unavailable targets
             if np.any(sInds):
                 endTime = startTime[sInds] + t_dets[sInds]
-                r_sc = Obs.orbit(endTime)
                 kogoodEnd = Obs.keepout(TL, sInds, endTime, OS.telescopeKeepout)
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
@@ -764,8 +762,7 @@ class SurveySimulation(object):
         # propagate the system to match up with current time
         SU.propag_system(sInd, TK.currentTimeNorm)
         # find spacecraft position and ZodiacalLight
-        r_sc = Obs.orbit(TK.currentTimeAbs)
-        fZ = ZL.fZ(TL, sInd, mode['lam'], r_sc)
+        fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(TK.currentTimeAbs))
         # find electron counts for planet, background, and speckle residual 
         C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, \
                 SU.fEZ[pInds], SU.dMag[pInds], SU.WA[pInds], mode)

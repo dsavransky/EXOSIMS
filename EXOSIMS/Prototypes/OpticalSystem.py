@@ -64,11 +64,11 @@ class OpticalSystem(object):
         focal (astropy Quantity):
             Focal length in units of m
         idark (astropy Quantity):
-            Dark current rate in units of 1/s
+            Detector dark-current per pixel in units of 1/s
         CIC (float):
-            Clock-induced-charge
+            Clock-induced-charge per frame per pixel
         sread (float):
-            Detector readout noise
+            Detector effective read noise per frame per pixel
         texp (astropy Quantity):
             Exposure time per frame in units of s
         ENF (float):
@@ -585,7 +585,7 @@ class OpticalSystem(object):
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of mas
+                Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
         

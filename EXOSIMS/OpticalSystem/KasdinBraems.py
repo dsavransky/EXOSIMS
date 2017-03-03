@@ -38,7 +38,7 @@ class KasdinBraems(OpticalSystem):
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of mas
+                Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
         

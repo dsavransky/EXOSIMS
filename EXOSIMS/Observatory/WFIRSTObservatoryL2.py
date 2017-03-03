@@ -85,22 +85,15 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         # find time from Earth equinox and interpolated position
         equinox = Time(60575.25,format='mjd')
         deltime = (currentTime - equinox)
-        
         # calculating Earth position
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
         dist_Earth = SkyCoord(r_Earth[0,:],r_Earth[1,:],r_Earth[2,:],representation='cartesian').heliocentrictrueecliptic.icrs.distance
-        
         # weighting L2 position with Earth-Sun distance
         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
-#         # alternatively, just add the Earth distance fluctuation
-#         L2_corr_dist = np.ones(currentTime.size)*self.L2_dist + (dist_Earth - 1*u.AU).to('AU')
-        
         # add L2 position to get current ecliptic coord
         th = 2*np.pi*np.mod(deltime.to('yr'),1.*u.yr).value
         cpos = self.orbit_interp(np.mod(deltime.to('yr'),self.orbit_period).to('year').value)
         cpos += np.vstack((np.cos(th),np.sin(th),np.zeros(th.size)))*L2_corr_dist.to('AU').value
-#        cpos = cpos.T
-        
         # finally, rotate into equatorial plane
         TDB = self.cent(currentTime)
         obe = np.array(np.radians(self.obe(TDB)),ndmin=1)

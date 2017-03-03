@@ -643,14 +643,13 @@ class SurveySimulation(object):
         # Find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             startTime = TK.currentTimeAbs
-            r_sc = Obs.orbit(startTime)
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, OS.telescopeKeepout)
         # If any planet to characterize, find the characterization times
         if np.any(tochar):
             # Propagate the whole system to match up with current time
             SU.propag_system(sInd, TK.currentTimeNorm)
             # Calculate characterization times at the detected fEZ, dMag, and WA
-            fZ = ZL.fZ(TL, sInd, mode['lam'], r_sc)
+            fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(startTime))
             fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][tochar]
             WA = self.lastDetected[sInd,3][tochar]*u.mas
@@ -662,7 +661,6 @@ class SurveySimulation(object):
         # Is target still observable at the end of any char time?
         if np.any(tochar):
             endTime = TK.currentTimeAbs + t_tots[tochar]
-            r_sc = Obs.orbit(endTime)
             tochar[tochar] = Obs.keepout(TL, sInd, endTime, OS.telescopeKeepout)
         # If yes, perform the characterization for the maximum char time
         if np.any(tochar):

@@ -301,34 +301,29 @@ class Observatory(object):
                 Position vectors of stars of interest in heliocentric 
                 equatorial frame in units of km
         
-        Note: currentTime must be of size 1, or size of sInds.
+        Note: If multiple times and targets, currentTime and sInds sizes must match.
         
         """
         
-        # reshape sInds
+        # check size of arrays
         sInds = np.array(sInds,ndmin=1)
-        # check size of currentTime
-        assert (currentTime.size == 1) or currentTime.size == sInds.size, \
-                    'CurrentTime must be of size 1, or size of sInds'
-        
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
+                currentTime and sInds sizes must match'
         # right ascension and declination
         ra = TL.coords.ra[sInds]
         dec = TL.coords.dec[sInds]
-        
         # set J2000 epoch
         j2000 = Time(2000., format='jyear')
-        
         # directions
         p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
         q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
         r0 = (TL.coords[sInds].cartesian.xyz/TL.coords[sInds].distance)
-        
         # proper motion vector
         mu0 = p0*TL.pmra[sInds] + q0*TL.pmdec[sInds]
-        
         # space velocity vector
         v = mu0/TL.parx[sInds]*u.AU + r0*TL.rv[sInds]
-        
         # stellar position vector
         dr = (v*(currentTime.mjd - j2000.mjd)*u.day).decompose()
         r_star = TL.coords[sInds].cartesian.xyz + dr

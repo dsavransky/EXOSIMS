@@ -31,10 +31,8 @@ class WFIRSTObservatory(Observatory):
         # orbital period is one sidereal day
         f = 2.*np.pi # orbital frequency (2*pi/period)
         r = 42164.*u.km # orbital height in km
-        
         # Find Earth position vector (km in heliocentric equatorial frame)
         r_earth = self.solarSystem_body_position(currentTime, 'Earth')
-        
         # Find spacecraft position vector with respect to Earth in orbital plane
         t = currentTime.mjd - np.floor(currentTime.mjd) # gives percent of day
         r_scearth = r*np.vstack((np.cos(f*t), np.sin(f*t), np.zeros(t.size)))
@@ -47,7 +45,7 @@ class WFIRSTObservatory(Observatory):
         
         return r_sc.to('km')
 
-    def keepout(self, TL, sInds, currentTime, koangle):
+    def keepout(self, TL, sInds, currentTime, koangle, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -62,26 +60,29 @@ class WFIRSTObservatory(Observatory):
                 Current absolute mission time in MJD
             koangle (astropy Quantity):
                 Telescope keepout angle in units of degree
+            returnExtra (boolean):
+                Optional flag, default False, set True to return additional rates for validation
                 
         Returns:
             kogood (boolean ndarray):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
         
-        Note: currentTime must be of size 1, or size of sInds.
+        Note: If multiple times and targets, currentTime and sInds sizes must match.
         
         """
         
-        # reshape sInds
+        # check size of arrays
         sInds = np.array(sInds,ndmin=1)
-        # check size of currentTime
-        assert (currentTime.size == 1) or currentTime.size == sInds.size, \
-                    'CurrentTime must be of size 1, or size of sInds'
+        nStars = sInds.size
+        nTimes = currentTime.size
+        nBodies = 11
+        assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
+                currentTime and sInds sizes must match'
         
         # Observatory position
         r_sc = self.orbit(currentTime)
-        
-        # Position vectors wrt spacecraft for targets and bright bodies, wrt sun
+        # Position vectors wrt sun, for targets and bright bodies
         r_targ = self.starprop(TL, sInds, currentTime) 
         r_body = np.array([np.zeros(r_sc.shape), # sun
             self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
@@ -94,16 +95,13 @@ class WFIRSTObservatory(Observatory):
             self.solarSystem_body_position(currentTime, 'Uranus').to('km').value,
             self.solarSystem_body_position(currentTime, 'Neptune').to('km').value,
             self.solarSystem_body_position(currentTime, 'Pluto').to('km').value])*u.km
-        
         # position vectors wrt spacecraft
         r_targ -= r_sc
         r_body -= r_sc
-        nBodies = np.size(r_body,0)
-        r_body = r_body.reshape(3, currentTime.size, nBodies)
-        
+        r_body = r_body.reshape(nBodies,nTimes,3)
         # unit vectors wrt spacecraft
         u_targ = r_targ.value/np.linalg.norm(r_targ, axis=0)
-        u_body = r_body.value/np.linalg.norm(r_body, axis=0)
+        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=2).T).T
         
         # Create koangles for all bodies, set by telescope keepout angle for brighter 
         # objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
@@ -114,12 +112,11 @@ class WFIRSTObservatory(Observatory):
         # If bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
-        nStars = sInds.size
         kogood = np.array([True]*nStars)
         culprit = np.zeros([nStars, nBodies])
         for i in xrange(nStars):
-            u_b = u_body[:,0,:] if currentTime.size == 1 else u_body[:,i,:]
-            angles = np.arccos(np.dot(u_targ[:,i],u_b))
+            u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
+            angles = np.arccos(np.dot(u_b, u_targ[:,i]))
             culprit[i,:] = (angles < koangles.to('rad').value)
             if np.any(culprit[i,:]):
                 kogood[i] = False
@@ -128,6 +125,7 @@ class WFIRSTObservatory(Observatory):
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), 'An element of kogood is not Boolean'
         
-#        return kogood, culprit
-        return kogood
-
+        if returnExtra:
+            return kogood, r_body, r_targ, culprit
+        else:
+            return kogood

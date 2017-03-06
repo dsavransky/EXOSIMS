@@ -211,7 +211,7 @@ class MissionSim(object):
             seed = specs['seed']
         else:
             seed = py_random.randint(1,1e9)
-        print('MissionSim: Seed is: ', seed)
+        print ('MissionSim: Seed is: ', seed)
         # give this seed to numpy
         np.random.seed(seed)
         

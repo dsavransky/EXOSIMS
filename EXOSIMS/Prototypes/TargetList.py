@@ -206,11 +206,16 @@ class TargetList(object):
             elif type(getattr(self, att)[0]) == str:
                 # FIXME: intent here unclear: 
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
+                #print(getattr(self, att)[0])
                 i = np.where(getattr(self, att) != float('nan'))[0]
+                #print(i)
                 self.revise_lists(i)
             elif (isinstance(getattr(self, att)[0], bytes)):
-                i = np.where(getattr(self, att)[0].decode("utf-8") != float('nan'))[0]
-
+                x = getattr(self, att)[0].decode("utf-8")
+                #print(x)
+                i = np.where((x) != float('nan'))[0]
+                #print(i)
+                
             # exclude non-numerical types
             elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
                 if att == 'coords':
@@ -219,6 +224,7 @@ class TargetList(object):
                     i = np.intersect1d(i1,i2)
                 else:
                     i = np.where(~np.isnan(getattr(self, att)))[0]
+                #print(i)
                 self.revise_lists(i)
                 
 

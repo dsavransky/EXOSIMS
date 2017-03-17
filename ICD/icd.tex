@@ -96,7 +96,7 @@ The overall framework of EXOSIMS is depicted in \reffig{fig:instantiation_tree} 
 \begin{figure}[ht]
     \begin{center}
         \begin{tabular}{c}
-             \includegraphics[width=1\textwidth]{instantiation_tree}
+             \includegraphics[width=0.7\textwidth]{instantiation_tree1}
         \end{tabular}
     \end{center}
     \caption{Schematic depiction of the instantiation path of all EXOSIMS modules.  The entry point to the backbone is the construction of a MissionSimulation object, which causes the instantiation of all other module objects.  All objects are instantiated in the order shown here, with SurveySimulation and SurveyEnsemble constructed last.  The arrows indicate calls to the object constructor, and object references to each module are always passed up directly to the top calling module, so that at the end of construction, the MissionSimulation object has direct access to all other modules as its attributes.}
@@ -166,6 +166,7 @@ EXOSIMS is an open source platform.  As such, packages and modules may be import
             \item scipy.special
             \item scipy.interpolate
         \end{itemize}
+    \item h5py (\emph{optional})
     \item jplephem (\emph{optional})
 \end{itemize}
 }
@@ -560,15 +561,15 @@ The starlight suppression system throughput and contrast - or residual intensity
 
 The input and output of the Optical System methods are depicted in \reffig{fig:opticalsysmodule}. The Optical System module has three methods used in simulation:
 \begin{itemize}[leftmargin=1.5in,font={\ttfamily}]
-    \item[\texttt calc\_maxintTime] Called to calculate the maximum integration time for observable stars in the target list (see \S\ref{sec:calcmaxintTimetask})  
-    \item[\texttt calc\_intTime] Called by \verb+calc_maxintTime+ to calculate the integration times for specific values of planet angular separation and flux ratio (see \S\ref{sec:calcintTimetask})
-    \item[\texttt Cp\_Cb\_Csp] Called by \verb+calc_intTime+ to calculate the electron count rates for planet signal, background noise, and speckle residuals (see \S\ref{sec:CpCbCsptask})
+    \item[\texttt calc\_maxintTime] Called to calculate the maximum integration times for all the stars from the target list, at the limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal noise and at a separation equal to twice the global IWA (see \S\ref{sec:calcmaxintTimetask}).
+    \item[\texttt calc\_intTime] Called by \verb+calc_maxintTime+ to calculate the integration times for specific values of planet zodiacal noise, delta magnitude, and angular separation (see \S\ref{sec:calcintTimetask}).
+    \item[\texttt Cp\_Cb\_Csp] Called by \verb+calc_intTime+ to calculate the electron count rates for planet signal, background noise, and speckle residuals (see \S\ref{sec:CpCbCsptask}).
 \end{itemize}
 
 \begin{figure}[ht]
     \begin{center}
         \begin{tabular}{c}
-            \includegraphics[width=\textwidth]{OpticalSysTasks2}
+            \includegraphics[width=\textwidth]{OpticalSystem}
         \end{tabular}
     \end{center}
     \caption{\label{fig:opticalsysmodule} Depiction of Optical System module methods including input and output (see \S\ref{sec:calcmaxintTimetask}, S\ref{sec:calcintTimetask} and \S\ref{sec:CpCbCsptask}).}
@@ -593,15 +594,16 @@ The specific set of inputs to this module will vary based on the simulation appr
     \item[Ndark (float)] \hfill \\ Number of dark frames used. Default value is 10.
     \item[IWA (float)] \hfill \\ Fundamental Inner Working Angle in units of $ arcsec $. No planets can ever be observed at smaller separations. If not set, defaults to smallest IWA of all starlightSuppressionSystems.
     \item[OWA (float)] \hfill \\ Fundamental Outer Working Angle in units of $ arcsec $. Set to $ Inf $ for no OWA. If not set, defaults to largest OWA of all starlightSuppressionSystems.  JSON values of 0 will be interpreted as $ Inf $.
-    \item[dMagLim (float)] \hfill \\ Fundamental limiting $ \Delta$mag (difference in magnitude between star and planet). Default value is 22.5.
+    \item[dMagLim (float)] \hfill \\ Limiting delta magnitude (difference in magnitude between star and planet) for integration time calculation. Default value is 22.5.
+    \item[WALim (float)] \hfill \\ Limiting working angle for integration time calculation in units of $ arcsec $. Defaults to the global IWA value.
     \item[scienceInstruments (list of dicts)] \hfill\\ List of dictionaries containing specific attributes of all science instruments. For each instrument, if the below attributes are missing from the dictionary, they will be assigned the default values listed, or any value directly passed as input to the class constructor. 
     \begin{description}
         \item[name (string)] \hfill\\ (Required) Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of instrument (imager or spectro). Every instrument should have a unique name.
         \item[pitch (float)] \hfill \\ Pixel pitch in units of $ m $. Default value is 1e-5. 
         \item[focal (float)] \hfill \\ Focal length in units of $ m $. Default value is 100. 
-        \item[idark (float)] \hfill \\ Detector dark-current rate of electrons per pixel in units of $ 1/s $. Default value is 5e-4. 
-        \item[CIC (float)] \hfill \\ (Specific to CCDs) Clock-induced-charge of electrons per frame. Default value is 5e-3. 
-        \item[sread (float)] \hfill \\ Detector effective read noise rate of electrons per frame, including any gain (e.g. electron multiplication gain). Default value is 0.2.
+        \item[idark (float)] \hfill \\ Detector dark-current per pixel in units of $ 1/s $. Default value is 5e-4. 
+        \item[CIC (float)] \hfill \\ (Specific to CCDs) Clock-induced-charge per frame per pixel. Default value is 5e-3. 
+        \item[sread (float)] \hfill \\ Detector effective read noise per frame per pixel, including any gain (e.g. electron multiplication gain). Default value is 0.2.
         \item[texp (float)] \hfill \\ Exposure time per frame in units of $ s $. Default value is 1000. 
         \item[ENF (float)] \hfill \\ (Specific to EM-CCDs) Excess noise factor. Default value is 1. 
         \item[Rs (float)] \hfill \\ (Specific to spectrometers) Spectral resolving power defined as $\lambda/d\lambda$. Default value is 70. 
@@ -638,8 +640,6 @@ The specific set of inputs to this module will vary based on the simulation appr
     \begin{description}
         \item[instName (string)]\hfill \\ (Required) Instrument name. Must match with the name of a defined science instrument.
         \item[systName (string)]\hfill \\ (Required) System name. Must match with the name of a defined starlight suppression system.
-        \item[inst (dict)]\hfill \\ Selected instrument of the observing mode.
-        \item[syst (dict)]\hfill \\ Selected system of the observing mode.
         \item[detection (boolean)]\hfill \\ True if this observing mode is the detection mode, otherwise False. Only one detection mode can be specified. If not specified, default detection mode is first imager mode.
         \item[SNR (float)]\hfill \\ Signal-to-noise ratio threshold. Defaults to 5.
         \item[timeMultiplier (float)]\hfill \\ Integration time multiplier. Equal to the number of discrete integrations needed to cover the full field of view (e.g. shaped pupil), or the full wavelength band and all required polarization states.  For example, if the band is split into three sub-bands, and there are two polarization states that must be measured, and each of these must be done sequentially, then this value would equal 6.  However, if the three sub-bands could be observed at the same time (e.g., by separate detectors) then the value would be two (for the two polarization states). Defaults to 1.
@@ -669,7 +669,8 @@ These will always be present in an OpticalSystem object and directly accessible 
     \item[haveOcculter (boolean)] \hfill \\ Boolean signifying if the system has an occulter
     \item[IWA (astropy Quantity)] \hfill \\ Fundamental Inner Working Angle in units of $ arcsec $
     \item[OWA (astropy Quantity)] \hfill \\ Fundamental Outer Working Angle in units of $ arcsec $
-    \item[dMagLim (float)] \hfill \\ Fundamental Limiting $ \Delta$mag (difference in magnitude between star and planet)
+    \item[dMagLim (float)] \hfill \\ Limiting delta magnitude (difference in magnitude between star and planet) for integration time calculation
+    \item[WALim (astropy Quantity)] \hfill \\ Limiting working angle for integration time calculation in units of $ arcsec $
     \item[scienceInstruments (list of dicts)] \hfill \\  List of dictionaries containing all supplied science instrument attributes.  Typically the first instrument will be the imager, and the second the spectrograph (IFS). Only required attribute is `name'.  See above for other commonly used attributes. 
     \item[starlightSuppressionSystems (list of dicts)] \hfill \\  List of dictionaries containing all supplied starlight suppression system attributes. Typically the first system will be used with the imager, and the second with the IFS. Only required attribute is `name'. See above for other commonly used attributes.
     \item[observingModes (list of dicts)] \hfill \\  List of dictionaries containing all mission observing modes. Only required attribute are `instName' and `systName'. See above for other commonly used attributes.    
@@ -678,17 +679,13 @@ These will always be present in an OpticalSystem object and directly accessible 
 \end{itemize}
 
 \subsubsection{calc\_maxintTime Method} \label{sec:calcmaxintTimetask}
-The \verb+calc_maxintTime+ method calculates the maximum integration time for each star in the target list.  This method is called from the SurveySimulation module.
+The \verb+calc_maxintTime+ method calculates the maximum integration time for each star in the target list.  This method is called from the TargetList module.
 
 \subsubsection*{Input}
 \begin{itemize}
 \item 
 \begin{description}
     \item[TL (TargetList module)] \hfill \\ TargetList class object, see \S\ref{sec:targetlist} for definition of available attributes
-    \item[sInds (integer ndarray)] \hfill \\ Integer indices of the stars of interest, with the length of the number of planets of interest
-    \item[fZ (astropy Quantity array)] \hfill \\ Surface brightness of local zodiacal light in units of $ 1/arcsec^2 $
-    \item[fEZ (astropy Quantity array)] \hfill \\ Surface brightness of exo-zodiacal light in units of $ 1/arcsec^2 $
-    \item[mode (dict)] \hfill \\ Selected observing mode
 \end{description}
 \end{itemize}
 
@@ -712,7 +709,7 @@ The \verb+calc_intTime+ method calculates the integration time required for spec
     \item[fZ (astropy Quantity array)] \hfill \\ Surface brightness of local zodiacal light in units of $ 1/arcsec^2 $
     \item[fEZ (astropy Quantity array)] \hfill \\ Surface brightness of exo-zodiacal light in units of $ 1/arcsec^2 $
     \item[dMag (float ndarray)] \hfill \\ Differences in magnitude between planets and their host star.
-    \item[WA (astropy Quantity array)] \hfill \\ Working angles of the planets of interest in units of $ mas $
+    \item[WA (astropy Quantity array)] \hfill \\ Working angles of the planets of interest in units of $ arcsec $
     \item[mode (dict)] \hfill \\ Selected observing mode
 \end{description}
 \end{itemize}
@@ -953,6 +950,7 @@ Monte Carlo methods for calculating completeness will require an input of the nu
 \begin{description}
     \item[PlanetPopulation (PlanetPopulation module)] \hfill \\ PlanetPopulation object (see \ref{sec:planetpopulation})
     \item[PlanetPhysicalModel (PlanetPhysicalModel module)] \hfill \\ PlanetPhysicalModel module object (see \ref{sec:planetphysicalmodel}) 
+    \item[visits] \hfill \\ Number of visits to each star in the target list, initialized in \verb+gen_update+
 \end{description}
 \end{itemize}
 
@@ -977,7 +975,7 @@ The \verb+target_completeness+ method generates completeness values for each sta
 \end{itemize}
 
 \subsubsection{gen\_update Method} \label{sec:genupdatetask}
-The \verb+gen_update+ method generates dynamic completeness values for successive observations of each star in the target list.
+The \verb+gen_update+ method generates dynamic completeness values for successive observations of each star in the target list and initializes the number of visits to each star in the target list stored in the \verb+visits+ attribute.
 
 \subsubsection*{Input}
 \begin{itemize}
@@ -1041,9 +1039,9 @@ The Target List module takes in information from the Star Catalog, Optical Syste
     \item[BackgroundSources (BackgroundSources module)] \hfill \\ BackgroundSources class object (see \ref{sec:backgroundsources})
     \item[PostProcessing (PostProcessing module)] \hfill \\ PostProcessing class object (see \ref{sec:postprocessing})
     \item[Completeness (Completeness module)] \hfill \\ Completeness class object (see \ref{sec:completeness})
-    \item[tint0 (astropy Quantity array)] \hfill \\ Integration time for each target star in units of $ day $, for a minimum detectable delta magnitude $ dMagLim$. Calculated from \verb+OpticalSystem.calc_intTime+ \S\ref{sec:calcintTimetask}
+    \item[tint0 (astropy Quantity array)] \hfill \\ Maximum integration time for each target star. Calculated from \verb+OpticalSystem.calc_maxintTime+ \S\ref{sec:calcmaxintTimetask}
     \item[comp0 (float ndarray)] \hfill \\ Completeness value for each target star. Calculated from \verb+Completeness.target_completeness+ \S\ref{sec:targetcompletenesstask}
-    \item[minComp (float)] \hfill \\ Minimum completeness value for inclusion in target list. 
+    \item[minComp (float)] \hfill \\ Minimum completeness value for inclusion in target list
     \item[MsEst (float ndarray)] \hfill \\ Approximate stellar mass in $ M_{sun} $
     \item[MsTrue (float ndarray)] \hfill \\ Stellar mass with an error component included in $ M_{sun} $
     \item[nStars (int)] \hfill \\ Number of target stars
@@ -1321,7 +1319,6 @@ The \verb+keepout+ method determines which stars in the target list are observab
     \item[TL (TargetList module)] \hfill \\ TargetList class object, see \S\ref{sec:targetlist} for definition of available attributes
     \item[sInds (integer ndarray)] \hfill \\ Integer indices of the stars of interest, with the length of the number of planets of interest
     \item[currentTime (astropy \href{http://astropy.readthedocs.org/en/latest/time/index.html}{Time} array)] \hfill \\ Current absolute mission time in MJD
-    \item[r\_sc (astropy Quantity n$\times$3 array)] \hfill \\ Observatory orbit position in HE reference frame at current mission time in units of $ km $
     \item[koangle (astropy Quantity)] \hfill \\ Telescope keepout angle in units of $ deg $ - \verb+OpticalSystem.telescopeKeepout+
 \end{description}
 \end{itemize}
@@ -1352,7 +1349,7 @@ If jplephem is not present, the Observatory prototype will load static ephemeris
 \begin{itemize}
 \item
 \begin{description}
-    \item[r\_body (astropy Quantity 1$\times$3 array)] \hfill \\ Heliocentric equatorial position vector in units of $ km $
+    \item[r\_body (astropy Quantity n$\times$3 array)] \hfill \\ Heliocentric equatorial position vector in units of $ km $
 \end{description}
 \end{itemize}
 
@@ -1536,14 +1533,14 @@ The \verb+run_sim+ method performs the survey simulation and populates the resul
         \item[plan\_inds (integer list)] \hfill \\ Indices of planets orbiting the observed target star
         \item[det\_time (float)] \hfill \\ Integration time for detection in units of $ day $
         \item[det\_status (integer list)] \hfill \\ List of detection status for each planet orbiting the observed target star, where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
-        \item[det\_SNR (float list)] \hfill \\ List of detection SNR values, only for observable planets
+        \item[det\_SNR (float list)] \hfill \\ List of detection SNR values for each planet orbiting the observed target star. Non-observable planets have their SNR set to 0.
         \item[det\_fEZ (float list)] \hfill \\ List of exo-zodi surface brightnesses at detection in units of $1/arcsec^2$ for each planet orbiting the observed target star
         \item[det\_dMag (float list)] \hfill \\ List of delta magnitudes  at detection for each planet orbiting the observed target star
         \item[det\_WA (float list)] \hfill \\ List of working angles  at detection in units of $mas$ for each planet orbiting the observed target star
         \item[char\_mode (dict)] \hfill \\ Observing mode selected for characterization. Default is first spectro/IFS mode.
         \item[char\_time (float)] \hfill \\ Integration time for characterization in units of $ day $
         \item[char\_status (integer list)] \hfill \\ List of characterization status for each planet orbiting the observed target star, where 1 is full spectrum, -1 partial spectrum, and 0 not characterized
-        \item[char\_SNR (float list)] \hfill \\ List of characterization SNR values only for observable planets
+        \item[char\_SNR (float list)] \hfill \\ List of characterization SNR values for each planet orbiting the observed target star. Non-observable planets have their SNR set to 0.
         \item[char\_fEZ (float list)] \hfill \\ List of exo-zodi surface brightnesses at characterization in units of $1/arcsec^2$ for each planet orbiting the observed target star
         \item[char\_dMag (float list)] \hfill \\ List of delta magnitudes at characterization for each planet orbiting the observed target star
         \item[char\_WA (float list)] \hfill \\ List of working angles at characterization in units of $mas$ for each planet orbiting the observed target star

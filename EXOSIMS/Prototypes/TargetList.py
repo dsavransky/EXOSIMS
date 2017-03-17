@@ -41,8 +41,7 @@ class TargetList(object):
         Completeness (Completeness module):
             Completeness class object
         tint0 (astropy Quantity array):
-            Integration time for each target star in units of day, for a minimum 
-            delta magnitude dMagLim
+            Maximum integration time for each target star in units of day
         comp0 (ndarray):
             Completeness value for each target star
         minComp (float): 
@@ -148,10 +147,8 @@ class TargetList(object):
         self.nan_filter()
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values, for minimum dMag in detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
-        self.tint0 = OS.calc_intTime(self, range(self.nStars), 0./u.arcsec**2, \
-                0./u.arcsec**2, OS.dMagLim, np.ones(self.nStars)*2.*OS.IWA, mode)
+        # populate minimum integration time values
+        self.tint0 = OS.calc_maxintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

@@ -225,12 +225,14 @@ class SurveySimulation(object):
         
         # loop until mission is finished
         sInd = None
+        cnt = 0
         while not TK.mission_is_over():
             
             # Acquire the NEXT TARGET star index and create DRM
             DRM, sInd, t_det = self.next_target(sInd, detMode)
             
             if sInd is not None:
+                cnt += 1
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and self.starExtended.shape[0] == 0:
                     for i in range(len(self.DRM)):
@@ -241,7 +243,7 @@ class SurveySimulation(object):
                 # Beginning of observation, create DRM and start to populate it
                 obsBegin = TK.currentTimeNorm.to('day')
                 Logger.info('current time is %r' % obsBegin)
-                print 'Current mission time: ', obsBegin
+                print 'Observation #%s, current mission time: %s' %(cnt, obsBegin.round(2))
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
@@ -383,7 +385,9 @@ class SurveySimulation(object):
             if np.any(sInds):
                 fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
                 fEZ = ZL.fEZ0
-                t_dets[sInds] = OS.calc_maxintTime(TL, sInds, fZ, fEZ, mode)
+                dMag = OS.dMagLim
+                WA = OS.WALim
+                t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 # include integration time multiplier
                 t_tot = t_dets*mode['timeMultiplier']
                 # total time must be positive and shorter than treshold
@@ -532,8 +536,10 @@ class SurveySimulation(object):
         det = (detected == 1)
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
-            Logger.info('Detected planet(s) %r of target %r' % (pInds[det], sInd))
-            print 'Detected planet(s)', pInds[det], 'of target', sInd
+            Logger.info('Detected planet(s) %s (%s/%s) at target #%s/%s' % (pInds[det], \
+                    len(pInds[det]), len(pInds), sInd, TL.nStars))
+            print 'Detected planet(s) %s (%s/%s) at target #%s/%s' % (pInds[det], \
+                    len(pInds[det]), len(pInds), sInd, TL.nStars)
         
         # Populate the lastDetected array by storing det, fEZ, dMag, and WA
         self.lastDetected[sInd,:] = det, SU.fEZ[pInds].to('1/arcsec2').value, \
@@ -552,8 +558,10 @@ class SurveySimulation(object):
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
             sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
-            Logger.info('False Alarm at target %r with WA %r and dMag %r' % (sInd, WA, dMag))
-            print 'False Alarm at target', sInd, 'with WA', WA, 'and dMag', dMag
+            Logger.info('False Alarm (WA=%s, dMag=%s) at target #%s/%s' % (int(WA)*u.mas, \
+                    round(dMag,1), sInd, TL.nStars))
+            print 'False Alarm (WA=%s, dMag=%s) at target #%s/%s' % (int(WA)*u.mas, \
+                    round(dMag,1), sInd, TL.nStars)
         
         # In both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
@@ -664,8 +672,10 @@ class SurveySimulation(object):
         if np.any(tochar):
             t_char = np.max(t_chars[tochar])
             pIndsChar = pInds[tochar]
-            Logger.info('Characterized planet(s) %r of target %r' % (pIndsChar, sInd))
-            print 'Characterized planet(s)', pIndsChar, 'of target', sInd
+            Logger.info('Charact. planet(s) %s (%s/%s) at target #%s/%s' % (pIndsChar, \
+                    len(pIndsChar), len(pInds), sInd, TL.nStars))
+            print 'Charact. planet(s) %s (%s/%s) at target #%s/%s' % (pIndsChar, \
+                    len(pIndsChar), len(pInds), sInd, TL.nStars)
             
             # SNR CALCULATION:
             # First, calculate SNR for observable planets (without false alarm)

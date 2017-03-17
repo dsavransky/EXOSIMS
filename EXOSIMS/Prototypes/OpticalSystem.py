@@ -47,7 +47,9 @@ class OpticalSystem(object):
         OWA (astropy Quantity):
             Fundamental Outer Working Angle in units of arcsec
         dMagLim (float):
-            Fundamental limiting delta magnitude
+            Limiting delta magnitude for integration time calculation
+        WALim (astropy Quantity):
+            Limiting working angle for integration time calculation
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -165,12 +167,12 @@ class OpticalSystem(object):
     _outspec = {}
 
     def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.5,intCutoff=50,Ndark=10,dMagLim=22.5,scienceInstruments=None,\
-            pitch=1e-5,focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,\
-            QE=0.9,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
+            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,pitch=1e-5,\
+            focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,QE=0.9,\
+            starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
             core_thruput=1e-2,core_contrast=1e-9,platescale=None,PSF=np.ones((3,3)),\
             samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
-            OWA=None,**specs):
+            OWA=None,dMagLim=22.5,WALim=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
@@ -183,7 +185,7 @@ class OpticalSystem(object):
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Ndark = float(Ndark)               # number of dark frames used
-        self.dMagLim = float(dMagLim)           # fundamental delta magnitude limit
+        self.dMagLim = float(dMagLim)           # limiting delta magnitude for calc_intTime
         
         # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
@@ -389,6 +391,9 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
+        # load the limiting working angle value, or set it equal to IWA by default
+        self.WALim = float(WALim)*u.arcsec if WALim is not None else self.IWA
+        
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
             if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
@@ -569,8 +574,8 @@ class OpticalSystem(object):
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration time for a specific target system 
         
-        This method is called by a method in the SurveySimulation class object.
-        This method defines the data type expected, integration time is 
+        This method is called in the run_sim() method of the SurveySimulation 
+        class object. It defines the data type expected, integration time is 
         determined by specific OpticalSystem classes.
         
         Args:
@@ -601,24 +606,17 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_maxintTime(self, TL, sInds, fZ, fEZ, mode):
-        """Finds maximum integration time for target systems 
+    def calc_maxintTime(self, TL):
+        """Finds maximum integration times for the whole target list.
         
-        This method is called in the run_sim() method of the SurveySimulation
-        class object. It calculates the default maximum integration time for a
-        fixed dMagLim, and at the optical system IWA.
+        This method is called in the TargetList class object. It calculates the 
+        maximum integration times for all the stars from the target list, at the 
+        limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal 
+        noise and at a separation equal to twice the global inner working angle (IWA).
         
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            mode (dict):
-                Selected observing mode
         
         Returns:
             maxintTime (astropy Quantity array):
@@ -626,10 +624,15 @@ class OpticalSystem(object):
         
         """
         
-        # calc integration time, for dMag = dMagLim, and WA = IWA
+        # define attributes for integration time calculation
+        sInds = np.arange(TL.nStars)
+        fZ = 0./u.arcsec**2
+        fEZ = 0./u.arcsec**2
         dMag = self.dMagLim
-        WA = self.IWA
-        mode = self.observingModes[0]
+        WA = 2.*self.IWA
+        # select detection mode
+        mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        # calculate maximum integration time
         maxintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
         
         return maxintTime

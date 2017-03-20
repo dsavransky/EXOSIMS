@@ -413,12 +413,8 @@ class SurveySimulation(object):
             
             # 5/ choose best target from remaining
             if np.any(sInds):
-                # prototype version choose sInd among targets with highest completeness
-                comps = TL.comp0[sInds]
-                updated = (self.starVisits[sInds] > 0)
-                comps[updated] =  self.Completeness.completeness_update(TL, \
-                        sInds[updated], TK.currentTimeNorm)
-                sInd = np.random.choice(sInds[comps == max(comps)])
+                # choose sInd of next target
+                sInd = self.choose_next_target(sInds)
                 # update visited list for current star
                 self.starVisits[sInd] += 1
                 # update visited list for Completeness for current star
@@ -452,6 +448,27 @@ class SurveySimulation(object):
                 return DRM, None, None
         
         return DRM, sInd, t_det
+
+    def choose_next_target(self,sInds):
+        """Helper method for method next_target to simplify alternative implementations.
+
+        Given a subset of targets (pre-filtered by method next_target or some other means),
+        select the best next one.  The prototype uses completeness as the sole heuristic.
+
+        Returns the index sInd of the selected target.
+
+        """
+
+        comps = self.TargetList.comp0[sInds]
+        updated = (self.starVisits[sInds] > 0)
+        comps[updated] =  self.Completeness.completeness_update(self.TargetList, \
+                sInds[updated], self.TimeKeeping.currentTimeNorm)
+        sInd = np.random.choice(sInds[comps == max(comps)])
+
+        return sInd
+
+
+
 
     def observation_detection(self, sInd, t_det, mode):
         """Determines the detection status, and updates the last detected list 

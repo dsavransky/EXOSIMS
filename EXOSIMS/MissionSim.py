@@ -270,6 +270,40 @@ class MissionSim(object):
         # return it as well
         return out
 
+    
+    def run_sim(self):
+        """Convenience method that simply calls the SurveySimulation run_sim method."""
+        
+        res = self.SurveySimulation.run_sim()
+
+        return res
+
+    def reset_sim(self,genNewPlanets=True):
+        """
+        Performs a full reset of the current simulation by:
+        1) Resetting SurveySimulation.DRM to []
+        2) Re-initializing the TimeKeeping object with its own outspec
+
+        If genNewPlanets is True (default) then it will also generate all new planets based on
+        the original input specification.  If genNewPlanets is False, then the original planets 
+        will remain, but they will not be rewound to their initial starting locations (i.e., all 
+        systems will remain at the times they were at the end of the last run, thereby effectively 
+        randomizing planet phases.
+        
+        """
+
+        self.SurveySimulation.DRM = []
+        self.TimeKeeping.__init__(**self.TimeKeeping._outspec)
+
+        if genNewPlanets:
+            self.SimulatedUniverse.gen_physical_properties(**self.SimulatedUniverse._outspec)
+            self.SimulatedUniverse.init_systems()
+
+        print "Simulation reset."
+        
+        return
+    
+
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Time's, and astropy Quantity's, into JSON.
     
@@ -310,4 +344,5 @@ def array_encoder(obj):
     # nothing worked, bail out
     
     return json.JSONEncoder.default(obj)
+
 

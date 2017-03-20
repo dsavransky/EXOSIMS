@@ -49,7 +49,7 @@ class OpticalSystem(object):
         dMagLim (float):
             Limiting delta magnitude for integration time calculation
         WALim (astropy Quantity):
-            Limiting working angle for integration time calculation
+            Limiting working angle for integration time calculation in units of arcsec
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):

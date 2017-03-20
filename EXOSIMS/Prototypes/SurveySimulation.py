@@ -367,10 +367,10 @@ class SurveySimulation(object):
                 else:
                     # position vector of previous target star
                     r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)
-                    u_old = r_old/np.sqrt(np.sum(r_old**2))
+                    u_old = r_old.value/np.linalg.norm(r_old)
                     # position vector of new target stars
                     r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
-                    u_new = r_new/(np.tile(np.linalg.norm(r_new,axis=1),(3,1)).T)
+                    u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
                     # angle between old and new stars
                     sd = np.arccos(np.dot(u_old, u_new.T))[0]
                     sd[np.where(np.isnan(sd))] = 0.

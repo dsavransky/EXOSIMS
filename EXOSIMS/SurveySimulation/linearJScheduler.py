@@ -73,7 +73,7 @@ class linearJScheduler(SurveySimulation):
         # only consider slew distance when there's an occulter
         if self.OpticalSystem.haveOcculter:
             combs = np.array([np.array(x) for x in  itertools.combinations(range(len(sInds)),2)]) 
-            r_ts = Obs.starprop(self.TargetList, sInds, self.TimeKeeping.currentTimeAbs)
+            r_ts = self.Observatory.starprop(self.TargetList, sInds, self.TimeKeeping.currentTimeAbs)
             u_ts = r_ts/(np.tile(np.linalg.norm(r_ts,axis=1),(3,1)).T*r_ts.unit)
 
             angdists = np.arccos(np.sum(u_ts[combs[:,0],:]*u_ts[combs[:,1],:],1))

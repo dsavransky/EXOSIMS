@@ -359,6 +359,7 @@ class SurveySimulation(object):
             
             # 1/ find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
+            sd = None
             if OS.haveOcculter == True:
                 # find angle between old and new stars, default to pi/2 for first target
                 if old_sInd is None:
@@ -369,7 +370,7 @@ class SurveySimulation(object):
                     u_old = r_old/np.sqrt(np.sum(r_old**2))
                     # position vector of new target stars
                     r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
-                    u_new = r_new/np.sqrt(np.sum(r_new**2))
+                    u_new = r_new/(np.tile(np.linalg.norm(r_new,axis=1),(3,1)).T)
                     # angle between old and new stars
                     sd = np.arccos(np.dot(u_old, u_new.T))[0]
                     sd[np.where(np.isnan(sd))] = 0.
@@ -414,7 +415,7 @@ class SurveySimulation(object):
             # 5/ choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_target(sInds)
+                sInd = self.choose_next_target(old_sInd,sInds,slewTime)
                 # update visited list for current star
                 self.starVisits[sInd] += 1
                 # update visited list for Completeness for current star
@@ -449,8 +450,20 @@ class SurveySimulation(object):
         
         return DRM, sInd, t_det
 
-    def choose_next_target(self,sInds):
+    def choose_next_target(self,old_sInd,sInds,slewTime):
         """Helper method for method next_target to simplify alternative implementations.
+
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            sInds (integer array):
+                Indices of available targets
+            slewTime (quantity array):
+                slew times to all stars (must be indexed by sInds)
+                
+        Returns:
+            sInd (integer):
+                Index of next target star
 
         Given a subset of targets (pre-filtered by method next_target or some other means),
         select the best next one.  The prototype uses completeness as the sole heuristic.
@@ -466,7 +479,6 @@ class SurveySimulation(object):
         sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
-
 
 
 

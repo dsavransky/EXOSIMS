@@ -274,6 +274,25 @@ given explicitly, use it instead.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.MissionSim.MissionSim.reset_sim">
+<code class="descname">reset_sim</code><span class="sig-paren">(</span><em>genNewPlanets=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.reset_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.reset_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a full reset of the current simulation by:
+1) Resetting SurveySimulation.DRM to []
+2) Re-initializing the TimeKeeping object with its own outspec</p>
+<p>If genNewPlanets is True (default) then it will also generate all new planets based on
+the original input specification.  If genNewPlanets is False, then the original planets
+will remain, but they will not be rewound to their initial starting locations (i.e., all
+systems will remain at the times they were at the end of the last run, thereby effectively
+randomizing planet phases.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.MissionSim.MissionSim.run_sim">
+<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.run_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience method that simply calls the SurveySimulation run_sim method.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.MissionSim.MissionSim.start_logging">
 <code class="descname">start_logging</code><span class="sig-paren">(</span><em>specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.start_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.start_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set up logging object so other modules can use logging.info(), logging.warning, etc.</p>
@@ -372,7 +391,7 @@ they unpack recursively into types for which encoding is known.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

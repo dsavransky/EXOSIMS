@@ -1,0 +1,39 @@
+{
+  "missionLife": 0.5,
+  "missionPortion": 0.1,
+  "minComp": 0.025,
+  "ppFact": 0.1,
+  "scienceInstruments": [
+    {
+      "name": "imager"
+    }  
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "occulter",
+      "occulter": true,
+      "lam": 550,
+      "BW": 0.10,
+      "IWA": 0.1,
+      "OWA": 0,
+      "occ_trans": 1
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "KeplerLike2",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}
+

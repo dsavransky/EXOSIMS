@@ -1,3 +1,17 @@
+"""
+End to End Test Suite for EXOSIMS
+Run as:
+    >python e2eTests.py
+
+This code will sequentially execute all script files found in:
+EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts
+and print a summary of the results.  Possible outcomes for each test
+are:
+    PASS
+    FAIL - Instantiation
+    FAIL - Execution
+"""
+
 import EXOSIMS
 import os
 import glob
@@ -47,7 +61,7 @@ def run_e2e_tests():
             print "Run failed."
             print sys.exc_info()[0]
             print "\n\n\n"
-            results.append("FAIL - Run")
+            results.append("FAIL - Execution")
             continue
 
         results.append("PASS")

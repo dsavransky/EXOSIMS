@@ -374,6 +374,7 @@ class SurveySimulation(object):
                     # angle between old and new stars
                     sd = np.arccos(np.dot(u_old, u_new.T))[0]
                     sd[np.where(np.isnan(sd))] = 0.
+                    sd = sd*u.rad
                 # calculate slew time
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             

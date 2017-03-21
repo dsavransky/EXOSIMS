@@ -82,7 +82,7 @@ class linearJScheduler(SurveySimulation):
             combs = np.array([np.array(x) for x in itertools.combinations(range(nStars),2)])
             r_ts = Obs.starprop(TL, sInds, TK.currentTimeAbs)
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
-            angdists = np.arccos(np.dot(u_ts,u_ts.T)[combs[:,0],combs[:,1]])
+            angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T)[combs[:,0],combs[:,1]],-1,1))
             A[np.tril(np.ones((nStars,nStars),dtype=bool),-1)] = angdists
             A = self.coeffs[0]*(A+A.T)/np.pi
         

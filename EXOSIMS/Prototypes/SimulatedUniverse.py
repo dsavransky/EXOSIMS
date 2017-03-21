@@ -200,14 +200,14 @@ class SimulatedUniverse(object):
         v1 = np.sqrt(mu/self.a**3)/(1. - e*np.cos(E))
         v2 = np.cos(E)
         
-        self.r = (A*r1 + B*r2).T.to('AU')                       # position
-        self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')             # velocity
-        self.d = np.sqrt(np.sum(self.r**2, axis=1))             # planet-star distance
-        self.s = np.sqrt(np.sum(self.r[:,0:2]**2, axis=1))      # apparent separation
-        self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))     # planet phase
-        self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)            # exozodi brightness
-        self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi) # delta magnitude
-        self.WA = np.arctan(self.s/sDist).to('mas')             # working angle
+        self.r = (A*r1 + B*r2).T.to('AU')                           # position
+        self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
+        self.d = np.linalg.norm(self.r,axis=1)*self.r.unit          # planet-star distance
+        self.s = np.linalg.norm(self.r[:,0:2],axis=1)*self.r.unit   # apparent separation
+        self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))         # planet phase
+        self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)                # exozodi brightness
+        self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
+        self.WA = np.arctan(self.s/sDist).to('mas')                 # working angle
         # current time (normalized to zero at mission start) of planet positions
         self.planTime = np.zeros(self.nPlans)*u.day
 
@@ -283,8 +283,8 @@ class SimulatedUniverse(object):
         # working angle, and current time
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
-        self.d[pInds] = np.sqrt(np.sum(self.r[pInds]**2, axis=1))
-        self.s[pInds] = np.sqrt(np.sum(self.r[pInds,0:2]**2, axis=1))
+        self.d[pInds] = np.linalg.norm(self.r[pInds],axis=1)*self.r.unit
+        self.s[pInds] = np.linalg.norm(self.r[pInds,0:2],axis=1)*self.r.unit
         self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])

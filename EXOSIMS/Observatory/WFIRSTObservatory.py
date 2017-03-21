@@ -117,8 +117,8 @@ class WFIRSTObservatory(Observatory):
         for i in xrange(nkogood):
             u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
             u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
-            angles = np.arccos(np.dot(u_b, u_t))
-            culprit[i,:] = (angles < koangles.to('rad').value)
+            angles = np.arccos(np.clip(np.dot(u_b,u_t),-1,1))*u.rad
+            culprit[i,:] = (angles < koangles)
             if np.any(culprit[i,:]):
                 kogood[i] = False
         

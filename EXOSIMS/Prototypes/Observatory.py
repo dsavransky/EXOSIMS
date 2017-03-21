@@ -622,21 +622,17 @@ class Observatory(object):
         
         """
         
-        # occulter separation distance
-        occulterSep = self.occulterSep
         # get spacecraft position vector
-        r_Ts = self.orbit(currentTime)[0]
+        r_sc = self.orbit(currentTime)[0]
         # sun -> earth position vector
-        r_Es = self.solarSystem_body_position(currentTime, 'Earth')
-        # sun -> target star vector
-        r_ts = self.starprop(TL, sInd, currentTime)[0]
+        r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
-        r_tT = r_ts - r_Ts
-        u_tT = r_tT/np.sqrt(np.sum(r_tT**2))
+        r_targ = self.starprop(TL, sInd, currentTime)[0] - r_sc
+        u_targ = r_targ.value/np.linalg.norm(r_targ)
         # sun -> occulter vector
-        r_Os = r_Ts + occulterSep*u_tT
+        r_Os = r_sc + self.occulterSep*u_targ
         # Earth-Moon barycenter -> spacecraft vectors
-        r_TE = r_Ts - r_Es
+        r_TE = r_sc - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
         F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to('N')
@@ -644,13 +640,13 @@ class Observatory(object):
         F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to('N')
         F_O = F_sO + F_EO
         # force on telescope
-        F_sT = (-const.G*const.M_sun*self.coMass*r_Ts/np.sqrt(np.sum(r_Ts**2))**3).to('N')
+        F_sT = (-const.G*const.M_sun*self.coMass*r_sc/np.sqrt(np.sum(r_sc**2))**3).to('N')
         F_ET = (-const.G*mEMB*self.coMass*r_TE/np.sqrt(np.sum(r_TE**2))**3).to('N')
         F_T = F_sT + F_ET
         # differential forces
         dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to('N')
-        dF_axial = np.dot(dF.to('N'), u_tT)
-        dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_tT)**2))
+        dF_axial = np.dot(dF.to('N'), u_targ)*u.N
+        dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_targ)**2))
         dF_axial = np.abs(dF_axial)
         
         return dF_lateral, dF_axial

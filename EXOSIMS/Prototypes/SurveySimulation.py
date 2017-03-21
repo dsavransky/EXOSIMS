@@ -242,12 +242,14 @@ class SurveySimulation(object):
                 
                 # Beginning of observation, create DRM and start to populate it
                 obsBegin = TK.currentTimeNorm.to('day')
-                Logger.info('current time is %r' % obsBegin)
-                print 'Observation #%s, current mission time: %s' %(cnt, obsBegin.round(2))
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
+                Logger.info('Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
+                        %(cnt, sInd, TL.nStars, len(pInds), obsBegin.round(2)))
+                print 'Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
+                        %(cnt, sInd, TL.nStars, len(pInds), obsBegin.round(2))
                 
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
@@ -366,15 +368,13 @@ class SurveySimulation(object):
                     sd = np.zeros(TL.nStars)*u.rad
                 else:
                     # position vector of previous target star
-                    r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)
+                    r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)[0]
                     u_old = r_old.value/np.linalg.norm(r_old)
                     # position vector of new target stars
                     r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
                     u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
                     # angle between old and new stars
-                    sd = np.arccos(np.dot(u_old, u_new.T))[0]
-                    sd[np.where(np.isnan(sd))] = 0.
-                    sd = sd*u.rad
+                    sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
                 # calculate slew time
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
@@ -453,7 +453,7 @@ class SurveySimulation(object):
 
     def choose_next_target(self,old_sInd,sInds,slewTime):
         """Helper method for method next_target to simplify alternative implementations.
-
+        
         Args:
             old_sInd (integer):
                 Index of the previous target star
@@ -465,23 +465,21 @@ class SurveySimulation(object):
         Returns:
             sInd (integer):
                 Index of next target star
-
+        
         Given a subset of targets (pre-filtered by method next_target or some other means),
         select the best next one.  The prototype uses completeness as the sole heuristic.
-
+        
         Returns the index sInd of the selected target.
-
+        
         """
-
+        
         comps = self.TargetList.comp0[sInds]
         updated = (self.starVisits[sInds] > 0)
         comps[updated] =  self.Completeness.completeness_update(self.TargetList, \
                 sInds[updated], self.TimeKeeping.currentTimeNorm)
         sInd = np.random.choice(sInds[comps == max(comps)])
-
+        
         return sInd
-
-
 
     def observation_detection(self, sInd, t_det, mode):
         """Determines the detection status, and updates the last detected list 
@@ -566,10 +564,8 @@ class SurveySimulation(object):
         det = (detected == 1)
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
-            Logger.info('Detected planet(s) %s (%s/%s) at target #%s/%s' % (pInds[det], \
-                    len(pInds[det]), len(pInds), sInd, TL.nStars))
-            print 'Detected planet(s) %s (%s/%s) at target #%s/%s' % (pInds[det], \
-                    len(pInds[det]), len(pInds), sInd, TL.nStars)
+            Logger.info('Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds)))
+            print 'Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds))
         
         # Populate the lastDetected array by storing det, fEZ, dMag, and WA
         self.lastDetected[sInd,:] = det, SU.fEZ[pInds].to('1/arcsec2').value, \
@@ -588,10 +584,8 @@ class SurveySimulation(object):
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
             sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
-            Logger.info('False Alarm (WA=%s, dMag=%s) at target #%s/%s' % (int(WA)*u.mas, \
-                    round(dMag,1), sInd, TL.nStars))
-            print 'False Alarm (WA=%s, dMag=%s) at target #%s/%s' % (int(WA)*u.mas, \
-                    round(dMag,1), sInd, TL.nStars)
+            Logger.info('False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1)))
+            print 'False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1))
         
         # In both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
@@ -702,10 +696,8 @@ class SurveySimulation(object):
         if np.any(tochar):
             t_char = np.max(t_chars[tochar])
             pIndsChar = pInds[tochar]
-            Logger.info('Charact. planet(s) %s (%s/%s) at target #%s/%s' % (pIndsChar, \
-                    len(pIndsChar), len(pInds), sInd, TL.nStars))
-            print 'Charact. planet(s) %s (%s/%s) at target #%s/%s' % (pIndsChar, \
-                    len(pIndsChar), len(pInds), sInd, TL.nStars)
+            Logger.info('Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds)))
+            print 'Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds))
             
             # SNR CALCULATION:
             # First, calculate SNR for observable planets (without false alarm)

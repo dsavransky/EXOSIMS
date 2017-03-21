@@ -140,6 +140,9 @@ class SimulatedUniverse(object):
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star,[j]*n))
+        # must generate at least one planet
+        if plan2star.size == 0:
+            plan2star = np.array([0])
         self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)

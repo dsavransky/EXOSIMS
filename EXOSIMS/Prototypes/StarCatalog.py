@@ -59,7 +59,7 @@ class StarCatalog(object):
     _modtype = 'StarCatalog'
     _outspec = {}
 
-    def __init__(self, ntargs=0, **specs):
+    def __init__(self, ntargs=1, **specs):
         
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc # distance in parsecs (dist = 1000/parx)

@@ -142,7 +142,7 @@ class TargetList(object):
                 setattr(self, att, getattr(SC, att))
         
         # number of target stars
-        self.nStars = len(self.Name);
+        self.nStars = len(self.Name)
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
         # populate completeness values

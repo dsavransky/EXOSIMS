@@ -635,19 +635,20 @@ class Observatory(object):
         r_TE = r_sc - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
-        F_sO = (-const.G*const.M_sun*self.scMass*r_Os/np.sqrt(np.sum(r_Os**2)**3)).to('N')
-        mEMB = const.M_sun/328900.56
-        F_EO = (-const.G*mEMB*self.scMass*r_OE/np.sqrt(np.sum(r_OE**2)**3)).to('N')
+        Mfactor = -self.scMass*const.M_sun*const.G
+        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3 * Mfactor
+        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3 * Mfactor/328900.56
         F_O = F_sO + F_EO
         # force on telescope
-        F_sT = (-const.G*const.M_sun*self.coMass*r_sc/np.sqrt(np.sum(r_sc**2))**3).to('N')
-        F_ET = (-const.G*mEMB*self.coMass*r_TE/np.sqrt(np.sum(r_TE**2))**3).to('N')
+        Mfactor = -self.coMass*const.M_sun*const.G
+        F_sT = r_sc/(np.linalg.norm(r_sc)*r_sc.unit)**3 * Mfactor
+        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3 * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
-        dF = ((F_O/self.scMass - F_T/self.coMass)*self.scMass).to('N')
+        dF = F_O - F_T*self.scMass/self.coMass
         dF_axial = np.dot(dF.to('N'), u_targ)*u.N
-        dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_targ)**2))
-        dF_axial = np.abs(dF_axial)
+        dF_lateral = np.sqrt(np.sum((dF - dF_axial*u_targ)**2)).to('N')
+        dF_axial = np.abs(dF_axial).to('N')
         
         return dF_lateral, dF_axial
 

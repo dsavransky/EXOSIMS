@@ -328,10 +328,14 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         s = np.array(s, ndmin=1, copy=False)
-
+        
         mindmag = -2.5*np.log10(self.pmax*(self.Rmax*self.x*np.sin(self.bstar)/s)**2*self.Phi(self.bstar))
-        mindmag[s < self.rmin*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2*self.Phi(np.arcsin(s[s < self.rmin*np.sin(self.bstar)]/self.rmin)))
-        mindmag[s > self.rmax*np.sin(self.bstar)] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.arcsin(s[s > self.rmax*np.sin(self.bstar)]/self.rmax)))
+        low = s < self.rmin*np.sin(self.bstar)
+        mindmag[low] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2\
+                *self.Phi(np.arcsin(np.clip(s[low]/self.rmin,-1,1))))
+        hi = s > self.rmax*np.sin(self.bstar)
+        mindmag[hi] = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2\
+                *self.Phi(np.arcsin(np.clip(s[hi]/self.rmax,-1,1))))
         
         return mindmag
 

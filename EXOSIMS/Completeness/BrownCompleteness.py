@@ -203,8 +203,8 @@ class BrownCompleteness(Completeness):
                 
                 # planet position, planet-star distance, apparent separation
                 r = (A*r1 + B*r2)*u.AU # position vector
-                d = np.sqrt(np.sum(r**2, axis=1)) # planet-star distance
-                s = np.sqrt(np.sum(r[:,0:2]**2, axis=1)) # apparent separation
+                d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
+                s = np.linalg.norm(r[:,0:2],axis=1)*r.unit # apparent separation
                 beta = np.arccos(r[:,2]/d) # phase angle
                 Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                 dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
@@ -406,8 +406,8 @@ class BrownCompleteness(Completeness):
         
         # planet position, planet-star distance, apparent separation
         r = (A*r1 + B*r2)*u.AU
-        d = np.sqrt(np.sum(r**2, axis=1))
-        s = np.sqrt(np.sum(r[:,0:2]**2, axis=1))
+        d = np.linalg.norm(r,axis=1)*r.unit
+        s = np.linalg.norm(r[:,0:2],axis=1)*r.unit
         
         # sample albedo, planetary radius, phase function
         p = PPop.gen_albedo(nplan)

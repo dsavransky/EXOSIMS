@@ -241,13 +241,16 @@ class MissionSim(object):
                 mod_name_short = re.sub('\.pyc$', '.py', inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         
-        # add in the SVN revision
+        # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
-        rev = subprocess.Popen("git log -1 "+path+"| grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+        #rev = subprocess.Popen("git -C "+path+" log -1 | grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+        rev = subprocess.Popen("git -C "+path+" log -1", stdout=subprocess.PIPE, shell=True)
         (gitRev, err) = rev.communicate()
         if isinstance(gitRev, basestring) & (len(gitRev) > 0):
-            out['Revision'] = "Github last commit " + gitRev[:-1]
-        # if not an SVN repository, add in the Github last commit
+            tmp = re.compile('\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n').match(gitRev)
+            if tmp:
+                out['Revision'] = "Github "+tmp.groups()[0]+" "+tmp.groups()[1]
+            #out['Revision'] = "Github commit "
         else:
             rev = subprocess.Popen("svn info "+path+"| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
             (svnRev, err) = rev.communicate()
@@ -305,7 +308,7 @@ class MissionSim(object):
     
 
 def array_encoder(obj):
-    r"""Encodes numpy arrays, astropy Time's, and astropy Quantity's, into JSON.
+    r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     
     Called from json.dump for types that it does not already know how to represent,
     like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types

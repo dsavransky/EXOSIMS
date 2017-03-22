@@ -229,6 +229,7 @@ class SurveySimulation(object):
         while not TK.mission_is_over():
             
             # Acquire the NEXT TARGET star index and create DRM
+            obsBegin = TK.currentTimeNorm.to('day')
             DRM, sInd, t_det = self.next_target(sInd, detMode)
             
             if sInd is not None:
@@ -240,8 +241,7 @@ class SurveySimulation(object):
                             self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
                             self.starExtended = np.unique(self.starExtended)
                 
-                # Beginning of observation, create DRM and start to populate it
-                obsBegin = TK.currentTimeNorm.to('day')
+                # Beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]

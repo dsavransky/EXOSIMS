@@ -391,8 +391,10 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
-        # load the limiting working angle value, or set it equal to IWA by default
-        self.WALim = float(WALim)*u.arcsec if WALim is not None else self.IWA
+        # load the limiting working angle value
+        # if not specified, set it equal to detection mode IWA by default
+        detMode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        self.WALim = float(WALim)*u.arcsec if WALim is not None else detMode['IWA']
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():

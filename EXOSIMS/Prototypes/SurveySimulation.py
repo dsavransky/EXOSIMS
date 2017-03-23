@@ -473,7 +473,7 @@ class SurveySimulation(object):
         
         """
         
-        comps = self.TargetList.comp0[sInds]
+        comps = self.TargetList.comp0[sInds]#completeness of each star in TargetList
         updated = (self.starVisits[sInds] > 0)
         comps[updated] =  self.Completeness.completeness_update(self.TargetList, \
                 sInds[updated], self.TimeKeeping.currentTimeNorm)

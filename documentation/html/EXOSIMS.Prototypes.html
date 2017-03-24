@@ -30,11 +30,14 @@
     <link rel="next" title="EXOSIMS.SimulatedUniverse package" href="EXOSIMS.SimulatedUniverse.html" />
     <link rel="prev" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -262,7 +265,7 @@ and uses eccanom utility to propagate.  Defaults to False.</li>
 <p>For finding positions of solar system bodies, this routine will attempt to
 use the jplephem module and a local SPK file on disk.  The module can be
 installed via pip or from source.  The default SPK file can be downloaded from
-here: <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp</a>
+here: <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp</a>
 and should be placed in the Observatory subdirectory of EXOSIMS.</p>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph">
@@ -382,7 +385,7 @@ dF_axial (astropy Quantity):</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.keepout">
-<code class="descclassname">Observatory.</code><code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>r_sc</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">Observatory.</code><code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds keepout Boolean values for stars of interest.</p>
 <p>This method defines the data type expected, all values are True.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -393,7 +396,6 @@ dF_axial (astropy Quantity):</p>
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
-<li><strong>r_sc</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Current observatory (spacecraft) position vector in units of km</li>
 <li><strong>koangle</strong> (<em>astropy Quantity</em>) &#8211; Telescope keepout angle in units of degree</li>
 </ul>
 </td>
@@ -407,7 +409,7 @@ target unobservable due to obstructions in the keepout zone.</p>
 </tr>
 </tbody>
 </table>
-<p>Note: currentTime and r_sc must be of same size.</p>
+<p>Note: If multiple times and targets, currentTime and sInds sizes must match.</p>
 </dd></dl>
 
 <dl class="method">
@@ -640,7 +642,7 @@ equatorial frame in units of km</p>
 </tr>
 </tbody>
 </table>
-<p>Note: For multiple targets, currentTime must be of size 1 or size of sInds.</p>
+<p>Note: If multiple times and targets, currentTime and sInds sizes must match.</p>
 </dd></dl>
 
 </dd></dl>
@@ -650,7 +652,7 @@ equatorial frame in units of km</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, telescopeKeepout=45, attenuation=0.5, intCutoff=50, Ndark=10, dMagLim=22.5, scienceInstruments=None, pitch=1e-05, focal=100, idark=0.0005, CIC=0.005, sread=0.2, texp=1000, ENF=1, Rs=70, QE=0.9, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.01, core_contrast=1e-09, platescale=None, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None, OWA=None, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, telescopeKeepout=45, attenuation=0.5, intCutoff=50, Ndark=10, scienceInstruments=None, pitch=1e-05, focal=100, idark=0.0005, CIC=0.005, sread=0.2, texp=1000, ENF=1, Rs=70, QE=0.9, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.01, core_contrast=1e-09, platescale=None, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None, OWA=None, dMagLim=22.5, WALim=None, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -741,7 +743,13 @@ system without the coronagraph elements</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
 <code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Fundamental limiting delta magnitude</p>
+<dd><p><em>float</em> &#8211; Limiting delta magnitude for integration time calculation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WALim">
+<code class="descname">WALim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WALim" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Limiting working angle for integration time calculation in units of arcsec</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -773,11 +781,11 @@ instrument (imager or spectro). Every instrument should have a unique name.</dd>
 <dt>focal (astropy Quantity):</dt>
 <dd>Focal length in units of m</dd>
 <dt>idark (astropy Quantity):</dt>
-<dd>Dark current rate in units of 1/s</dd>
+<dd>Detector dark-current per pixel in units of 1/s</dd>
 <dt>CIC (float):</dt>
-<dd>Clock-induced-charge</dd>
+<dd>Clock-induced-charge per frame per pixel</dd>
 <dt>sread (float):</dt>
-<dd>Detector readout noise</dd>
+<dd>Detector effective read noise per frame per pixel</dd>
 <dt>texp (astropy Quantity):</dt>
 <dd>Exposure time per frame in units of s</dd>
 <dt>ENF (float):</dt>
@@ -919,8 +927,8 @@ C_b (astropy Quantity array):</p>
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">
 <code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>dMag</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds integration time for a specific target system</p>
-<p>This method is called by a method in the SurveySimulation class object.
-This method defines the data type expected, integration time is
+<p>This method is called in the run_sim() method of the SurveySimulation
+class object. It defines the data type expected, integration time is
 determined by specific OpticalSystem classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -932,7 +940,7 @@ determined by specific OpticalSystem classes.</p>
 <li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 <li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
 <li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of mas</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
 <li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
@@ -949,29 +957,21 @@ determined by specific OpticalSystem classes.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration time for target systems</p>
-<p>This method is called in the run_sim() method of the SurveySimulation
-class object. It calculates the default maximum integration time for a
-fixed dMagLim, and at the optical system IWA.</p>
+<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds maximum integration times for the whole target list.</p>
+<p>This method is called in the TargetList class object. It calculates the
+maximum integration times for all the stars from the target list, at the
+limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal
+noise and at a separation equal to twice the global inner working angle (IWA).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Maximum integration times for target list stars in units of day</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Maximum integration times for target list stars in units of day</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">maxintTime (astropy Quantity array)</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">maxintTime (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -1800,7 +1800,7 @@ the Kepler state transition matrix.</p>
 <span id="exosims-prototypes-starcatalog-module"></span><h2>EXOSIMS.Prototypes.StarCatalog module<a class="headerlink" href="#module-EXOSIMS.Prototypes.StarCatalog" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.StarCatalog.</code><code class="descname">StarCatalog</code><span class="sig-paren">(</span><em>ntargs=0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.StarCatalog.</code><code class="descname">StarCatalog</code><span class="sig-paren">(</span><em>ntargs=1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/StarCatalog.html#StarCatalog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Star Catalog class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -2131,6 +2131,34 @@ SurveySimulation module.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method for method next_target to simplify alternative implementations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Given a subset of targets (pre-filtered by method next_target or some other means),
+select the best next one.  The prototype uses completeness as the sole heuristic.</p>
+<p>Returns the index sInd of the selected target.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">
 <code class="descname">next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds index of next target star and calculates its integration time.</p>
@@ -2370,8 +2398,7 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.tint0">
 <code class="descname">tint0</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.tint0" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Integration time for each target star in units of day, for a minimum
-delta magnitude dMagLim</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Maximum integration time for each target star in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2790,7 +2817,7 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
-<p>Note: r_sc must be an array of shape = len(sInds)x3</p>
+<p>Note: r_sc must be an array of shape (sInds.size x 3)</p>
 </dd></dl>
 
 </dd></dl>
@@ -2865,8 +2892,8 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/EXOSIMS.Prototypes.rst.txt"

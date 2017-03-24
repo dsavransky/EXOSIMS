@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -89,7 +92,7 @@
 <span class="sd">        For finding positions of solar system bodies, this routine will attempt to </span>
 <span class="sd">        use the jplephem module and a local SPK file on disk.  The module can be </span>
 <span class="sd">        installed via pip or from source.  The default SPK file can be downloaded from</span>
-<span class="sd">        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp</span>
+<span class="sd">        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp</span>
 <span class="sd">        and should be placed in the Observatory subdirectory of EXOSIMS.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -285,13 +288,12 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">),(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">),(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
-        
+        <span class="n">r_sc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">,</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">,</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
         <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_sc</span><span class="p">)),</span> <span class="s1">&#39;Observatory position vector r_sc has infinite value.&#39;</span>
         
-        <span class="k">return</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Observatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
+<div class="viewcode-block" id="Observatory.keepout"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keepout">[docs]</a>    <span class="k">def</span> <span class="nf">keepout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">koangle</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds keepout Boolean values for stars of interest.</span>
 <span class="sd">        </span>
 <span class="sd">        This method defines the data type expected, all values are True.</span>
@@ -303,8 +305,6 @@
 <span class="sd">                Integer indices of the stars of interest</span>
 <span class="sd">            currentTime (astropy Time array):</span>
 <span class="sd">                Current absolute mission time in MJD</span>
-<span class="sd">            r_sc (astropy Quantity nx3 array):</span>
-<span class="sd">                Current observatory (spacecraft) position vector in units of km</span>
 <span class="sd">            koangle (astropy Quantity):</span>
 <span class="sd">                Telescope keepout angle in units of degree</span>
 <span class="sd">                </span>
@@ -313,24 +313,69 @@
 <span class="sd">                True is a target unobstructed and observable, and False is a </span>
 <span class="sd">                target unobservable due to obstructions in the keepout zone.</span>
 <span class="sd">        </span>
-<span class="sd">        Note: currentTime and r_sc must be of same size.</span>
+<span class="sd">        Note: If multiple times and targets, currentTime and sInds sizes must match.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># reshape sInds</span>
+        <span class="c1"># check size of arrays</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="c1"># check size of currentTime and r_sc</span>
-        <span class="k">assert</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;currentTime and r_sc must be of same size.&#39;</span>
+        <span class="n">nStars</span> <span class="o">=</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">nTimes</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">assert</span> <span class="n">nStars</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="n">nStars</span><span class="p">,</span> <span class="s1">&#39;If multiple times and targets, </span><span class="se">\</span>
+<span class="s1">                currentTime and sInds sizes must match&#39;</span>
         
-        <span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-        
-        <span class="c1"># check to make sure all elements in self.kogood are Boolean</span>
+        <span class="c1"># build &quot;keepout good&quot; array, check if all elements are Boolean</span>
+        <span class="n">kogood</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
         <span class="n">trues</span> <span class="o">=</span> <span class="p">[</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">kogood</span><span class="p">]</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">trues</span><span class="p">),</span> <span class="s1">&#39;An element of kogood is not Boolean&#39;</span>
         
         <span class="k">return</span> <span class="n">kogood</span></div>
+
+<div class="viewcode-block" id="Observatory.starprop"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.starprop">[docs]</a>    <span class="k">def</span> <span class="nf">starprop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds target star position vector (km) for current time (MJD)</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Integer indices of the stars of interest</span>
+<span class="sd">            currentTime (astropy Time):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_star (astropy Quantity nx3 array): </span>
+<span class="sd">                Position vectors of stars of interest in heliocentric </span>
+<span class="sd">                equatorial frame in units of km</span>
+<span class="sd">        </span>
+<span class="sd">        Note: If multiple times and targets, currentTime and sInds sizes must match.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># check size of arrays</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">nStars</span> <span class="o">=</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">nTimes</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">assert</span> <span class="n">nStars</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="n">nStars</span><span class="p">,</span> <span class="s1">&#39;If multiple times and targets, </span><span class="se">\</span>
+<span class="s1">                currentTime and sInds sizes must match&#39;</span>
+        
+        <span class="c1"># right ascension and declination</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># set J2000 epoch</span>
+        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
+        <span class="c1"># directions</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+        <span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)])</span>
+        <span class="n">r0</span> <span class="o">=</span> <span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
+        <span class="c1"># proper motion vector</span>
+        <span class="n">mu0</span> <span class="o">=</span> <span class="n">p0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">+</span> <span class="n">q0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># space velocity vector</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">mu0</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> <span class="o">+</span> <span class="n">r0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># stellar position vector</span>
+        <span class="n">dr</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span><span class="o">*</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span>
+        <span class="n">r_star</span> <span class="o">=</span> <span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span> <span class="o">+</span> <span class="n">dr</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        
+        <span class="k">return</span> <span class="n">r_star</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Observatory.solarSystem_body_position"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position">[docs]</a>    <span class="k">def</span> <span class="nf">solarSystem_body_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
@@ -350,15 +395,12 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span><span class="p">:</span>
             <span class="n">r_body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spk_body</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">r_body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Observatory.spk_body"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.spk_body">[docs]</a>    <span class="k">def</span> <span class="nf">spk_body</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
@@ -379,9 +421,6 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        
         <span class="c1"># dictionary of solar system bodies available in spice kernel</span>
         <span class="n">bodies</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Mercury&#39;</span><span class="p">:</span><span class="mi">199</span><span class="p">,</span>
                   <span class="s1">&#39;Venus&#39;</span><span class="p">:</span><span class="mi">299</span><span class="p">,</span>
@@ -394,7 +433,6 @@
                   <span class="s1">&#39;Pluto&#39;</span><span class="p">:</span><span class="mi">9</span><span class="p">,</span>
                   <span class="s1">&#39;Sun&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span>
                   <span class="s1">&#39;Moon&#39;</span><span class="p">:</span><span class="mi">301</span><span class="p">}</span>
-        
         <span class="k">assert</span> <span class="n">bodies</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">bodyname</span><span class="p">),</span>\
                  <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is not a recognized body name.&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">bodyname</span><span class="p">)</span>
         
@@ -417,8 +455,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">r_body</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">bodies</span><span class="p">[</span><span class="n">bodyname</span><span class="p">]]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span> <span class="o">-</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">jd</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+        <span class="n">r_body</span> <span class="o">=</span> <span class="n">r_body</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Observatory.keplerplanet"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">[docs]</a>    <span class="k">def</span> <span class="nf">keplerplanet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">bodyname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds position vector for solar system objects</span>
@@ -438,9 +477,6 @@
 <span class="sd">                Heliocentric equatorial position vector in units of km</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">bodyname</span> <span class="o">==</span> <span class="s1">&#39;Moon&#39;</span><span class="p">:</span>
             <span class="n">r_Earth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keplerplanet</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)</span>
@@ -472,17 +508,17 @@
         <span class="n">rx</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span>
         <span class="n">ry</span> <span class="o">=</span> <span class="n">p</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span>
         <span class="n">rz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="n">r_body</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">rx</span><span class="p">,</span><span class="n">ry</span><span class="p">,</span><span class="n">rz</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">r_body</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">rx</span><span class="p">,</span><span class="n">ry</span><span class="p">,</span><span class="n">rz</span><span class="p">))</span>
         <span class="c1"># position vector (km) in ecliptic plane</span>
         <span class="n">r_body</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">O</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">3</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">I</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">1</span><span class="p">)),</span>\
-                <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">wp</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">3</span><span class="p">),</span><span class="n">r_body</span><span class="p">[</span><span class="n">x</span><span class="p">,:]))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">wp</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">3</span><span class="p">),</span><span class="n">r_body</span><span class="p">[:,</span><span class="n">x</span><span class="p">]))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
         <span class="c1"># find obliquity of the ecliptic</span>
-        <span class="n">obe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obe</span><span class="p">(</span><span class="n">TDB</span><span class="p">))</span>
+        <span class="n">obe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obe</span><span class="p">(</span><span class="n">TDB</span><span class="p">)),</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1"># position vector (km) in heliocentric equatorial frame</span>
-        <span class="n">r_body</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">1</span><span class="p">),</span><span class="n">r_body</span><span class="p">[</span><span class="n">x</span><span class="p">,:])</span>\
+        <span class="n">r_body</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rot</span><span class="p">(</span><span class="o">-</span><span class="n">obe</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="mi">1</span><span class="p">),</span><span class="n">r_body</span><span class="p">[:,</span><span class="n">x</span><span class="p">])</span>\
                 <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
         
-        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">r_body</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Observatory.moon_earth"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.moon_earth">[docs]</a>    <span class="k">def</span> <span class="nf">moon_earth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds geocentric equatorial position vector (km) for Earth&#39;s moon</span>
@@ -500,9 +536,6 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        
         <span class="n">TDB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cent</span><span class="p">(</span><span class="n">currentTime</span><span class="p">)</span>
         <span class="n">la</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">218.32</span> <span class="o">+</span> <span class="mf">481267.8813</span><span class="o">*</span><span class="n">TDB</span> <span class="o">+</span> \
             <span class="mf">6.29</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">134.9</span> <span class="o">+</span> <span class="mf">477198.85</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">-</span> 
@@ -511,78 +544,21 @@
             <span class="mf">0.21</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">269.9</span> <span class="o">+</span> <span class="mf">954397.70</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">-</span> 
             <span class="mf">0.19</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">357.5</span> <span class="o">+</span> <span class="mf">35999.05</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">-</span> 
             <span class="mf">0.11</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">186.6</span> <span class="o">+</span> <span class="mf">966404.05</span><span class="o">*</span><span class="n">TDB</span><span class="p">)))</span>
-        
         <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">5.13</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">93.3</span> <span class="o">+</span> <span class="mf">483202.03</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">+</span> 
             <span class="mf">0.28</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">228.2</span> <span class="o">+</span> <span class="mf">960400.87</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">-</span> 
             <span class="mf">0.28</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">318.3</span> <span class="o">+</span> <span class="mf">6003.18</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">-</span> 
             <span class="mf">0.17</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">217.6</span> <span class="o">-</span> <span class="mf">407332.20</span><span class="o">*</span><span class="n">TDB</span><span class="p">)))</span>
-        
         <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">0.9508</span> <span class="o">+</span> <span class="mf">0.0518</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">134.9</span> <span class="o">+</span> <span class="mf">477198.85</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">+</span> 
             <span class="mf">0.0095</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">259.2</span> <span class="o">-</span> <span class="mf">413335.38</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">+</span> 
             <span class="mf">0.0078</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">235.7</span> <span class="o">+</span> <span class="mf">890534.23</span><span class="o">*</span><span class="n">TDB</span><span class="p">))</span> <span class="o">+</span> 
             <span class="mf">0.0028</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">269.9</span> <span class="o">+</span> <span class="mf">954397.70</span><span class="o">*</span><span class="n">TDB</span><span class="p">)))</span>
-        
         <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mf">23.439291</span> <span class="o">-</span> <span class="mf">0.0130042</span><span class="o">*</span><span class="n">TDB</span> <span class="o">-</span> <span class="mf">1.64e-7</span><span class="o">*</span><span class="n">TDB</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">5.04e-7</span><span class="o">*</span><span class="n">TDB</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
-        
         <span class="n">r</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">P</span><span class="p">)</span><span class="o">*</span><span class="mf">6378.137</span> <span class="c1"># km</span>
-        
-        <span class="n">r_moon</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">la</span><span class="p">),</span>
+        <span class="n">r_moon</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">la</span><span class="p">),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">la</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">la</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">la</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))))</span><span class="o">.</span><span class="n">T</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>
         
-        <span class="k">return</span> <span class="n">r_moon</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Observatory.starprop"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.starprop">[docs]</a>    <span class="k">def</span> <span class="nf">starprop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds target star position vector (km) for current time (MJD)</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            TL (TargetList module):</span>
-<span class="sd">                TargetList class object</span>
-<span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Integer indices of the stars of interest</span>
-<span class="sd">            currentTime (astropy Time):</span>
-<span class="sd">                Current absolute mission time in MJD</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            r_star (astropy Quantity nx3 array): </span>
-<span class="sd">                Position vectors of stars of interest in heliocentric </span>
-<span class="sd">                equatorial frame in units of km</span>
-<span class="sd">        </span>
-<span class="sd">        Note: For multiple targets, currentTime must be of size 1 or size of sInds.</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># reshape sInds</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="c1"># check size of sInds</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="k">assert</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> \
-                    <span class="s1">&#39;For multiple targets, currentTime must be of size 1 or size of sInds&#39;</span>
-        
-        <span class="c1"># right ascension and declination</span>
-        <span class="n">ra</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">ra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="n">dec</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">dec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        
-        <span class="c1"># set J2000 epoch</span>
-        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
-        
-        <span class="c1"># directions</span>
-        <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))])</span>
-        <span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)])</span>
-        <span class="n">r0</span> <span class="o">=</span> <span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
-        
-        <span class="c1"># proper motion vector</span>
-        <span class="n">mu0</span> <span class="o">=</span> <span class="n">p0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">+</span> <span class="n">q0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        
-        <span class="c1"># space velocity vector</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="n">mu0</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> <span class="o">+</span> <span class="n">r0</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        
-        <span class="c1"># stellar position vector</span>
-        <span class="n">r_star</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span> <span class="o">+</span> <span class="n">v</span><span class="o">*</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        
-        <span class="k">return</span> <span class="n">r_star</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">r_moon</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Observatory.cent"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.cent">[docs]</a>    <span class="k">def</span> <span class="nf">cent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds time in Julian centuries since J2000 epoch</span>
@@ -598,9 +574,6 @@
 <span class="sd">                time in Julian centuries since the J2000 epoch </span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># reshape currentTime</span>
-        <span class="n">currentTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         
         <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
         <span class="n">TDB</span> <span class="o">=</span> <span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">jd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">jd</span><span class="p">)</span><span class="o">/</span><span class="mf">36525.</span>
@@ -639,7 +612,9 @@
                 <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
                 <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         
+        <span class="c1"># propagated ephem must be an array</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">TDB</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">TDB</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">y</span></div>
 
@@ -692,39 +667,33 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># occulter separation distance</span>
-        <span class="n">occulterSep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span>
-        
         <span class="c1"># get spacecraft position vector</span>
-        <span class="n">r_Ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currentTime</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">r_sc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currentTime</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># sun -&gt; earth position vector</span>
-        <span class="n">r_Es</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)</span>
-        <span class="c1"># sun -&gt; target star vector</span>
-        <span class="n">r_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">r_Es</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solarSystem_body_position</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="s1">&#39;Earth&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># Telescope -&gt; target vector and unit vector</span>
-        <span class="n">r_tT</span> <span class="o">=</span> <span class="n">r_ts</span> <span class="o">-</span> <span class="n">r_Ts</span>
-        <span class="n">u_tT</span> <span class="o">=</span> <span class="n">r_tT</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_tT</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">r_targ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">r_sc</span>
+        <span class="n">u_targ</span> <span class="o">=</span> <span class="n">r_targ</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_targ</span><span class="p">)</span>
         <span class="c1"># sun -&gt; occulter vector</span>
-        <span class="n">r_Os</span> <span class="o">=</span> <span class="n">r_Ts</span> <span class="o">+</span> <span class="n">occulterSep</span><span class="o">*</span><span class="n">u_tT</span>
+        <span class="n">r_Os</span> <span class="o">=</span> <span class="n">r_sc</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span><span class="o">*</span><span class="n">u_targ</span>
         <span class="c1"># Earth-Moon barycenter -&gt; spacecraft vectors</span>
-        <span class="n">r_TE</span> <span class="o">=</span> <span class="n">r_Ts</span> <span class="o">-</span> <span class="n">r_Es</span>
+        <span class="n">r_TE</span> <span class="o">=</span> <span class="n">r_sc</span> <span class="o">-</span> <span class="n">r_Es</span>
         <span class="n">r_OE</span> <span class="o">=</span> <span class="n">r_Os</span> <span class="o">-</span> <span class="n">r_Es</span>
-        
         <span class="c1"># force on occulter</span>
-        <span class="n">F_sO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">r_Os</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Os</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
-        <span class="n">mEMB</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">/</span><span class="mf">328900.56</span>
-        <span class="n">F_EO</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">r_OE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_OE</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+        <span class="n">Mfactor</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">G</span>
+        <span class="n">F_sO</span> <span class="o">=</span> <span class="n">r_Os</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_Os</span><span class="p">)</span><span class="o">*</span><span class="n">r_Os</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">Mfactor</span>
+        <span class="n">F_EO</span> <span class="o">=</span> <span class="n">r_OE</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_OE</span><span class="p">)</span><span class="o">*</span><span class="n">r_OE</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">Mfactor</span><span class="o">/</span><span class="mf">328900.56</span>
         <span class="n">F_O</span> <span class="o">=</span> <span class="n">F_sO</span> <span class="o">+</span> <span class="n">F_EO</span>
-        
         <span class="c1"># force on telescope</span>
-        <span class="n">F_sT</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_Ts</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_Ts</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
-        <span class="n">F_ET</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="n">mEMB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">r_TE</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_TE</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+        <span class="n">Mfactor</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_sun</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">G</span>
+        <span class="n">F_sT</span> <span class="o">=</span> <span class="n">r_sc</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_sc</span><span class="p">)</span><span class="o">*</span><span class="n">r_sc</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">Mfactor</span>
+        <span class="n">F_ET</span> <span class="o">=</span> <span class="n">r_TE</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_TE</span><span class="p">)</span><span class="o">*</span><span class="n">r_TE</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">Mfactor</span><span class="o">/</span><span class="mf">328900.56</span>
         <span class="n">F_T</span> <span class="o">=</span> <span class="n">F_sT</span> <span class="o">+</span> <span class="n">F_ET</span>
-        
         <span class="c1"># differential forces</span>
-        <span class="n">dF</span> <span class="o">=</span> <span class="p">((</span><span class="n">F_O</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-</span> <span class="n">F_T</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
-        <span class="n">dF_axial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dF</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">),</span> <span class="n">u_tT</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">N</span>
-        <span class="n">dF_lateral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">dF</span> <span class="o">-</span> <span class="n">dF_axial</span><span class="o">*</span><span class="n">u_tT</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">dF</span> <span class="o">=</span> <span class="n">F_O</span> <span class="o">-</span> <span class="n">F_T</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coMass</span>
+        <span class="n">dF_axial</span> <span class="o">=</span> <span class="n">dF</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_targ</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+        <span class="n">dF_lateral</span> <span class="o">=</span> <span class="p">(</span><span class="n">dF</span> <span class="o">-</span> <span class="n">dF_axial</span><span class="o">*</span><span class="n">u_targ</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+        <span class="n">dF_lateral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dF_lateral</span><span class="p">)</span><span class="o">*</span><span class="n">dF_lateral</span><span class="o">.</span><span class="n">unit</span>
         <span class="n">dF_axial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dF_axial</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">dF_lateral</span><span class="p">,</span> <span class="n">dF_axial</span></div>
@@ -860,8 +829,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

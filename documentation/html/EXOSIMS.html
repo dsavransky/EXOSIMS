@@ -30,11 +30,14 @@
     <link rel="next" title="EXOSIMS.BackgroundSources package" href="EXOSIMS.BackgroundSources.html" />
     <link rel="prev" title="Survey Ensemble Parallelization" href="parallel.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -127,8 +130,15 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html">EXOSIMS.SurveyEnsemble package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#module-EXOSIMS.SurveyEnsemble.IPClusterEnsemble">EXOSIMS.SurveyEnsemble.IPClusterEnsemble module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#exosims-surveyensemble-ipclusterensemble-module">EXOSIMS.SurveyEnsemble.IPClusterEnsemble module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html#module-EXOSIMS.SurveyEnsemble">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="EXOSIMS.SurveySimulation.html">EXOSIMS.SurveySimulation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.linearJScheduler">EXOSIMS.SurveySimulation.linearJScheduler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.starkAYO2014">EXOSIMS.SurveySimulation.starkAYO2014 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.TargetList.html">EXOSIMS.TargetList package</a><ul>
@@ -327,13 +337,33 @@ logfile: if not present, logging is turned off; if supplied, but empty, a</p>
 <dl class="function">
 <dt id="EXOSIMS.MissionSim.array_encoder">
 <code class="descclassname">EXOSIMS.MissionSim.</code><code class="descname">array_encoder</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#array_encoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.array_encoder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Encodes numpy arrays, astropy Time&#8217;s, and astropy Quantity&#8217;s, into JSON.</p>
+<dd><p>Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.</p>
 <p>Called from json.dump for types that it does not already know how to represent,
 like astropy Quantity&#8217;s, numpy arrays, etc.  The json.dump() method encodes types
 like integers, strings, and lists itself, so this code does not see these types.
 Likewise, this routine can and does return such objects, which is OK as long as
 they unpack recursively into types for which encoding is known.</p>
 </dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.e2eTests">
+<span id="exosims-e2etests-module"></span><h2>EXOSIMS.e2eTests module<a class="headerlink" href="#module-EXOSIMS.e2eTests" title="Permalink to this headline">¶</a></h2>
+<p>End to End Test Suite for EXOSIMS
+Run as:</p>
+<blockquote>
+<div>&gt;python e2eTests.py</div></blockquote>
+<p>This code will sequentially execute all script files found in:
+EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts
+and print a summary of the results.  Possible outcomes for each test
+are:</p>
+<blockquote>
+<div>PASS
+FAIL - Instantiation
+FAIL - Execution</div></blockquote>
+<dl class="function">
+<dt id="EXOSIMS.e2eTests.run_e2e_tests">
+<code class="descclassname">EXOSIMS.e2eTests.</code><code class="descname">run_e2e_tests</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/e2eTests.html#run_e2e_tests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.e2eTests.run_e2e_tests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="module-EXOSIMS">
@@ -353,6 +383,7 @@ they unpack recursively into types for which encoding is known.</p>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.MissionSim">EXOSIMS.MissionSim module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.e2eTests">EXOSIMS.e2eTests module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS">Module contents</a></li>
 </ul>
 </li>
@@ -391,8 +422,8 @@ they unpack recursively into types for which encoding is known.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/EXOSIMS.rst.txt"

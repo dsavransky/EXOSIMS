@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -283,13 +286,16 @@
                 <span class="n">mod_name_short</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;\.pyc$&#39;</span><span class="p">,</span> <span class="s1">&#39;.py&#39;</span><span class="p">,</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))</span>
             <span class="n">out</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="n">mod_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_name_short</span>
         
-        <span class="c1"># add in the SVN revision</span>
+        <span class="c1"># add in the SVN/Git revision</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">rev</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="s2">&quot;git log -1 &quot;</span><span class="o">+</span><span class="n">path</span><span class="o">+</span><span class="s2">&quot;| grep </span><span class="se">\&quot;</span><span class="s2">commit</span><span class="se">\&quot;</span><span class="s2"> | awk &#39;{print $2}&#39;&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">#rev = subprocess.Popen(&quot;git -C &quot;+path+&quot; log -1 | grep \&quot;commit\&quot; | awk &#39;{print $2}&#39;&quot;, stdout=subprocess.PIPE, shell=True)</span>
+        <span class="n">rev</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="s2">&quot;git -C &quot;</span><span class="o">+</span><span class="n">path</span><span class="o">+</span><span class="s2">&quot; log -1&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="p">(</span><span class="n">gitRev</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">=</span> <span class="n">rev</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gitRev</span><span class="p">,</span> <span class="n">basestring</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gitRev</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="n">out</span><span class="p">[</span><span class="s1">&#39;Revision&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Github last commit &quot;</span> <span class="o">+</span> <span class="n">gitRev</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="c1"># if not an SVN repository, add in the Github last commit</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;\S*(commit [0-9a-fA-F]+)</span><span class="se">\n</span><span class="s1">[\s\S]*Date: ([\S ]*)</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">gitRev</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tmp</span><span class="p">:</span>
+                <span class="n">out</span><span class="p">[</span><span class="s1">&#39;Revision&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Github &quot;</span><span class="o">+</span><span class="n">tmp</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">tmp</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1">#out[&#39;Revision&#39;] = &quot;Github commit &quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rev</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="s2">&quot;svn info &quot;</span><span class="o">+</span><span class="n">path</span><span class="o">+</span><span class="s2">&quot;| grep </span><span class="se">\&quot;</span><span class="s2">Revision</span><span class="se">\&quot;</span><span class="s2"> | awk &#39;{print $2}&#39;&quot;</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="p">(</span><span class="n">svnRev</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">=</span> <span class="n">rev</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
@@ -347,7 +353,7 @@
     
 
 <div class="viewcode-block" id="array_encoder"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.array_encoder">[docs]</a><span class="k">def</span> <span class="nf">array_encoder</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encodes numpy arrays, astropy Time&#39;s, and astropy Quantity&#39;s, into JSON.</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.</span>
 <span class="sd">    </span>
 <span class="sd">    Called from json.dump for types that it does not already know how to represent,</span>
 <span class="sd">    like astropy Quantity&#39;s, numpy arrays, etc.  The json.dump() method encodes types</span>
@@ -421,8 +427,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

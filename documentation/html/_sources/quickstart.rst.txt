@@ -30,4 +30,20 @@ Once instantiated, the MissionSim object contains directly accessible instances 
     
     res = sim.SurveySimulation.run_sim()
 
+The terminal will display Observation #'s as well as any detections or characterizations that are made. The output is saved to the DRM variable. This can be accessed by:
+
+.. code-block:: python
+    
+    myDRM = sim.SurveySimulation.DRM
+    myDRM
+
+The terminal should display all the mission parameters of all observations made. If the last observation output of res = sim.SurveySimulation.run_sim() was #15, then accessing myDRM[14] would display the output of the 15th observation. To find the number of stars observed during my mission that have at least 1 planet detected, we could run:
+
+.. code-block:: python
+    
+    count = 0
+    for i in range(1,len(myDRM)):
+        if 1 in myDRM[i]['det_status']:
+            count = count+1
+    print(count)
 

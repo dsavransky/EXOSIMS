@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -73,15 +76,14 @@
 <span class="sd">            fZ (astropy Quantity array):</span>
 <span class="sd">                Surface brightness of zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
-<span class="sd">        Note: r_sc must be an array of shape = len(sInds)x3</span>
+<span class="sd">        Note: r_sc must be an array of shape (sInds.size x 3)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># reshape sInds</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        
         <span class="c1"># check shape of r_sc</span>
-        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (len(sInds),3)&#39;</span>
+        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (sInds.size x 3)&#39;</span>
         
         <span class="c1"># observatory coordinates wrt Sun</span>
         <span class="n">rsc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span><span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span>
@@ -166,8 +168,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

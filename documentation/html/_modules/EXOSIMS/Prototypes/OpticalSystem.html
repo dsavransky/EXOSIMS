@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -89,7 +92,9 @@
 <span class="sd">        OWA (astropy Quantity):</span>
 <span class="sd">            Fundamental Outer Working Angle in units of arcsec</span>
 <span class="sd">        dMagLim (float):</span>
-<span class="sd">            Fundamental limiting delta magnitude</span>
+<span class="sd">            Limiting delta magnitude for integration time calculation</span>
+<span class="sd">        WALim (astropy Quantity):</span>
+<span class="sd">            Limiting working angle for integration time calculation in units of arcsec</span>
 <span class="sd">        scienceInstruments (list of dicts):</span>
 <span class="sd">            All science instrument attributes (variable)</span>
 <span class="sd">        starlightSuppressionSystems (list of dicts):</span>
@@ -106,11 +111,11 @@
 <span class="sd">        focal (astropy Quantity):</span>
 <span class="sd">            Focal length in units of m</span>
 <span class="sd">        idark (astropy Quantity):</span>
-<span class="sd">            Dark current rate in units of 1/s</span>
+<span class="sd">            Detector dark-current per pixel in units of 1/s</span>
 <span class="sd">        CIC (float):</span>
-<span class="sd">            Clock-induced-charge</span>
+<span class="sd">            Clock-induced-charge per frame per pixel</span>
 <span class="sd">        sread (float):</span>
-<span class="sd">            Detector readout noise</span>
+<span class="sd">            Detector effective read noise per frame per pixel</span>
 <span class="sd">        texp (astropy Quantity):</span>
 <span class="sd">            Exposure time per frame in units of s</span>
 <span class="sd">        ENF (float):</span>
@@ -207,12 +212,12 @@
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obscurFac</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span><span class="n">shapeFac</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span><span class="n">pupilDiam</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">telescopeKeepout</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span>\
-            <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">intCutoff</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">Ndark</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">dMagLim</span><span class="o">=</span><span class="mf">22.5</span><span class="p">,</span><span class="n">scienceInstruments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>\
-            <span class="n">pitch</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span><span class="n">focal</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">idark</span><span class="o">=</span><span class="mf">5e-4</span><span class="p">,</span><span class="n">CIC</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span><span class="n">sread</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span><span class="n">texp</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">ENF</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Rs</span><span class="o">=</span><span class="mi">70</span><span class="p">,</span>\
-            <span class="n">QE</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span><span class="n">starlightSuppressionSystems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">lam</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span><span class="n">BW</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span><span class="n">occ_trans</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>\
+            <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">intCutoff</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">Ndark</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">scienceInstruments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">pitch</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>\
+            <span class="n">focal</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">idark</span><span class="o">=</span><span class="mf">5e-4</span><span class="p">,</span><span class="n">CIC</span><span class="o">=</span><span class="mf">5e-3</span><span class="p">,</span><span class="n">sread</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span><span class="n">texp</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">ENF</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Rs</span><span class="o">=</span><span class="mi">70</span><span class="p">,</span><span class="n">QE</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>\
+            <span class="n">starlightSuppressionSystems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">lam</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span><span class="n">BW</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span><span class="n">occ_trans</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>\
             <span class="n">core_thruput</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span><span class="n">core_contrast</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">,</span><span class="n">platescale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">PSF</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)),</span>\
             <span class="n">samp</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">ohTime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">observingModes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">SNR</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">timeMultiplier</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">IWA</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>\
-            <span class="n">OWA</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+            <span class="n">OWA</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">dMagLim</span><span class="o">=</span><span class="mf">22.5</span><span class="p">,</span><span class="n">WALim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c1">#load all values with defaults</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">obscurFac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">obscurFac</span><span class="p">)</span>       <span class="c1"># obscuration factor</span>
@@ -225,7 +230,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">attenuation</span><span class="p">)</span>   <span class="c1"># non-coronagraph attenuation factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">intCutoff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">intCutoff</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>   <span class="c1"># integration time cutoff</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Ndark</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Ndark</span><span class="p">)</span>               <span class="c1"># number of dark frames used</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagLim</span><span class="p">)</span>           <span class="c1"># fundamental delta magnitude limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagLim</span><span class="p">)</span>           <span class="c1"># limiting delta magnitude for calc_intTime</span>
         
         <span class="c1"># Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm</span>
         <span class="c1"># F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):</span>
@@ -431,6 +436,11 @@
         
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">OWA</span><span class="p">,</span> <span class="s2">&quot;Fundamental IWA must be smaller that the OWA.&quot;</span>
         
+        <span class="c1"># load the limiting working angle value</span>
+        <span class="c1"># if not specified, set it equal to detection mode IWA by default</span>
+        <span class="n">detMode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WALim</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">WALim</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span> <span class="k">if</span> <span class="n">WALim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">detMode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span>
+        
         <span class="c1"># populate outspec with all OpticalSystem scalar attributes</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;F0&#39;</span><span class="p">,</span><span class="s1">&#39;scienceInstruments&#39;</span><span class="p">,</span><span class="s1">&#39;starlightSuppressionSystems&#39;</span><span class="p">,</span>\
@@ -611,8 +621,8 @@
 <div class="viewcode-block" id="OpticalSystem.calc_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds integration time for a specific target system </span>
 <span class="sd">        </span>
-<span class="sd">        This method is called by a method in the SurveySimulation class object.</span>
-<span class="sd">        This method defines the data type expected, integration time is </span>
+<span class="sd">        This method is called in the run_sim() method of the SurveySimulation </span>
+<span class="sd">        class object. It defines the data type expected, integration time is </span>
 <span class="sd">        determined by specific OpticalSystem classes.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
@@ -627,7 +637,7 @@
 <span class="sd">            dMag (float ndarray):</span>
 <span class="sd">                Differences in magnitude between planets and their host star</span>
 <span class="sd">            WA (astropy Quantity array):</span>
-<span class="sd">                Working angles of the planets of interest in units of mas</span>
+<span class="sd">                Working angles of the planets of interest in units of arcsec</span>
 <span class="sd">            mode (dict):</span>
 <span class="sd">                Selected observing mode</span>
 <span class="sd">        </span>
@@ -643,24 +653,17 @@
         
         <span class="k">return</span> <span class="n">intTime</span></div>
 
-<div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds maximum integration time for target systems </span>
+<div class="viewcode-block" id="OpticalSystem.calc_maxintTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_maxintTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds maximum integration times for the whole target list.</span>
 <span class="sd">        </span>
-<span class="sd">        This method is called in the run_sim() method of the SurveySimulation</span>
-<span class="sd">        class object. It calculates the default maximum integration time for a</span>
-<span class="sd">        fixed dMagLim, and at the optical system IWA.</span>
+<span class="sd">        This method is called in the TargetList class object. It calculates the </span>
+<span class="sd">        maximum integration times for all the stars from the target list, at the </span>
+<span class="sd">        limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal </span>
+<span class="sd">        noise and at a separation equal to twice the global inner working angle (IWA).</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            TL (TargetList module):</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Integer indices of the stars of interest</span>
-<span class="sd">            fZ (astropy Quantity array):</span>
-<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
-<span class="sd">            fEZ (astropy Quantity array):</span>
-<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
-<span class="sd">            mode (dict):</span>
-<span class="sd">                Selected observing mode</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            maxintTime (astropy Quantity array):</span>
@@ -668,10 +671,15 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># calc integration time, for dMag = dMagLim, and WA = IWA</span>
+        <span class="c1"># define attributes for integration time calculation</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span>
-        <span class="n">WA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">IWA</span>
-        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observingModes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">IWA</span>
+        <span class="c1"># select detection mode</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># calculate maximum integration time</span>
         <span class="n">maxintTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">maxintTime</span></div></div>
@@ -708,8 +716,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

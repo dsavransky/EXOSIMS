@@ -30,11 +30,14 @@
     <link rel="next" title="EXOSIMS.OpticalSystem package" href="EXOSIMS.OpticalSystem.html" />
     <link rel="prev" title="EXOSIMS.Completeness package" href="EXOSIMS.Completeness.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -58,7 +61,7 @@ observatory needed to perform Observatory Definition Module calculations
 in exoplanet mission simulation.</p>
 <dl class="method">
 <dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">
-<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>r_sc</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>koangle</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds keepout Boolean values for stars of interest.</p>
 <p>This method returns the keepout Boolean values for stars of interest, where
 True is an observable star.</p>
@@ -70,8 +73,8 @@ True is an observable star.</p>
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
-<li><strong>r_sc</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Current observatory (spacecraft) position vector in units of km</li>
 <li><strong>koangle</strong> (<em>astropy Quantity</em>) &#8211; Telescope keepout angle in units of degree</li>
+<li><strong>returnExtra</strong> (<em>boolean</em>) &#8211; Optional flag, default False, set True to return additional rates for validation</li>
 </ul>
 </td>
 </tr>
@@ -84,8 +87,7 @@ target unobservable due to obstructions in the keepout zone.</p>
 </tr>
 </tbody>
 </table>
-<p>Note1: currentTime and r_sc must be of same size.
-Note2: For multiple targets, currentTime/r_sc must be of size 1 or size of sInds.</p>
+<p>Note: If multiple times and targets, currentTime and sInds sizes must match.</p>
 </dd></dl>
 
 <dl class="method">
@@ -205,8 +207,8 @@ in the heliocentric equatorial frame.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/EXOSIMS.Observatory.rst.txt"

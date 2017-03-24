@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>EXOSIMS.SurveySimulation package &#8212; EXOSIMS 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EXOSIMS.TargetList package" href="EXOSIMS.TargetList.html" />
+    <link rel="prev" title="EXOSIMS.SurveyEnsemble package" href="EXOSIMS.SurveyEnsemble.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="exosims-surveysimulation-package">
+<h1>EXOSIMS.SurveySimulation package<a class="headerlink" href="#exosims-surveysimulation-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.linearJScheduler">
+<span id="exosims-surveysimulation-linearjscheduler-module"></span><h2>EXOSIMS.SurveySimulation.linearJScheduler module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.linearJScheduler" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.linearJScheduler.</code><code class="descname">linearJScheduler</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/linearJScheduler.html#linearJScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<p>This class implements the linear cost function scheduler described
+in Savransky et al. (2010).</p>
+<blockquote>
+<div><p>Args:
+as (iterable 3x1):</p>
+<blockquote>
+<div>Cost function coefficients: slew distance, completeness, target list coverage</div></blockquote>
+<dl class="docutils">
+<dt>**specs:</dt>
+<dd>user specified values</dd>
+</dl>
+</div></blockquote>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/linearJScheduler.html#linearJScheduler.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next target based on truncated depth first search
+of linear cost function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>float array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.starkAYO2014">
+<span id="exosims-surveysimulation-starkayo2014-module"></span><h2>EXOSIMS.SurveySimulation.starkAYO2014 module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.starkAYO2014" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.starkAYO2014.starkAYO2014">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO2014.</code><code class="descname">starkAYO2014</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO2014.html#starkAYO2014"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO2014.starkAYO2014" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<p>startAYO2014</p>
+<p>This class implements the AYO discussed in stark2014.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>CHANGE Args:</dt>
+<dd><dl class="first last docutils">
+<dt>as (iterable 3x1):</dt>
+<dd>Cost function coefficients: slew distance, completeness, target list coverage</dd>
+<dt>**specs:</dt>
+<dd>user specified values</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO2014.starkAYO2014.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO2014.html#starkAYO2014.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO2014.starkAYO2014.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next target based on truncated depth first search
+of linear cost function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>float array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.SurveySimulation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.SurveySimulation" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EXOSIMS.SurveySimulation package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.linearJScheduler">EXOSIMS.SurveySimulation.linearJScheduler module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.starkAYO2014">EXOSIMS.SurveySimulation.starkAYO2014 module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
+      <li>Previous: <a href="EXOSIMS.SurveyEnsemble.html" title="previous chapter">EXOSIMS.SurveyEnsemble package</a></li>
+      <li>Next: <a href="EXOSIMS.TargetList.html" title="next chapter">EXOSIMS.TargetList package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/EXOSIMS.SurveySimulation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/EXOSIMS.SurveySimulation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

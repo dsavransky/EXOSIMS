@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -114,15 +117,14 @@
 <span class="sd">            fZ (astropy Quantity array):</span>
 <span class="sd">                Surface brightness of zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
-<span class="sd">        Note: r_sc must be an array of shape = len(sInds)x3</span>
+<span class="sd">        Note: r_sc must be an array of shape (sInds.size x 3)</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># reshape sInds</span>
         <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        
         <span class="c1"># check shape of r_sc</span>
-        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (len(sInds),3)&#39;</span>
+        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (sInds.size x 3)&#39;</span>
         
         <span class="n">nZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span>
         <span class="n">fZ</span> <span class="o">=</span> <span class="n">nZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magZ</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
@@ -164,9 +166,9 @@
         <span class="n">beta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span> <span class="o">-</span> <span class="n">beta</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">fbeta</span> <span class="o">=</span> <span class="mf">2.44</span> <span class="o">-</span> <span class="mf">0.0403</span><span class="o">*</span><span class="n">beta</span> <span class="o">+</span> <span class="mf">0.000269</span><span class="o">*</span><span class="n">beta</span><span class="o">**</span><span class="mi">2</span>
         
-        <span class="c1"># absolute magnitude of the star (in the V band)</span>
+        <span class="c1"># apparent magnitude of the star (in the V band)</span>
         <span class="n">MV</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MV</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="c1"># absolute magnitude of the Sun (in the V band)</span>
+        <span class="c1"># apparent magnitude of the Sun (in the V band)</span>
         <span class="n">MVsun</span> <span class="o">=</span> <span class="mf">4.83</span>
         
         <span class="n">fEZ</span> <span class="o">=</span> <span class="n">nEZ</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">magEZ</span><span class="p">)</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="p">(</span><span class="n">MV</span><span class="o">-</span><span class="n">MVsun</span><span class="p">))</span>\
@@ -206,8 +208,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

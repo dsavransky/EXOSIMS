@@ -28,11 +28,14 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -105,7 +108,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">wrange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkranges</span><span class="p">(</span><span class="n">wrange</span><span class="p">,</span><span class="s1">&#39;wrange&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkranges</span><span class="p">(</span><span class="n">prange</span><span class="p">,</span><span class="s1">&#39;prange&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rprange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkranges</span><span class="p">(</span><span class="n">Rprange</span><span class="p">,</span><span class="s1">&#39;Rprange&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkranges</span><span class="p">(</span><span class="n">Mprange</span><span class="p">,</span><span class="s1">&#39;Mprange&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mprange</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkranges</span><span class="p">(</span><span class="n">Mprange</span><span class="p">,</span><span class="s1">&#39;Mprange&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
         
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scaleOrbits</span><span class="p">,</span><span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;scaleOrbits must be boolean&quot;</span>
         <span class="c1"># scale planetary orbits by sqrt(L)</span>
@@ -130,9 +133,9 @@
             <span class="n">dat</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span> <span class="k">else</span> <span class="n">dat</span>
             <span class="k">if</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;Mprange&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">/=</span> <span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="o">.</span><span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">/=</span> <span class="n">const</span><span class="o">.</span><span class="n">M_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
             <span class="k">elif</span> <span class="n">att</span> <span class="o">==</span> <span class="s1">&#39;Rprange&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">/=</span> <span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">/=</span> <span class="n">const</span><span class="o">.</span><span class="n">R_earth</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
         <span class="c1"># import PlanetPhysicalModel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">],</span> \
@@ -477,8 +480,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
     </div>
 

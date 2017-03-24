@@ -273,20 +273,19 @@ class MissionSim(object):
         # return it as well
         return out
 
-    
     def run_sim(self):
         """Convenience method that simply calls the SurveySimulation run_sim method."""
         
         res = self.SurveySimulation.run_sim()
-
+        
         return res
 
-    def reset_sim(self,genNewPlanets=True,rewindPlanets=True):
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
         """
         Performs a full reset of the current simulation by:
         1) Resetting SurveySimulation.DRM to []
         2) Re-initializing the TimeKeeping object with its own outspec
-
+        
         If genNewPlanets is True (default) then it will also generate all new planets based on
         the original input specification.  If genNewPlanets is False, then the original planets 
         will remain, but they will not be rewound to their initial starting locations (i.e., all 
@@ -298,21 +297,28 @@ class MissionSim(object):
         will have the effect of resetting the full simulation to its exact original state.
         
         """
-
+        
         self.SurveySimulation.DRM = []
         self.TimeKeeping.__init__(**self.TimeKeeping._outspec)
-
+        
         if genNewPlanets:
             self.SimulatedUniverse.gen_physical_properties(**self.SimulatedUniverse._outspec)
             rewindPlanets = True
 
         if rewindPlanets:
             self.SimulatedUniverse.init_systems()
-
+        
         print "Simulation reset."
         
         return
-    
+
+    def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
+        """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""
+        
+        res = self.SurveyEnsemble.run_ensemble(self, nb_run_sim, run_one=run_one, \
+                genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
+        
+        return res
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
@@ -354,5 +360,4 @@ def array_encoder(obj):
     # nothing worked, bail out
     
     return json.JSONEncoder.default(obj)
-
 

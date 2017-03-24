@@ -30,11 +30,14 @@
     <link rel="next" title="Installing and Configuring EXOSIMS" href="install.html" />
     <link rel="prev" title="Welcome to EXOSIMS’s documentation!" href="index.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body role="document">
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -60,6 +63,19 @@
 </div>
 <p>Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., <code class="docutils literal"><span class="pre">sim.Observatory</span></code>) as well as a dictionary of the modules (<code class="docutils literal"><span class="pre">sim.modules</span></code>).  A run simulation can be kicked off via the <code class="docutils literal"><span class="pre">run_sim</span></code> method of the SurveySimulation class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The terminal will display Observation #&#8217;s as well as any detections or characterizations that are made. The output is saved to the DRM variable. This can be accessed by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">myDRM</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">DRM</span>
+<span class="n">myDRM</span>
+</pre></div>
+</div>
+<p>The terminal should display all the mission parameters of all observations made. If the last observation output of res = sim.SurveySimulation.run_sim() was #15, then accessing myDRM[14] would display the output of the 15th observation. To find the number of stars observed during my mission that have at least 1 planet detected, we could run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">myDRM</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">myDRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;det_status&#39;</span><span class="p">]:</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span><span class="o">+</span><span class="mi">1</span>
+<span class="k">print</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -113,8 +129,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
       
       |
       <a href="_sources/quickstart.rst.txt"

@@ -281,7 +281,7 @@ class MissionSim(object):
 
         return res
 
-    def reset_sim(self,genNewPlanets=True):
+    def reset_sim(self,genNewPlanets=True,rewindPlanets=True):
         """
         Performs a full reset of the current simulation by:
         1) Resetting SurveySimulation.DRM to []
@@ -292,6 +292,10 @@ class MissionSim(object):
         will remain, but they will not be rewound to their initial starting locations (i.e., all 
         systems will remain at the times they were at the end of the last run, thereby effectively 
         randomizing planet phases.
+
+        If rewindPlanets is True (default), then the current set of planets will be reset to their original
+        orbital phases.  This has no effect if genNewPlanets is True, but if genNewPlanets is False, 
+        will have the effect of resetting the full simulation to its exact original state.
         
         """
 
@@ -300,6 +304,9 @@ class MissionSim(object):
 
         if genNewPlanets:
             self.SimulatedUniverse.gen_physical_properties(**self.SimulatedUniverse._outspec)
+            rewindPlanets = True
+
+        if rewindPlanets:
             self.SimulatedUniverse.init_systems()
 
         print "Simulation reset."

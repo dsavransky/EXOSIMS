@@ -30,7 +30,7 @@ Once instantiated, the MissionSim object contains directly accessible instances 
     
     res = sim.SurveySimulation.run_sim()
 
-The terminal will display Observation #'s as well as any detections or characterizations that are made. The output is saved to the DRM variable. This can be accessed by:
+The terminal will display Observation #'s as well as any detections or characterizations that are made. The output is saved to the DRM variable. Which can be accessed by:
 
 .. code-block:: python
     

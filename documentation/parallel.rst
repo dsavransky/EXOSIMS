@@ -11,9 +11,8 @@ The basic method for parallelization relies heavily on the `ipyparallel package 
 
 .. code-block:: python
 
-    import EXOSIMS,os.path
+    import EXOSIMS, EXOSIMS.MissionSim, os.path
     scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','parallel_ensemble_script.json')
-    import EXOSIMS.MissionSim
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
 
 The ``sim`` object will have a ``SurveyEnsemble`` attribute with a ``run_ensemble`` method.  This method takes an argument of the ``run_one`` function, which must be defined in the ipython session:
@@ -31,10 +30,6 @@ The ``sim`` object will have a ``SurveyEnsemble`` attribute with a ``run_ensembl
 
         return res
 
-Once defined, the run_one can be parallelized N times by running ``res = sim.SurveyEnsemble.run_ensemble(run_one, N)``.  On return, ``res`` will be a list of lists of the DRM dictionaries. 
-
-
-
-
+Once defined, the run_one can be parallelized N times by running ``res = sim.run_ensemble(N, run_one=run_one)``.  On return, ``res`` will be a list of lists of the DRM dictionaries. 
 
 

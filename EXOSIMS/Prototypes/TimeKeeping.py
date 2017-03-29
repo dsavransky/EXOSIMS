@@ -1,14 +1,5 @@
-# -*- coding: utf-8 -*-
-import sys
-import os
-import logging
-import inspect
-from astropy.time import Time
 import astropy.units as u
-import numpy as np
-
-# the EXOSIMS logger
-Logger = logging.getLogger(__name__)
+from astropy.time import Time
 
 class TimeKeeping(object):
     """TimeKeeping class template.
@@ -55,8 +46,8 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
 
-    def __init__(self, missionStart=60634., missionLife=6., extendedLife=0.,\
-                  missionPortion = 1/6., dtAlloc = 1, intCutoff = 50, **specs):
+    def __init__(self, missionStart=60634, missionLife=6, extendedLife=0,\
+                  missionPortion=1/6., OBduration=None, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -72,18 +63,24 @@ class TimeKeeping(object):
         self.missionLife = float(missionLife)*u.year
         self.extendedLife = float(extendedLife)*u.year
         self.missionPortion = float(missionPortion)
-        self.dtAlloc = float(dtAlloc)*u.day
-        # planet-finding operation duration is equal to Optical System intCutoff
-        self.duration = float(intCutoff)*u.day
         
         # set values derived from quantities above
         self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')
         self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife
         
         # initialize values updated by functions
-        self.nextTimeAvail = 0*u.day
         self.currentTimeNorm = 0.*u.day
         self.currentTimeAbs = self.missionStart
+        
+        # initialize observing block (OB) START and END times
+        self.OBstartTime = self.missionStart
+        if OBduration is not None:
+            self.OBduration = float(OBduration)*u.day
+            self.OBendTime = self.OBstartTime + self.OBduration
+        # if no OB duration was specified, set artificially long end time
+        else:
+            self.OBduration = None
+            self.OBendTime = self.OBstartTime + 999*u.year
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -101,65 +98,6 @@ class TimeKeeping(object):
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
-    def allocate_time(self, dt):
-        r"""Allocate a temporal block of width dt, advancing the observation window if needed.
-        
-        Advance the mission time by dt units.  If this requires moving into the next observation
-        window, do so.
-        If dt is longer than the observation window length, making a contiguous observation is
-        not possible, so return False.  If dt < 0, return False.  Otherwise, allocate time and
-        return True.
-        
-        Caveats:
-        [1] This does not handle allocations that move beyond the allowed mission time.  This
-        would be a place for an exception that could be caught in the simulation main loop.
-        For now, we check for this condition at the top of the simulation loop and not here.
-        
-        Args:
-            dt (astropy Quantity):
-                Amount of time requested in units of day
-                
-        Returns:
-            success (boolean):
-                True if the requested time fits in the widest window, otherwise False.
-        """
-        
-        # get caller info
-        _,filename,line_number,function_name,_,_ = inspect.stack()[1]
-        location = '%s:%d(%s)' % (os.path.basename(filename), line_number, function_name)
-        # if no issues, we will advance to this time
-        provisional_time = self.currentTimeNorm + dt
-        window_advance = False
-        success = True
-        if dt > self.duration:
-            success = False
-            description = '!too long'
-        elif dt < 0:
-            success = False
-            description = '!negative allocation'
-        elif provisional_time > self.nextTimeAvail + self.duration:
-            # advance to the next observation window:
-            #   add "duration" (time for our instrument's observations)
-            #   also add a term for other observations based on fraction-available
-            self.nextTimeAvail += (self.duration + \
-                    ((1.0 - self.missionPortion)/self.missionPortion) * self.duration)
-            # set current time to dt units beyond start of next window
-            self.currentTimeNorm = self.nextTimeAvail + dt
-            self.currentTimeAbs = self.missionStart + self.currentTimeNorm
-            window_advance = True
-            description = '+window'
-        else:
-            # simply advance by dt
-            self.currentTimeNorm = provisional_time
-            self.currentTimeAbs += dt
-            description = 'ok'
-        # Log a message for the time allocation
-        message = "TK [%s]: alloc: %.2f day\t[%s]\t[%s]" % (
-            self.currentTimeNorm.to('day').value, dt.to('day').value, description, location)
-        Logger.info(message)
-        
-        return success
-
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?
         
@@ -176,4 +114,63 @@ class TimeKeeping(object):
         is_over = (self.currentTimeNorm > self.missionFinishNorm)
         
         return is_over
+
+    def wait(self):
+        """Waits a certain time in case no target can be observed at current time.
+        
+        This method is called in the run_sim() method of the SurveySimulation 
+        class object. In the prototype version, it simply allocate a temporal block 
+        of 1 day.
+        
+        """
+        self.allocate_time(1.*u.d)
+
+    def allocate_time(self, dt):
+        r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
+        
+        Advance the mission time by dt units. If this requires moving into the next OB,
+        call the next_observing_block() method of the TimeKeeping class object.
+        
+        Args:
+            dt (astropy Quantity):
+                Temporal block allocated in units of day
+        
+        """
+        
+        if dt == 0:
+            return
+            
+        self.currentTimeNorm += dt
+        self.currentTimeAbs += dt
+        
+        if self.currentTimeAbs > self.OBendTime:
+            self.next_observing_block()
+
+    def next_observing_block(self, dt=None):
+        """Defines the next observing block, start and end times
+        
+        This method is called in the allocate_time() method of the TimeKeeping 
+        class object, when the allocated time requires moving outside of the current OB.
+        
+        If no OB duration was specified, this method is only called in the run_sim() 
+        method of the SurveySimulation class object, where a temporal block dt will
+        be passed, equivalent to the time spent on one target (i.e., one observation 
+        per OB).
+        
+        """
+        
+        # number of blocks to wait
+        nwait = (1 - self.missionPortion)/self.missionPortion
+        
+        if dt is None:
+            self.OBstartTime = self.OBendTime + nwait*self.OBduration
+            self.OBendTime = self.OBstartTime + self.OBduration
+        
+        else: # for the default case, called in SurveySimulation
+            self.OBstartTime = self.currentTimeAbs + nwait*dt
+        
+        # move to the OB start time
+        self.allocate_time((self.OBstartTime - self.currentTimeAbs).jd*u.d)
+
+
 

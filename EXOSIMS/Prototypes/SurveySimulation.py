@@ -229,7 +229,7 @@ class SurveySimulation(object):
         while not TK.mission_is_over():
             
             # Acquire the NEXT TARGET star index and create DRM
-            obsBegin = TK.currentTimeNorm.to('day')
+            obsStart = TK.currentTimeNorm.to('day')
             DRM, sInd, t_det = self.next_target(sInd, detMode)
             
             if sInd is not None:
@@ -247,9 +247,9 @@ class SurveySimulation(object):
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
                 Logger.info('Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
-                        %(cnt, sInd, TL.nStars, len(pInds), obsBegin.round(2)))
+                        %(cnt, sInd, TL.nStars, len(pInds), obsStart.round(2)))
                 print 'Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
-                        %(cnt, sInd, TL.nStars, len(pInds), obsBegin.round(2))
+                        %(cnt, sInd, TL.nStars, len(pInds), obsStart.round(2))
                 
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
@@ -290,15 +290,25 @@ class SurveySimulation(object):
                 DRM['char_status'] = characterized
                 DRM['char_SNR'] = charSNR
                 
-                # update target time
-                self.starTimes[sInd] = TK.currentTimeNorm
-                
-                # append result values to self.DRM
+                # Append result values to self.DRM
                 self.DRM.append(DRM)
                 
-                # with occulter, if spacecraft fuel is depleted, exit loop
+                # Calculate total observation time
+                obsEnd = TK.currentTimeNorm.to('day')
+                obsLength = obsEnd - obsStart
+                print 'Total time spent on target %s '%(obsLength.round(2))
+                
+                # Update target time
+                self.starTimes[sInd] = obsEnd
+                
+                # With prototype TimeKeeping, if no OB duration was specified, advance
+                # to the next OB with timestep equivalent to time spent on one target
+                if TK.OBduration is None:
+                    TK.next_observing_block(dt=obsLength)
+                
+                # With occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %r' % TK.currentTimeNorm
+                    print 'Total fuel mass exceeded at %s' %obsEnd.round(2)
                     break
         
         mission_end = "Simulation finishing OK. Results stored in SurveySimulation.DRM"
@@ -359,7 +369,7 @@ class SurveySimulation(object):
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
-            # 1/ find spacecraft orbital START positions and filter out unavailable 
+            # 1/ Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = None
             if OS.haveOcculter == True:
@@ -382,8 +392,8 @@ class SurveySimulation(object):
             kogoodStart = Obs.keepout(TL, sInds, startTime, OS.telescopeKeepout)
             sInds = sInds[np.where(kogoodStart)[0]]
             
-            # 2/ calculate integration times for the preselected targets, 
-            # and filter out t_tot > integration cutoff
+            # 2/ Calculate integration times for the preselected targets, 
+            # and filter out t_tots > integration cutoff
             if np.any(sInds):
                 fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
                 fEZ = ZL.fEZ0
@@ -391,18 +401,20 @@ class SurveySimulation(object):
                 WA = OS.WALim
                 t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 # include integration time multiplier
-                t_tot = t_dets*mode['timeMultiplier']
-                # total time must be positive and shorter than treshold
-                sInds = np.where((0 < t_tot) & (t_tot < OS.intCutoff))[0]
+                t_tots = t_dets*mode['timeMultiplier']
+                # total time must be positive, shorter than integration cut-off,
+                # and it must not exceed the Observing Block end-time 
+                sInds = np.where((t_tots > 0) & (t_tots < OS.intCutoff) & \
+                        ((startTime + t_tots) < TK.OBendTime))[0]
             
-            # 3/ find spacecraft orbital END positions (for each candidate target), 
+            # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if np.any(sInds):
-                endTime = startTime[sInds] + t_dets[sInds]
+                endTime = startTime[sInds] + t_tots[sInds]
                 kogoodEnd = Obs.keepout(TL, sInds, endTime, OS.telescopeKeepout)
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
-            # 4/ filter out all previously (more-)visited targets, unless in 
+            # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if np.any(sInds):
                 tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
@@ -413,10 +425,10 @@ class SurveySimulation(object):
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
             
-            # 5/ choose best target from remaining
+            # 5/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd,sInds,slewTime)
+                sInd = self.choose_next_target(old_sInd, sInds, slewTime)
                 # update visited list for current star
                 self.starVisits[sInd] += 1
                 # update visited list for Completeness for current star
@@ -425,10 +437,9 @@ class SurveySimulation(object):
                 t_det = t_dets[sInd]
                 break
             
-            # if no observable target, allocate time and try again
-            # TODO: improve how to deal with no available target
+            # if no observable target, call the TimeKeeping.wait() method
             else:
-                TK.allocate_time(TK.dtAlloc)
+                TK.wait()
             
         else:
             Logger.info('Mission complete: no more time available')
@@ -657,7 +668,7 @@ class SurveySimulation(object):
         # Initialize outputs, and check if any planet to characterize
         characterized = np.zeros(det.size, dtype=int)
         SNR = np.zeros(det.size)
-        t_char = 0.0*u.d
+        t_char = 0.*u.d
         if not np.any(pInds):
             return characterized.tolist(), SNR.tolist(), t_char
         
@@ -670,11 +681,12 @@ class SurveySimulation(object):
         else:
             tochar[det] = np.array([True])
         
-        # Find spacecraft orbital START position and check keepout angle
+        # 1/ Find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             startTime = TK.currentTimeAbs
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, OS.telescopeKeepout)
-        # If any planet to characterize, find the characterization times
+        
+        # 2/ If any planet to characterize, find the characterization times
         if np.any(tochar):
             # Propagate the whole system to match up with current time
             SU.propag_system(sInd, TK.currentTimeNorm)
@@ -686,13 +698,17 @@ class SurveySimulation(object):
             t_chars = np.zeros(len(pInds))*u.d
             t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             t_tots = t_chars*(mode['timeMultiplier'])
-            # Filter out planets with t_tots > integration cutoff
-            tochar = (t_tots > 0) & (t_tots < OS.intCutoff)
-        # Is target still observable at the end of any char time?
+            # Total time must be positive, shorter than integration cut-off,
+            # and it must not exceed the Observing Block end-time
+            tochar = (t_tots > 0) & (t_tots < OS.intCutoff) & \
+                    ((startTime + t_tots) < TK.OBendTime)
+        
+        # 3/ Is target still observable at the end of any char time?
         if np.any(tochar):
-            endTime = TK.currentTimeAbs + t_tots[tochar]
+            endTime = startTime + t_tots[tochar]
             tochar[tochar] = Obs.keepout(TL, sInd, endTime, OS.telescopeKeepout)
-        # If yes, perform the characterization for the maximum char time
+        
+        # 4/ If yes, perform the characterization for the maximum char time
         if np.any(tochar):
             t_char = np.max(t_chars[tochar])
             pIndsChar = pInds[tochar]

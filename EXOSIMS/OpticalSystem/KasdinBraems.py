@@ -76,8 +76,8 @@ class KasdinBraems(OpticalSystem):
             beta = np.true_divide(C_p,Tcore)
             intTime = np.true_divide((K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2, \
                     (beta*Qbar*Ta*Psi))
-        # integration times (NAN and negative values correspond to infinity)
-        intTime[np.isnan(intTime)] = np.inf*u.day
-        intTime[intTime < 0] = np.inf*u.day
+        # negative values, infinite, and NAN, are set to zero
+        mask = (intTime < 0) | (intTime == np.inf*u.d) | np.isnan(intTime)
+        intTime[mask] = 0.*u.d
         
         return intTime.to('day')

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-import astropy.units as u
-import numpy as np
 import os.path
-import astropy.io.fits as fits
 import numbers
-from operator import itemgetter
+import numpy as np
+import astropy.units as u
+import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
+from operator import itemgetter
 
 class OpticalSystem(object):
     """Optical System class template
@@ -605,6 +605,9 @@ class OpticalSystem(object):
         # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         intTime = np.ones(len(sInds))*u.day
+        # negative values, infinite, and NAN, are set to zero
+        mask = (intTime < 0) | (intTime == np.inf*u.d) | np.isnan(intTime)
+        intTime[mask] = 0.*u.d
         
         return intTime
 

@@ -231,6 +231,7 @@ class SurveySimulation(object):
             # Acquire the NEXT TARGET star index and create DRM
             obsStart = TK.currentTimeNorm.to('day')
             DRM, sInd, t_det = self.next_target(sInd, detMode)
+            assert t_det !=0, "Integration time can't be 0."
             
             if sInd is not None:
                 cnt += 1
@@ -275,8 +276,9 @@ class SurveySimulation(object):
                 DRM['char_mode'] = dict(charMode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
+                assert t_char !=0, "Integration time can't be 0."
                 # Update the occulter wet mass
-                if OS.haveOcculter == True:
+                if OS.haveOcculter == True and t_char is not None:
                     DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
                 # if any false alarm, store its characterization status, fEZ, dMag, and WA
                 if FA == True:
@@ -286,7 +288,7 @@ class SurveySimulation(object):
                     DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
                     DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
                 # Populate the DRM with characterization results
-                DRM['char_time'] = t_char.to('day').value
+                DRM['char_time'] = t_char.to('day').value if t_char else 0.
                 DRM['char_status'] = characterized
                 DRM['char_SNR'] = charSNR
                 
@@ -668,7 +670,7 @@ class SurveySimulation(object):
         # Initialize outputs, and check if any planet to characterize
         characterized = np.zeros(det.size, dtype=int)
         SNR = np.zeros(det.size)
-        t_char = 0.*u.d
+        t_char = None
         if not np.any(pInds):
             return characterized.tolist(), SNR.tolist(), t_char
         

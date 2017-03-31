@@ -1,8 +1,7 @@
 {
   "missionLife": 1,
+  "missionPortion": 0.2,
   "pupilDiam": 2.37,
-  "obscurFac": 0.14728,
-  "attenuation": 0.441,
   "ppFact": 0.1,
   "scienceInstruments": [
     {

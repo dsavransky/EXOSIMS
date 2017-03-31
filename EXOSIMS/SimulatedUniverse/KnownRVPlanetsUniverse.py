@@ -80,6 +80,5 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         T[T <= 0] = PPop.period[planinds][T <= 0]
         # calculate initial mean anomaly
         tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
-                *PPop.tpererr[planinds]).to('day').value,format='jd')
+                *PPop.tpererr[planinds]).to('day').value, format='jd', scale='tai')
         self.M0 = np.mod(((missionStart - tper)/T).decompose().value*360,360)*u.deg
-

@@ -197,8 +197,6 @@ class SurveySimulation(object):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
-        Logger.info('run_sim beginning')
-        
         # initialize lists updated later
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
@@ -223,13 +221,15 @@ class SurveySimulation(object):
         else:
             charMode = OS.observingModes[0]
         
-        # loop until mission is finished
+        # Begin Survey, and loop until mission is finished
+        Logger.info('OB%s: survey beginning.'%(TK.OBnumber+1))
+        print 'OB%s: survey beginning.'%(TK.OBnumber+1)
         sInd = None
         cnt = 0
         while not TK.mission_is_over():
             
             # Acquire the NEXT TARGET star index and create DRM
-            obsStart = TK.currentTimeNorm.to('day')
+            TK.obsStart = TK.currentTimeNorm.to('day')
             DRM, sInd, t_det = self.next_target(sInd, detMode)
             assert t_det !=0, "Integration time can't be 0."
             
@@ -243,14 +243,15 @@ class SurveySimulation(object):
                             self.starExtended = np.unique(self.starExtended)
                 
                 # Beginning of observation, start to populate DRM
+                DRM['OB'] = TK.OBnumber
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
-                Logger.info('Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
-                        %(cnt, sInd, TL.nStars, len(pInds), obsStart.round(2)))
-                print 'Observation #%s, target #%s/%s with %s planet(s), mission time: %s' \
-                        %(cnt, sInd, TL.nStars, len(pInds), obsStart.round(2))
+                Logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
+                        %(cnt, sInd, TL.nStars, len(pInds), TK.obsStart.round(2)))
+                print '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
+                        %(cnt, sInd, TL.nStars, len(pInds), TK.obsStart.round(2))
                 
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
@@ -295,22 +296,19 @@ class SurveySimulation(object):
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
                 
-                # Calculate total observation time
-                obsEnd = TK.currentTimeNorm.to('day')
-                obsLength = obsEnd - obsStart
-                print 'Total time spent on target %s '%(obsLength.round(2))
-                
-                # Update target time
-                self.starTimes[sInd] = obsEnd
+                # Calculate observation end time, and update target time
+                TK.obsEnd = TK.currentTimeNorm.to('day')
+                self.starTimes[sInd] = TK.obsEnd
                 
                 # With prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
-                if TK.OBduration is None:
+                if np.isinf(TK.OBduration):
+                    obsLength = (TK.obsEnd-TK.obsStart).to('day')
                     TK.next_observing_block(dt=obsLength)
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %s' %obsEnd.round(2)
+                    print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
                     break
         
         mission_end = "Simulation finishing OK. Results stored in SurveySimulation.DRM"
@@ -405,9 +403,10 @@ class SurveySimulation(object):
                 # include integration time multiplier
                 t_tots = t_dets*mode['timeMultiplier']
                 # total time must be positive, shorter than integration cut-off,
-                # and it must not exceed the Observing Block end-time 
+                # and it must not exceed the Observing Block end time 
+                startTimeNorm = (startTime - TK.missionStart).jd*u.day
                 sInds = np.where((t_tots > 0) & (t_tots < OS.intCutoff) & \
-                        ((startTime + t_tots) < TK.OBendTime))[0]
+                        (startTimeNorm + t_tots < TK.OBendTimes[TK.OBnumber]))[0]
             
             # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
@@ -445,6 +444,7 @@ class SurveySimulation(object):
             
         else:
             Logger.info('Mission complete: no more time available')
+            print 'Mission complete: no more time available'
             return DRM, None, None
         
         if OS.haveOcculter == True:
@@ -460,6 +460,7 @@ class SurveySimulation(object):
             TK.allocate_time(slewTime[sInd])
             if TK.mission_is_over():
                 Logger.info('Mission complete: no more time available')
+                print 'Mission complete: no more time available'
                 return DRM, None, None
         
         return DRM, sInd, t_det
@@ -577,8 +578,8 @@ class SurveySimulation(object):
         det = (detected == 1)
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
-            Logger.info('Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds)))
-            print 'Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds))
+            Logger.info('   - Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds)))
+            print '   - Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds))
         
         # Populate the lastDetected array by storing det, fEZ, dMag, and WA
         self.lastDetected[sInd,:] = det, SU.fEZ[pInds].to('1/arcsec2').value, \
@@ -597,8 +598,8 @@ class SurveySimulation(object):
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
             sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
-            Logger.info('False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1)))
-            print 'False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1))
+            Logger.info('   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1)))
+            print '   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1))
         
         # In both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
@@ -701,9 +702,10 @@ class SurveySimulation(object):
             t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             t_tots = t_chars*(mode['timeMultiplier'])
             # Total time must be positive, shorter than integration cut-off,
-            # and it must not exceed the Observing Block end-time
+            # and it must not exceed the Observing Block end time
+            startTimeNorm = (startTime - TK.missionStart).jd*u.day
             tochar = (t_tots > 0) & (t_tots < OS.intCutoff) & \
-                    ((startTime + t_tots) < TK.OBendTime)
+                    (startTimeNorm + t_tots < TK.OBendTimes[TK.OBnumber])
         
         # 3/ Is target still observable at the end of any char time?
         if np.any(tochar):
@@ -714,8 +716,8 @@ class SurveySimulation(object):
         if np.any(tochar):
             t_char = np.max(t_chars[tochar])
             pIndsChar = pInds[tochar]
-            Logger.info('Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds)))
-            print 'Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds))
+            Logger.info('   - Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds)))
+            print '   - Charact. planet(s) %s (%s/%s)'%(pIndsChar,len(pIndsChar),len(pInds))
             
             # SNR CALCULATION:
             # First, calculate SNR for observable planets (without false alarm)

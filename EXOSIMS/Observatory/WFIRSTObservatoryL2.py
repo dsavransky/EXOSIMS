@@ -81,7 +81,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         """
         
         # find time from Earth equinox and interpolated position
-        equinox = Time([60575.25],format='mjd')
+        equinox = Time([60575.25], format='mjd', scale='tai')
         deltime = currentTime - equinox
         # calculating Earth position
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth')

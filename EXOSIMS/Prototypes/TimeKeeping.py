@@ -1,3 +1,4 @@
+import numpy as np
 import astropy.units as u
 from astropy.time import Time
 
@@ -47,7 +48,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, missionLife=6, extendedLife=0,\
-                  missionPortion=1/6., OBduration=None, **specs):
+                  missionPortion=1/6., OBduration=np.inf, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -72,15 +73,15 @@ class TimeKeeping(object):
         self.currentTimeNorm = 0.*u.day
         self.currentTimeAbs = self.missionStart
         
-        # initialize observing block (OB) START and END times
-        self.OBstartTime = self.missionStart
-        if OBduration is not None:
-            self.OBduration = float(OBduration)*u.day
-            self.OBendTime = self.OBstartTime + self.OBduration
-        # if no OB duration was specified, set artificially long end time
-        else:
-            self.OBduration = None
-            self.OBendTime = self.OBstartTime + 999*u.year
+        # initialize observing block times arrays
+        self.OBnumber = 0
+        self.OBduration = float(OBduration)*u.day
+        self.OBstartTimes = [0.]*u.day
+        self.OBendTimes = [0.]*u.day + self.OBduration
+        
+        # initialize single observation START and END times
+        self.obsStart = 0.*u.day
+        self.obsEnd = 0.*u.day
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -123,7 +124,7 @@ class TimeKeeping(object):
         of 1 day.
         
         """
-        self.allocate_time(1.*u.d)
+        self.allocate_time(1.*u.day)
 
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
@@ -143,7 +144,7 @@ class TimeKeeping(object):
         self.currentTimeNorm += dt
         self.currentTimeAbs += dt
         
-        if self.currentTimeAbs > self.OBendTime:
+        if self.currentTimeNorm > self.OBendTimes[self.OBnumber]:
             self.next_observing_block()
 
     def next_observing_block(self, dt=None):
@@ -159,18 +160,34 @@ class TimeKeeping(object):
         
         """
         
+        # current OB number
+        nb = self.OBnumber
         # number of blocks to wait
         nwait = (1 - self.missionPortion)/self.missionPortion
         
+        # Calculate next OB times using OBduration (fixed blocks)
+        # and append to 
         if dt is None:
-            self.OBstartTime = self.OBendTime + nwait*self.OBduration
-            self.OBendTime = self.OBstartTime + self.OBduration
+            dt = self.OBduration
+            nextStart = self.OBendTimes[nb] + nwait*dt
+            nextEnd = nextStart + dt
         
-        else: # for the default case, called in SurveySimulation
-            self.OBstartTime = self.currentTimeAbs + nwait*dt
+        # For the default case called in SurveySimulation, OBendTime is infinite
+        else: 
+            nextStart = self.currentTimeNorm + nwait*dt
+            nextEnd = np.inf*u.day
         
-        # move to the OB start time
-        self.allocate_time((self.OBstartTime - self.currentTimeAbs).jd*u.d)
-
-
-
+        # Update START and END time arrays, and move to the next OB start time
+        self.OBnumber += 1
+        self.OBstartTimes = np.append(self.OBstartTimes.to('day').value, \
+                nextStart.to('day').value)*u.day
+        self.OBendTimes = np.append(self.OBendTimes.to('day').value, \
+                nextEnd.to('day').value)*u.day
+        self.allocate_time(nextStart - self.currentTimeNorm)
+        # update observation start time
+        self.obsStart = nextStart
+        
+        # If mission is not over, start a new OB
+        if not self.mission_is_over():
+            print 'OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, \
+                    dt.round(2), (nwait*dt).round(2))

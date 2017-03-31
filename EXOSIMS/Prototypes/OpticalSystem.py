@@ -605,9 +605,10 @@ class OpticalSystem(object):
         # reshape sInds
         sInds = np.array(sInds,ndmin=1)
         intTime = np.ones(len(sInds))*u.day
-        # negative values, infinite, and NAN, are set to zero
-        mask = (intTime < 0) | (intTime == np.inf*u.d) | np.isnan(intTime)
-        intTime[mask] = 0.*u.d
+        # infinite and NAN are set to zero
+        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
+        # negative values are set to zero
+        intTime[intTime < 0] = 0.*u.d
         
         return intTime
 

@@ -59,8 +59,9 @@ class Nemati(OpticalSystem):
         # calculate integration time based on Nemati 2014
         with np.errstate(divide='ignore',invalid='ignore'):
             intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
-        # negative values, infinite, and NAN, are set to zero
-        mask = (intTime < 0) | (intTime == np.inf*u.d) | np.isnan(intTime)
-        intTime[mask] = 0.*u.d
+        # infinite and NAN are set to zero
+        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
+        # negative values are set to zero
+        intTime[intTime < 0] = 0.*u.d
         
         return intTime.to('day')

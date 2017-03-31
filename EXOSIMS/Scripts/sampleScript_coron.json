@@ -1,6 +1,5 @@
 {
-  "missionLife": 1,
-  "missionPortion": 0.2,
+  "OBduration": 50,
   "pupilDiam": 2.37,
   "ppFact": 0.1,
   "scienceInstruments": [

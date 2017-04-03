@@ -50,7 +50,7 @@ class BrownCompleteness(Completeness):
         
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation']
+        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         
         extstr = ''

@@ -40,7 +40,7 @@ class GarrettCompleteness(BrownCompleteness):
         BrownCompleteness.__init__(self, **specs)
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation']
+        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
         # get unitless values of population parameters
         self.amin = self.PlanetPopulation.arange.min().value
         self.amax = self.PlanetPopulation.arange.max().value

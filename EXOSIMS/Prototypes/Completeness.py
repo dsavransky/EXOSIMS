@@ -68,6 +68,8 @@ class Completeness(object):
         
         # initialize number of visits per star
         self.visits = np.array([0]*TL.nStars)
+        # Prototype does not use precomputed updates, so set these to zeros
+        self.updates = np.zeros((TL.nStars, 5))
 
     def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed

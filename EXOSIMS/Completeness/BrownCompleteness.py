@@ -51,6 +51,12 @@ class BrownCompleteness(Completeness):
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
         self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
+        # get path to dynamic completeness array in a pickled .dcomp file
+        self.dfilename = specs['modules']['PlanetPopulation'] + \
+                        specs['modules']['PlanetPhysicalModel'] + \
+                        specs['modules']['OpticalSystem'] + \
+                        specs['modules']['StarCatalog'] + \
+                        specs['modules']['TargetList']
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         
         extstr = ''
@@ -139,96 +145,120 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = self.PlanetPopulation
         
-        print 'Beginning completeness update calculations'
-        # initialize number of visits
-        self.visits = np.array([0]*TL.nStars)
-        # dynamic completeness values: rows are stars, columns are number of visits
-        self.updates = np.zeros((TL.nStars, 5))
-        # number of planets to simulate
-        nplan = int(2e4)
-        # normalization time
-        dt = 1e9*u.day
-        # sample quantities which do not change in time
-        a = PPop.gen_sma(nplan) # AU
-        e = PPop.gen_eccen(nplan)
-        I = PPop.gen_I(nplan) # deg
-        O = PPop.gen_O(nplan) # deg
-        w = PPop.gen_w(nplan) # deg
-        p = PPop.gen_albedo(nplan)
-        Rp = PPop.gen_radius(nplan) # km
-        Mp = PPop.gen_mass(nplan) # kg
-        rmax = a*(1.+e)
-        # sample quantity which will be updated
-        M = np.random.uniform(high=2.*np.pi,size=nplan)
-        newM = np.zeros((nplan,))
-        # population values
-        smin = (np.tan(OS.IWA)*TL.dist).to('AU')
-        if np.isfinite(OS.OWA):
-            smax = (np.tan(OS.OWA)*TL.dist).to('AU')
-        else:
-            smax = np.array([np.max(PPop.arange.to('AU').value)*\
-                    (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
-        # fill dynamic completeness values
-        for sInd in xrange(TL.nStars):
-            Mstar = TL.MsTrue[sInd]*const.M_sun
-            # remove rmax < smin 
-            pInds = np.where(rmax > smin[sInd])[0]
-            # calculate for 5 successive observations
-            for num in xrange(5):
-                if num == 0:
-                    self.updates[sInd, num] = TL.comp0[sInd]
-                if not pInds.any():
-                    break
-                # find Eccentric anomaly
-                if num == 0:
-                    E = eccanom(M[pInds],e[pInds])
-                    newM[pInds] = M[pInds]
-                else:
-                    E = eccanom(newM[pInds],e[pInds])
-                
-                r1 = a[pInds]*(np.cos(E) - e[pInds])
-                r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-                r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
-                r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-                
-                a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
-                a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
-                a3 = np.sin(w[pInds])*np.sin(I[pInds])
-                A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-                
-                b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
-                b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
-                b3 = np.cos(w[pInds])*np.sin(I[pInds])
-                B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-                
-                # planet position, planet-star distance, apparent separation
-                r = (A*r1 + B*r2)*u.AU # position vector
-                d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
-                s = np.linalg.norm(r[:,0:2],axis=1)*r.unit # apparent separation
-                beta = np.arccos(r[:,2]/d) # phase angle
-                Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
-                dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
-                
-                toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                toremovedmag = np.where(dMag < OS.dMagLim)[0]
-                toremove = np.intersect1d(toremoves, toremovedmag)
-                
-                pInds = np.delete(pInds, toremove)
-                
-                if num == 0:
-                    self.updates[sInd, num] = TL.comp0[sInd]
-                else:
-                    self.updates[sInd, num] = float(len(toremove))/nplan
-                
-                # update M
-                mu = const.G*(Mstar+Mp[pInds])
-                n = np.sqrt(mu/a[pInds]**3)
-                newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-                            
-            if (sInd+1) % 50 == 0:
-                print 'stars: %r / %r' % (sInd+1,TL.nStars)
+        # get name for stored dynamic completeness updates array
+        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+        extstr = ''
+        for att in atts:
+            extstr += '%s: ' % att + str(getattr(TL.PlanetPopulation, att)) + ' '
+        atts2 = ['IWA','OWA','dMagLim']
+        for att in atts2:
+            extstr += '%s: ' % att + str(getattr(TL.OpticalSystem, att)) + ' '
+        extstr += 'nStars: ' + str(TL.nStars)
+        ext = hashlib.md5(extstr).hexdigest()
+        self.dfilename += ext 
+        self.dfilename += '.dcomp'
         
-        print 'Completeness update calculations finished'
+        path = os.path.join(self.classpath, self.dfilename)
+        # if the 2D completeness update array exists as a .dcomp file load it
+        if os.path.exists(path):
+            print 'Loading cached dynamic completeness array from "%s".' % path
+            self.updates = pickle.load(open(path, 'rb'))
+            print 'Dynamic completeness array loaded from cache.'
+        else:
+            # run Monte Carlo simulation and pickle the resulting array
+            print 'Cached dynamic completeness array not found at "%s".' % path
+            print 'Beginning dynamic completeness calculations'
+            # initialize number of visits
+            self.visits = np.array([0]*TL.nStars)
+            # dynamic completeness values: rows are stars, columns are number of visits
+            self.updates = np.zeros((TL.nStars, 5))
+            # number of planets to simulate
+            nplan = int(2e4)
+            # normalization time
+            dt = 1e9*u.day
+            # sample quantities which do not change in time
+            a = PPop.gen_sma(nplan) # AU
+            e = PPop.gen_eccen(nplan)
+            I = PPop.gen_I(nplan) # deg
+            O = PPop.gen_O(nplan) # deg
+            w = PPop.gen_w(nplan) # deg
+            p = PPop.gen_albedo(nplan)
+            Rp = PPop.gen_radius(nplan) # km
+            Mp = PPop.gen_mass(nplan) # kg
+            rmax = a*(1.+e)
+            # sample quantity which will be updated
+            M = np.random.uniform(high=2.*np.pi,size=nplan)
+            newM = np.zeros((nplan,))
+            # population values
+            smin = (np.tan(OS.IWA)*TL.dist).to('AU')
+            if np.isfinite(OS.OWA):
+                smax = (np.tan(OS.OWA)*TL.dist).to('AU')
+            else:
+                smax = np.array([np.max(PPop.arange.to('AU').value)*\
+                                 (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
+            # fill dynamic completeness values
+            for sInd in xrange(TL.nStars):
+                Mstar = TL.MsTrue[sInd]*const.M_sun
+                # remove rmax < smin 
+                pInds = np.where(rmax > smin[sInd])[0]
+                # calculate for 5 successive observations
+                for num in xrange(5):
+                    if num == 0:
+                        self.updates[sInd, num] = TL.comp0[sInd]
+                    if not pInds.any():
+                        break
+                    # find Eccentric anomaly
+                    if num == 0:
+                        E = eccanom(M[pInds],e[pInds])
+                        newM[pInds] = M[pInds]
+                    else:
+                        E = eccanom(newM[pInds],e[pInds])
+                
+                    r1 = a[pInds]*(np.cos(E) - e[pInds])
+                    r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
+                    r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
+                    r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
+                
+                    a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
+                    a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
+                    a3 = np.sin(w[pInds])*np.sin(I[pInds])
+                    A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
+                
+                    b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
+                    b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
+                    b3 = np.cos(w[pInds])*np.sin(I[pInds])
+                    B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
+                
+                    # planet position, planet-star distance, apparent separation
+                    r = (A*r1 + B*r2)*u.AU # position vector
+                    d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
+                    s = np.linalg.norm(r[:,0:2],axis=1)*r.unit # apparent separation
+                    beta = np.arccos(r[:,2]/d) # phase angle
+                    Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
+                    dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
+                
+                    toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
+                    toremovedmag = np.where(dMag < OS.dMagLim)[0]
+                    toremove = np.intersect1d(toremoves, toremovedmag)
+                
+                    pInds = np.delete(pInds, toremove)
+                
+                    if num == 0:
+                        self.updates[sInd, num] = TL.comp0[sInd]
+                    else:
+                        self.updates[sInd, num] = float(len(toremove))/nplan
+                
+                    # update M
+                    mu = const.G*(Mstar+Mp[pInds])
+                    n = np.sqrt(mu/a[pInds]**3)
+                    newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
+                            
+                if (sInd+1) % 50 == 0:
+                    print 'stars: %r / %r' % (sInd+1,TL.nStars)
+            # store dynamic completeness array as .dcomp file
+            pickle.dump(self.updates, open(path, 'wb'))
+            print 'Dynamic completeness calculations finished'
+            print 'Dynamic completeness array stored in %r' % path
 
     def completeness_update(self, TL, sInds, dt):
         """Updates completeness value for stars previously observed by selecting
@@ -287,7 +317,6 @@ class BrownCompleteness(Completeness):
             print 'Loading cached completeness file from "%s".' % Cpath
             H = pickle.load(open(Cpath, 'rb'))
             print 'Completeness loaded from cache.'
-            #h, xedges, yedges = self.hist(nplan, xedges, yedges)
         else:
             # run Monte Carlo simulation and pickle the resulting array
             print 'Cached completeness file not found at "%s".' % Cpath

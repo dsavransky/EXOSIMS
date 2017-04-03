@@ -91,3 +91,15 @@ class Completeness(object):
         comp0 = TL.comp0[sInds]
         
         return comp0
+    
+    def revise_updates(self, ind):
+        """Keeps completeness update values only for targets remaining in 
+        target list during filtering (called from TargetList.filter_target_list)
+        
+        Args:
+            ind (ndarray):
+                1D numpy ndarray of indices to keep
+        
+        """
+        
+        self.updates = self.updates[ind,:]

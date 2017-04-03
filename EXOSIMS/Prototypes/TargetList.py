@@ -92,10 +92,9 @@ class TargetList(object):
         
         # now populate and filter the list
         self.populate_target_list(**specs)
-        self.filter_target_list(**specs)
-        
         # generate any completeness update data needed
         Comp.gen_update(self)
+        self.filter_target_list(**specs)
         
         # have target list, no need for catalog now
         if not keepStarCatalog:
@@ -346,7 +345,10 @@ class TargetList(object):
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[ind])
-        
+        try:
+            self.Completeness.revise_updates(ind)
+        except AttributeError:
+            pass
         self.nStars = len(ind)
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
 

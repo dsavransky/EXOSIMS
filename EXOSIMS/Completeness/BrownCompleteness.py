@@ -144,7 +144,8 @@ class BrownCompleteness(Completeness):
         
         OS = TL.OpticalSystem
         PPop = self.PlanetPopulation
-        
+        # initialize number of visits
+        self.visits = np.array([0]*TL.nStars)
         # get name for stored dynamic completeness updates array
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         extstr = ''
@@ -168,8 +169,6 @@ class BrownCompleteness(Completeness):
             # run Monte Carlo simulation and pickle the resulting array
             print 'Cached dynamic completeness array not found at "%s".' % path
             print 'Beginning dynamic completeness calculations'
-            # initialize number of visits
-            self.visits = np.array([0]*TL.nStars)
             # dynamic completeness values: rows are stars, columns are number of visits
             self.updates = np.zeros((TL.nStars, 5))
             # number of planets to simulate

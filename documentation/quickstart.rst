@@ -4,12 +4,25 @@ Quick Start Guide
 
 This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the ICD and detailed as-built documentation of the prototypes.
 
-Environment
---------------
+Setting Up Your Environment
+---------------------------
 
 ``EXOSIMS`` requires Python 2.7 and multiple packages including numpy and astropy.  All required modules are listed in the ICD and can be obtained from PyPI or other package resources such as Macports.
 
-The directory containing the ``EXOSIMS`` directory must be in your Python path.  On POSIX systems, this is accomplished simply by appending the path to the ``PYTHONPATH`` environment variables.  
+
+The directory containing the ``EXOSIMS`` directory must be in your Python path.  On POSIX systems, this is accomplished simply by appending the path to the ``PYTHONPATH`` environment variables.
+
+For Ubuntu users
+To append the ``EXOSIMS`` directory to your ``PYTHONPATH``
+1. locate your .bashrc file (should be in your home directory /home/username)
+2. Append the following lines::
+    export PYHTONPATH="$PYTHONPATH:/home/username/PATH TO EXOSIMS PARENT DIRECTORY"
+3. Save
+4. From command line execute::
+    $ source ~/.bashrc
+
+An example: If I pulled ``EXOSIMS`` into the folder /home/user1/TACO such that TACO contains the folders EXOSIMS ICD and documentation, then my PYTHONPATH is::
+    export PYTHONPATH="$PYTHONPATH:/home/user1/TACO"
 
 
 Creating a Mission Simulation Object
@@ -46,4 +59,20 @@ The terminal should display all the mission parameters of all observations made.
         if 1 in myDRM[i]['det_status']:
             count = count+1
     print(count)
+
+
+Above the basics
+----------------
+
+To run with the Forecaster Module, h5py must be installed.
+See http://docs.h5py.org/en/latest/build.html
+For Ubuntu users::
+    $ pip install h5py
+
+You also need to specify "PlanetPhysicalModel": "Forecaster", in the module portion of your .json file.
+
+To run the WFIRSTObservatoryL2 module, you must have jplephem installed. Instructions can be found here https://pypi.python.org/pypi/jplephem
+For Ubuntu users::
+    $ pip install jplephem
+
 

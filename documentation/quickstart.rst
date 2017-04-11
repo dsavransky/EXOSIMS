@@ -27,7 +27,7 @@ An example: If ``EXOSIMS`` were pulled from git into the folder /home/user1/TACO
 
 Setting PYTHONPATH in WINDOWS
 -----------------------------
-Find My Computer > Properties > Advanced Systems Settings > Environment Variables > then under system variables add a new variable called PYTHONPATH or append to it. In this variable you need to have C:\PATH TO EXOSIMS PARENT DIRECTORY
+Find My Computer > Properties > Advanced Systems Settings > Environment Variables > then under system variables add a new variable called PYTHONPATH or append to it. In this variable you need to have C:\\PATH TO EXOSIMS PARENT DIRECTORY
 
 
 Creating a Mission Simulation Object

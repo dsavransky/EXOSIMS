@@ -16,15 +16,18 @@ For Ubuntu users
 To append the ``EXOSIMS`` directory to your ``PYTHONPATH``
 
 1. locate your .bashrc file (should be in your home directory /home/username)
+
 2. Append the following lines
 ::
     export PYHTONPATH="$PYTHONPATH:/home/username/PATH TO EXOSIMS PARENT DIRECTORY"
+    
 3. Save
 4. From command line execute
 ::
     $ source ~/.bashrc
 
-An example: If I pulled ``EXOSIMS`` into the folder /home/user1/TACO such that TACO contains the folders EXOSIMS ICD and documentation, then my PYTHONPATH is::
+An example: If I pulled ``EXOSIMS`` into the folder /home/user1/TACO such that TACO contains the folders EXOSIMS ICD and documentation, then my PYTHONPATH is
+::
     export PYTHONPATH="$PYTHONPATH:/home/user1/TACO"
 
 

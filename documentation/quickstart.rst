@@ -12,7 +12,9 @@ Setting Up Your Environment
 
 The directory containing the ``EXOSIMS`` directory must be in your Python path.  On POSIX systems, this is accomplished simply by appending the path to the ``PYTHONPATH`` environment variables.
 
-For Ubuntu users
+Setting PYTHONPATH in Ubuntu
+----------------------------
+
 To append the ``EXOSIMS`` directory to your ``PYTHONPATH`` locate your .bashrc file (should be in your home directory /home/username) and append the following line to the end.
 ::
     export PYHTONPATH="$PYTHONPATH:/home/username/PATH TO EXOSIMS PARENT DIRECTORY"
@@ -22,6 +24,10 @@ Be sure to execute ``$ source ~/.bashrc``
 An example: If ``EXOSIMS`` were pulled from git into the folder /home/user1/TACO such that TACO contains the folders EXOSIMS ICD and documentation, then my PYTHONPATH is
 ::
     export PYTHONPATH="$PYTHONPATH:/home/user1/TACO"
+
+Setting PYTHONPATH in WINDOWS
+-----------------------------
+Find My Computer > Properties > Advanced Systems Settings > Environment Variables > then under system variables add a new variable called PYTHONPATH or append to it. In this variable you need to have C:\PATH TO EXOSIMS PARENT DIRECTORY
 
 
 Creating a Mission Simulation Object

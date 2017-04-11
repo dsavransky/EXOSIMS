@@ -6,9 +6,9 @@ from IPython.core.debugger import Tracer
 
 
 class cbytScheduler(SurveySimulation):
-    """startAYO2014 
+    """cbytScheduler 
     
-    This class implements the AYO discussed in stark2014.
+    This class implements a Scheduler that selects the current highest Completeness/Integration Time.
     
        CHANGE Args:
         as (iterable 3x1):

@@ -2,7 +2,6 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 import itertools
-from IPython.core.debugger import Tracer
 
 
 class cbytScheduler(SurveySimulation):
@@ -57,10 +56,6 @@ class cbytScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
-<<<<<<< HEAD
-
-=======
->>>>>>> 63ec20907afba61ad4e193f80e833fa4a900ec68
         comps = TL.comp0[sInds]#completeness of each star in TL
         updated = (self.starVisits[sInds] > 0)#what does starVisits contain?
         comps[updated] = Comp.completeness_update(TL, sInds[updated],TK.currentTimeNorm)
@@ -71,26 +66,6 @@ class cbytScheduler(SurveySimulation):
         #Here I select the target star to observe
         tmp = sInds[selMetric == max(selMetric)]#this selects maximum completeness/integration time
         sInd = tmp[0]#casts numpy array to single integer
-        #sInd = np.random.choice(sInds[comps == max(comps)])#this selects the maximum completeness
-
-        ## reshape sInds
-        #sInds = np.array(sInds,ndmin=1)
-        # 
-        # # current star has to be in the adjmat
-        # if (old_sInd is not None) and (old_sInd not in sInds):
-        #     sInds = np.append(sInds, old_sInd)
-        # 
-        # # get completeness values
-        # comps = TL.comp0[sInds]
-        # updated = (self.starVisits[sInds] > 0)
-        # comps[updated] =  Comp.completeness_update(TL, sInds[updated], TK.currentTimeNorm)
-        # 
-        # # if first target, or if only 1 available target, choose highest available completeness
-        # nStars = len(sInds)
-        # if (old_sInd is None) or (nStars == 1):
-        #     sInd = np.random.choice(sInds[comps == max(comps)])
-        #     return sInd
-        #Tracer()()
         
         return sInd
 

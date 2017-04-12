@@ -80,25 +80,6 @@ To run the WFIRSTObservatoryL2 module, you must have jplephem installed. Instruc
 For Ubuntu users::
     $ pip install jplephem
 
-To use Hybrid Lyot Coronagraph (HLC) contrast curves, you first need to download the contrast curves from https://wfirst.ipac.caltech.edu/sims/Coronagraph_public_images.html#CGI_Performance labeled "HLC files". Move these to a folder of your choosing. To specifiy these curves for the HLC-565, it is sufficient to add the following to your .json script.
-
-.. code-block:: javascript
-    "starlightSuppressionSystems": [
-    {
-      "name": "HLC-565",
-      "lam": 565,
-      "BW": 0.10,
-      "occ_trans": "$PATH TO EXOSIMS SCRIPTS/hlc-20160125_0.4mas_jitter_1.0mas_star_results_occ_trans.fits",
-      
-      "core_thruput": "$PATH TO EXOSIMS SCRIPTS/hlc-20160125_0.4mas_jitter_1.0mas_star_results_thruput.fits",
-      
-      "core_mean_intensity": "$PATH TO EXOSIMS SCRIPTS/hlc-20160125_0.4mas_jitter_1.0mas_star_results_mean_intensity.fits",
-      
-      "core_area": "$PATH TO EXOSIMS SCRIPTS/hlc-20160125_0.4mas_jitter_1.0mas_star_results_area.fits",
-      
-      "platescale": 0.30
-    },
-
-Replace "hlc-20160125_0.4mas_" with your filenames.
+To use Hybrid Lyot Coronagraph (HLC) contrast curves, you first need to download the contrast curves from https://wfirst.ipac.caltech.edu/sims/Coronagraph_public_images.html#CGI_Performance labeled "HLC files". Move these to a folder of your choosing. To specifiy these curves for the HLC-565, it is sufficient to change values of occ_trans, core_thruput, core_mean_intensity, and core_area to the path of the corresponding .fits file in the .json script.
 
 

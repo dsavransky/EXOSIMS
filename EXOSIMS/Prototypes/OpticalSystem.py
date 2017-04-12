@@ -635,7 +635,7 @@ class OpticalSystem(object):
         fZ = 0./u.arcsec**2
         fEZ = 0./u.arcsec**2
         dMag = self.dMagLim
-        WA = 2.*self.IWA
+        WA = 2.*self.IWA if np.isinf(self.OWA) else (self.IWA + self.OWA)/2.
         # select detection mode
         mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
         # calculate maximum integration time

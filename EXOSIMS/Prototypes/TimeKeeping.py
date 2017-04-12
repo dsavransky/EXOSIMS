@@ -77,7 +77,7 @@ class TimeKeeping(object):
         self.OBnumber = 0
         self.OBduration = float(OBduration)*u.day
         self.OBstartTimes = [0.]*u.day
-        self.OBendTimes = [0.]*u.day + self.OBduration
+        self.OBendTimes = [min(self.OBduration, self.missionFinishNorm).to('d').value]*u.d
         
         # initialize single observation START and END times
         self.obsStart = 0.*u.day
@@ -112,7 +112,7 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = (self.currentTimeNorm > self.missionFinishNorm)
+        is_over = (self.currentTimeNorm >= self.missionFinishNorm)
         
         return is_over
 
@@ -144,7 +144,8 @@ class TimeKeeping(object):
         self.currentTimeNorm += dt
         self.currentTimeAbs += dt
         
-        if self.currentTimeNorm > self.OBendTimes[self.OBnumber]:
+        if not self.mission_is_over() and (self.currentTimeNorm \
+                >= self.OBendTimes[self.OBnumber]):
             self.next_observing_block()
 
     def next_observing_block(self, dt=None):
@@ -160,34 +161,34 @@ class TimeKeeping(object):
         
         """
         
-        # current OB number
-        nb = self.OBnumber
         # number of blocks to wait
         nwait = (1 - self.missionPortion)/self.missionPortion
         
-        # Calculate next OB times using OBduration (fixed blocks)
-        # and append to 
-        if dt is None:
-            dt = self.OBduration
-            nextStart = self.OBendTimes[nb] + nwait*dt
-            nextEnd = nextStart + dt
-        
-        # For the default case called in SurveySimulation, OBendTime is infinite
+        # For the default case called in SurveySimulation, OBendTime is current time
+        if dt is not None:
+            self.OBendTimes[self.OBnumber] = self.currentTimeNorm
+        # else, the OB duration is a fixed value
         else: 
-            nextStart = self.currentTimeNorm + nwait*dt
-            nextEnd = np.inf*u.day
+            dt = self.OBduration
         
-        # Update START and END time arrays, and move to the next OB start time
-        self.OBnumber += 1
+        # the next OB must not happen after mission finish
+        nextStart = min(self.missionFinishNorm, self.OBendTimes[self.OBnumber]+nwait*dt)
+        nextEnd = min(self.missionFinishNorm, nextStart+dt)
+        
+        # update OB arrays
         self.OBstartTimes = np.append(self.OBstartTimes.to('day').value, \
                 nextStart.to('day').value)*u.day
         self.OBendTimes = np.append(self.OBendTimes.to('day').value, \
                 nextEnd.to('day').value)*u.day
-        self.allocate_time(nextStart - self.currentTimeNorm)
-        # update observation start time
-        self.obsStart = nextStart
+        self.OBnumber += 1
         
-        # If mission is not over, start a new OB
-        if not self.mission_is_over():
+        # If mission is not over, move to the next OB, and update observation start time
+        self.allocate_time(nextStart - self.currentTimeNorm)
+        if self.mission_is_over():
+            self.OBstartTimes = self.OBstartTimes[:-1]
+            self.OBendTimes = self.OBendTimes[:-1]
+            self.OBnumber -= 1
+        else:
+            self.obsStart = nextStart
             print 'OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, \
                     dt.round(2), (nwait*dt).round(2))

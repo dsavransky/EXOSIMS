@@ -353,6 +353,7 @@ class SurveySimulation(object):
         
         # Allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         if OS.haveOcculter == True:
@@ -405,8 +406,8 @@ class SurveySimulation(object):
                 # total time must be positive, shorter than integration cut-off,
                 # and it must not exceed the Observing Block end time 
                 startTimeNorm = (startTime - TK.missionStart).jd*u.day
-                sInds = np.where((t_tots > 0) & (t_tots < OS.intCutoff) & \
-                        (startTimeNorm + t_tots < TK.OBendTimes[TK.OBnumber]))[0]
+                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
+                        (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
             
             # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
@@ -704,8 +705,8 @@ class SurveySimulation(object):
             # Total time must be positive, shorter than integration cut-off,
             # and it must not exceed the Observing Block end time
             startTimeNorm = (startTime - TK.missionStart).jd*u.day
-            tochar = (t_tots > 0) & (t_tots < OS.intCutoff) & \
-                    (startTimeNorm + t_tots < TK.OBendTimes[TK.OBnumber])
+            tochar = (t_tots > 0) & (t_tots <= OS.intCutoff) & \
+                    (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
         
         # 3/ Is target still observable at the end of any char time?
         if np.any(tochar):

@@ -82,7 +82,7 @@ For Ubuntu users::
 
 To use Hybrid Lyot Coronagraph (HLC) contrast curves, you first need to download the contrast curves from https://wfirst.ipac.caltech.edu/sims/Coronagraph_public_images.html#CGI_Performance labeled "HLC files". Move these to a folder of your choosing. To specifiy these curves for the HLC-565, it is sufficient to add the following to your .json script.
 
-::
+.. code-block:: javascript
     "starlightSuppressionSystems": [
     {
       "name": "HLC-565",

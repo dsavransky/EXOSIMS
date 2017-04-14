@@ -132,6 +132,6 @@ class Nemati(OpticalSystem):
         C_inst = np.zeros((len(sInds),len(WA)))
         for i in xrange(len(sInds)):
             C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, dMag, WA, mode)
-            C_inst[i,:] = SNR*np.sqrt(C_b/t_int[i] + C_sp**2)/(C_F0*10.0**(-0.4*mV[i])*core_thruput)
+            C_inst[i,:] = (SNR*np.sqrt(C_b/t_int[i] + C_sp**2)/(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value
         
         return C_inst

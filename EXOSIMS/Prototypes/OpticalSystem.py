@@ -642,3 +642,43 @@ class OpticalSystem(object):
         maxintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
         
         return maxintTime
+    
+    def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
+        """Finds instrument achievable contrast for given integration time(s) and
+        working angle(s).
+        
+        The prototype returns the equivalent contrast of dMagLim as an m x n
+        array where m corresponds to each star in sInds and n corresponds to 
+        each working angle in WA.
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+                
+        Returns:
+            C_inst (ndarray):
+                Instrument contrast for given integration time and working angle
+                
+        """
+        
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+        # reshape WA
+        WA = np.array(WA.value,ndmin=1)*WA.unit
+        C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds),len(WA)))
+        
+        return C_inst

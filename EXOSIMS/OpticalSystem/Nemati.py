@@ -97,6 +97,11 @@ class Nemati(OpticalSystem):
                 
         """
         
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+        # reshape WA
+        WA = np.array(WA.value,ndmin=1)*WA.unit
+        
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']

@@ -533,7 +533,7 @@ class OpticalSystem(object):
             core_mean_intensity = syst['core_mean_intensity'](lam,WA)
             # if a platesale was specified with the coro parameters, apply correction
             if syst['platescale'] != None:
-                platescale = inst['pitch']/inst['focal']/(lam/self.pupilDiam)
+                platescale = (inst['pitch']/inst['focal']/(lam/self.pupilDiam)).decompose().value
                 core_mean_intensity *= platescale/syst['platescale']
             core_intensity = core_mean_intensity * Npix
         

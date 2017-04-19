@@ -165,15 +165,16 @@ class TimeKeeping(object):
         nwait = (1 - self.missionPortion)/self.missionPortion
         
         # For the default case called in SurveySimulation, OBendTime is current time
+        # Note: the next OB must not happen after mission finish
         if dt is not None:
             self.OBendTimes[self.OBnumber] = self.currentTimeNorm
+            nextStart = min(self.missionFinishNorm, self.OBendTimes[self.OBnumber]+nwait*dt)
+            nextEnd = self.missionFinishNorm
         # else, the OB duration is a fixed value
-        else: 
+        else:
             dt = self.OBduration
-        
-        # the next OB must not happen after mission finish
-        nextStart = min(self.missionFinishNorm, self.OBendTimes[self.OBnumber]+nwait*dt)
-        nextEnd = min(self.missionFinishNorm, nextStart+dt)
+            nextStart = min(self.missionFinishNorm, self.OBendTimes[self.OBnumber]+nwait*dt)
+            nextEnd = min(self.missionFinishNorm, nextStart+dt)
         
         # update OB arrays
         self.OBstartTimes = np.append(self.OBstartTimes.to('day').value, \

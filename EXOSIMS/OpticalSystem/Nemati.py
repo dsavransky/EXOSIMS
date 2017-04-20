@@ -67,8 +67,8 @@ class Nemati(OpticalSystem):
         return intTime.to('day')
     
     def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
-        """Finds instrument achievable contrast for given integration time(s) 
-        and working angle(s).
+        """Finds instrument achievable contrast for one integration time per
+        star in the input list at one or more working angles.
         
         Instrument contrast is returned as an m x n array where m corresponds 
         to each star in sInds and n corresponds to each working angle in WA.
@@ -88,8 +88,8 @@ class Nemati(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
+            dMag (float):
+                Difference in brightness magnitude between planet and host star
                 
         Returns:
             C_inst (ndarray):
@@ -97,10 +97,11 @@ class Nemati(OpticalSystem):
                 
         """
         
-        # reshape sInds
+        # reshape sInds, WA, t_int
         sInds = np.array(sInds,ndmin=1)
-        # reshape WA
         WA = np.array(WA.value,ndmin=1)*WA.unit
+        t_int = np.array(t_int.value,ndmin=1)*t_int.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
         
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
@@ -117,7 +118,6 @@ class Nemati(OpticalSystem):
             WA = WA*lam/syst['lam']
         
         # get star magnitude
-        sInds = np.array(sInds,ndmin=1)
         mV = TL.starMag(sInds,lam)
         
         # get signal to noise ratio

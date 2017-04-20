@@ -421,7 +421,7 @@ class OpticalSystem(object):
         
         Args:
             syst (dict):
-                Dictionnary containing the parameters of one starlight suppression system
+                Dictionary containing the parameters of one starlight suppression system
             param_name (string):
                 Name of the parameter that must be loaded
             fill (float):
@@ -429,7 +429,7 @@ class OpticalSystem(object):
         
         Returns:
             syst (dict):
-                Updated dictionnary of parameters
+                Updated dictionary of parameters
         
         """
         
@@ -644,8 +644,8 @@ class OpticalSystem(object):
         return maxintTime
     
     def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
-        """Finds instrument achievable contrast for given integration time(s) and
-        working angle(s).
+        """Finds instrument achievable contrast for one integration time per
+        star in the input list at one or more working angles.
         
         The prototype returns the equivalent contrast of dMagLim as an m x n
         array where m corresponds to each star in sInds and n corresponds to 
@@ -666,8 +666,8 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
+            dMag (float):
+                Difference in brightness magnitude between planet and host star
                 
         Returns:
             C_inst (ndarray):
@@ -675,10 +675,12 @@ class OpticalSystem(object):
                 
         """
         
-        # reshape sInds
+        # reshape sInds, WA, t_int
         sInds = np.array(sInds,ndmin=1)
-        # reshape WA
         WA = np.array(WA.value,ndmin=1)*WA.unit
+        t_int = np.array(t_int.value,ndmin=1)*t_int.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        
         C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds),len(WA)))
         
         return C_inst

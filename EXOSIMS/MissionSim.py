@@ -298,15 +298,22 @@ class MissionSim(object):
         
         """
         
-        self.SurveySimulation.DRM = []
+        # Reset mission time parameters
         self.TimeKeeping.__init__(**self.TimeKeeping._outspec)
         
+        # Generate new planets if requested (default)
         if genNewPlanets:
             self.SimulatedUniverse.gen_physical_properties(**self.SimulatedUniverse._outspec)
             rewindPlanets = True
         
+        # Re-initialize systems if requested (default)
         if rewindPlanets:
             self.SimulatedUniverse.init_systems()
+        
+        # Re-initialize SurveySimulation arrays
+        specs = self.SurveySimulation._outspec
+        specs['modules'] = self.modules
+        self.SurveySimulation.__init__(**specs)
         
         print "Simulation reset."
         

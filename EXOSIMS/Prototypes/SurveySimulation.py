@@ -166,10 +166,24 @@ class SurveySimulation(object):
                 
                 setattr(self, modName, specs['modules'][modName])
         
-        # observation time sampling (must be an integer)
-        self.nt_flux = int(nt_flux)
         # list of simulation results, each item is a dictionary
         self.DRM = []
+        # initialize arrays updated in run_sim()
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
+        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
+        self.starVisits = np.zeros(TL.nStars,dtype=int)
+        self.starTimes = np.zeros(TL.nStars)*u.d
+        self.starRevisit = np.array([])
+        self.starExtended = np.array([])
+        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+        
+        # observation time sampling (must be an integer)
+        self.nt_flux = int(nt_flux)
+        
+        # populate outspec with nt_flux
+        self._outspec['nt_flux'] = self.nt_flux
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -196,15 +210,6 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
-        # initialize lists updated later
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.starVisits = np.zeros(TL.nStars,dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
-        self.starRevisit = np.array([])
-        self.starExtended = np.array([])
-        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter

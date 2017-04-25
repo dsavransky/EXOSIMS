@@ -1,4 +1,6 @@
 {
+  "missionLife": 1,
+  "missionPortion": 1,
   "OBduration": 50,
   "pupilDiam": 2.37,
   "ppFact": 0.1,
@@ -82,7 +84,7 @@
     "Completeness": " ",
     "TargetList": "KnownRVPlanetsTargetList",
     "SimulatedUniverse": "KnownRVPlanetsUniverse",
-    "SurveySimulation": " ",
+    "SurveySimulation": "linearJScheduler",
     "SurveyEnsemble": " "
   }
 }

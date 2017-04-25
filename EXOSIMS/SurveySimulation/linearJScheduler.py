@@ -18,7 +18,7 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], **specs):
+    def __init__(self, coeffs=[1,1,2], **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -93,11 +93,6 @@ class linearJScheduler(SurveySimulation):
         f_uv[self.starVisits[sInds] == 0] = ((TK.currentTimeNorm / TK.missionFinishNorm)\
                 .decompose().value)**2
         A = A - self.coeffs[2]*f_uv
-
-        # add factor due to revisited ramp
-        f2_uv = np.where(SSim.starVisits[sInds] > 0, SSim.starVisits[sInds], 0) *\
-                (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
-        A = A - self.coeffs[3]*f2_uv
         
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)

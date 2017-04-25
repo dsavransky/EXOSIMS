@@ -373,33 +373,19 @@ class SurveySimulation(object):
             # 1/ Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = None
-            # ===========================================================================================================
-            # find angle between old and new stars, default to pi/2 for first target
-            if old_sInd is None:
-                sd = np.zeros(TL.nStars)*u.rad
-            else:
-                # position vector of previous target star
-                r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)[0]
-                u_old = r_old.value/np.linalg.norm(r_old)
-                # position vector of new target stars
-                r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
-                u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-                # angle between old and new stars
-                sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
-
             if OS.haveOcculter == True:
                 # find angle between old and new stars, default to pi/2 for first target
-                # if old_sInd is None:
-                #     sd = np.zeros(TL.nStars)*u.rad
-                # else:
-                #     # position vector of previous target star
-                #     r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)[0]
-                #     u_old = r_old.value/np.linalg.norm(r_old)
-                #     # position vector of new target stars
-                #     r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
-                #     u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-                #     # angle between old and new stars
-                #     sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
+                if old_sInd is None:
+                    sd = np.zeros(TL.nStars)*u.rad
+                else:
+                    # position vector of previous target star
+                    r_old = Obs.starprop(TL, old_sInd, TK.currentTimeAbs)[0]
+                    u_old = r_old.value/np.linalg.norm(r_old)
+                    # position vector of new target stars
+                    r_new = Obs.starprop(TL, sInds, TK.currentTimeAbs)
+                    u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
+                    # angle between old and new stars
+                    sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
                 # calculate slew time
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
@@ -461,13 +447,11 @@ class SurveySimulation(object):
             Logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
             return DRM, None, None
-
-        DRM['slew_angle'] = sd[sInd].to('deg').value
         
         if OS.haveOcculter == True:
             # find values related to slew time
             DRM['slew_time'] = slewTime[sInd].to('day').value
-            #DRM['slew_angle'] = sd[sInd].to('deg').value
+            DRM['slew_angle'] = sd[sInd].to('deg').value
             slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
             DRM['slew_dV'] = (slewTime[sInd]*ao*Obs.defburnPortion).to('m/s').value
             DRM['slew_mass_used'] = slew_mass_used.to('kg').value

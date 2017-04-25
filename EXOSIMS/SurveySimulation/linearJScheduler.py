@@ -66,7 +66,7 @@ class linearJScheduler(SurveySimulation):
         # get completeness values
         comps = TL.comp0[sInds]
         updated = (self.starVisits[sInds] > 0)
-        comps[updated] =  Comp.completeness_update(TL, sInds[updated], TK.currentTimeNorm)
+        comps[updated] = Comp.completeness_update(TL, sInds[updated], TK.currentTimeNorm)
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(sInds)
@@ -76,16 +76,15 @@ class linearJScheduler(SurveySimulation):
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
-        
+
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            combs = np.array([np.array(x) for x in itertools.combinations(range(nStars),2)])
             r_ts = Obs.starprop(TL, sInds, TK.currentTimeAbs)
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
-            angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T)[combs[:,0],combs[:,1]],-1,1))
-            A[np.tril(np.ones((nStars,nStars),dtype=bool),-1)] = angdists
-            A = self.coeffs[0]*(A+A.T)/np.pi
-        
+            angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
+            A[np.ones((nStars),dtype=bool)] = angdists
+            A = self.coeffs[0]*(A)/np.pi
+
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
         
@@ -99,11 +98,10 @@ class linearJScheduler(SurveySimulation):
         A = A + np.diag(np.ones(nStars)*np.Inf)
         
         # take two traversal steps
-        lc = nStars-1
-        step1 = np.tile(A[sInds==old_sInd,:],(lc,1)).flatten('F')
-        step2 = A[np.array(np.ones((nStars,nStars)) - np.eye(nStars),dtype=bool)]
+        step1 = np.tile(A[sInds==old_sInd,:],(nStars,1)).flatten('F')
+        step2 = A[np.array(np.ones((nStars,nStars)),dtype=bool)]
         tmp = np.argmin(step1+step2)
-        sInd = sInds[int(np.ceil(tmp/float(lc)))]
+        sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
         return sInd
 

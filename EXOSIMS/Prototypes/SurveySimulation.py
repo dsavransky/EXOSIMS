@@ -254,9 +254,9 @@ class SurveySimulation(object):
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
                 Logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd, TL.nStars, len(pInds), TK.obsStart.round(2)))
+                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 print '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd, TL.nStars, len(pInds), TK.obsStart.round(2))
+                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
@@ -395,7 +395,7 @@ class SurveySimulation(object):
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
             startTime = TK.currentTimeAbs + slewTime
-            kogoodStart = Obs.keepout(TL, sInds, startTime, OS.telescopeKeepout)
+            kogoodStart = Obs.keepout(TL, sInds, startTime, mode['syst']['occulter'])
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 2/ Calculate integration times for the preselected targets, 
@@ -418,7 +418,7 @@ class SurveySimulation(object):
             # and filter out unavailable targets
             if np.any(sInds):
                 endTime = startTime[sInds] + t_tots[sInds]
-                kogoodEnd = Obs.keepout(TL, sInds, endTime, OS.telescopeKeepout)
+                kogoodEnd = Obs.keepout(TL, sInds, endTime, mode['syst']['occulter'])
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 4/ Filter out all previously (more-)visited targets, unless in 
@@ -693,7 +693,7 @@ class SurveySimulation(object):
         # 1/ Find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             startTime = TK.currentTimeAbs
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, OS.telescopeKeepout)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode['syst']['occulter'])
         
         # 2/ If any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -716,7 +716,7 @@ class SurveySimulation(object):
         # 3/ Is target still observable at the end of any char time?
         if np.any(tochar):
             endTime = startTime + t_tots[tochar]
-            tochar[tochar] = Obs.keepout(TL, sInd, endTime, OS.telescopeKeepout)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode['syst']['occulter'])
         
         # 4/ If yes, perform the characterization for the maximum char time
         if np.any(tochar):

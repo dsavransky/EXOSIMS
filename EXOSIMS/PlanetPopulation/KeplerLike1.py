@@ -286,7 +286,7 @@ class KeplerLike1(PlanetPopulation):
         n = self.gen_input_check(n)
         R = np.array([])
         for j in range(len(self.Rvals)):
-            nsamp = np.random.poisson(lam=self.Rvals[j]*n)  
+            nsamp = np.random.poisson(lam=self.Rvals[j]*n)
             R = np.hstack((R, np.exp(np.log(self.Rs[j])+\
                     (np.log(self.Rs[j+1])-np.log(self.Rs[j]))*\
                     np.random.uniform(size=nsamp))))

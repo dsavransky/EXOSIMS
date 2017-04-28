@@ -22,6 +22,10 @@ class Observatory(object):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
+        minKeepout (astropy Quantity):
+            Telescope minimum keepout angle in units of deg
+        maxKeepout (astropy Quantity):
+            Telescope maximum keepout angle (for occulter) in units of deg
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -55,30 +59,22 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self, settlingTime=1., thrust=450., slewIsp=4160., scMass=6000.,\
-                 dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,\
-                 defburnPortion=0.05, spkpath=None, forceStaticEphem=False,\
-                 **specs):
+    def __init__(self,minKeepout=45,maxKeepout=90,settlingTime=1,thrust=450,slewIsp=4160,\
+            scMass=6000,dryMass=3400,coMass=5800,occulterSep=55000,skIsp=220,\
+            defburnPortion=0.05,spkpath=None,forceStaticEphem=False,**specs):
         
         # default Observatory values
-        # instrument settling time after repoint (days)
-        self.settlingTime = float(settlingTime)*u.day 
-        # occulter slew thrust (mN)
-        self.thrust = float(thrust)*u.mN 
-        # occulter slew specific impulse (s)
-        self.slewIsp = float(slewIsp)*u.s 
-        # occulter (maneuvering sc) initial (wet) mass (kg)
-        self.scMass = float(scMass)*u.kg 
-        # occulter (maneuvering sc) dry mass (kg)
-        self.dryMass = float(dryMass)*u.kg 
-        # telescope (or non-maneuvering sc) mass (kg)
-        self.coMass = float(coMass)*u.kg 
-        # occulter-telescope distance (km)
-        self.occulterSep = float(occulterSep)*u.km
-        # station-keeping Isp (s)
-        self.skIsp = float(skIsp)*u.s 
-        # default burn portion
-        self.defburnPortion = float(defburnPortion)
+        self.minKeepout = minKeepout*u.deg      # keepout minimum angle
+        self.maxKeepout = maxKeepout*u.deg      # keepout maximum angle (for occulter)
+        self.settlingTime = settlingTime*u.d    # instrument settling time after repoint (days)
+        self.thrust = thrust*u.mN           # occulter slew thrust (mN)
+        self.slewIsp = slewIsp*u.s          # occulter slew specific impulse (s)
+        self.scMass = scMass*u.kg           # occulter (maneuvering sc) initial (wet) mass (kg)
+        self.dryMass = dryMass*u.kg         # occulter (maneuvering sc) dry mass (kg)
+        self.coMass = coMass*u.kg           # telescope (or non-maneuvering sc) mass (kg)
+        self.occulterSep = occulterSep*u.km # occulter-telescope distance (km)
+        self.skIsp = skIsp*u.s              # station-keeping Isp (s)
+        self.defburnPortion = float(defburnPortion) # default burn portion
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
@@ -248,7 +244,7 @@ class Observatory(object):
         
         return r_sc.to('km')
 
-    def keepout(self, TL, sInds, currentTime, koangle):
+    def keepout(self, TL, sInds, currentTime, occulter):
         """Finds keepout Boolean values for stars of interest.
         
         This method defines the data type expected, all values are True.
@@ -260,8 +256,8 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            koangle (astropy Quantity):
-                Telescope keepout angle in units of degree
+            occulter (boolean):
+                Boolean signifying if the observing mode has an occulter
                 
         Returns:
             kogood (boolean ndarray):

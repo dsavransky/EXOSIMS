@@ -45,7 +45,7 @@ class WFIRSTObservatory(Observatory):
         
         return r_sc.to('km')
 
-    def keepout(self, TL, sInds, currentTime, koangle, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, occulter, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -58,8 +58,8 @@ class WFIRSTObservatory(Observatory):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            koangle (astropy Quantity):
-                Telescope keepout angle in units of degree
+            occulter (boolean):
+                Boolean signifying if the observing mode has an occulter
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
                 
@@ -102,9 +102,9 @@ class WFIRSTObservatory(Observatory):
         u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
         u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
-        # Create koangles for all bodies, set by telescope keepout angle for brighter 
-        # objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
-        koangles = np.ones(nBodies)*koangle
+        # Create koangles for all bodies, set by telescope minimum keepout angle for 
+        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
+        koangles = np.ones(nBodies)*self.minKeepout
         koangles[3:] = 1.*u.deg
         
         # Find angles and make angle comparisons to build kogood array.
@@ -119,6 +119,9 @@ class WFIRSTObservatory(Observatory):
             u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
             angles = np.arccos(np.clip(np.dot(u_b,u_t),-1,1))*u.rad
             culprit[i,:] = (angles < koangles)
+            # if this mode has an occulter, check maximum keepout angle for the Sun
+            if occulter:
+                culprit[i,0] = (culprit[i,0] or (angles[0] > self.maxKeepout))
             if np.any(culprit[i,:]):
                 kogood[i] = False
         

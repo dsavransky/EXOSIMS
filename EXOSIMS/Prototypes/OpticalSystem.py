@@ -29,8 +29,6 @@ class OpticalSystem(object):
             Entrance pupil diameter in units of m
         pupilArea (astropy Quantity):
             Entrance pupil area in units of m2
-        telescopeKeepout (astropy Quantity):
-            Telescope keepout angle in units of deg
         attenuation (float):
             Non-coronagraph attenuation, equal to the throughput of the optical 
             system without the coronagraph elements
@@ -61,26 +59,34 @@ class OpticalSystem(object):
         name (string):
             Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
             instrument (imager or spectro). Every instrument should have a unique name.
-        pitch (astropy Quantity):
+        QE (float, callable):
+            Detector quantum efficiency: either a scalar for constant QE, or a 
+            two-column array for wavelength-dependent QE, where the first column 
+            contains the wavelengths in units of nm. May be data or FITS filename.
+        FoV (astropy Quantity):
+            Field of view in units of arcsec
+        pixelNumber (integer):
+            Detector array format, number of pixels per detector lines/columns 
+        pixelScale (astropy Quantity):
+            Detector pixel scale in units of arcsec per pixel
+        pixelSize (astropy Quantity):
             Pixel pitch in units of m
         focal (astropy Quantity):
             Focal length in units of m
+        fnumber (float):
+            Detector f-number
+        sread (float):
+            Detector effective read noise per frame per pixel
         idark (astropy Quantity):
             Detector dark-current per pixel in units of 1/s
         CIC (float):
             Clock-induced-charge per frame per pixel
-        sread (float):
-            Detector effective read noise per frame per pixel
         texp (astropy Quantity):
             Exposure time per frame in units of s
         ENF (float):
             Excess noise factor
         Rs (float):
             Spectral resolving power
-        QE (float, callable):
-            Detector quantum efficiency: either a scalar for constant QE, or a 
-            two-column array for wavelength-dependent QE, where the first column 
-            contains the wavelengths in units of nm. May be data or FITS filename.
         
     Common starlight suppression system attributes:
         name (string):
@@ -110,8 +116,9 @@ class OpticalSystem(object):
             then the total core intensity is equal to core_contrast * core_thruput.
         core_area (astropy Quantity, callable):
             Area of the FWHM region of the planet PSF, in units of arcsec^2
-        platescale (float):
-            Platescale used for this set of coronagraph parameters.
+        core_platescale (float):
+            Platescale used for a specific set of coronagraph parameters, in units 
+            of lambda/D per pixel
         PSF (float, callable):
             Point spread function - 2D ndarray of values, normalized to 1 at
             the core. Note: normalization means that all throughput effects 
@@ -166,22 +173,19 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,pitch=1e-5,\
-            focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,QE=0.9,\
-            starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
-            core_thruput=1e-2,core_contrast=1e-9,platescale=None,PSF=np.ones((3,3)),\
+    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,\
+            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,QE=0.9,FoV=9.5,\
+            pixelNumber=1024,pixelSize=1e-5,sread=2e-6,idark=5e-4,CIC=5e-3,texp=1000,\
+            ENF=1,Rs=70,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
+            core_thruput=1e-2,core_contrast=1e-9,core_platescale=None,PSF=np.ones((3,3)),\
             samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
             OWA=None,dMagLim=22.5,WALim=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
-        self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
-        self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2\
-                                                # entrance pupil area
-        self.telescopeKeepout = float(telescopeKeepout)*u.deg\
-                                                # keepout angle in degrees
+        self.pupilDiam = pupilDiam*u.m          # entrance pupil diameter
+        self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2 # entrance pupil area
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Ndark = float(Ndark)               # number of dark frames used
@@ -203,17 +207,6 @@ class OpticalSystem(object):
             inst['QE'] = inst.get('QE',QE)
             self._outspec['scienceInstruments'].append(inst.copy())
             
-            # Loading detector specifications
-            inst['pitch'] = float(inst.get('pitch',pitch))*u.m  # pixel pitch
-            inst['focal'] = float(inst.get('focal',focal))*u.m  # focal length
-            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
-            inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
-            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
-            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
-            inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
-            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
-                    .lower() else 1.                            # spectral resolving power
-            
             # quantum efficiency
             if inst.has_key('QE'):
                 if isinstance(inst['QE'],basestring):
@@ -224,6 +217,24 @@ class OpticalSystem(object):
                     #inst['QE'] = lambda or interp
                 elif isinstance(inst['QE'],numbers.Number):
                     inst['QE'] = lambda l, QE=float(inst['QE']): QE/u.photon
+            
+            # Loading detector specifications
+            inst['FoV'] = float(inst.get('FoV',FoV))*u.arcsec   # field of view
+            inst['pixelNumber'] = int(inst.get('pixelNumber',pixelNumber)) # array format
+            inst['pixelSize'] = float(inst.get('pixelSize',pixelSize))*u.m # pixel pitch
+            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
+            inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
+            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
+            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
+            inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
+            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
+                    .lower() else 1.                            # spectral resolving power
+            
+            # Calculate pixelScale (Nyquist sampled)
+            inst['pixelScale'] = 2*inst['FoV']/inst['pixelNumber']
+            # Calculate focal and f-number
+            inst['focal'] = inst['pixelSize']/inst['pixelScale'].to('rad').value
+            inst['fnumber'] = (inst['focal']/self.pupilDiam).decompose().value
             
             # populate detector specifications to outspec
             for att in inst.keys():
@@ -275,7 +286,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
-            syst['platescale'] = syst.get('platescale',platescale)
+            syst['core_platescale'] = syst.get('core_platescale',core_platescale)
             
             # Get PSF
             if isinstance(syst['PSF'],basestring):
@@ -500,6 +511,7 @@ class OpticalSystem(object):
         
         # get mode wavelength
         lam = mode['lam']
+        lam_min = mode['lam'] - mode['deltaLam']/2.
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
@@ -508,16 +520,12 @@ class OpticalSystem(object):
         if lam != syst['lam']:
             WA = WA*lam/syst['lam']
         
-        # get star magnitude
-        sInds = np.array(sInds,ndmin=1)
-        mV = TL.starMag(sInds,lam)
-        
         # solid angle of photometric aperture, specified by core_area(optional), 
         # otherwise obtained from (lambda/D)^2
         Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
-                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+                np.pi*(np.sqrt(2)/2*lam_min/self.pupilDiam*u.rad)**2
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = (Omega / (inst['pitch']/inst['focal']*u.rad)**2).decompose().value
+        Npix = (Omega/inst['pixelScale']**2).decompose().value
         
         # get coronagraph input parameters
         occ_trans = syst['occ_trans'](lam,WA)
@@ -532,10 +540,14 @@ class OpticalSystem(object):
         else:
             core_mean_intensity = syst['core_mean_intensity'](lam,WA)
             # if a platesale was specified with the coro parameters, apply correction
-            if syst['platescale'] != None:
-                platescale = (inst['pitch']/inst['focal']/(lam/self.pupilDiam)).decompose().value
-                core_mean_intensity *= platescale/syst['platescale']
+            if syst['core_platescale'] != None:
+                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+                        /(lam_min/self.pupilDiam)).decompose().value
             core_intensity = core_mean_intensity * Npix
+        
+        # get star magnitude
+        sInds = np.array(sInds,ndmin=1)
+        mV = TL.starMag(sInds,lam)
         
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
@@ -553,7 +565,7 @@ class OpticalSystem(object):
         # clock-induced-charge
         C_cc = Npix*inst['CIC']/inst['texp']
         # readout noise
-        C_rn = Npix*inst['sread']**2/inst['texp']
+        C_rn = Npix*inst['sread']/inst['texp']
         # background
         C_b = inst['ENF']**2*(C_sr+C_z+C_ez+C_dc+C_cc)+C_rn 
         # spatial structure to the speckle including post-processing contrast factor

@@ -90,12 +90,10 @@ class BrownCompleteness(Completeness):
         xedges = xedges.to('AU').value
         
         # yedges is array of delta magnitude values for interpolant
-        ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*\
-                (self.PlanetPopulation.Rprange[1]/(self.PlanetPopulation.rrange[0]))\
-                .decompose().value**2)))
-        ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange[0]*\
-                (self.PlanetPopulation.Rprange[0]/(self.PlanetPopulation.rrange[1]))\
-                .decompose().value**2*1e-11)))
+        ymin = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
+                self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
+        ymax = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+                self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2*1e-11))
         yedges = np.linspace(ymin, ymax, bins)
         
         # number of planets for each Monte Carlo simulation
@@ -336,7 +334,7 @@ class BrownCompleteness(Completeness):
                 else:
                     H += h
             
-            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))            
+            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
             pickle.dump(H, open(Cpath, 'wb'))

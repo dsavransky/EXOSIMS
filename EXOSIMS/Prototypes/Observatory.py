@@ -22,9 +22,9 @@ class Observatory(object):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
-        minKeepout (astropy Quantity):
+        koAngleMin (astropy Quantity):
             Telescope minimum keepout angle in units of deg
-        maxKeepout (astropy Quantity):
+        koAngleMax (astropy Quantity):
             Telescope maximum keepout angle (for occulter) in units of deg
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
@@ -59,13 +59,13 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self,minKeepout=45,maxKeepout=90,settlingTime=1,thrust=450,slewIsp=4160,\
+    def __init__(self,koAngleMin=45,koAngleMax=90,settlingTime=1,thrust=450,slewIsp=4160,\
             scMass=6000,dryMass=3400,coMass=5800,occulterSep=55000,skIsp=220,\
             defburnPortion=0.05,spkpath=None,forceStaticEphem=False,**specs):
         
         # default Observatory values
-        self.minKeepout = minKeepout*u.deg      # keepout minimum angle
-        self.maxKeepout = maxKeepout*u.deg      # keepout maximum angle (for occulter)
+        self.koAngleMin = koAngleMin*u.deg      # keepout minimum angle
+        self.koAngleMax = koAngleMax*u.deg      # keepout maximum angle (for occulter)
         self.settlingTime = settlingTime*u.d    # instrument settling time after repoint (days)
         self.thrust = thrust*u.mN           # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s          # occulter slew specific impulse (s)

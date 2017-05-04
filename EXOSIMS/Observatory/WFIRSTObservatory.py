@@ -104,7 +104,7 @@ class WFIRSTObservatory(Observatory):
         
         # Create koangles for all bodies, set by telescope minimum keepout angle for 
         # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
-        koangles = np.ones(nBodies)*self.minKeepout
+        koangles = np.ones(nBodies)*self.koAngleMin
         koangles[3:] = 1.*u.deg
         
         # Find angles and make angle comparisons to build kogood array.
@@ -121,7 +121,7 @@ class WFIRSTObservatory(Observatory):
             culprit[i,:] = (angles < koangles)
             # if this mode has an occulter, check maximum keepout angle for the Sun
             if occulter:
-                culprit[i,0] = (culprit[i,0] or (angles[0] > self.maxKeepout))
+                culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
             if np.any(culprit[i,:]):
                 kogood[i] = False
         

@@ -403,8 +403,8 @@ class SurveySimulation(object):
             if np.any(sInds):
                 fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
                 fEZ = ZL.fEZ0
-                dMag = OS.dMagLim
-                WA = OS.WALim
+                dMag = OS.dMagint
+                WA = OS.WAint
                 t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 # include integration time multiplier
                 t_tots = t_dets*mode['timeMultiplier']

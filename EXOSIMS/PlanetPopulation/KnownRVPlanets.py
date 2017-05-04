@@ -182,8 +182,8 @@ class KnownRVPlanets(KeplerLike1):
         
         """
         n = self.gen_input_check(n)
-        Mmin = (self.Mprange[0]/const.M_jup).decompose().value
-        Mmax = (self.Mprange[1]/const.M_jup).decompose().value
+        Mmin = float(self.Mprange[0]/const.M_jup)
+        Mmax = float(self.Mprange[1]/const.M_jup)
         Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
         
         return Mp

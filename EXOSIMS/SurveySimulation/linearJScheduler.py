@@ -90,8 +90,7 @@ class linearJScheduler(SurveySimulation):
         
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
-        f_uv[self.starVisits[sInds] == 0] = ((TK.currentTimeNorm / TK.missionFinishNorm)\
-                .decompose().value)**2
+        f_uv[self.starVisits[sInds]==0] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
         A = A - self.coeffs[2]*f_uv
         
         # kill diagonal

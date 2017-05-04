@@ -45,9 +45,11 @@ class OpticalSystem(object):
         OWA (astropy Quantity):
             Fundamental Outer Working Angle in units of arcsec
         dMagLim (float):
-            Limiting delta magnitude for integration time calculation
-        WALim (astropy Quantity):
-            Limiting working angle for integration time calculation in units of arcsec
+            Limiting planet-to-star delta magnitude value
+        WAint (astropy Quantity):
+            Working angle used for integration time calculation in units of arcsec
+        dMagint (astropy Quantity):
+            Delta magnitude used for integration time calculation
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -179,12 +181,12 @@ class OpticalSystem(object):
             ENF=1,Rs=70,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
             core_thruput=1e-2,core_contrast=1e-9,core_platescale=None,PSF=np.ones((3,3)),\
             samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
-            OWA=None,dMagLim=22.5,WALim=None,**specs):
+            OWA=None,dMagLim=22.5,WAint=None,dMagint=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
-        self.pupilDiam = pupilDiam*u.m          # entrance pupil diameter
+        self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2 # entrance pupil area
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
@@ -233,8 +235,8 @@ class OpticalSystem(object):
             # Calculate pixelScale (Nyquist sampled)
             inst['pixelScale'] = 2*inst['FoV']/inst['pixelNumber']
             # Calculate focal and f-number
-            inst['focal'] = inst['pixelSize']/inst['pixelScale'].to('rad').value
-            inst['fnumber'] = (inst['focal']/self.pupilDiam).decompose().value
+            inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
+            inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
             # populate detector specifications to outspec
             for att in inst.keys():
@@ -273,7 +275,7 @@ class OpticalSystem(object):
             
             # When provided, always use deltaLam instead of BW (bandwidth fraction)
             syst['lam'] = float(syst.get('lam',lam))*u.nm       # central wavelength (nm)
-            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].value\
+            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].to('nm').value\
                     *syst.get('BW',BW)))*u.nm                   # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
             # Default lam and BW updated with values from first instrument
@@ -402,10 +404,11 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
-        # load the limiting working angle value
-        # if not specified, set it equal to detection mode IWA by default
+        # Load the integration working angle (WAint) and delta magnitude (dMagint) values
+        # Default to detection mode IWA and dMadLim
         detMode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
-        self.WALim = float(WALim)*u.arcsec if WALim is not None else detMode['IWA']
+        self.WAint = float(WAint)*u.arcsec if WAint else detMode['IWA']
+        self.dMagint = float(dMagint) if dMagint else dMagLim
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():

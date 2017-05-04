@@ -523,7 +523,7 @@ class OpticalSystem(object):
         # solid angle of photometric aperture, specified by core_area(optional), 
         # otherwise obtained from (lambda/D)^2
         Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
-                np.pi*(np.sqrt(2)/2*lam_min/self.pupilDiam*u.rad)**2
+                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels in the photometric aperture = Omega / theta^2 
         Npix = (Omega/inst['pixelScale']**2).decompose().value
         
@@ -542,7 +542,7 @@ class OpticalSystem(object):
             # if a platesale was specified with the coro parameters, apply correction
             if syst['core_platescale'] != None:
                 core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
-                        /(lam_min/self.pupilDiam)).decompose().value
+                        /(lam/self.pupilDiam)).decompose().value
             core_intensity = core_mean_intensity * Npix
         
         # get star magnitude

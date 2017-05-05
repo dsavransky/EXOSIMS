@@ -26,6 +26,9 @@ class Observatory(object):
             Telescope minimum keepout angle in units of deg
         koAngleMax (astropy Quantity):
             Telescope maximum keepout angle (for occulter) in units of deg
+        checkKeepoutEnd (boolean):
+            Boolean signifying if the keepout method must be called at the end of 
+            each observation
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -59,21 +62,22 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self,koAngleMin=45,koAngleMax=90,settlingTime=1,thrust=450,slewIsp=4160,\
-            scMass=6000,dryMass=3400,coMass=5800,occulterSep=55000,skIsp=220,\
-            defburnPortion=0.05,spkpath=None,forceStaticEphem=False,**specs):
+    def __init__(self,koAngleMin=45,koAngleMax=90,checkKeepoutEnd=True,settlingTime=1,\
+            thrust=450,slewIsp=4160,scMass=6000,dryMass=3400,coMass=5800,occulterSep=55000,\
+            skIsp=220,defburnPortion=0.05,spkpath=None,forceStaticEphem=False,**specs):
         
         # default Observatory values
-        self.koAngleMin = koAngleMin*u.deg      # keepout minimum angle
-        self.koAngleMax = koAngleMax*u.deg      # keepout maximum angle (for occulter)
-        self.settlingTime = settlingTime*u.d    # instrument settling time after repoint (days)
-        self.thrust = thrust*u.mN           # occulter slew thrust (mN)
-        self.slewIsp = slewIsp*u.s          # occulter slew specific impulse (s)
-        self.scMass = scMass*u.kg           # occulter (maneuvering sc) initial (wet) mass (kg)
-        self.dryMass = dryMass*u.kg         # occulter (maneuvering sc) dry mass (kg)
-        self.coMass = coMass*u.kg           # telescope (or non-maneuvering sc) mass (kg)
-        self.occulterSep = occulterSep*u.km # occulter-telescope distance (km)
-        self.skIsp = skIsp*u.s              # station-keeping Isp (s)
+        self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
+        self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (for occulter)
+        self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at end of each obs
+        self.settlingTime = settlingTime*u.d        # instrument settling time after repoint (days)
+        self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
+        self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
+        self.scMass = scMass*u.kg                   # occulter (maneuvering sc) initial (wet) mass (kg)
+        self.dryMass = dryMass*u.kg                 # occulter (maneuvering sc) dry mass (kg)
+        self.coMass = coMass*u.kg                   # telescope (or non-maneuvering sc) mass (kg)
+        self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
+        self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
         
         # set values derived from quantities above

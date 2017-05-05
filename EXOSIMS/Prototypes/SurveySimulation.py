@@ -416,7 +416,7 @@ class SurveySimulation(object):
             
             # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
-            if np.any(sInds):
+            if np.any(sInds) and Obs.checkKeepoutEnd:
                 endTime = startTime[sInds] + t_tots[sInds]
                 kogoodEnd = Obs.keepout(TL, sInds, endTime, mode['syst']['occulter'])
                 sInds = sInds[np.where(kogoodEnd)[0]]
@@ -714,7 +714,8 @@ class SurveySimulation(object):
                     (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
         
         # 3/ Is target still observable at the end of any char time?
-        if np.any(tochar):
+        if np.any(tochar) and Obs.checkKeepoutEnd:
+            print 'PROUT'
             endTime = startTime + t_tots[tochar]
             tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode['syst']['occulter'])
         

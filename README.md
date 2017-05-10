@@ -9,10 +9,10 @@ EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67
 
 Install and Quick Start Guide
 -----------------------------
-https://github.com/dsavransky/EXOSIMS/blob/master/documentation/install.rst
-https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
+- https://github.com/dsavransky/EXOSIMS/blob/master/documentation/install.rst
+- https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
 
 Interface Control Documentation
 -------------------------------
-https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf
-https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 
+- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf
+- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 

@@ -7,8 +7,12 @@ Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, 
 
 EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 
-Quick Start Guide: https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
+Install and Quick Start Guide
+-----------------------------
+https://github.com/dsavransky/EXOSIMS/blob/master/documentation/install.rst
+https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
 
-See https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf (ICD/icd.pdf) for the interface control documentation and https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html (documentation/html/) for the as-built documentation (currently under development).
-
-EXOSIMS requires astropy - a community-developed core Python package for Astronomy (Astropy Collaboration, 2013); http://www.astropy.org
+Interface Control Documentation
+-------------------------------
+https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf
+https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 

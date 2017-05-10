@@ -32,7 +32,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         r2 = self.dview.execute("sim = SurveySim(**specs)")
         self.lview = self.rc.load_balanced_view()
 
-    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True)
+    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
         
         t1 = time.time()
         async_res = []

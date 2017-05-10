@@ -6,6 +6,14 @@
   "dMagLim": 22.5,
   "pupilDiam": 2.37,
   "ppFact": 0.1,
+  "thrust": 450,
+  "slewIsp": 4160,
+  "scMass": 6000,
+  "dryMass": 3400,
+  "coMass": 5800,
+  "occulterSep": 55000,
+  "skIsp": 220,
+  "defburnPortion":0.05,
   "scienceInstruments": [
     { "name": "imager",
       "QE": 0.72,
@@ -32,37 +40,34 @@
     }
   ],
   "starlightSuppressionSystems": [
-    { "name": "HLC-565",
+    { "name": "occulter",
+      "occulter": true,
       "lam": 565,
       "BW": 0.10,
-      "IWA": 0.15,
-      "OWA": 0.42,
+      "IWA": 0.1,
       "occ_trans": 0.2,
-      "core_thruput": 0.01,
-      "core_mean_intensity": 1.6e-12,
+      "core_thruput": 0.69,
+      "core_contrast": 1e-10,
       "core_area": 0.002,
-      "core_platescale": 0.30
-    },
-    { "name": "SPC-800",
-      "lam": 800,
-      "BW": 0.18,
-      "IWA": 0.19,
-      "OWA": 0.62,
-      "occ_trans": 0.2,
-      "core_thruput": 0.015,
-      "core_mean_intensity": 1.6e-12,
-      "core_area": 0.003,
-      "core_platescale": 0.30
+      "core_platescale": 0.30,
+      "occulterDiameter": 26,
+      "NocculterDistances" : 1,
+      "occulterDistances": [
+        {
+        "occulterDistance": 55000,
+        "occulterRedEdge": 690,
+        "occulterBlueEdge": 450 }
+      ]
     }
   ],
   "observingModes": [
     { "instName": "imager",
-      "systName": "HLC-565",
+      "systName": "occulter",
       "detectionMode": true
     },
-    { "instName": "spectro",
-      "systName": "SPC-800",
-      "lam": 770,
+    {
+      "instName": "spectro",
+      "systName": "occulter",
       "SNR": 10
     }
   ],
@@ -79,7 +84,7 @@
     "Completeness": "GarrettCompleteness",
     "TargetList": " ",
     "SimulatedUniverse": "KeplerLikeUniverse",
-    "SurveySimulation": " ",
+    "SurveySimulation": "linearJScheduler",
     "SurveyEnsemble": " "
   }
 }

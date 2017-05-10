@@ -65,7 +65,7 @@ class SurveySimulation(object):
             brightness (in units of 1/arcsec2), delta magnitude, and working angles 
             (in units of mas)
         DRM (list of dicts):
-            Contains the results of survey simulation
+            The Design Reference Mission, contains the results of a survey simulation
         
     """
 
@@ -715,7 +715,6 @@ class SurveySimulation(object):
         
         # 3/ Is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            print 'PROUT'
             endTime = startTime + t_tots[tochar]
             tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode['syst']['occulter'])
         

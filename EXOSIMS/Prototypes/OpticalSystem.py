@@ -92,7 +92,7 @@ class OpticalSystem(object):
         
     Common starlight suppression system attributes:
         name (string):
-            System name (e.g. HLC-465, HLC-565, SPC-660), should also contain the
+            System name (e.g. HLC-565, SPC-660), should also contain the
             central wavelength the system is optimized for. Every system must have 
             a unique name. 
         lam (astropy Quantity):
@@ -176,12 +176,12 @@ class OpticalSystem(object):
     _outspec = {}
 
     def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,\
-            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,QE=0.9,FoV=9.5,\
-            pixelNumber=1024,pixelSize=1e-5,sread=2e-6,idark=5e-4,CIC=5e-3,texp=1000,\
-            ENF=1,Rs=70,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
+            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,QE=0.9,FoV=10,\
+            pixelNumber=1000,pixelSize=1e-5,sread=1e-6,idark=1e-4,CIC=1e-3,texp=100,\
+            ENF=1,Rs=50,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
             core_thruput=1e-2,core_contrast=1e-9,core_platescale=None,PSF=np.ones((3,3)),\
             samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
-            OWA=None,dMagLim=22.5,WAint=None,dMagint=None,**specs):
+            OWA=None,dMagLim=25,WAint=None,dMagint=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor

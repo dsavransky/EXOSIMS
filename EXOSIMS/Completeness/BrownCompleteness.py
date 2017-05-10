@@ -143,7 +143,7 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = self.PlanetPopulation
         # initialize number of visits
-        self.visits = np.array([0]*TL.nStars)
+        self.visits = np.zeros(TL.nStars,dtype=int)
         # get name for stored dynamic completeness updates array
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         extstr = ''

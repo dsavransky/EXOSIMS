@@ -458,7 +458,7 @@ class OpticalSystem(object):
             assert np.all(D>=0) and np.all(D<=1), \
                     param_name+" must be positive and smaller than 1."
             # parameter values outside of WA
-            Dinterp = scipy.interpolate.interp1d(WA, D, kind='cubic',\
+            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float), kind='cubic',\
                     fill_value=fill, bounds_error=False)
             syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),ndmin=1)
             # update IWA and OWA

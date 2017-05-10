@@ -37,37 +37,41 @@ The entry point to all ``EXOSIMS`` runs is via the survey simulation object, whi
 
 .. code-block:: python
 
-    import EXOSIMS,os.path
+    import EXOSIMS,EXOSIMS.MissionSim,os.path
     scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','sampleScript_coron.json')
-    import EXOSIMS.MissionSim
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
 
-Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., ``sim.Observatory``) as well as a dictionary of the modules (``sim.modules``).  A run simulation can be kicked off via the ``run_sim`` method of the SurveySimulation class:
+Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., ``sim.Observatory``) as well as a dictionary of the modules (``sim.modules``).  A survey simulation can be kicked off via the ``run_sim`` method. The terminal will display Observation #'s as well as any detections or characterizations that are made. The output is saved to the Design Reference Mission (DRM) variable, which contains all the mission parameters of all observations made. 
 
 .. code-block:: python
     
-    res = sim.SurveySimulation.run_sim()
+    sim.run_sim()
+    DRM = sim.SurveySimulation.DRM
 
-The terminal will display Observation #'s as well as any detections or characterizations that are made. The output is saved to the DRM variable. Which can be accessed by:
-
-.. code-block:: python
-    
-    myDRM = sim.SurveySimulation.DRM
-    myDRM
-
-The terminal should display all the mission parameters of all observations made. If the last observation output of res = sim.SurveySimulation.run_sim() was #15, then accessing myDRM[14] would display the output of the 15th observation. To find the number of stars observed during my mission that have at least 1 planet detected, we could run:
+If e.g. 10 observations were made, accessing DRM[4] would display the output of the 5th observation. To find the number of stars observed during my mission that have at least 1 planet detected, we could run:
 
 .. code-block:: python
     
-    count = 0
-    for i in range(1,len(myDRM)):
-        if 1 in myDRM[i]['det_status']:
-            count = count+1
-    print(count)
+    len([DRM[x]['star_ind'] for x in range(len(DRM)) if 1 in DRM[x]['det_status']])
 
+To run a new simulation using the same input scriptfile, simply reset the simulation and run it again. You can choose to generate new planets and/or rewind their positions. 
 
-Above the basics
-----------------
+.. code-block:: python
+    
+    sim.reset_sim(genNewPlanets=True, rewindPlanets=True)
+    sim.run_sim()
+
+You can also run an ensemble of N simulations, wich produces a list of DRMs. From there, you can find e.g. the number of observations made during each survey.
+
+.. code-block:: python
+    
+    sim.reset_sim()
+    N = 100
+    ens = sim.run_ensemble(N, genNewPlanets=True, rewindPlanets=True)
+    nb_obs = []
+    for i in range(N):
+        DRM = ens[i]
+        nb_obs.append(len(DRM))
 
 To run with the Forecaster Module, h5py must be installed.
 See http://docs.h5py.org/en/latest/build.html

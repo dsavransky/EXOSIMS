@@ -248,7 +248,8 @@ class SurveySimulation(object):
                             self.starExtended = np.unique(self.starExtended)
                 
                 # Beginning of observation, start to populate DRM
-                DRM['OB'] = TK.OBnumber
+                DRM['OB#'] = TK.OBnumber+1
+                DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]

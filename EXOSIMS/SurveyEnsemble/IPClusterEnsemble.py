@@ -5,17 +5,17 @@ import time
 
 class IPClusterEnsemble(SurveyEnsemble):
     """
-    Parallelized suvey ensemble based on IPython parallal (ipcluster)
-
+    Parallelized suvey ensemble based on IPython parallel (ipcluster)
+    
     Args: 
         \*\*specs: 
             user specified values
             
     Attributes: 
         
-
+    
     Notes:  
-
+    
     """
 
     def __init__(self, **specs):
@@ -27,9 +27,9 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview = self.rc[:]
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS,EXOSIMS.util.get_module
-        r1 = self.dview.execute("SurveySim = EXOSIMS.util.get_module.get_module('%s', 'SurveySimulation')"%specs['modules']['SurveySimulation'])
         self.dview.push(dict(specs=specs))
-        r2 = self.dview.execute("sim = SurveySim(**specs)")
+        self.dview.execute("SS = EXOSIMS.util.get_module.get_module(specs['modules']\
+                ['SurveySimulation'],'SurveySimulation')(**specs)")
         self.lview = self.rc.load_balanced_view()
 
     def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
@@ -49,4 +49,3 @@ class IPClusterEnsemble(SurveyEnsemble):
         res = [ar.get() for ar in async_res]
         
         return res
-

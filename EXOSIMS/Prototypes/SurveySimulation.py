@@ -101,8 +101,7 @@ class SurveySimulation(object):
         
         # if a script file is provided read it in
         if scriptfile is not None:
-            import json
-            import os.path
+            import json, os.path
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             
             try:
@@ -141,6 +140,7 @@ class SurveySimulation(object):
             self.PostProcessing = SU.PostProcessing
             self.Completeness = SU.Completeness
             self.TargetList = SU.TargetList
+        
         else:
             #these are the modules that must be present if passing instantiated objects
             neededObjMods = ['PlanetPopulation',
@@ -158,13 +158,27 @@ class SurveySimulation(object):
             #ensure that you have the minimal set
             for modName in neededObjMods:
                 if modName not in specs['modules'].keys():
-                    raise ValueError("%s module is required but was not provided." % modName)
+                    raise ValueError("%s module is required but was not provided."%modName)
             
             for modName in specs['modules'].keys():
                 assert (specs['modules'][modName]._modtype == modName), \
                 "Provided instance of %s has incorrect modtype."%modName
                 
                 setattr(self, modName, specs['modules'][modName])
+        
+        # save modules
+        self.modules = {}
+        self.modules['PlanetPopulation'] = self.PlanetPopulation
+        self.modules['PlanetPhysicalModel'] = self.PlanetPhysicalModel
+        self.modules['OpticalSystem'] = self.OpticalSystem
+        self.modules['ZodiacalLight'] = self.ZodiacalLight
+        self.modules['BackgroundSources'] = self.BackgroundSources
+        self.modules['PostProcessing'] = self.PostProcessing
+        self.modules['Completeness'] = self.Completeness
+        self.modules['TargetList'] = self.TargetList
+        self.modules['SimulatedUniverse'] = self.SimulatedUniverse
+        self.modules['Observatory'] = self.Observatory
+        self.modules['TimeKeeping'] = self.TimeKeeping
         
         # list of simulation results, each item is a dictionary
         self.DRM = []
@@ -871,3 +885,48 @@ class SurveySimulation(object):
         DRM['scMass'] = Obs.scMass.to('kg').value
         
         return DRM
+
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
+        """
+        Performs a full reset of the current simulation by:
+        
+        1) Re-initializing the TimeKeeping object with its own outspec
+        
+        2) If genNewPlanets is True (default) then it will also generate all new 
+        planets based on the original input specification. If genNewPlanets is False, 
+        then the original planets will remain, but they will not be rewound to their 
+        initial starting locations (i.e., all systems will remain at the times they 
+        were at the end of the last run, thereby effectively randomizing planet phases.
+        
+        3) If rewindPlanets is True (default), then the current set of planets will be 
+        reset to their original orbital phases. This has no effect if genNewPlanets is 
+        True, but if genNewPlanets is False, will have the effect of resetting the full 
+        simulation to its exact original state.
+        
+        4) Re-initializing the SurveySimulation object, including resetting the DRM to []
+        
+        """
+        
+        SU = self.SimulatedUniverse
+        TK = self.TimeKeeping
+        
+        # Reset mission time parameters
+        TK.__init__(**TK._outspec)
+        
+        # Generate new planets if requested (default)
+        if genNewPlanets:
+            SU.gen_physical_properties(**SU._outspec)
+            rewindPlanets = True
+        
+        # Re-initialize systems if requested (default)
+        if rewindPlanets:
+            SU.init_systems()
+        
+        # Re-initialize SurveySimulation arrays
+        specs = self._outspec
+        specs['modules'] = self.modules
+        self.__init__(**specs)
+        
+        print "Simulation reset."
+        
+        return

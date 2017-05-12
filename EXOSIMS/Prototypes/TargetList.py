@@ -28,7 +28,7 @@ class TargetList(object):
             StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
-        PlanetPhysicalModel ( module):
+        PlanetPhysicalModel (PlanetPhysicalModel module):
             PlanetPhysicalModel class object
         OpticalSystem (OpticalSystem module):
             OpticalSystem class object

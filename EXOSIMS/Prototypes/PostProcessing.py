@@ -104,7 +104,7 @@ class PostProcessing(object):
         
         return 'Post Processing class object attributes'
 
-    def det_occur(self, SNR, SNRmin):
+    def det_occur(self, SNR, SNRmin, bs_density, OWA):
         """Determines if a detection has occurred and returns booleans 
         
         This method returns two booleans where True gives the case.
@@ -114,6 +114,10 @@ class PostProcessing(object):
                 signal-to-noise ratio of the planets around the selected target
             SNRmin (float):
                 signal-to-noise ratio threshold for detection
+            bs_density (float):
+                background source density for the sInd in question in arcsec**2
+            OWA (float):
+                Outer Working Angle of the observation mode
         
         Returns:
             FA (boolean):
@@ -125,6 +129,12 @@ class PostProcessing(object):
         Notes:
             TODO: Add backgroundsources hook
         """
+
+        BS = self.BackgroundSources
+
+        OWA_solidangle = OWA**2
+
+        FABP = bs_density * OWA_solidangle # false positive rate due to background sources
         
         # initialize
         FA = False
@@ -132,7 +142,7 @@ class PostProcessing(object):
         
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p = np.random.rand()
-        if p <= self.FAP:
+        if p <= self.FAP + FABP:
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?

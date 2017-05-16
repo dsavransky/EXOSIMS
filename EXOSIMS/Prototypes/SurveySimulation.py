@@ -196,6 +196,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        BS = self.BackgroundSources
         
         # initialize lists updated later
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
@@ -205,6 +206,10 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([])
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+        self.coords = TL.coords
+        self.intDepths = TL.Vmag + OS.dMagLim
+
+        self.bs_density = BS.dNbackground(self.coords, self.intDepths).to(1/u.arcsec**2)
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
@@ -423,6 +428,8 @@ class SurveySimulation(object):
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
                     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+                    print(dt_max)
+                    print(dt_rev)
                     ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
@@ -515,7 +522,8 @@ class SurveySimulation(object):
         Returns:
             detected (integer list):
                 Detection status for each planet orbiting the observed target star,
-                where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
+                where 2 is a false positive, 1 is detection, 0 missed detection, 
+                -1 below IWA, and -2 beyond OWA
             SNR (float list):
                 Detection signal-to-noise ratio of the observable planets
             FA (boolean):
@@ -567,18 +575,27 @@ class SurveySimulation(object):
         
         # Find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred, and populate detection status array
-        FA, MD = PPro.det_occur(SNRobs, mode['SNR'])
+        FA, MD = PPro.det_occur(SNRobs, mode['SNR'], self.bs_density[sInd], mode['OWA'])
         detected = observable
         SNR = np.zeros(len(pInds))
+        print(detected)
         if np.any(obs):
             detected[obs] = (~MD).astype(int)
+            if FA == True:
+                if np.any(detected):
+                    detected[0] = 2
+                else:
+                    detected + np.array([2])
             SNR[obs] = SNRobs
         
         # If planets are detected, calculate the minimum apparent separation
         smin = None
-        det = (detected == 1)
+        det = np.in1d(detected, [1,2])
+        print(detected)
+
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
+            print(smin)
             Logger.info('   - Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds)))
             print '   - Detected planet(s) %s (%s/%s)'%(pInds[det],len(pInds[det]),len(pInds))
         
@@ -590,7 +607,7 @@ class SurveySimulation(object):
         # dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('mas'), np.minimum(mode['OWA'], \
-                    np.arctan(max(PPop.arange)/TL.dist[sInd])).to('mas'))
+                    np.arctan(max(PPop.arange)/TL.dist[sInd])).to('mas'))                           #XXXXXX BROKEN
             dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA*u.mas)), OS.dMagLim)
             fEZ = ZL.fEZ0.to('1/arcsec2').value
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
@@ -598,6 +615,7 @@ class SurveySimulation(object):
             self.lastDetected[sInd,2] = np.append(self.lastDetected[sInd,2], dMag)
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
             sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
+            print(sminFA)
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
             Logger.info('   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1)))
             print '   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1))
@@ -613,6 +631,7 @@ class SurveySimulation(object):
             else:
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
+            print(sp)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm + T/2.
         # Otherwise, revisit based on average of population semi-major axis and mass

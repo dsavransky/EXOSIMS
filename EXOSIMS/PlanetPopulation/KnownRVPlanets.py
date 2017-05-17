@@ -9,7 +9,6 @@ from astropy.io.votable import parse
 from astropy.time import Time
 from EXOSIMS.util import statsFun 
 
-
 class KnownRVPlanets(KeplerLike1):
     """
     Population consisting only of known RV planets.  Eccentricity and sma 
@@ -54,9 +53,7 @@ class KnownRVPlanets(KeplerLike1):
 
     def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None, **specs):
         
-        specs['smaknee'] = float(smaknee)
-        specs['esigma'] = float(esigma)
-        KeplerLike1.__init__(self, **specs)
+        KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
         #default file is ipac_2016-05-15
         if rvplanetfilepath is None:
@@ -119,7 +116,7 @@ class KnownRVPlanets(KeplerLike1):
         self.radiusmask = data['pl_radj'].mask
         self.radiuserr1 = data['pl_radjerr1'].data*const.R_jup
         self.radiuserr2 = data['pl_radjerr2'].data*const.R_jup
-
+        
         #save the periastron time and period 
         tmp = data['pl_orbper'].data*u.d
         tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
@@ -128,7 +125,7 @@ class KnownRVPlanets(KeplerLike1):
         self.perioderr = data['pl_orbpererr1'].data*u.d
         mask = data['pl_orbpererr1'].mask
         self.perioderr[mask] = np.nanmean(self.perioderr)
-
+        
         #if perisastron time missing, fill in random value
         tmp = data['pl_orbtper'].data
         tmp[data['pl_orbtper'].mask] = np.random.uniform(low=np.nanmin(tmp),high=np.nanmax(tmp),\
@@ -142,9 +139,6 @@ class KnownRVPlanets(KeplerLike1):
         
         #save the original data structure
         self.allplanetdata = data
-        
-        #define the mass distribution function (in Jupiter masses)
-        self.massdist = lambda x: x**(-1.3)
 
     def gen_radius(self,n):
         """Generate planetary radius values in km
@@ -157,12 +151,12 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius values in units of km
         
         """
         n = self.gen_input_check(n)
-        Mtmp = self.gen_mass(n)
-        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)
+        Mp = self.gen_mass(n)
+        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mp).to('km')
         
         return Rp
 
@@ -178,12 +172,12 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass values in units of kg
         
         """
         n = self.gen_input_check(n)
         Mmin = float(self.Mprange[0]/const.M_jup)
         Mmax = float(self.Mprange[1]/const.M_jup)
-        Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
+        Mp = statsFun.simpSample(self.Mpdist, n, Mmin, Mmax)*const.M_jup.to('kg')
         
         return Mp

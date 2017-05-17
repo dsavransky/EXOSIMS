@@ -1,6 +1,7 @@
 {
-  "missionLife": 0.5,
+  "missionLife": 0.3,
   "missionPortion": 0.1,
+  "OBduration": 10,
   "minComp": 0.025,
   "ppFact": 0.1,
   "scienceInstruments": [

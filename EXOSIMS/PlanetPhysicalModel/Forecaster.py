@@ -62,9 +62,9 @@ class Forecaster(FortneyMarleyCahoyMix1):
         for i in range(sample_size):
             logr[i] = self.piece_linear(hyper[i], logm[i], prob[i])
         
-        Rp = 10.**logr*const.R_earth
+        Rp = 10.**logr*const.R_earth.to('km')
         
-        return Rp.to('km')
+        return Rp
 
 #####################################################################################
 # The following functions where adapted from the func.py file from the FORECASTER   #

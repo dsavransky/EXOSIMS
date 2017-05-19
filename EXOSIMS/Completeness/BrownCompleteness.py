@@ -31,9 +31,6 @@ class BrownCompleteness(Completeness):
             Path on disk to Brown Completeness
         filename (string):
             Name of file where completeness interpolant is stored
-        visits (integer ndarray):
-            Number of observations corresponding to each star in the target list
-            (initialized in gen_update)
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
@@ -141,17 +138,16 @@ class BrownCompleteness(Completeness):
         """
         
         OS = TL.OpticalSystem
-        PPop = self.PlanetPopulation
-        # initialize number of visits
-        self.visits = np.zeros(TL.nStars,dtype=int)
+        PPop = TL.PlanetPopulation
+        
         # get name for stored dynamic completeness updates array
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         extstr = ''
         for att in atts:
-            extstr += '%s: ' % att + str(getattr(TL.PlanetPopulation, att)) + ' '
+            extstr += '%s: ' % att + str(getattr(PPop, att)) + ' '
         atts2 = ['IWA','OWA','dMagLim']
         for att in atts2:
-            extstr += '%s: ' % att + str(getattr(TL.OpticalSystem, att)) + ' '
+            extstr += '%s: ' % att + str(getattr(OS, att)) + ' '
         extstr += 'nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
@@ -192,7 +188,7 @@ class BrownCompleteness(Completeness):
                 smax = (np.tan(OS.OWA)*TL.dist).to('AU')
             else:
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
-                                 (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
+                        (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
             # fill dynamic completeness values
             for sInd in xrange(TL.nStars):
                 Mstar = TL.MsTrue[sInd]*const.M_sun
@@ -257,7 +253,7 @@ class BrownCompleteness(Completeness):
             print 'Dynamic completeness calculations finished'
             print 'Dynamic completeness array stored in %r' % path
 
-    def completeness_update(self, TL, sInds, dt):
+    def completeness_update(self, TL, sInds, visits, dt):
         """Updates completeness value for stars previously observed by selecting
         the appropriate value from the updates array
         
@@ -266,23 +262,22 @@ class BrownCompleteness(Completeness):
                 TargetList class object
             sInds (integer array):
                 Indices of stars to update
+            visits (integer array):
+                Number of visits for each star
             dt (astropy Quantity):
                 Time since initial completeness
         
         Returns:
-            comp0 (float ndarray):
+            dcomp (float ndarray):
                 Completeness values for each star
         
         """
-        
-        # number of visits for each star
-        cols = self.visits[sInds]
         # if visited more than five times, return 5th stored dynamic 
         # completeness value
-        cols[cols>4] = 4
-        # return value from the updates array
+        visits[visits > 4] = 4
+        dcomp = self.updates[sInds, visits]
         
-        return self.updates[sInds, cols]
+        return dcomp
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness

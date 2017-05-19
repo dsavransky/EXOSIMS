@@ -56,13 +56,13 @@ class cbytScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
-        comps = TL.comp0[sInds]#completeness of each star in TL
-        updated = (self.starVisits[sInds] > 0)#what does starVisits contain?
-        comps[updated] = Comp.completeness_update(TL, sInds[updated],TK.currentTimeNorm)
+        # get dynamic completeness values
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        
         tint = TL.tint0[sInds]
         
         selMetric=comps/tint#selMetric is the selection metric being used. Here it is Completeness/integration time
-
+        
         #Here I select the target star to observe
         tmp = sInds[selMetric == max(selMetric)]#this selects maximum completeness/integration time
         sInd = tmp[0]#casts numpy array to single integer

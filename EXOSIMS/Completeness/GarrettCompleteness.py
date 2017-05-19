@@ -26,9 +26,6 @@ class GarrettCompleteness(BrownCompleteness):
             user specified values
     
     Attributes:
-        visits (ndarray):
-            Number of observations corresponding to each star in the target list
-            (initialized in gen_update)
         updates (nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)

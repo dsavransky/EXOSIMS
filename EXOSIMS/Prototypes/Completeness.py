@@ -65,13 +65,10 @@ class Completeness(object):
                 TargetList class object
         
         """
-        
-        # initialize number of visits per star
-        self.visits = np.array([0]*TL.nStars)
         # Prototype does not use precomputed updates, so set these to zeros
         self.updates = np.zeros((TL.nStars, 5))
 
-    def completeness_update(self, TL, sInds, dt):
+    def completeness_update(self, TL, sInds, visits, dt):
         """Updates completeness value for stars previously observed
         
         Args:
@@ -79,6 +76,8 @@ class Completeness(object):
                 TargetList class object
             sInds (integer array):
                 Indices of stars to update
+            visits (integer array):
+                Number of visits for each star
             dt (astropy Quantity):
                 Time since initial completeness
         
@@ -91,7 +90,7 @@ class Completeness(object):
         comp0 = TL.comp0[sInds]
         
         return comp0
-    
+
     def revise_updates(self, ind):
         """Keeps completeness update values only for targets remaining in 
         target list during filtering (called from TargetList.filter_target_list)

@@ -45,7 +45,7 @@ class WFIRSTObservatory(Observatory):
         
         return r_sc.to('km')
 
-    def keepout(self, TL, sInds, currentTime, occulter, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -58,8 +58,8 @@ class WFIRSTObservatory(Observatory):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            occulter (boolean):
-                Boolean signifying if the observing mode has an occulter
+            mode (dict):
+                Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
                 
@@ -120,7 +120,7 @@ class WFIRSTObservatory(Observatory):
             angles = np.arccos(np.clip(np.dot(u_b,u_t),-1,1))*u.rad
             culprit[i,:] = (angles < koangles)
             # if this mode has an occulter, check maximum keepout angle for the Sun
-            if occulter:
+            if mode['syst']['occulter']:
                 culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
             if np.any(culprit[i,:]):
                 kogood[i] = False

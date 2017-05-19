@@ -410,33 +410,53 @@ class SurveySimulation(object):
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
             startTime = TK.currentTimeAbs + slewTime
-            kogoodStart = Obs.keepout(TL, sInds, startTime, mode['syst']['occulter'])
+            kogoodStart = Obs.keepout(TL, sInds, startTime, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
             
-            # 2/ Calculate integration times for the preselected targets, 
-            # and filter out t_tots > integration cutoff
+            # 2/ Lucky target selection: choose a target and check if it is observable
             if np.any(sInds):
-                fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
+                # choose sInd of next target
+                sInd = self.choose_next_target(old_sInd, sInds, slewTime)
+                # calculate t_det
+                fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(startTime[sInd]))
                 fEZ = ZL.fEZ0
                 dMag = OS.dMagint
                 WA = OS.WAint
-                t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+                t_det = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)[0]
                 # include integration time multiplier
-                t_tots = t_dets*mode['timeMultiplier']
+                t_tot = t_det*mode['timeMultiplier']
                 # total time must be positive, shorter than integration cut-off,
-                # and it must not exceed the Observing Block end time 
-                startTimeNorm = (startTime - TK.missionStart).jd*u.day
-                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                        (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
+                # it must not exceed the Observing Block end time,
+                endTime = startTime[sInd] + t_tot
+                endTimeNorm = (endTime - TK.missionStart).jd*u.day
+                OBend = TK.OBendTimes[TK.OBnumber]
+                if (t_tot > 0) & (t_tot <= OS.intCutoff) & (endTimeNorm <= OBend):
+                    # and the keepout must be good at the end of integration
+                    if not(Obs.checkKeepoutEnd) | Obs.keepout(TL, sInd, endTime, mode)[0]:
+                        # update visited list for current star
+                        self.starVisits[sInd] += 1
+                        # update visited list for Completeness for current star
+                        Comp.visits[sInd] += 1
+                        break
             
-            # 3/ Find spacecraft orbital END positions (for each candidate target), 
+            # 3/ Calculate integration times for all preselected targets, 
+            # and filter out t_tots > integration cutoff
+            if np.any(sInds):
+                fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
+                t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+                t_tots = t_dets*mode['timeMultiplier']
+                endTime = startTime + t_tots
+                endTimeNorm = (endTime - TK.missionStart).jd*u.day
+                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
+                        (endTimeNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+            
+            # 4/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if np.any(sInds) and Obs.checkKeepoutEnd:
-                endTime = startTime[sInds] + t_tots[sInds]
-                kogoodEnd = Obs.keepout(TL, sInds, endTime, mode['syst']['occulter'])
+                kogoodEnd = Obs.keepout(TL, sInds, endTime[sInds], mode)
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
-            # 4/ Filter out all previously (more-)visited targets, unless in 
+            # 5/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if np.any(sInds):
                 tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
@@ -447,14 +467,12 @@ class SurveySimulation(object):
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
             
-            # 5/ Choose best target from remaining
+            # 6/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
                 sInd = self.choose_next_target(old_sInd, sInds, slewTime)
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                # update visited list for Completeness for current star
-                Comp.visits[sInd] += 1
                 # store relevant values
                 t_det = t_dets[sInd]
                 break
@@ -486,7 +504,7 @@ class SurveySimulation(object):
         
         return DRM, sInd, t_det
 
-    def choose_next_target(self,old_sInd,sInds,slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTime):
         """Helper method for method next_target to simplify alternative implementations.
         
         Args:
@@ -508,10 +526,15 @@ class SurveySimulation(object):
         
         """
         
-        comps = self.TargetList.comp0[sInds]#completeness of each star in TargetList
-        updated = (self.starVisits[sInds] > 0)
-        comps[updated] =  self.Completeness.completeness_update(self.TargetList, \
-                sInds[updated], self.TimeKeeping.currentTimeNorm)
+        Comp = self.Completeness
+        TL = self.TargetList
+        TK = self.TimeKeeping
+        
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+        # get dynamic completeness values
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
         
         return sInd
@@ -708,7 +731,7 @@ class SurveySimulation(object):
         # 1/ Find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             startTime = TK.currentTimeAbs
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode['syst']['occulter'])
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
         
         # 2/ If any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -731,7 +754,7 @@ class SurveySimulation(object):
         # 3/ Is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             endTime = startTime + t_tots[tochar]
-            tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode['syst']['occulter'])
+            tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode)
         
         # 4/ If yes, perform the characterization for the maximum char time
         if np.any(tochar):

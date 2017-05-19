@@ -32,7 +32,7 @@ class linearJScheduler(SurveySimulation):
         
         self.coeffs = coeffs
 
-    def choose_next_target(self,old_sInd,sInds,slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTime):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -63,10 +63,8 @@ class linearJScheduler(SurveySimulation):
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
         
-        # get completeness values
-        comps = TL.comp0[sInds]
-        updated = (self.starVisits[sInds] > 0)
-        comps[updated] = Comp.completeness_update(TL, sInds[updated], TK.currentTimeNorm)
+        # get dynamic completeness values
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(sInds)
@@ -76,7 +74,7 @@ class linearJScheduler(SurveySimulation):
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
-
+        
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = Obs.starprop(TL, sInds, TK.currentTimeAbs)
@@ -84,7 +82,7 @@ class linearJScheduler(SurveySimulation):
             angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
             A[np.ones((nStars),dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
-
+        
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
         

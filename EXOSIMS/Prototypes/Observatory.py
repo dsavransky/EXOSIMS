@@ -248,7 +248,7 @@ class Observatory(object):
         
         return r_sc.to('km')
 
-    def keepout(self, TL, sInds, currentTime, occulter):
+    def keepout(self, TL, sInds, currentTime, mode):
         """Finds keepout Boolean values for stars of interest.
         
         This method defines the data type expected, all values are True.
@@ -260,8 +260,8 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            occulter (boolean):
-                Boolean signifying if the observing mode has an occulter
+            mode (dict):
+                Selected observing mode
                 
         Returns:
             kogood (boolean ndarray):

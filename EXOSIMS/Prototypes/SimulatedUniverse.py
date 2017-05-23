@@ -74,9 +74,6 @@ class SimulatedUniverse(object):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of mas
-        planTime (astropy Quantity array):
-            Contains the last time the planet was observed in units of day, 
-            for planet position propagation
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -160,12 +157,11 @@ class SimulatedUniverse(object):
         self.p = PPop.gen_albedo(self.nPlans)               # albedo
 
     def init_systems(self):
-        """Finds initial time-dependant parameters. Assigns each planet an 
-        initial position, velocity, planet-star distance, apparent separation, 
-        phase function, surface brightness of exo-zodiacal light, delta magnitude, 
-        working angle, and initializes the planet current times to zero. 
-        This method makes us of the systems' physical properties (masses, distances)
-         and their orbital elements (a, e, I, O, w, M0).
+        """Finds initial time-dependant parameters. Assigns each planet an initial 
+        position, velocity, planet-star distance, apparent separation, phase function, 
+        surface brightness of exo-zodiacal light, delta magnitude, and working angle. 
+        This method makes us of the systems' physical properties (masses, distances) 
+        and their orbital elements (a, e, I, O, w, M0).
         """
         
         PPMod = self.PlanetPhysicalModel
@@ -208,10 +204,8 @@ class SimulatedUniverse(object):
         self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)                # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         self.WA = np.arctan(self.s/sDist).to('mas')                 # working angle
-        # current time (normalized to zero at mission start) of planet positions
-        self.planTime = np.zeros(self.nPlans)*u.day
 
-    def propag_system(self, sInd, currentTimeNorm):
+    def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
         planet-star distance, apparent separation, phase function, surface brightness 
         of exo-zodiacal light, delta magnitude, working angle, and the planet 
@@ -224,8 +218,8 @@ class SimulatedUniverse(object):
         Args:
             sInd (integer):
                 Index of the target system of interest
-            currentTimeNorm (astropy Quantity):
-                Current mission time normalized to zero at mission start in units of day
+            dt (astropy Quantity):
+                Time increment in units of day, for planet position propagation
         
         """
         
@@ -240,7 +234,6 @@ class SimulatedUniverse(object):
         if not np.any(pInds):
             return
         # check for positive time increment
-        dt = currentTimeNorm - self.planTime[pInds][0]
         assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
         if dt == 0:
             return
@@ -278,9 +271,8 @@ class SimulatedUniverse(object):
         rind = np.array(range(0,len(x1),2)) # even indices
         vind = np.array(range(1,len(x1),2)) # odd indices
         
-        # update planets' position, velocity, planet-star distance, apparent 
-        # separation, phase function, exozodi surface brightness, delta magnitude, 
-        # working angle, and current time
+        # update planets' position, velocity, planet-star distance, apparent, separation,
+        # phase function, exozodi surface brightness, delta magnitude and working angle
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.linalg.norm(self.r[pInds],axis=1)*self.r.unit
@@ -289,5 +281,3 @@ class SimulatedUniverse(object):
         self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/sDist).to('mas')
-        self.planTime[pInds] = currentTimeNorm
-

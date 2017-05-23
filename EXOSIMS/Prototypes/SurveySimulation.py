@@ -316,9 +316,8 @@ class SurveySimulation(object):
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
                 
-                # Calculate observation end time, and update target time
+                # Calculate observation end time
                 TK.obsEnd = TK.currentTimeNorm.to('day')
-                self.starTimes[sInd] = TK.obsEnd
                 
                 # With prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
@@ -435,8 +434,6 @@ class SurveySimulation(object):
                     if not(Obs.checkKeepoutEnd) | Obs.keepout(TL, sInd, endTime, mode)[0]:
                         # update visited list for current star
                         self.starVisits[sInd] += 1
-                        # update visited list for Completeness for current star
-                        Comp.visits[sInd] += 1
                         break
             
             # 3/ Calculate integration times for all preselected targets, 
@@ -459,7 +456,7 @@ class SurveySimulation(object):
             # 5/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if np.any(sInds):
-                tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
+                tovisit[sInds] = (self.starVisits[sInds] == min(self.starVisits[sInds]))
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
                     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
@@ -473,7 +470,7 @@ class SurveySimulation(object):
                 sInd = self.choose_next_target(old_sInd, sInds, slewTime)
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                # store relevant values
+                # store selected start integration time
                 t_det = t_dets[sInd]
                 break
             
@@ -736,7 +733,8 @@ class SurveySimulation(object):
         # 2/ If any planet to characterize, find the characterization times
         if np.any(tochar):
             # Propagate the whole system to match up with current time
-            SU.propag_system(sInd, TK.currentTimeNorm)
+            SU.propag_system(sInd, TK.currentTimeNorm - self.starTimes[sInd])
+            self.starTimes[sInd] = TK.currentTimeNorm
             # Calculate characterization times at the detected fEZ, dMag, and WA
             fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(startTime))
             fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
@@ -856,7 +854,8 @@ class SurveySimulation(object):
         # allocate first half of t_int
         TK.allocate_time(t_int/2.)
         # propagate the system to match up with current time
-        SU.propag_system(sInd, TK.currentTimeNorm)
+        SU.propag_system(sInd, TK.currentTimeNorm - self.starTimes[sInd])
+        self.starTimes[sInd] = TK.currentTimeNorm
         # find spacecraft position and ZodiacalLight
         fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(TK.currentTimeAbs))
         # find electron counts for planet, background, and speckle residual 

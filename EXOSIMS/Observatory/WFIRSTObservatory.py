@@ -77,8 +77,8 @@ class WFIRSTObservatory(Observatory):
         nStars = sInds.size
         nTimes = currentTime.size
         nBodies = 11
-        assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
-                currentTime and sInds sizes must match'
+        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match"
         
         # Observatory position
         r_sc = self.orbit(currentTime)

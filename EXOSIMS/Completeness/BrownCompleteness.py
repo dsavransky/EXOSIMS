@@ -191,7 +191,6 @@ class BrownCompleteness(Completeness):
                         (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
             # fill dynamic completeness values
             for sInd in xrange(TL.nStars):
-                Mstar = TL.MsTrue[sInd]*const.M_sun
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
@@ -206,22 +205,22 @@ class BrownCompleteness(Completeness):
                         newM[pInds] = M[pInds]
                     else:
                         E = eccanom(newM[pInds],e[pInds])
-                
+                    
                     r1 = a[pInds]*(np.cos(E) - e[pInds])
                     r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
                     r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
                     r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-                
+                    
                     a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a3 = np.sin(w[pInds])*np.sin(I[pInds])
                     A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-                
+                    
                     b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b3 = np.cos(w[pInds])*np.sin(I[pInds])
                     B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-                
+                    
                     # planet position, planet-star distance, apparent separation
                     r = (A*r1 + B*r2)*u.AU # position vector
                     d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
@@ -229,23 +228,23 @@ class BrownCompleteness(Completeness):
                     beta = np.arccos(r[:,2]/d) # phase angle
                     Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                     dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
-                
+                    
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                     toremovedmag = np.where(dMag < OS.dMagLim)[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
-                
+                    
                     pInds = np.delete(pInds, toremove)
-                
+                    
                     if num == 0:
                         self.updates[sInd, num] = TL.comp0[sInd]
                     else:
                         self.updates[sInd, num] = float(len(toremove))/nplan
-                
+                    
                     # update M
-                    mu = const.G*(Mstar+Mp[pInds])
+                    mu = const.G*(Mp[pInds] + TL.MsTrue[sInd])
                     n = np.sqrt(mu/a[pInds]**3)
                     newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-                            
+                    
                 if (sInd+1) % 50 == 0:
                     print 'stars: %r / %r' % (sInd+1,TL.nStars)
             # store dynamic completeness array as .dcomp file

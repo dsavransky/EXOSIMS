@@ -89,14 +89,14 @@ class KnownRVPlanets(KeplerLike1):
         #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
         mask = data['pl_orbsmax'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
         T = data['pl_orbper'].data[mask]*u.d
         self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
         assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
         #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
         mask = data['pl_orbsmaxerr1'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
         T = data['pl_orbpererr1'].data[mask]*u.d
         self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
@@ -118,10 +118,10 @@ class KnownRVPlanets(KeplerLike1):
         self.radiuserr2 = data['pl_radjerr2'].data*const.R_jup
         
         #save the periastron time and period 
-        tmp = data['pl_orbper'].data*u.d
-        tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
-                /(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun)).decompose().to(u.d)
-        self.period = tmp
+        self.period = data['pl_orbper'].data*u.d
+        mask = data['pl_orbper'].mask
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
+        self.period[mask] = np.sqrt(4*np.pi**2*self.sma[mask]**3/(const.G*Ms)).to('day')
         self.perioderr = data['pl_orbpererr1'].data*u.d
         mask = data['pl_orbpererr1'].mask
         self.perioderr[mask] = np.nanmean(self.perioderr)

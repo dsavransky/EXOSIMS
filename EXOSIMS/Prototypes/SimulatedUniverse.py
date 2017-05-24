@@ -168,10 +168,6 @@ class SimulatedUniverse(object):
         ZL = self.ZodiacalLight
         TL = self.TargetList
         
-        sInds = self.plan2star                  # indices of target stars
-        sDist = TL.dist[sInds]                  # distances to target stars
-        Ms = TL.MsTrue[sInds]*const.M_sun       # masses of target stars
-        
         a = self.a.to('AU').value               # semi-major axis
         e = self.e                              # eccentricity
         I = self.I.to('rad').value              # inclinations
@@ -189,10 +185,10 @@ class SimulatedUniverse(object):
         b2 = np.sqrt(1.-e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
         b3 = np.sqrt(1.-e**2)*np.sin(I)*np.cos(w)
         B = a*np.vstack((b1,b2,b3))*u.AU
-        
         r1 = np.cos(E) - e
         r2 = np.sin(E)
-        mu = const.G*(Mp + Ms)
+        
+        mu = const.G*(Mp + TL.MsTrue[self.plan2star])
         v1 = np.sqrt(mu/self.a**3)/(1. - e*np.cos(E))
         v2 = np.cos(E)
         
@@ -201,9 +197,9 @@ class SimulatedUniverse(object):
         self.d = np.linalg.norm(self.r,axis=1)*self.r.unit          # planet-star distance
         self.s = np.linalg.norm(self.r[:,0:2],axis=1)*self.r.unit   # apparent separation
         self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))         # planet phase
-        self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)                # exozodi brightness
+        self.fEZ = ZL.fEZ(TL, self.plan2star, self.I, self.d)       # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
-        self.WA = np.arctan(self.s/sDist).to('mas')                 # working angle
+        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('mas')# working angle
 
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
@@ -238,19 +234,15 @@ class SimulatedUniverse(object):
         if dt == 0:
             return
         
-        # Initial positions in AU and velocities in AU/day
+        # Calculate initial positions in AU and velocities in AU/day
         rold = self.r[pInds].to('AU').value
         vold = self.v[pInds].to('AU/day').value
         # stack dimensionless positions and velocities
-        x0 = np.array([])
-        for i in xrange(len(rold)):
-            x0 = np.hstack((x0, rold[i], vold[i]))
+        x0 = np.reshape(np.concatenate((rold,vold), axis=1), len(rold)*6)
         
-        # calculate system's distance and masses
-        sDist = TL.dist[[sInd]]
-        Ms = TL.MsTrue[[sInd]]*const.M_sun
+        # Calculate vector of gravitational parameter in AU3/day2
+        Ms = TL.MsTrue[[sInd]]
         Mp = self.Mp[pInds]
-        # calculate vector of gravitational parameter
         mu = (const.G*(Mp + Ms)).to('AU3/day2').value
         
         # use keplerSTM.py to propagate the system
@@ -280,4 +272,4 @@ class SimulatedUniverse(object):
         self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/sDist).to('mas')
+        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')

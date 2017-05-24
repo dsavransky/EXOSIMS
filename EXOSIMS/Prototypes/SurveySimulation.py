@@ -644,7 +644,7 @@ class SurveySimulation(object):
         
         # In both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
-        Ms = TL.MsTrue[sInd]*const.M_sun
+        Ms = TL.MsTrue[sInd]
         if smin is not None:
             sp = smin
             if np.any(det):

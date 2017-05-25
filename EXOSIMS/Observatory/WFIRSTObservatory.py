@@ -39,11 +39,12 @@ class WFIRSTObservatory(Observatory):
         # position vector wrt Earth in equatorial frame
         r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth).T
         # position vector in heliocentric equatorial frame
-        r_sc = r_earth + r_scearth
+        r_sc = (r_earth + r_scearth).to('km')
         
-        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
+        assert np.all(np.isfinite(r_sc)), \
+                "Observatory position vector r_sc has infinite value."
         
-        return r_sc.to('km')
+        return r_sc
 
     def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
@@ -84,7 +85,8 @@ class WFIRSTObservatory(Observatory):
         r_sc = self.orbit(currentTime)
         # Position vectors wrt sun, for targets and bright bodies
         r_targ = self.starprop(TL, sInds, currentTime)
-        r_body = np.array([np.zeros(r_sc.shape), # sun
+        r_body = np.array([ \
+            self.solarSystem_body_position(currentTime, 'Sun').to('km').value, #zeros
             self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
             self.solarSystem_body_position(currentTime, 'Earth').to('km').value,
             self.solarSystem_body_position(currentTime, 'Mercury').to('km').value,
@@ -127,7 +129,7 @@ class WFIRSTObservatory(Observatory):
         
         # check to make sure all elements in kogood are Boolean
         trues = [isinstance(element, np.bool_) for element in kogood]
-        assert all(trues), 'An element of kogood is not Boolean'
+        assert all(trues), "An element of kogood is not Boolean"
         
         if returnExtra:
             return kogood, r_body, r_targ, culprit

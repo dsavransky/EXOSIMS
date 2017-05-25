@@ -85,9 +85,12 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         deltime = currentTime - equinox
         # calculating Earth position
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
-        dist_Earth = SkyCoord(r_Earth[:,0],r_Earth[:,1],r_Earth[:,2],representation='cartesian').heliocentrictrueecliptic.icrs.distance
+        c = SkyCoord(r_Earth[:,0], r_Earth[:,1], r_Earth[:,2], \
+                representation='cartesian').represent_as('spherical')
+        coord_Earth = SkyCoord(c.lon, c.lat, c.distance, frame='heliocentrictrueecliptic')
+        dist_Earth = coord_Earth.distance.to('AU').value
         # weighting L2 position with Earth-Sun distance
-        L2_corr_dist = np.ones(currentTime.size)*self.L2_dist * dist_Earth.to('AU').value
+        L2_corr_dist = dist_Earth * self.L2_dist
         # add L2 position to get current ecliptic coord
         th = 2*np.pi*np.mod(deltime.to('yr'),1.*u.yr).value
         cpos = self.orbit_interp(np.mod(deltime.to('yr'),self.orbit_period).to('year').value)
@@ -98,7 +101,8 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         r_sc = np.empty((obe.size,3))*u.km
         for i in range(obe.size):
             r_sc[i,:] = (np.dot(self.rot(-obe[i],1),cpos[:,i])*u.AU).to('km')
-      
-        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
         
-        return r_sc.to('km')
+        assert np.all(np.isfinite(r_sc)), \
+                "Observatory position vector r_sc has infinite value."
+        
+        return r_sc

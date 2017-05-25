@@ -115,9 +115,9 @@ class PostProcessing(object):
             SNRmin (float):
                 signal-to-noise ratio threshold for detection
             bs_density (float):
-                background source density for the sInd in question in arcsec**2
+                background source density for the sInd in question in 1/arcsec**2
             OWA (float):
-                Outer Working Angle of the observation mode
+                Outer Working Angle of the observation mode in arcsec
         
         Returns:
             FA (boolean):
@@ -141,8 +141,9 @@ class PostProcessing(object):
         MD = np.array([False]*len(SNR))
         
         # 1/ For the whole system: is there a False Alarm (false positive)?
-        p = np.random.rand()
-        if p <= self.FAP + FABP:
+        p1 = np.random.rand()
+        p2 = np.random.rand()
+        if p1 <= self.FAP  or p2 <= FABP:
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?

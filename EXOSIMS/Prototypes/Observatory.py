@@ -80,6 +80,7 @@ class Observatory(object):
         self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
         self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
+        self.forceStaticEphem = forceStaticEphem    # boolean used to force static ephem
         
         # set values derived from quantities above
         # slew flow rate (kg/day)

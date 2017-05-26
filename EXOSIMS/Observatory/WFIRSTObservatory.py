@@ -85,8 +85,7 @@ class WFIRSTObservatory(Observatory):
         r_sc = self.orbit(currentTime)
         # Position vectors wrt sun, for targets and bright bodies
         r_targ = self.starprop(TL, sInds, currentTime)
-        r_body = np.array([ \
-            self.solarSystem_body_position(currentTime, 'Sun').to('km').value, #zeros
+        r_body = np.array([np.zeros(r_sc.shape), # sun
             self.solarSystem_body_position(currentTime, 'Moon').to('km').value,
             self.solarSystem_body_position(currentTime, 'Earth').to('km').value,
             self.solarSystem_body_position(currentTime, 'Mercury').to('km').value,

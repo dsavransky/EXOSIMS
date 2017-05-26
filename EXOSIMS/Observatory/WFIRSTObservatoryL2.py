@@ -50,13 +50,13 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         else:
             halo = pickle.load(open(orbit_datapath, 'rb'))
         
-        # unpack orbit properties
+        # unpack orbit properties wrt Sun in ecliptic frame 
         self.period_halo = halo['te'][0,0]/(2*np.pi)*u.year
         self.t_halo = halo['t'][:,0]/(2*np.pi)*u.year
-        self.r_halo = halo['state'][:,0:3]*u.AU #this is in rotating frame wrt the sun
-        self.v_halo = halo['state'][:,3:6]*u.AU/u.year*(2*np.pi) #velocity in rotating frame
-        self.L2_dist = halo['x_lpoint'][0,0]*u.AU
-        self.r_halo[:,0] -= self.L2_dist #now with respect to L2, still in rotating frame
+        self.r_halo = halo['state'][:,0:3]*u.AU
+        self.v_halo = halo['state'][:,3:6]*u.AU/u.year*(2*np.pi)
+        # position wrt Earth
+        self.r_halo[:,0] -= 1*u.AU
         
         # create interpolant for position (years & AU units)
         self.r_halo_interp = interpolate.interp1d(self.t_halo.value, \
@@ -87,25 +87,21 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         t_halo = np.mod(dt, self.period_halo).to('yr')
         r_halo = self.r_halo_interp(t_halo.value).T*u.AU
         
-        # weighting L2 position with Earth-Sun distance
+        # adding Earth-Sun distance
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth')
-        c = SkyCoord(r_Earth[:,0], r_Earth[:,1], r_Earth[:,2], \
-                representation='cartesian').represent_as('spherical')
-        coord_Earth = SkyCoord(c.lon, c.lat, c.distance, frame='heliocentrictrueecliptic')
-        dist_Earth = coord_Earth.distance.to('AU').value
-        r_halo[:,0] += self.L2_dist * dist_Earth
+        r_Earth_norm = np.linalg.norm(r_Earth, axis=1)*r_Earth.unit
+        r_halo[:,0] += r_Earth_norm
         
-        # rotate to current ecliptic coord
-        th = 2*np.pi*np.mod(dt, 1.*u.yr).value
-        x = np.cos(th)*r_halo[:,0] - np.sin(th)*r_halo[:,1]
-        y = np.sin(th)*r_halo[:,0] + np.cos(th)*r_halo[:,1]
-        r_halo[:,0] = x
-        r_halo[:,1] = y
+        # rotate into current ecliptic coord
+        th = np.sign(r_Earth[:,1])*np.arccos(r_Earth[:,0]/r_Earth_norm).to('rad').value
+        r_sc = np.array([np.dot(self.rot(-th[x],3), r_halo[x,:]) \
+                for x in range(currentTime.size)])*r_halo.unit
         
-        # finally, rotate into equatorial plane
+        # find obliquity of the ecliptic
         TDB = self.cent(currentTime)
         obe = np.array(np.radians(self.obe(TDB)),ndmin=1)
-        r_sc = np.array([np.dot(self.rot(-obe[x],1),r_halo[x,:].to('km')) \
+        # position vector (km) in heliocentric equatorial frame
+        r_sc = np.array([np.dot(self.rot(-obe[x],1), r_sc[x,:].to('km')) \
                 for x in range(currentTime.size)])*u.km
         
         assert np.all(np.isfinite(r_sc)), \

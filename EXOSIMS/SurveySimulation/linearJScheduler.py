@@ -32,7 +32,7 @@ class linearJScheduler(SurveySimulation):
         
         self.coeffs = coeffs
 
-    def choose_next_target(self, old_sInd, sInds, slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -43,6 +43,8 @@ class linearJScheduler(SurveySimulation):
                 Indices of available targets
             slewTime (float array):
                 slew times to all stars (must be indexed by sInds)
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
                 
         Returns:
             sInd (integer):

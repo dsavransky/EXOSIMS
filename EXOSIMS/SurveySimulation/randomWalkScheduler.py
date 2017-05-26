@@ -12,7 +12,7 @@ class randomWalkScheduler(SurveySimulation):
     for a fixed population of planets in order to validate other schedulers.
     """
 
-    def choose_next_target(self, old_sInd, sInds, slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
         """Choose next target at random
         
         Args:
@@ -22,6 +22,8 @@ class randomWalkScheduler(SurveySimulation):
                 Indices of available targets
             slewTime (float array):
                 slew times to all stars (must be indexed by sInds)
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
                 
         Returns:
             sInd (integer):
@@ -29,6 +31,10 @@ class randomWalkScheduler(SurveySimulation):
         
         """
         
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+        
+        # pick one
         sInd = np.random.choice(sInds)
         
         return sInd

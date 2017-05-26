@@ -415,8 +415,8 @@ class SurveySimulation(object):
             # 2/ Lucky target selection: choose a target and check if it is observable
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTime)
-                # calculate t_det
+                sInd = self.choose_next_target(old_sInd, sInds, slewTime, TL.tint0[sInds])
+                # calculate t_det for selected target
                 fZ = ZL.fZ(TL, sInd, mode['lam'], Obs.orbit(startTime[sInd]))
                 fEZ = ZL.fEZ0
                 dMag = OS.dMagint
@@ -436,7 +436,7 @@ class SurveySimulation(object):
                         self.starVisits[sInd] += 1
                         break
             
-            # 3/ Calculate integration times for all preselected targets, 
+            # 3/ Calculate integration times for ALL preselected targets, 
             # and filter out t_tots > integration cutoff
             if np.any(sInds):
                 fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
@@ -467,7 +467,7 @@ class SurveySimulation(object):
             # 6/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTime)
+                sInd = self.choose_next_target(old_sInd, sInds, slewTime, t_dets[sInds])
                 # update visited list for current star
                 self.starVisits[sInd] += 1
                 # store selected start integration time
@@ -501,7 +501,7 @@ class SurveySimulation(object):
         
         return DRM, sInd, t_det
 
-    def choose_next_target(self, old_sInd, sInds, slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
         """Helper method for method next_target to simplify alternative implementations.
         
         Args:
@@ -511,6 +511,8 @@ class SurveySimulation(object):
                 Indices of available targets
             slewTime (quantity array):
                 slew times to all stars (must be indexed by sInds)
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
                 
         Returns:
             sInd (integer):

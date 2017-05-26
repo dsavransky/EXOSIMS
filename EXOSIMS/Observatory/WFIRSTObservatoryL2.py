@@ -101,6 +101,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         y = np.sin(th)*r_halo[:,0] + np.cos(th)*r_halo[:,1]
         r_halo[:,0] = x
         r_halo[:,1] = y
+        
         # finally, rotate into equatorial plane
         TDB = self.cent(currentTime)
         obe = np.array(np.radians(self.obe(TDB)),ndmin=1)

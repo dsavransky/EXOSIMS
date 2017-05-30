@@ -99,7 +99,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         
         # find obliquity of the ecliptic
         TDB = self.cent(currentTime)
-        obe = np.array(np.radians(self.obe(TDB)),ndmin=1)
+        obe = np.array(np.radians(self.obe(TDB)), ndmin=1)
         # position vector (km) in heliocentric equatorial frame
         r_sc = np.array([np.dot(self.rot(-obe[x],1), r_sc[x,:].to('km')) \
                 for x in range(currentTime.size)])*u.km

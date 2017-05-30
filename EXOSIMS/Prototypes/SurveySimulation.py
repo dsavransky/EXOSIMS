@@ -335,8 +335,8 @@ class SurveySimulation(object):
         else:
             dtsim = (time.time()-t0)*u.s
             mission_end = "Mission complete: no more time available.\n"\
-                    + "Simulation finishing in %s.\n" %dtsim.astype('int')\
-                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)." \
+                    + "Simulation duration: %s.\n" %dtsim.astype('int')\
+                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
                     
             Logger.info(mission_end)
             print mission_end

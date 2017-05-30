@@ -333,9 +333,7 @@ class Observatory(object):
         v = mu0/TL.parx[sInds]*u.AU + r0*TL.rv[sInds]
         # stellar position vector
         dr = (v*(currentTime.mjd - j2000.mjd)*u.day).decompose()
-        r = (coord.cartesian.xyz + dr).T.to('km')
-        r_star = SkyCoord(r[:,0], r[:,1], r[:,2], \
-                representation='cartesian').heliocentrictrueecliptic.cartesian.xyz.T
+        r_star = (coord.cartesian.xyz + dr).T.to('km')
         
         return r_star
 

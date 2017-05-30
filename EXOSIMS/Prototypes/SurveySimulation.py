@@ -4,6 +4,7 @@ import sys, logging
 import astropy.units as u
 import astropy.constants as const
 from EXOSIMS.util.get_module import get_module
+import time
 
 # the EXOSIMS logger
 Logger = logging.getLogger(__name__)
@@ -243,6 +244,7 @@ class SurveySimulation(object):
         # Begin Survey, and loop until mission is finished
         Logger.info('OB%s: survey beginning.'%(TK.OBnumber+1))
         print 'OB%s: survey beginning.'%(TK.OBnumber+1)
+        t0 = time.time()
         sInd = None
         cnt = 0
         while not TK.mission_is_over():
@@ -330,11 +332,16 @@ class SurveySimulation(object):
                     print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
                     break
         
-        mission_end = "Simulation finishing OK. Results stored in SurveySimulation.DRM"
-        Logger.info(mission_end)
-        print mission_end
+        else:
+            dtsim = (time.time()-t0)*u.s
+            mission_end = "Mission complete: no more time available.\n"\
+                    + "Simulation finishing in %s.\n" %dtsim.astype('int')\
+                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)." \
+                    
+            Logger.info(mission_end)
+            print mission_end
         
-        return mission_end
+            return mission_end
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -479,8 +486,6 @@ class SurveySimulation(object):
                 TK.wait()
             
         else:
-            Logger.info('Mission complete: no more time available')
-            print 'Mission complete: no more time available'
             return DRM, None, None
         
         if OS.haveOcculter == True:
@@ -495,8 +500,6 @@ class SurveySimulation(object):
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTime[sInd])
             if TK.mission_is_over():
-                Logger.info('Mission complete: no more time available')
-                print 'Mission complete: no more time available'
                 return DRM, None, None
         
         return DRM, sInd, t_det

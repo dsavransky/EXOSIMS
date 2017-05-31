@@ -9,7 +9,6 @@ from astropy.io.votable import parse
 from astropy.time import Time
 from EXOSIMS.util import statsFun 
 
-
 class KnownRVPlanets(KeplerLike1):
     """
     Population consisting only of known RV planets.  Eccentricity and sma 
@@ -54,9 +53,7 @@ class KnownRVPlanets(KeplerLike1):
 
     def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None, **specs):
         
-        specs['smaknee'] = float(smaknee)
-        specs['esigma'] = float(esigma)
-        KeplerLike1.__init__(self, **specs)
+        KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
         #default file is ipac_2016-05-15
         if rvplanetfilepath is None:
@@ -92,14 +89,14 @@ class KnownRVPlanets(KeplerLike1):
         #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
         mask = data['pl_orbsmax'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
         T = data['pl_orbper'].data[mask]*u.d
         self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
         assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
         #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
         mask = data['pl_orbsmaxerr1'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
         T = data['pl_orbpererr1'].data[mask]*u.d
         self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
@@ -119,16 +116,16 @@ class KnownRVPlanets(KeplerLike1):
         self.radiusmask = data['pl_radj'].mask
         self.radiuserr1 = data['pl_radjerr1'].data*const.R_jup
         self.radiuserr2 = data['pl_radjerr2'].data*const.R_jup
-
+        
         #save the periastron time and period 
-        tmp = data['pl_orbper'].data*u.d
-        tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
-                /(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun)).decompose().to(u.d)
-        self.period = tmp
+        self.period = data['pl_orbper'].data*u.d
+        mask = data['pl_orbper'].mask
+        Ms = data['st_mass'].data[mask]*u.solMass # units of solar mass
+        self.period[mask] = np.sqrt(4*np.pi**2*self.sma[mask]**3/(const.G*Ms)).to('day')
         self.perioderr = data['pl_orbpererr1'].data*u.d
         mask = data['pl_orbpererr1'].mask
         self.perioderr[mask] = np.nanmean(self.perioderr)
-
+        
         #if perisastron time missing, fill in random value
         tmp = data['pl_orbtper'].data
         tmp[data['pl_orbtper'].mask] = np.random.uniform(low=np.nanmin(tmp),high=np.nanmax(tmp),\
@@ -142,9 +139,6 @@ class KnownRVPlanets(KeplerLike1):
         
         #save the original data structure
         self.allplanetdata = data
-        
-        #define the mass distribution function (in Jupiter masses)
-        self.massdist = lambda x: x**(-1.3)
 
     def gen_radius(self,n):
         """Generate planetary radius values in km
@@ -157,12 +151,12 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius values in units of km
         
         """
         n = self.gen_input_check(n)
-        Mtmp = self.gen_mass(n)
-        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)
+        Mp = self.gen_mass(n)
+        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mp).to('km')
         
         return Rp
 
@@ -178,12 +172,12 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass values in units of kg
         
         """
         n = self.gen_input_check(n)
-        Mmin = (self.Mprange[0]/const.M_jup).decompose().value
-        Mmax = (self.Mprange[1]/const.M_jup).decompose().value
-        Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
+        Mmin = float(self.Mprange[0]/const.M_jup)
+        Mmax = float(self.Mprange[1]/const.M_jup)
+        Mp = statsFun.simpSample(self.Mpdist, n, Mmin, Mmax)*const.M_jup.to('kg')
         
         return Mp

@@ -74,9 +74,6 @@ class SimulatedUniverse(object):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of mas
-        planTime (astropy Quantity array):
-            Contains the last time the planet was observed in units of day, 
-            for planet position propagation
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -160,21 +157,16 @@ class SimulatedUniverse(object):
         self.p = PPop.gen_albedo(self.nPlans)               # albedo
 
     def init_systems(self):
-        """Finds initial time-dependant parameters. Assigns each planet an 
-        initial position, velocity, planet-star distance, apparent separation, 
-        phase function, surface brightness of exo-zodiacal light, delta magnitude, 
-        working angle, and initializes the planet current times to zero. 
-        This method makes us of the systems' physical properties (masses, distances)
-         and their orbital elements (a, e, I, O, w, M0).
+        """Finds initial time-dependant parameters. Assigns each planet an initial 
+        position, velocity, planet-star distance, apparent separation, phase function, 
+        surface brightness of exo-zodiacal light, delta magnitude, and working angle. 
+        This method makes us of the systems' physical properties (masses, distances) 
+        and their orbital elements (a, e, I, O, w, M0).
         """
         
         PPMod = self.PlanetPhysicalModel
         ZL = self.ZodiacalLight
         TL = self.TargetList
-        
-        sInds = self.plan2star                  # indices of target stars
-        sDist = TL.dist[sInds]                  # distances to target stars
-        Ms = TL.MsTrue[sInds]*const.M_sun       # masses of target stars
         
         a = self.a.to('AU').value               # semi-major axis
         e = self.e                              # eccentricity
@@ -193,10 +185,10 @@ class SimulatedUniverse(object):
         b2 = np.sqrt(1.-e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
         b3 = np.sqrt(1.-e**2)*np.sin(I)*np.cos(w)
         B = a*np.vstack((b1,b2,b3))*u.AU
-        
         r1 = np.cos(E) - e
         r2 = np.sin(E)
-        mu = const.G*(Mp + Ms)
+        
+        mu = const.G*(Mp + TL.MsTrue[self.plan2star])
         v1 = np.sqrt(mu/self.a**3)/(1. - e*np.cos(E))
         v2 = np.cos(E)
         
@@ -205,13 +197,11 @@ class SimulatedUniverse(object):
         self.d = np.linalg.norm(self.r,axis=1)*self.r.unit          # planet-star distance
         self.s = np.linalg.norm(self.r[:,0:2],axis=1)*self.r.unit   # apparent separation
         self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))         # planet phase
-        self.fEZ = ZL.fEZ(TL, sInds, self.I, self.d)                # exozodi brightness
+        self.fEZ = ZL.fEZ(TL, self.plan2star, self.I, self.d)       # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
-        self.WA = np.arctan(self.s/sDist).to('mas')                 # working angle
-        # current time (normalized to zero at mission start) of planet positions
-        self.planTime = np.zeros(self.nPlans)*u.day
+        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('mas')# working angle
 
-    def propag_system(self, sInd, currentTimeNorm):
+    def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
         planet-star distance, apparent separation, phase function, surface brightness 
         of exo-zodiacal light, delta magnitude, working angle, and the planet 
@@ -224,8 +214,8 @@ class SimulatedUniverse(object):
         Args:
             sInd (integer):
                 Index of the target system of interest
-            currentTimeNorm (astropy Quantity):
-                Current mission time normalized to zero at mission start in units of day
+            dt (astropy Quantity):
+                Time increment in units of day, for planet position propagation
         
         """
         
@@ -240,24 +230,19 @@ class SimulatedUniverse(object):
         if not np.any(pInds):
             return
         # check for positive time increment
-        dt = currentTimeNorm - self.planTime[pInds][0]
         assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
         if dt == 0:
             return
         
-        # Initial positions in AU and velocities in AU/day
+        # Calculate initial positions in AU and velocities in AU/day
         rold = self.r[pInds].to('AU').value
         vold = self.v[pInds].to('AU/day').value
         # stack dimensionless positions and velocities
-        x0 = np.array([])
-        for i in xrange(len(rold)):
-            x0 = np.hstack((x0, rold[i], vold[i]))
+        x0 = np.reshape(np.concatenate((rold,vold), axis=1), len(rold)*6)
         
-        # calculate system's distance and masses
-        sDist = TL.dist[[sInd]]
-        Ms = TL.MsTrue[[sInd]]*const.M_sun
+        # Calculate vector of gravitational parameter in AU3/day2
+        Ms = TL.MsTrue[[sInd]]
         Mp = self.Mp[pInds]
-        # calculate vector of gravitational parameter
         mu = (const.G*(Mp + Ms)).to('AU3/day2').value
         
         # use keplerSTM.py to propagate the system
@@ -278,9 +263,8 @@ class SimulatedUniverse(object):
         rind = np.array(range(0,len(x1),2)) # even indices
         vind = np.array(range(1,len(x1),2)) # odd indices
         
-        # update planets' position, velocity, planet-star distance, apparent 
-        # separation, phase function, exozodi surface brightness, delta magnitude, 
-        # working angle, and current time
+        # update planets' position, velocity, planet-star distance, apparent, separation,
+        # phase function, exozodi surface brightness, delta magnitude and working angle
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.linalg.norm(self.r[pInds],axis=1)*self.r.unit
@@ -288,6 +272,4 @@ class SimulatedUniverse(object):
         self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/sDist).to('mas')
-        self.planTime[pInds] = currentTimeNorm
-
+        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')

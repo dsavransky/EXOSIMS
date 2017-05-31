@@ -66,7 +66,7 @@ class KasdinBraems(OpticalSystem):
         PPro = TL.PostProcessing                    # post-processing module
         K = st.norm.ppf(1-PPro.FAP)                 # false alarm threshold
         gamma = st.norm.ppf(1-PPro.MDP)             # missed detection threshold
-        deltaAlphaBar = ((inst['pitch']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
+        deltaAlphaBar = ((inst['pixelSize']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
                 .decompose()                        # dimensionless pixel size
         Tcore = syst['core_thruput'](lam, WA)
         Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput

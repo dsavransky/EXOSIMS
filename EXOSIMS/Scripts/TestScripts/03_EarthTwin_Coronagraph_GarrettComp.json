@@ -1,6 +1,5 @@
 {
-  "missionLife": 0.5,
-  "missionPortion": 0.1,
+  "missionLife": 0.01,
   "minComp": 0.025,
   "ppFact": 0.1,
   "scienceInstruments": [
@@ -22,8 +21,8 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KnownRVPlanets",
-    "StarCatalog": " ",
+    "PlanetPopulation": "EarthTwinHabZone2",
+    "StarCatalog": "EXOCAT1",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
@@ -31,9 +30,9 @@
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": " ",
-    "TargetList": "KnownRVPlanetsTargetList",
-    "SimulatedUniverse": "KnownRVPlanetsUniverse",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "",
     "SurveySimulation": " ",
     "SurveyEnsemble": " "
   }

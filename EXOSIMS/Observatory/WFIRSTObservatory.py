@@ -39,13 +39,14 @@ class WFIRSTObservatory(Observatory):
         # position vector wrt Earth in equatorial frame
         r_scearth = np.dot(np.dot(self.rot(-O,3), self.rot(-i,1)),r_scearth).T
         # position vector in heliocentric equatorial frame
-        r_sc = r_earth + r_scearth
+        r_sc = (r_earth + r_scearth).to('km')
         
-        assert np.all(np.isfinite(r_sc)), 'Observatory position vector r_sc has infinite value.'
+        assert np.all(np.isfinite(r_sc)), \
+                "Observatory position vector r_sc has infinite value."
         
-        return r_sc.to('km')
+        return r_sc
 
-    def keepout(self, TL, sInds, currentTime, koangle, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -58,8 +59,8 @@ class WFIRSTObservatory(Observatory):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            koangle (astropy Quantity):
-                Telescope keepout angle in units of degree
+            mode (dict):
+                Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
                 
@@ -77,8 +78,8 @@ class WFIRSTObservatory(Observatory):
         nStars = sInds.size
         nTimes = currentTime.size
         nBodies = 11
-        assert nStars==1 or nTimes==1 or nTimes==nStars, 'If multiple times and targets, \
-                currentTime and sInds sizes must match'
+        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match"
         
         # Observatory position
         r_sc = self.orbit(currentTime)
@@ -102,9 +103,9 @@ class WFIRSTObservatory(Observatory):
         u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
         u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
-        # Create koangles for all bodies, set by telescope keepout angle for brighter 
-        # objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
-        koangles = np.ones(nBodies)*koangle
+        # Create koangles for all bodies, set by telescope minimum keepout angle for 
+        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies.
+        koangles = np.ones(nBodies)*self.koAngleMin
         koangles[3:] = 1.*u.deg
         
         # Find angles and make angle comparisons to build kogood array.
@@ -119,12 +120,15 @@ class WFIRSTObservatory(Observatory):
             u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
             angles = np.arccos(np.clip(np.dot(u_b,u_t),-1,1))*u.rad
             culprit[i,:] = (angles < koangles)
+            # if this mode has an occulter, check maximum keepout angle for the Sun
+            if mode['syst']['occulter']:
+                culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
             if np.any(culprit[i,:]):
                 kogood[i] = False
         
         # check to make sure all elements in kogood are Boolean
         trues = [isinstance(element, np.bool_) for element in kogood]
-        assert all(trues), 'An element of kogood is not Boolean'
+        assert all(trues), "An element of kogood is not Boolean"
         
         if returnExtra:
             return kogood, r_body, r_targ, culprit

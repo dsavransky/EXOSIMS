@@ -99,45 +99,28 @@ class MissionSim(object):
         seed = self.random_seed_initialize(specs)
         self._outspec['seed'] = seed
         
-        #create the ensemble object first, before any specs are updated
-        SurveyEns = get_module(specs['modules']['SurveyEnsemble'],'SurveyEnsemble')
-        sens = SurveyEns(**specs)
+        #initialize top level, import modules
+        self.SurveyEnsemble = get_module(specs['modules']\
+                ['SurveyEnsemble'],'SurveyEnsemble')(**specs)
+        self.SurveySimulation = get_module(specs['modules']\
+                ['SurveySimulation'],'SurveySimulation')(**specs)
+        
+        # collect sub-initializations
+        SS = self.SurveySimulation
+        self.PlanetPopulation = SS.PlanetPopulation
+        self.PlanetPhysicalModel = SS.PlanetPhysicalModel
+        self.OpticalSystem = SS.OpticalSystem
+        self.ZodiacalLight = SS.ZodiacalLight
+        self.BackgroundSources = SS.BackgroundSources
+        self.PostProcessing = SS.PostProcessing
+        self.Completeness = SS.Completeness
+        self.TargetList = SS.TargetList
+        self.SimulatedUniverse = SS.SimulatedUniverse
+        self.Observatory = SS.Observatory
+        self.TimeKeeping = SS.TimeKeeping
         
         #preserve star catalog name
         self.StarCatalog = specs['modules']['StarCatalog']
-        
-        #initialize top level, import modules
-        self.modules = {}
-        self.modules['SimulatedUniverse'] = get_module(specs['modules']\
-                ['SimulatedUniverse'],'SimulatedUniverse')(**specs)
-        self.modules['Observatory'] = get_module(specs['modules']\
-                ['Observatory'],'Observatory')(**specs)
-        self.modules['TimeKeeping'] = get_module(specs['modules']\
-                ['TimeKeeping'],'TimeKeeping')(**specs)
-        
-        # collect sub-initializations
-        SU = self.modules['SimulatedUniverse']
-        self.modules['PlanetPopulation'] = SU.PlanetPopulation
-        self.modules['PlanetPhysicalModel'] = SU.PlanetPhysicalModel
-        self.modules['OpticalSystem'] = SU.OpticalSystem
-        self.modules['ZodiacalLight'] = SU.ZodiacalLight
-        self.modules['BackgroundSources'] = SU.BackgroundSources
-        self.modules['PostProcessing'] = SU.PostProcessing
-        self.modules['Completeness'] = SU.Completeness
-        self.modules['TargetList'] = SU.TargetList
-        
-        # replace modules dict with instantiated objects 
-        SurveySim = get_module(specs['modules']['SurveySimulation'], 'SurveySimulation')
-        inputMods = specs.pop('modules')
-        specs['modules'] = self.modules
-        
-        # generate sim object
-        self.modules['SurveySimulation'] = SurveySim(**specs)
-        self.modules['SurveyEnsemble'] = sens
-        
-        # make all objects accessible from the top level
-        for modName in specs['modules'].keys():
-            setattr(self, modName, specs['modules'][modName])
 
     def start_logging(self, specs):
         r"""Set up logging object so other modules can use logging.info(), logging.warning, etc.
@@ -281,36 +264,12 @@ class MissionSim(object):
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
-        """
-        Performs a full reset of the current simulation by:
-        1) Resetting SurveySimulation.DRM to []
-        2) Re-initializing the TimeKeeping object with its own outspec
+        """Convenience method that simply calls the SurveySimulation reset_sim method."""
         
-        If genNewPlanets is True (default) then it will also generate all new planets based on
-        the original input specification.  If genNewPlanets is False, then the original planets 
-        will remain, but they will not be rewound to their initial starting locations (i.e., all 
-        systems will remain at the times they were at the end of the last run, thereby effectively 
-        randomizing planet phases.
+        res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets, \
+                rewindPlanets=rewindPlanets)
         
-        If rewindPlanets is True (default), then the current set of planets will be reset to their original
-        orbital phases.  This has no effect if genNewPlanets is True, but if genNewPlanets is False, 
-        will have the effect of resetting the full simulation to its exact original state.
-        
-        """
-        
-        self.SurveySimulation.DRM = []
-        self.TimeKeeping.__init__(**self.TimeKeeping._outspec)
-        
-        if genNewPlanets:
-            self.SimulatedUniverse.gen_physical_properties(**self.SimulatedUniverse._outspec)
-            rewindPlanets = True
-        
-        if rewindPlanets:
-            self.SimulatedUniverse.init_systems()
-        
-        print "Simulation reset."
-        
-        return
+        return res
 
     def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
         """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""

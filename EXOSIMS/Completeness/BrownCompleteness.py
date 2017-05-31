@@ -31,9 +31,6 @@ class BrownCompleteness(Completeness):
             Path on disk to Brown Completeness
         filename (string):
             Name of file where completeness interpolant is stored
-        visits (integer ndarray):
-            Number of observations corresponding to each star in the target list
-            (initialized in gen_update)
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
@@ -90,12 +87,10 @@ class BrownCompleteness(Completeness):
         xedges = xedges.to('AU').value
         
         # yedges is array of delta magnitude values for interpolant
-        ymin = np.round((-2.5*np.log10(self.PlanetPopulation.prange[1]*\
-                (self.PlanetPopulation.Rprange[1]/(self.PlanetPopulation.rrange[0]))\
-                .decompose().value**2)))
-        ymax = np.round((-2.5*np.log10(self.PlanetPopulation.prange[0]*\
-                (self.PlanetPopulation.Rprange[0]/(self.PlanetPopulation.rrange[1]))\
-                .decompose().value**2*1e-11)))
+        ymin = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
+                self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
+        ymax = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+                self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2*1e-11))
         yedges = np.linspace(ymin, ymax, bins)
         
         # number of planets for each Monte Carlo simulation
@@ -143,17 +138,16 @@ class BrownCompleteness(Completeness):
         """
         
         OS = TL.OpticalSystem
-        PPop = self.PlanetPopulation
-        # initialize number of visits
-        self.visits = np.array([0]*TL.nStars)
+        PPop = TL.PlanetPopulation
+        
         # get name for stored dynamic completeness updates array
         atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
         extstr = ''
         for att in atts:
-            extstr += '%s: ' % att + str(getattr(TL.PlanetPopulation, att)) + ' '
+            extstr += '%s: ' % att + str(getattr(PPop, att)) + ' '
         atts2 = ['IWA','OWA','dMagLim']
         for att in atts2:
-            extstr += '%s: ' % att + str(getattr(TL.OpticalSystem, att)) + ' '
+            extstr += '%s: ' % att + str(getattr(OS, att)) + ' '
         extstr += 'nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
@@ -194,10 +188,9 @@ class BrownCompleteness(Completeness):
                 smax = (np.tan(OS.OWA)*TL.dist).to('AU')
             else:
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
-                                 (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
+                        (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
             # fill dynamic completeness values
             for sInd in xrange(TL.nStars):
-                Mstar = TL.MsTrue[sInd]*const.M_sun
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
@@ -212,22 +205,22 @@ class BrownCompleteness(Completeness):
                         newM[pInds] = M[pInds]
                     else:
                         E = eccanom(newM[pInds],e[pInds])
-                
+                    
                     r1 = a[pInds]*(np.cos(E) - e[pInds])
                     r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
                     r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
                     r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-                
+                    
                     a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a3 = np.sin(w[pInds])*np.sin(I[pInds])
                     A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-                
+                    
                     b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b3 = np.cos(w[pInds])*np.sin(I[pInds])
                     B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-                
+                    
                     # planet position, planet-star distance, apparent separation
                     r = (A*r1 + B*r2)*u.AU # position vector
                     d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
@@ -235,23 +228,23 @@ class BrownCompleteness(Completeness):
                     beta = np.arccos(r[:,2]/d) # phase angle
                     Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                     dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
-                
+                    
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                     toremovedmag = np.where(dMag < OS.dMagLim)[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
-                
+                    
                     pInds = np.delete(pInds, toremove)
-                
+                    
                     if num == 0:
                         self.updates[sInd, num] = TL.comp0[sInd]
                     else:
                         self.updates[sInd, num] = float(len(toremove))/nplan
-                
+                    
                     # update M
-                    mu = const.G*(Mstar+Mp[pInds])
+                    mu = const.G*(Mp[pInds] + TL.MsTrue[sInd])
                     n = np.sqrt(mu/a[pInds]**3)
                     newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
-                            
+                    
                 if (sInd+1) % 50 == 0:
                     print 'stars: %r / %r' % (sInd+1,TL.nStars)
             # store dynamic completeness array as .dcomp file
@@ -259,7 +252,7 @@ class BrownCompleteness(Completeness):
             print 'Dynamic completeness calculations finished'
             print 'Dynamic completeness array stored in %r' % path
 
-    def completeness_update(self, TL, sInds, dt):
+    def completeness_update(self, TL, sInds, visits, dt):
         """Updates completeness value for stars previously observed by selecting
         the appropriate value from the updates array
         
@@ -268,23 +261,22 @@ class BrownCompleteness(Completeness):
                 TargetList class object
             sInds (integer array):
                 Indices of stars to update
+            visits (integer array):
+                Number of visits for each star
             dt (astropy Quantity):
                 Time since initial completeness
         
         Returns:
-            comp0 (float ndarray):
+            dcomp (float ndarray):
                 Completeness values for each star
         
         """
-        
-        # number of visits for each star
-        cols = self.visits[sInds]
         # if visited more than five times, return 5th stored dynamic 
         # completeness value
-        cols[cols>4] = 4
-        # return value from the updates array
+        visits[visits > 4] = 4
+        dcomp = self.updates[sInds, visits]
         
-        return self.updates[sInds, cols]
+        return dcomp
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness
@@ -336,7 +328,7 @@ class BrownCompleteness(Completeness):
                 else:
                     H += h
             
-            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))            
+            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
             pickle.dump(H, open(Cpath, 'wb'))

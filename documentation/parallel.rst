@@ -12,7 +12,7 @@ The basic method for parallelization relies heavily on the `ipyparallel package 
 .. code-block:: python
 
     import EXOSIMS, EXOSIMS.MissionSim, os.path
-    scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','parallel_ensemble_script.json')
+    scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','sampleScript_parallel_ensemble.json')
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
 
 The ``sim`` object will have a ``SurveyEnsemble`` attribute with a ``run_ensemble`` method.  This method takes an argument of the ``run_one`` function, which must be defined in the ipython session:

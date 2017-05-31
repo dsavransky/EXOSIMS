@@ -28,7 +28,7 @@ class TargetList(object):
             StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
-        PlanetPhysicalModel ( module):
+        PlanetPhysicalModel (PlanetPhysicalModel module):
             PlanetPhysicalModel class object
         OpticalSystem (OpticalSystem module):
             OpticalSystem class object
@@ -47,9 +47,9 @@ class TargetList(object):
         minComp (float): 
             Minimum completeness value for inclusion in target list
         MsEst (float ndarray):
-            'approximate' stellar mass in M_sun
+            'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
-            'true' stellar mass in M_sun
+            'true' stellar mass in units of solar mass
         nStars (int):
             Number of target stars
     
@@ -64,11 +64,9 @@ class TargetList(object):
         
         """
         
-        #validate inputs
-        assert isinstance(keepStarCatalog,bool),\
-                "keepStarCatalog must be a boolean."
-        assert isinstance(minComp,numbers.Number),\
-                "minComp must be a number."
+        # validate inputs
+        assert isinstance(keepStarCatalog,bool), "keepStarCatalog must be a boolean."
+        assert isinstance(minComp,numbers.Number), "minComp must be a number."
         self.minComp = float(minComp)
         
         # get desired module names (specific or prototype) and instantiate objects
@@ -79,11 +77,9 @@ class TargetList(object):
         self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
-        Comp = self.Completeness
-        PPro = self.PostProcessing
-        self.PlanetPopulation = Comp.PlanetPopulation
-        self.PlanetPhysicalModel = Comp.PlanetPhysicalModel
-        self.BackgroundSources = PPro.BackgroundSources
+        self.PlanetPopulation = self.Completeness.PlanetPopulation
+        self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
+        self.BackgroundSources = self.PostProcessing.BackgroundSources
         
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -93,7 +89,7 @@ class TargetList(object):
         # now populate and filter the list
         self.populate_target_list(**specs)
         # generate any completeness update data needed
-        Comp.gen_update(self)
+        self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
         
         # have target list, no need for catalog now
@@ -356,12 +352,12 @@ class TargetList(object):
         """Populates target list with 'true' and 'approximate' stellar masses
         
         This method calculates stellar mass via the formula relating absolute V
-        magnitude and stellar mass.  The values are in terms of M_sun.
+        magnitude and stellar mass.  The values are in units of solar mass.
         
         """
         
         # 'approximate' stellar mass
-        self.MsEst = (10.**(0.002456*self.MV**2 - 0.09711*self.MV + 0.4365))
+        self.MsEst = (10.**(0.002456*self.MV**2 - 0.09711*self.MV + 0.4365))*u.solMass
         # normally distributed 'error'
         err = (np.random.random(len(self.MV))*2. - 1.)*0.07
         self.MsTrue = (1. + err)*self.MsEst

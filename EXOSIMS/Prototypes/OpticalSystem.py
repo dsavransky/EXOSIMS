@@ -29,8 +29,6 @@ class OpticalSystem(object):
             Entrance pupil diameter in units of m
         pupilArea (astropy Quantity):
             Entrance pupil area in units of m2
-        telescopeKeepout (astropy Quantity):
-            Telescope keepout angle in units of deg
         attenuation (float):
             Non-coronagraph attenuation, equal to the throughput of the optical 
             system without the coronagraph elements
@@ -47,9 +45,11 @@ class OpticalSystem(object):
         OWA (astropy Quantity):
             Fundamental Outer Working Angle in units of arcsec
         dMagLim (float):
-            Limiting delta magnitude for integration time calculation
-        WALim (astropy Quantity):
-            Limiting working angle for integration time calculation in units of arcsec
+            Limiting planet-to-star delta magnitude value
+        WAint (astropy Quantity):
+            Working angle used for integration time calculation in units of arcsec
+        dMagint (astropy Quantity):
+            Delta magnitude used for integration time calculation
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -61,30 +61,38 @@ class OpticalSystem(object):
         name (string):
             Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
             instrument (imager or spectro). Every instrument should have a unique name.
-        pitch (astropy Quantity):
+        QE (float, callable):
+            Detector quantum efficiency: either a scalar for constant QE, or a 
+            two-column array for wavelength-dependent QE, where the first column 
+            contains the wavelengths in units of nm. May be data or FITS filename.
+        FoV (astropy Quantity):
+            Field of view in units of arcsec
+        pixelNumber (integer):
+            Detector array format, number of pixels per detector lines/columns 
+        pixelScale (astropy Quantity):
+            Detector pixel scale in units of arcsec per pixel
+        pixelSize (astropy Quantity):
             Pixel pitch in units of m
         focal (astropy Quantity):
             Focal length in units of m
+        fnumber (float):
+            Detector f-number
+        sread (float):
+            Detector effective read noise per frame per pixel
         idark (astropy Quantity):
             Detector dark-current per pixel in units of 1/s
         CIC (float):
             Clock-induced-charge per frame per pixel
-        sread (float):
-            Detector effective read noise per frame per pixel
         texp (astropy Quantity):
             Exposure time per frame in units of s
         ENF (float):
             Excess noise factor
         Rs (float):
             Spectral resolving power
-        QE (float, callable):
-            Detector quantum efficiency: either a scalar for constant QE, or a 
-            two-column array for wavelength-dependent QE, where the first column 
-            contains the wavelengths in units of nm. May be data or FITS filename.
         
     Common starlight suppression system attributes:
         name (string):
-            System name (e.g. HLC-465, HLC-565, SPC-660), should also contain the
+            System name (e.g. HLC-565, SPC-660), should also contain the
             central wavelength the system is optimized for. Every system must have 
             a unique name. 
         lam (astropy Quantity):
@@ -110,8 +118,9 @@ class OpticalSystem(object):
             then the total core intensity is equal to core_contrast * core_thruput.
         core_area (astropy Quantity, callable):
             Area of the FWHM region of the planet PSF, in units of arcsec^2
-        platescale (float):
-            Platescale used for this set of coronagraph parameters.
+        core_platescale (float):
+            Platescale used for a specific set of coronagraph parameters, in units 
+            of lambda/D per pixel
         PSF (float, callable):
             Point spread function - 2D ndarray of values, normalized to 1 at
             the core. Note: normalization means that all throughput effects 
@@ -166,22 +175,19 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,telescopeKeepout=45,\
-            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,pitch=1e-5,\
-            focal=100,idark=5e-4,CIC=5e-3,sread=0.2,texp=1000,ENF=1,Rs=70,QE=0.9,\
-            starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
-            core_thruput=1e-2,core_contrast=1e-9,platescale=None,PSF=np.ones((3,3)),\
+    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,\
+            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,QE=0.9,FoV=10,\
+            pixelNumber=1000,pixelSize=1e-5,sread=1e-6,idark=1e-4,CIC=1e-3,texp=100,\
+            ENF=1,Rs=50,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
+            core_thruput=1e-2,core_contrast=1e-9,core_platescale=None,PSF=np.ones((3,3)),\
             samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
-            OWA=None,dMagLim=22.5,WALim=None,**specs):
+            OWA=None,dMagLim=25,WAint=None,dMagint=None,**specs):
         
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
-        self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2\
-                                                # entrance pupil area
-        self.telescopeKeepout = float(telescopeKeepout)*u.deg\
-                                                # keepout angle in degrees
+        self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2 # entrance pupil area
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Ndark = float(Ndark)               # number of dark frames used
@@ -203,17 +209,6 @@ class OpticalSystem(object):
             inst['QE'] = inst.get('QE',QE)
             self._outspec['scienceInstruments'].append(inst.copy())
             
-            # Loading detector specifications
-            inst['pitch'] = float(inst.get('pitch',pitch))*u.m  # pixel pitch
-            inst['focal'] = float(inst.get('focal',focal))*u.m  # focal length
-            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
-            inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
-            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
-            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
-            inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
-            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
-                    .lower() else 1.                            # spectral resolving power
-            
             # quantum efficiency
             if inst.has_key('QE'):
                 if isinstance(inst['QE'],basestring):
@@ -224,6 +219,24 @@ class OpticalSystem(object):
                     #inst['QE'] = lambda or interp
                 elif isinstance(inst['QE'],numbers.Number):
                     inst['QE'] = lambda l, QE=float(inst['QE']): QE/u.photon
+            
+            # Loading detector specifications
+            inst['FoV'] = float(inst.get('FoV',FoV))*u.arcsec   # field of view
+            inst['pixelNumber'] = int(inst.get('pixelNumber',pixelNumber)) # array format
+            inst['pixelSize'] = float(inst.get('pixelSize',pixelSize))*u.m # pixel pitch
+            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
+            inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
+            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
+            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
+            inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
+            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
+                    .lower() else 1.                            # spectral resolving power
+            
+            # Calculate pixelScale (Nyquist sampled)
+            inst['pixelScale'] = 2*inst['FoV']/inst['pixelNumber']
+            # Calculate focal and f-number
+            inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
+            inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
             # populate detector specifications to outspec
             for att in inst.keys():
@@ -262,7 +275,7 @@ class OpticalSystem(object):
             
             # When provided, always use deltaLam instead of BW (bandwidth fraction)
             syst['lam'] = float(syst.get('lam',lam))*u.nm       # central wavelength (nm)
-            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].value\
+            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].to('nm').value\
                     *syst.get('BW',BW)))*u.nm                   # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
             # Default lam and BW updated with values from first instrument
@@ -275,7 +288,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
-            syst['platescale'] = syst.get('platescale',platescale)
+            syst['core_platescale'] = syst.get('core_platescale',core_platescale)
             
             # Get PSF
             if isinstance(syst['PSF'],basestring):
@@ -391,10 +404,11 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
-        # load the limiting working angle value
-        # if not specified, set it equal to detection mode IWA by default
+        # Load the integration working angle (WAint) and delta magnitude (dMagint) values
+        # Default to detection mode IWA and dMadLim
         detMode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
-        self.WALim = float(WALim)*u.arcsec if WALim is not None else detMode['IWA']
+        self.WAint = float(WAint)*u.arcsec if WAint else detMode['IWA']
+        self.dMagint = float(dMagint) if dMagint else dMagLim
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
@@ -421,7 +435,7 @@ class OpticalSystem(object):
         
         Args:
             syst (dict):
-                Dictionnary containing the parameters of one starlight suppression system
+                Dictionary containing the parameters of one starlight suppression system
             param_name (string):
                 Name of the parameter that must be loaded
             fill (float):
@@ -429,7 +443,7 @@ class OpticalSystem(object):
         
         Returns:
             syst (dict):
-                Updated dictionnary of parameters
+                Updated dictionary of parameters
         
         """
         
@@ -444,7 +458,7 @@ class OpticalSystem(object):
             assert np.all(D>=0) and np.all(D<=1), \
                     param_name+" must be positive and smaller than 1."
             # parameter values outside of WA
-            Dinterp = scipy.interpolate.interp1d(WA, D, kind='cubic',\
+            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float), kind='cubic',\
                     fill_value=fill, bounds_error=False)
             syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),ndmin=1)
             # update IWA and OWA
@@ -500,6 +514,7 @@ class OpticalSystem(object):
         
         # get mode wavelength
         lam = mode['lam']
+        lam_min = mode['lam'] - mode['deltaLam']/2.
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
@@ -508,16 +523,12 @@ class OpticalSystem(object):
         if lam != syst['lam']:
             WA = WA*lam/syst['lam']
         
-        # get star magnitude
-        sInds = np.array(sInds,ndmin=1)
-        mV = TL.starMag(sInds,lam)
-        
         # solid angle of photometric aperture, specified by core_area(optional), 
         # otherwise obtained from (lambda/D)^2
         Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
                 np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = (Omega / (inst['pitch']/inst['focal']*u.rad)**2).decompose().value
+        Npix = (Omega/inst['pixelScale']**2).decompose().value
         
         # get coronagraph input parameters
         occ_trans = syst['occ_trans'](lam,WA)
@@ -532,10 +543,14 @@ class OpticalSystem(object):
         else:
             core_mean_intensity = syst['core_mean_intensity'](lam,WA)
             # if a platesale was specified with the coro parameters, apply correction
-            if syst['platescale'] != None:
-                platescale = (inst['pitch']/inst['focal']/(lam/self.pupilDiam)).decompose().value
-                core_mean_intensity *= platescale/syst['platescale']
+            if syst['core_platescale'] != None:
+                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+                        /(lam/self.pupilDiam)).decompose().value
             core_intensity = core_mean_intensity * Npix
+        
+        # get star magnitude
+        sInds = np.array(sInds,ndmin=1)
+        mV = TL.starMag(sInds,lam)
         
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
@@ -553,7 +568,7 @@ class OpticalSystem(object):
         # clock-induced-charge
         C_cc = Npix*inst['CIC']/inst['texp']
         # readout noise
-        C_rn = Npix*inst['sread']**2/inst['texp']
+        C_rn = Npix*inst['sread']/inst['texp']
         # background
         C_b = inst['ENF']**2*(C_sr+C_z+C_ez+C_dc+C_cc)+C_rn 
         # spatial structure to the speckle including post-processing contrast factor
@@ -644,8 +659,8 @@ class OpticalSystem(object):
         return maxintTime
     
     def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
-        """Finds instrument achievable contrast for given integration time(s) and
-        working angle(s).
+        """Finds instrument achievable contrast for one integration time per
+        star in the input list at one or more working angles.
         
         The prototype returns the equivalent contrast of dMagLim as an m x n
         array where m corresponds to each star in sInds and n corresponds to 
@@ -666,8 +681,8 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
+            dMag (float):
+                Difference in brightness magnitude between planet and host star
                 
         Returns:
             C_inst (ndarray):
@@ -675,10 +690,12 @@ class OpticalSystem(object):
                 
         """
         
-        # reshape sInds
+        # reshape sInds, WA, t_int
         sInds = np.array(sInds,ndmin=1)
-        # reshape WA
         WA = np.array(WA.value,ndmin=1)*WA.unit
+        t_int = np.array(t_int.value,ndmin=1)*t_int.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        
         C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds),len(WA)))
         
         return C_inst

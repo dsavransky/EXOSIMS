@@ -26,9 +26,6 @@ class GarrettCompleteness(BrownCompleteness):
             user specified values
     
     Attributes:
-        visits (ndarray):
-            Number of observations corresponding to each star in the target list
-            (initialized in gen_update)
         updates (nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
@@ -57,10 +54,10 @@ class GarrettCompleteness(BrownCompleteness):
         # conversion factor
         self.x = self.PlanetPopulation.Rprange.unit.to(self.PlanetPopulation.arange.unit)
         # distributions needed
-        self.dist_sma = self.PlanetPopulation.dist_sma
-        self.dist_eccen = self.PlanetPopulation.dist_eccen
-        self.dist_albedo = self.PlanetPopulation.dist_albedo
-        self.dist_radius = self.PlanetPopulation.dist_radius
+        self.dist_sma = self.PlanetPopulation.adist
+        self.dist_eccen = self.PlanetPopulation.edist
+        self.dist_albedo = self.PlanetPopulation.pdist
+        self.dist_radius = self.PlanetPopulation.Rpdist
         # are any of a, e, p, Rp constant?
         self.aconst = self.amin == self.amax
         self.econst = self.emin == self.emax
@@ -487,7 +484,7 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             if (self.aconst & self.econst):
                 if self.emin == 0.0:
-                    f = self.PlanetPopulation.dist_sma(r)
+                    f = self.dist_sma(r)
                 else:
                     if r > self.amin*(1.0-self.emin):
                         f = (r/(np.pi*self.amin*np.sqrt((self.amin*self.emin)**2-(self.amin-r)**2)))

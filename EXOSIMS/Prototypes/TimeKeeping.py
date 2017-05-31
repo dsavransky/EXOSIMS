@@ -124,7 +124,9 @@ class TimeKeeping(object):
         of 1 day.
         
         """
-        self.allocate_time(1.*u.day)
+        dt = 1.*u.day
+        self.allocate_time(dt)
+        #print '  Waiting %s'%dt.round(2)
 
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.

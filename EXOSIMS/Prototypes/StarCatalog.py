@@ -45,7 +45,7 @@ class StarCatalog(object):
         parx (astropy Quantity array):
             Parallax in units of mas
         coords (astropy SkyCoord array):
-            SkyCoord objects containing right ascension, declination, and 
+            SkyCoord object (ICRS frame) containing right ascension, declination, and 
             distance to star in units of deg, deg, and pc
         pmra (astropy Quantity array):
             Proper motion in right ascension in units of mas/year

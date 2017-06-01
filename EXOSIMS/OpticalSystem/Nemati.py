@@ -65,7 +65,7 @@ class Nemati(OpticalSystem):
         intTime[intTime < 0] = 0.*u.d
         
         return intTime.to('day')
-    
+
     def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
         """Finds instrument achievable contrast for one integration time per
         star in the input list at one or more working angles.

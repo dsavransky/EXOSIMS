@@ -15,7 +15,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         
     """
 
-    def __init__(self,**specs):
+    def __init__(self, **specs):
         
         SimulatedUniverse.__init__(self, **specs)
         
@@ -47,7 +47,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(planinds)
         
-        #populate parameters
+        # populate parameters
         self.a = PPop.sma[planinds] +  np.random.normal(size=self.nPlans)\
                 *PPop.smaerr[planinds]                      # semi-major axis
         # ensure sampling did not make it negative

@@ -62,11 +62,11 @@ class PlanetPopulation(object):
     _modtype = 'PlanetPopulation'
     _outspec = {}
 
-    def __init__(self,arange=[0.1,100],erange=[0.01,0.99],Irange=[0,180],\
-            Orange=[0,360],wrange=[0,360],prange=[0.1,0.6],Rprange=[1,30],\
-            Mprange = [1,4131],adist=None,edist=None,Idist=None,Odist=None,\
-            wdist=None,pdist=None,Rpdist=None,Mpdist=None,rdist=None,\
-            scaleOrbits=False,constrainOrbits=False,eta=0.1,**specs):
+    def __init__(self, arange=[0.1,100], erange=[0.01,0.99], Irange=[0,180],
+            Orange=[0,360], wrange=[0,360], prange=[0.1,0.6], Rprange=[1,30],
+            Mprange=[1,4131], adist=None, edist=None, Idist=None, Odist=None,
+            wdist=None, pdist=None, Rpdist=None, Mpdist=None, rdist=None,
+            scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
         
         # check range of parameters
         self.arange = self.checkranges(arange,'arange')*u.AU
@@ -75,16 +75,17 @@ class PlanetPopulation(object):
         self.Orange = self.checkranges(Orange,'Orange')*u.deg
         self.wrange = self.checkranges(wrange,'wrange')*u.deg
         self.prange = self.checkranges(prange,'prange')
-        self.Rprange = self.checkranges(Rprange,'Rprange')*const.R_earth.to('km')
-        self.Mprange = self.checkranges(Mprange,'Mprange')*const.M_earth.to('kg')
-        # orbital radius range
+        self.Rprange = self.checkranges(Rprange,'Rprange')*u.earthRad
+        self.Mprange = self.checkranges(Mprange,'Mprange')*u.earthMass
+        
+        # derive orbital radius range from quantities above
         a = self.arange.to('AU').value
         self.rrange = [a[0]*(1.-self.erange[1]),a[1]*(1.+self.erange[1])]*u.AU
         
         # define prototype distributions of parameters (uniform and log-uniform)
-        self.uniform = lambda x,v: np.array((x >= v[0])&(x <= v[1]),\
+        self.uniform = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
                 dtype=float, ndmin=1) / (v[1] - v[0])
-        self.logunif = lambda x,v: np.array((x >= v[0])&(x <= v[1]),\
+        self.logunif = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
                 dtype=float, ndmin=1) / (x*np.log(v[1]/v[0]))
         self.adist = lambda x,v=self.arange.to('AU').value: self.logunif(x,v)
         self.edist = lambda x,v=self.erange: self.uniform(x,v)
@@ -103,21 +104,17 @@ class PlanetPopulation(object):
         
         assert isinstance(eta,numbers.Number) and (eta > 0),\
                 "eta must be strictly positive"
-        #global occurrence rate defined as expected number of planets per 
-        #star in a given universe
+        # global occurrence rate defined as expected number of planets per 
+        # star in a given universe
         self.eta = eta
         
-        #populate all attributes to outspec
+        # populate all attributes to outspec
         for att in self.__dict__.keys():
             dat = copy.copy(self.__dict__[att])
             self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
-            if att == 'Mprange':
-                self._outspec[att] /= const.M_earth.to('kg').value
-            elif att == 'Rprange':
-                self._outspec[att] /= const.R_earth.to('km').value
         
         # import PlanetPhysicalModel
-        self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'], \
+        self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'],
                 'PlanetPhysicalModel')(**specs)
 
     def checkranges(self, var, name):
@@ -132,7 +129,8 @@ class PlanetPopulation(object):
         if name in ['arange','Rprange','Mprange']:
             assert np.all(var > 0), "%s values must be strictly positive"%name
         if name in ['erange','prange']:
-            assert np.all(var >= 0) and np.all(var <= 1), "%s values must be between 0 and 1"%name
+            assert np.all(var >= 0) and np.all(var <= 1),\
+                    "%s values must be between 0 and 1"%name
         
         # the second element must be greater or equal to the first
         if var[1] < var[0]:

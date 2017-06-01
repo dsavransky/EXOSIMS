@@ -175,14 +175,14 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self,obscurFac=0.1,shapeFac=np.pi/4,pupilDiam=4,\
-            attenuation=0.5,intCutoff=50,Ndark=10,scienceInstruments=None,QE=0.9,FoV=10,\
-            pixelNumber=1000,pixelSize=1e-5,sread=1e-6,idark=1e-4,CIC=1e-3,texp=100,\
-            ENF=1,Rs=50,starlightSuppressionSystems=None,lam=500,BW=0.2,occ_trans=0.2,\
-            core_thruput=1e-2,core_contrast=1e-9,core_platescale=None,PSF=np.ones((3,3)),\
-            samp=10,ohTime=1,observingModes=None,SNR=5,timeMultiplier=1,IWA=None,\
-            OWA=None,dMagLim=25,WAint=None,dMagint=None,**specs):
-        
+    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, attenuation=0.5,
+            intCutoff=50, Ndark=10, scienceInstruments=None, QE=0.9, FoV=10,
+            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, texp=100,
+            ENF=1, Rs=50, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
+            core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
+            samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
+            OWA=None, dMagLim=25, WAint=None, dMagint=None, **specs):
+        pass
         #load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
@@ -256,16 +256,16 @@ class OpticalSystem(object):
             assert syst.has_key('name') and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
-            syst['occ_trans'] = syst.get('occ_trans',occ_trans)
-            syst['core_thruput'] = syst.get('core_thruput',core_thruput)
-            syst['core_contrast'] = syst.get('core_contrast',core_contrast)
+            syst['occ_trans'] = syst.get('occ_trans', occ_trans)
+            syst['core_thruput'] = syst.get('core_thruput', core_thruput)
+            syst['core_contrast'] = syst.get('core_contrast', core_contrast)
             syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
             syst['core_area'] = syst.get('core_area') # no default
-            syst['PSF'] = syst.get('PSF',PSF)
+            syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
             # set an occulter, for an external or hybrid system
-            syst['occulter'] = syst.get('occulter',False)
+            syst['occulter'] = syst.get('occulter', False)
             if syst['occulter'] == True:
                 self.haveOcculter = True
             
@@ -274,9 +274,9 @@ class OpticalSystem(object):
                 syst['OWA'] = np.Inf
             
             # When provided, always use deltaLam instead of BW (bandwidth fraction)
-            syst['lam'] = float(syst.get('lam',lam))*u.nm       # central wavelength (nm)
-            syst['deltaLam'] = float(syst.get('deltaLam',syst['lam'].to('nm').value\
-                    *syst.get('BW',BW)))*u.nm                   # bandwidth (nm)
+            syst['lam'] = float(syst.get('lam', lam))*u.nm      # central wavelength (nm)
+            syst['deltaLam'] = float(syst.get('deltaLam', syst['lam'].to('nm').value\
+                    *syst.get('BW', BW)))*u.nm                  # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
             # Default lam and BW updated with values from first instrument
             if nsyst == 0:
@@ -288,7 +288,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
-            syst['core_platescale'] = syst.get('core_platescale',core_platescale)
+            syst['core_platescale'] = syst.get('core_platescale', core_platescale)
             
             # Get PSF
             if isinstance(syst['PSF'],basestring):
@@ -315,8 +315,8 @@ class OpticalSystem(object):
             # Loading system specifications
             syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
-            syst['samp'] = float(syst.get('samp',samp))*u.arcsec    # PSF sampling
-            syst['ohTime'] = float(syst.get('ohTime',ohTime))*u.d   # overhead time
+            syst['samp'] = float(syst.get('samp', samp))*u.arcsec   # PSF sampling
+            syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
             #populate system specifications to outspec
             for att in syst.keys():
@@ -458,12 +458,12 @@ class OpticalSystem(object):
             assert np.all(D>=0) and np.all(D<=1), \
                     param_name+" must be positive and smaller than 1."
             # parameter values outside of WA
-            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float), kind='cubic',\
-                    fill_value=fill, bounds_error=False)
+            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float), \
+                    kind='cubic', fill_value=fill, bounds_error=False)
             syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),ndmin=1)
             # update IWA and OWA
-            syst['IWA'] = max(np.min(WA), syst.get('IWA',np.min(WA)))
-            syst['OWA'] = min(np.max(WA), syst.get('OWA',np.max(WA)))
+            syst['IWA'] = max(np.min(WA), syst.get('IWA', np.min(WA)))
+            syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
             
         elif isinstance(syst[param_name],numbers.Number):
             assert syst[param_name]>=0 and syst[param_name]<=1, \
@@ -691,11 +691,11 @@ class OpticalSystem(object):
         """
         
         # reshape sInds, WA, t_int
-        sInds = np.array(sInds,ndmin=1)
-        WA = np.array(WA.value,ndmin=1)*WA.unit
-        t_int = np.array(t_int.value,ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
         assert len(t_int) == len(sInds), "t_int and sInds must be same length"
         
-        C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds),len(WA)))
+        C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds), len(WA)))
         
         return C_inst

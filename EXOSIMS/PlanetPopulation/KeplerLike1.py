@@ -42,8 +42,8 @@ class KeplerLike1(PlanetPopulation):
 
     def __init__(self, smaknee=30, esigma=0.25, **specs):
         
-        specs['prange'] = [0.083,0.882]
-        specs['Rprange'] = [1,22.6]
+        specs['prange'] = [0.083, 0.882]
+        specs['Rprange'] = [1, 22.6]
         PlanetPopulation.__init__(self, **specs)
         
         # define sma distribution, with decay point (knee)

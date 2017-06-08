@@ -47,8 +47,12 @@ class GarrettCompleteness(BrownCompleteness):
         self.pmax = self.PlanetPopulation.prange.max()
         self.Rmin = self.PlanetPopulation.Rprange.min().value
         self.Rmax = self.PlanetPopulation.Rprange.max().value
-        self.rmin = self.amin*(1.0 - self.emax)
-        self.rmax = self.amax*(1.0 + self.emax)
+        if self.PlanetPopulation.constrainOrbits:
+            self.rmin = self.amin
+            self.rmax = self.amax
+        else:
+            self.rmin = self.amin*(1.0 - self.emax)
+            self.rmax = self.amax*(1.0 + self.emax)
         self.zmin = self.pmin*self.Rmin**2
         self.zmax = self.pmax*self.Rmax**2
         # conversion factor
@@ -56,6 +60,7 @@ class GarrettCompleteness(BrownCompleteness):
         # distributions needed
         self.dist_sma = self.PlanetPopulation.adist
         self.dist_eccen = self.PlanetPopulation.edist
+        self.dist_eccen_con = self.PlanetPopulation.edist_from_sma
         self.dist_albedo = self.PlanetPopulation.pdist
         self.dist_radius = self.PlanetPopulation.Rpdist
         # are any of a, e, p, Rp constant?
@@ -391,8 +396,10 @@ class GarrettCompleteness(BrownCompleteness):
                 Values of first integrand
         
         """
-        
-        f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)*self.dist_sma(a)
+        if self.PlanetPopulation.constrainOrbits:
+            f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen_con(e,a)*self.dist_sma(a)
+        else:
+            f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)*self.dist_sma(a)
         
         return f
         
@@ -411,7 +418,6 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of second integrand
         
         """
-        
         emin1 = np.abs(1.0 - r/a)
         if emin1 < self.emin:
             emin1 = self.emin
@@ -419,7 +425,17 @@ class GarrettCompleteness(BrownCompleteness):
         if emin1 > self.emax:
             f = 0.0
         else:
-            f = integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=100)[0]
+            if self.PlanetPopulation.constrainOrbits:
+                if a <= 0.5*(self.amin+self.amax):
+                    elim = 1.0-self.amin/a
+                else:
+                    elim = self.amax/a - 1.0
+                if emin1 > elim:
+                    f = 0.0
+                else:
+                    f = integrate.fixed_quad(self.rgrand1,emin1,elim, args=(a,r), n=100)[0]
+            else:
+                f = integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=100)[0]
 
         return f
         
@@ -440,8 +456,10 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of integrand
         
         """
-        
-        f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)
+        if self.PlanetPopulation.constrainOrbits:
+            f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen_con(e,a)
+        else:
+            f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)
         
         return f
         
@@ -523,12 +541,16 @@ class GarrettCompleteness(BrownCompleteness):
                         low = self.amin
                     f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=200)[0]
             else:
-                a1 = r/(1.0+self.emax)
-                a2 = r/(1.0-self.emax)
-                if a1 < self.amin:
-                    a1 = self.amin
-                if a2 > self.amax:
-                    a2 = self.amax
+                if self.PlanetPopulation.constrainOrbits:
+                    a1 = 0.5*(self.amin+r)
+                    a2 = 0.5*(self.amax+r)
+                else:
+                    a1 = r/(1.0+self.emax)
+                    a2 = r/(1.0-self.emax)
+                    if a1 < self.amin:
+                        a1 = self.amin
+                    if a2 > self.amax:
+                        a2 = self.amax
                 f = integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=200)[0]
     
         return f

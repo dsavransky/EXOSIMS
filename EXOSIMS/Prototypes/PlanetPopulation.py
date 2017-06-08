@@ -1,5 +1,4 @@
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 import copy
 import numbers
@@ -354,3 +353,44 @@ class PlanetPopulation(object):
         Mp = np.exp(np.random.uniform(low=np.log(v[0]),high=np.log(v[1]),size=n))*u.kg
         
         return Mp
+    
+    def edist_from_sma(self, e, a):
+        """Probability density function for eccentricity constrained by 
+        semi-major axis, such that orbital radius always falls within the 
+        provided sma range.
+        
+        The prototype provides a uniform distribution between the minimum and 
+        maximum allowable values.
+        
+        Args:
+            e (ndarray):
+                Eccentricity values
+            a (float):
+                Semi-major axis value in AU
+        
+        Returns:
+            f (ndarray):
+                Probability density of eccentricity constrained by semi-major
+                axis
+        
+        """
+        if not isinstance(e,np.ndarray):
+            e = np.array(e, ndmin=1, copy=False)
+        if not isinstance(a,np.ndarray):
+            a = np.array(a, ndmin=1, copy=False)
+
+        if a.shape == e.shape or (len(a) == 1 and len(e) == e.size):
+            amean = 0.5*(self.arange[0].to('AU').value + self.arange[1].to('AU').value)
+            elim = np.zeros(a.shape)
+            elim[a<=amean] = 1.0-self.arange[0].to('AU').value/a[a<=amean]
+            elim[a>amean] = self.arange[1].to('AU').value/a[a>amean] - 1.0
+            f = self.uniform(e,(self.erange[0],elim))
+        elif len(a) == a.size and len(e) == e.size:
+            x, y = np.meshgrid(a,e)
+            f = self.edist_from_sma(y,x)
+        else:
+            print 'Input mismatch between semi-major axis and eccentricity'
+            print 'pdf set to zero'
+            f = np.array([0.0])
+        
+        return f

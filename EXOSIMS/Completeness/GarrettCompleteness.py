@@ -45,8 +45,8 @@ class GarrettCompleteness(BrownCompleteness):
         self.emax = self.PlanetPopulation.erange.max()
         self.pmin = self.PlanetPopulation.prange.min()
         self.pmax = self.PlanetPopulation.prange.max()
-        self.Rmin = self.PlanetPopulation.Rprange.min().value
-        self.Rmax = self.PlanetPopulation.Rprange.max().value
+        self.Rmin = self.PlanetPopulation.Rprange.min().to('km').value
+        self.Rmax = self.PlanetPopulation.Rprange.max().to('km').value
         if self.PlanetPopulation.constrainOrbits:
             self.rmin = self.amin
             self.rmax = self.amax
@@ -56,7 +56,7 @@ class GarrettCompleteness(BrownCompleteness):
         self.zmin = self.pmin*self.Rmin**2
         self.zmax = self.pmax*self.Rmax**2
         # conversion factor
-        self.x = self.PlanetPopulation.Rprange.unit.to(self.PlanetPopulation.arange.unit)
+        self.x = u.km.to('AU')
         # distributions needed
         self.dist_sma = self.PlanetPopulation.adist
         self.dist_eccen = self.PlanetPopulation.edist

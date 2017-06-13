@@ -51,7 +51,7 @@ class linearJScheduler(SurveySimulation):
                 Index of next target star
         
         """
-        
+
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
@@ -94,7 +94,7 @@ class linearJScheduler(SurveySimulation):
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
-        f2_uv = np.where(self.starVisits[sInds] > 0, self.starVisits[sInds], 0) *\
+        f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
                 (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
         A = A + self.coeffs[3]*f2_uv
         

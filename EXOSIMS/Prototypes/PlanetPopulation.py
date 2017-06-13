@@ -93,7 +93,7 @@ class PlanetPopulation(object):
         # mass distribution function (in Jupiter masses)
         self.Mpdist = lambda x: x**(-1.3)
         
-        assert isinstance(scaleOrbits,bool), "scaleOrbits must be boolean"
+        assert isinstance(scaleOrbits, bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
         self.scaleOrbits = scaleOrbits
         
@@ -110,7 +110,7 @@ class PlanetPopulation(object):
         # populate all attributes to outspec
         for att in self.__dict__.keys():
             dat = copy.copy(self.__dict__[att])
-            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # import PlanetPhysicalModel
         self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'],

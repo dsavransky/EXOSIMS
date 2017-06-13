@@ -182,59 +182,59 @@ class OpticalSystem(object):
             core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
             OWA=None, dMagLim=25, WAint=None, dMagint=None, **specs):
-        pass
-        #load all values with defaults
+        
+        # load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
-        self.pupilArea = (1-self.obscurFac)*self.shapeFac*self.pupilDiam**2 # entrance pupil area
+        self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2 # pupil area
         self.attenuation = float(attenuation)   # non-coronagraph attenuation factor
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Ndark = float(Ndark)               # number of dark frames used
-        self.dMagLim = float(dMagLim)           # limiting delta magnitude for calc_intTime
+        self.dMagLim = float(dMagLim)           # limiting astro contrast for intTime calc
         
-        # Spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
+        # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
-        self.F0 = lambda l: 1e4*10**(4.01-(l.to('nm').value-550)/770)*u.ph/u.s/u.m**2/u.nm 
+        self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
+                *u.ph/u.s/u.m**2/u.nm 
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
         self.scienceInstruments = scienceInstruments
         self._outspec['scienceInstruments'] = []
-        for ninst,inst in enumerate(self.scienceInstruments):
-            assert isinstance(inst,dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('name') and isinstance(inst['name'],basestring),\
+        for ninst, inst in enumerate(self.scienceInstruments):
+            assert isinstance(inst, dict), "Science instruments must be defined as dicts."
+            assert inst.has_key('name') and isinstance(inst['name'], basestring), \
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
-            inst['QE'] = inst.get('QE',QE)
+            inst['QE'] = inst.get('QE', QE)
             self._outspec['scienceInstruments'].append(inst.copy())
             
             # quantum efficiency
             if inst.has_key('QE'):
-                if isinstance(inst['QE'],basestring):
-                    assert os.path.isfile(inst['QE']),\
-                            "%s is not a valid file."%inst['QE']
+                if isinstance(inst['QE'], basestring):
+                    assert os.path.isfile(inst['QE']), "%s is not a valid file."%inst['QE']
                     tmp = fits.open(inst['QE'])
                     #basic validation here for size and wavelength
                     #inst['QE'] = lambda or interp
-                elif isinstance(inst['QE'],numbers.Number):
+                elif isinstance(inst['QE'], numbers.Number):
                     inst['QE'] = lambda l, QE=float(inst['QE']): QE/u.photon
             
-            # Loading detector specifications
-            inst['FoV'] = float(inst.get('FoV',FoV))*u.arcsec   # field of view
-            inst['pixelNumber'] = int(inst.get('pixelNumber',pixelNumber)) # array format
-            inst['pixelSize'] = float(inst.get('pixelSize',pixelSize))*u.m # pixel pitch
-            inst['idark'] = float(inst.get('idark',idark))/u.s  # dark-current rate
-            inst['CIC'] = float(inst.get('CIC',CIC))            # clock-induced-charge
-            inst['sread'] = float(inst.get('sread',sread))      # effective readout noise
-            inst['texp'] = float(inst.get('texp',texp))*u.s     # exposure time per frame
-            inst['ENF'] = float(inst.get('ENF',ENF))            # excess noise factor
-            inst['Rs'] = float(inst.get('Rs',Rs)) if 'spec' in inst['name'] \
+            # load detector specifications
+            inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
+            inst['pixelNumber'] = int(inst.get('pixelNumber', pixelNumber)) # array format
+            inst['pixelSize'] = float(inst.get('pixelSize', pixelSize))*u.m # pixel pitch
+            inst['idark'] = float(inst.get('idark', idark))/u.s # dark-current rate
+            inst['CIC'] = float(inst.get('CIC', CIC))           # clock-induced-charge
+            inst['sread'] = float(inst.get('sread', sread))     # effective readout noise
+            inst['texp'] = float(inst.get('texp', texp))*u.s    # exposure time per frame
+            inst['ENF'] = float(inst.get('ENF', ENF))           # excess noise factor
+            inst['Rs'] = float(inst.get('Rs', Rs)) if 'spec' in inst['name'] \
                     .lower() else 1.                            # spectral resolving power
             
-            # Calculate pixelScale (Nyquist sampled)
+            # calculate pixelScale (Nyquist sampled)
             inst['pixelScale'] = 2*inst['FoV']/inst['pixelNumber']
-            # Calculate focal and f-number
+            # calculate focal and f-number
             inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
@@ -243,7 +243,7 @@ class OpticalSystem(object):
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
-                            if isinstance(dat,u.Quantity) else dat
+                            if isinstance(dat, u.Quantity) else dat
         
         # loop through all starlight suppression systems (must have one defined)
         assert starlightSuppressionSystems, "No starlight suppression systems defined."
@@ -273,16 +273,16 @@ class OpticalSystem(object):
             if syst.get('OWA') == 0:
                 syst['OWA'] = np.Inf
             
-            # When provided, always use deltaLam instead of BW (bandwidth fraction)
+            # when provided, always use deltaLam instead of BW (bandwidth fraction)
             syst['lam'] = float(syst.get('lam', lam))*u.nm      # central wavelength (nm)
-            syst['deltaLam'] = float(syst.get('deltaLam', syst['lam'].to('nm').value\
-                    *syst.get('BW', BW)))*u.nm                  # bandwidth (nm)
+            syst['deltaLam'] = float(syst.get('deltaLam', syst['lam'].to('nm').value*
+                    syst.get('BW', BW)))*u.nm                   # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
-            # Default lam and BW updated with values from first instrument
+            # default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
             
-            # Get coronagraph input parameters
+            # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')
             syst = self.get_coro_param(syst, 'core_thruput')
             syst = self.get_coro_param(syst, 'core_contrast', fill=1.)
@@ -290,11 +290,10 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
             
-            # Get PSF
-            if isinstance(syst['PSF'],basestring):
+            # get PSF
+            if isinstance(syst['PSF'], basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
-                assert os.path.isfile(pth),\
-                        "%s is not a valid file."%pth
+                assert os.path.isfile(pth), "%s is not a valid file."%pth
                 hdr = fits.open(pth)[0].header
                 dat = fits.open(pth)[0].data
                 assert len(dat.shape) == 2, "Wrong PSF data shape."
@@ -312,22 +311,22 @@ class OpticalSystem(object):
             if not(syst.get('OWA')):
                 syst['OWA'] = OWA if OWA else np.Inf
             
-            # Loading system specifications
+            # loading system specifications
             syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
             syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
             syst['samp'] = float(syst.get('samp', samp))*u.arcsec   # PSF sampling
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
-            #populate system specifications to outspec
+            # populate system specifications to outspec
             for att in syst.keys():
-                if att not in ['occ_trans','core_thruput','core_contrast',\
-                        'core_mean_intensity','core_area','PSF']:
+                if att not in ['occ_trans', 'core_thruput', 'core_contrast',
+                        'core_mean_intensity', 'core_area', 'PSF']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
-                            = dat.value if isinstance(dat,u.Quantity) else dat
+                            = dat.value if isinstance(dat, u.Quantity) else dat
         
         # loop through all observing modes
-        # if no observing mode defined, create a default mode:
+        # if no observing mode defined, create a default mode
         if observingModes == None:
             inst = self.scienceInstruments[0]
             syst = self.starlightSuppressionSystems[0]
@@ -336,33 +335,32 @@ class OpticalSystem(object):
                                'systName': syst['name']}]
         self.observingModes = observingModes
         self._outspec['observingModes'] = []
-        for nmode,mode in enumerate(self.observingModes):
-            assert isinstance(mode,dict),\
-                    "Observing modes must be defined as dicts."
-            assert mode.has_key('instName') and mode.has_key('systName'),\
+        for nmode, mode in enumerate(self.observingModes):
+            assert isinstance(mode, dict), "Observing modes must be defined as dicts."
+            assert mode.has_key('instName') and mode.has_key('systName'), \
                     "All observing modes must have key instName and systName."
             assert np.any([mode['instName'] == inst['name'] for inst in \
-                    self.scienceInstruments]), "The mode's instrument name " + \
-                    mode['instName'] + " does not exist."
+                    self.scienceInstruments]), "The mode's instrument name " \
+                    + mode['instName'] + " does not exist."
             assert np.any([mode['systName'] == syst['name'] for syst in \
-                    self.starlightSuppressionSystems]), "The mode's system name " + \
-                    mode['systName'] + " does not exist."
+                    self.starlightSuppressionSystems]), "The mode's system name " \
+                    + mode['systName'] + " does not exist."
             self._outspec['observingModes'].append(mode.copy())
             
-            # Loading mode specifications
-            mode['SNR'] = float(mode.get('SNR',SNR))
-            mode['timeMultiplier'] = float(mode.get('timeMultiplier',timeMultiplier))
-            mode['detectionMode'] = mode.get('detectionMode',False)
+            # loading mode specifications
+            mode['SNR'] = float(mode.get('SNR', SNR))
+            mode['timeMultiplier'] = float(mode.get('timeMultiplier', timeMultiplier))
+            mode['detectionMode'] = mode.get('detectionMode', False)
             mode['inst'] = [inst for inst in self.scienceInstruments \
                     if inst['name'] == mode['instName']][0]
             mode['syst'] = [syst for syst in self.starlightSuppressionSystems \
                     if syst['name'] == mode['systName']][0]
-            # get mode wavelength and bandwidth. If not specified, take system values.
-            # When provided, always use deltaLam instead of BW (bandwidth fraction)
+            # get mode wavelength and bandwidth (get system's values by default)
+            # when provided, always use deltaLam instead of BW (bandwidth fraction)
             syst_lam = mode['syst']['lam'].to('nm').value
             syst_BW = mode['syst']['BW']
-            mode['lam'] = float(mode.get('lam',syst_lam))*u.nm
-            mode['deltaLam'] = float(mode.get('deltaLam',mode['lam'].value \
+            mode['lam'] = float(mode.get('lam', syst_lam))*u.nm
+            mode['deltaLam'] = float(mode.get('deltaLam', mode['lam'].value \
                     *mode.get('BW',syst_BW)))*u.nm
             mode['BW'] = float(mode['deltaLam']/mode['lam'])
             # get mode IWA and OWA: rescale if the mode wavelength is different than 
@@ -374,16 +372,17 @@ class OpticalSystem(object):
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
         
         # check for only one detection mode
-        detectionModes = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)
-        assert len(detectionModes) <= 1, "More than one detection mode specified."
+        allModes = self.observingModes
+        detModes = filter(lambda mode: mode['detectionMode'] == True, allModes)
+        assert len(detModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
-        if len(detectionModes) == 0:
-            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], self.observingModes)
+        if len(detModes) == 0:
+            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
             if imagerModes:
                 imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
             else:
-                self.observingModes[0]['detectionMode'] = True
+                allModes[0]['detectionMode'] = True
         
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.observingModes if x.get('IWA') is not None]
@@ -404,27 +403,30 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
-        # Load the integration working angle (WAint) and delta magnitude (dMagint) values
-        # Default to detection mode IWA and dMadLim
-        detMode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        # load the integration values: working angle (WAint), delta magnitude (dMagint)
+        # default to detection mode IWA and dMadLim
+        detMode = filter(lambda mode: mode['detectionMode'] == True,
+                self.observingModes)[0]
         self.WAint = float(WAint)*u.arcsec if WAint else detMode['IWA']
         self.dMagint = float(dMagint) if dMagint else dMagLim
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
-            if att not in ['F0','scienceInstruments','starlightSuppressionSystems',\
+            if att not in ['F0', 'scienceInstruments', 'starlightSuppressionSystems',
                     'observingModes']:
                 dat = self.__dict__[att]
-                self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Optical System object
         
         When the command 'print' is used on the Optical System object, this 
-        method will print the attribute values contained in the object"""
+        method will print the attribute values contained in the object
+        
+        """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print '%s: %r'%(att, getattr(self, att))
         
         return 'Optical System class object attributes'
 
@@ -450,26 +452,27 @@ class OpticalSystem(object):
         assert isinstance(param_name, basestring), "param_name must be a string."
         if isinstance(syst[param_name], basestring):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
-            assert os.path.isfile(pth),\
-                    "%s is not a valid file."%pth
+            assert os.path.isfile(pth), "%s is not a valid file."%pth
             dat = fits.open(pth)[0].data
-            assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong "+param_name+" data shape."
-            WA,D = (dat[0],dat[1]) if dat.shape[0] == 2 else (dat[:,0],dat[:,1])
-            assert np.all(D>=0) and np.all(D<=1), \
-                    param_name+" must be positive and smaller than 1."
+            assert len(dat.shape) == 2 and 2 in dat.shape, \
+                    param_name + " wrong data shape."
+            WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
+            assert np.all(D >= 0) and np.all(D <= 1), \
+                    param_name + " must be positive and smaller than 1."
             # parameter values outside of WA
-            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float), \
+            Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float),
                     kind='cubic', fill_value=fill, bounds_error=False)
-            syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),ndmin=1)
+            syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),
+                    ndmin=1)
             # update IWA and OWA
             syst['IWA'] = max(np.min(WA), syst.get('IWA', np.min(WA)))
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
             
-        elif isinstance(syst[param_name],numbers.Number):
-            assert syst[param_name]>=0 and syst[param_name]<=1, \
-                    param_name+" must be positive and smaller than 1."
+        elif isinstance(syst[param_name], numbers.Number):
+            assert syst[param_name] >= 0 and syst[param_name] <= 1, \
+                    param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D = float(syst[param_name]): \
-                    ((s >= syst['IWA']) & (s <= syst['OWA']))*(D-fill)+fill
+                    ((s >= syst['IWA']) & (s <= syst['OWA']))*(D - fill) + fill
             
         else:
             syst[param_name] = None
@@ -525,32 +528,32 @@ class OpticalSystem(object):
         
         # solid angle of photometric aperture, specified by core_area(optional), 
         # otherwise obtained from (lambda/D)^2
-        Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
+        Omega = syst['core_area'](lam, WA)*u.arcsec**2 if syst['core_area'] else \
                 np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels in the photometric aperture = Omega / theta^2 
         Npix = (Omega/inst['pixelScale']**2).decompose().value
         
         # get coronagraph input parameters
-        occ_trans = syst['occ_trans'](lam,WA)
-        core_thruput = syst['core_thruput'](lam,WA)
-        core_contrast = syst['core_contrast'](lam,WA)
+        occ_trans = syst['occ_trans'](lam, WA)
+        core_thruput = syst['core_thruput'](lam, WA)
+        core_contrast = syst['core_contrast'](lam, WA)
         
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
-            core_intensity = core_contrast * core_thruput
+            core_intensity = core_contrast*core_thruput
         # OPTION 2: otherwise use core_mean_intensity
         else:
-            core_mean_intensity = syst['core_mean_intensity'](lam,WA)
+            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
             # if a platesale was specified with the coro parameters, apply correction
             if syst['core_platescale'] != None:
                 core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
                         /(lam/self.pupilDiam)).decompose().value
-            core_intensity = core_mean_intensity * Npix
+            core_intensity = core_mean_intensity*Npix
         
         # get star magnitude
-        sInds = np.array(sInds,ndmin=1)
-        mV = TL.starMag(sInds,lam)
+        sInds = np.array(sInds, ndmin=1)
+        mV = TL.starMag(sInds, lam)
         
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
@@ -570,18 +573,17 @@ class OpticalSystem(object):
         # readout noise
         C_rn = Npix*inst['sread']/inst['texp']
         # background
-        C_b = inst['ENF']**2*(C_sr+C_z+C_ez+C_dc+C_cc)+C_rn 
+        C_b = inst['ENF']**2*(C_sr + C_z + C_ez + C_dc + C_cc) + C_rn 
         # spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)
         
         # organize components into an optional fourth result
-        C_extra = dict(
-            C_sr = C_sr.to('1/s'),
-            C_z  = C_z.to('1/s'),
-            C_ez = C_ez.to('1/s'),
-            C_dc = C_dc.to('1/s'),
-            C_cc = C_cc.to('1/s'),
-            C_rn = C_rn.to('1/s'))
+        C_extra = dict(C_sr = C_sr.to('1/s'),
+                       C_z = C_z.to('1/s'),
+                       C_ez = C_ez.to('1/s'),
+                       C_dc = C_dc.to('1/s'),
+                       C_cc = C_cc.to('1/s'),
+                       C_rn = C_rn.to('1/s'))
         
         if returnExtra:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
@@ -618,7 +620,7 @@ class OpticalSystem(object):
         """
         
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         intTime = np.ones(len(sInds))*u.day
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d

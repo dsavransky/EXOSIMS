@@ -59,7 +59,7 @@ class linearJScheduler(SurveySimulation):
         TK = self.TimeKeeping
         
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):

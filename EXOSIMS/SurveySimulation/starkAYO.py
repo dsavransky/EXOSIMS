@@ -258,8 +258,7 @@ class starkAYO(SurveySimulation):
         #WA = OS.WALim
         slewTime2 = np.zeros(sInds.shape[0])*u.d#initialize slewTime for each star
         startTime2 = TK.currentTimeAbs + slewTime2#calculate slewTime
-        #r_sc_list2 = Obs.orbit(startTime2)#list of orbital positions the length of startTime
-        #fZ = ZL.fZ(TL, sInds, mode['lam'], r_sc_list2)#378
+        #fZ = ZL.fZ(Obs, TL, sInds, startTime2, self.mode['lam'])#378
         #fEZ = ZL.fEZ0
         #Tint = np.zeros((sInds.shape[0],len(dmag)))#array of #stars by dmags(225)
         ##Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]
@@ -875,8 +874,7 @@ class starkAYO(SurveySimulation):
         TL = self.TargetList
         Obs = self.Observatory
         startTime = np.zeros(len(sInds))*u.d + self.TimeKeeping.currentTimeAbs
-        r_sc_list = Obs.orbit(startTime)#list of orbital positions the length of startTime
-        fZ = ZL.fZ(TL, sInds, self.mode['lam'], r_sc_list)#378
+        fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode['lam'])#378
         fEZ = ZL.fEZ0
         Tint = np.zeros((sInds.shape[0],len(self.dmag_startSaved)))#array of #stars by dmags(500)
         #Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]

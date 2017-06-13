@@ -64,18 +64,18 @@ class KasdinBraems(OpticalSystem):
         Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
         Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3
         PPro = TL.PostProcessing                    # post-processing module
-        K = st.norm.ppf(1-PPro.FAP)                 # false alarm threshold
-        gamma = st.norm.ppf(1-PPro.MDP)             # missed detection threshold
-        deltaAlphaBar = ((inst['pixelSize']/inst['focal'])**2 / (lam/self.pupilDiam)**2)\
-                .decompose()                        # dimensionless pixel size
+        K = st.norm.ppf(1 - PPro.FAP)               # false alarm threshold
+        gamma = st.norm.ppf(1 - PPro.MDP)           # missed detection threshold
+        deltaAlphaBar = ((inst['pixelSize']/inst['focal'])**2 \
+                /(lam/self.pupilDiam)**2).decompose() # dimensionless pixel size
         Tcore = syst['core_thruput'](lam, WA)
         Ta = Tcore*self.shapeFac*deltaAlphaBar*P1   # Airy throughput
         # calculate integration time based on Kasdin&Braems2006
-        with np.errstate(divide='ignore',invalid='ignore'):
-            Qbar = np.true_divide(C_p*P1,C_b)
-            beta = np.true_divide(C_p,Tcore)
-            intTime = np.true_divide((K - gamma*np.sqrt(1.+Qbar*Xi/Psi))**2, \
-                    (beta*Qbar*Ta*Psi))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            Qbar = np.true_divide(C_p*P1, C_b)
+            beta = np.true_divide(C_p, Tcore)
+            intTime = np.true_divide((K - gamma*np.sqrt(1. + Qbar*Xi/Psi))**2,
+                    beta*Qbar*Ta*Psi)
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
         # negative values are set to zero

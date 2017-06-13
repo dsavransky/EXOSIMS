@@ -18,7 +18,7 @@ class Completeness(object):
     _outspec = {}
     
     def __init__(self, **specs):
-        # import PlanetPopulation class
+        # import Planet Population and Physical Model class objects
         Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
         self.PlanetPopulation = Pop # planet population object class
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel

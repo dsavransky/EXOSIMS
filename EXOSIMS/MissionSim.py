@@ -9,13 +9,12 @@ import numpy as np
 import astropy.units as u
 import os.path
 
-
 class MissionSim(object):
     """Mission Simulation (backbone) class
     
     This class is responsible for instantiating all objects required 
     to carry out a mission simulation.
-
+    
     Args:
         \*\*specs:
             user specified values
@@ -47,32 +46,35 @@ class MissionSim(object):
             SurveySimulation class object
         SurveyEnsemble (SurveyEnsemble):
             SurveyEnsemble class object
+    
     """
 
     _modtype = 'MissionSim'
     _outspec = {}
 
-    def __init__(self,scriptfile=None,**specs):
+    def __init__(self, scriptfile=None, **specs):
         """Initializes all modules from a given script file or specs dictionary.
         
-        Input: 
-            scriptfile:
-                JSON script file.  If not set, assumes that 
+        Args: 
+            scriptfile (string):
+                Path to JSON script file. If not set, assumes that 
                 dictionary has been passed through specs.
-            specs: 
+            specs (dictionary):
                 Dictionary containing additional user specification values and 
                 desired module names.
+        
         """
         
+        # extend given specs with (JSON) script file
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
-            
             try:
                 script = open(scriptfile).read()
                 specs_from_file = json.loads(script)
                 specs_from_file.update(specs)
             except ValueError as err:
-                print "Error: %s: Input file `%s' improperly formatted." % (self._modtype, scriptfile)
+                print "Error: %s: Input file `%s' improperly formatted."%(self._modtype,
+                        scriptfile)
                 print "Error: JSON error was: ", err
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
@@ -82,31 +84,35 @@ class MissionSim(object):
                 raise
         else:
             specs_from_file = {}
-        
-        # extend given specs with file specs
         specs.update(specs_from_file)
         
         if 'modules' not in specs.keys():
             raise ValueError("No modules field found in script.")
         
-        # set up log file, if it was desired
-        self.start_logging(specs)
-        # in this module, use the logger like this:
-        # logger = logging.getLogger(__name__)
-        # logger.info('__init__ started logging.')
-        
         # set up numpy random number seed at top
-        seed = self.random_seed_initialize(specs)
-        self._outspec['seed'] = seed
+        self.seed = specs.get('seed', py_random.randint(1, 1e9))
+        print 'MissionSim seed is: ', self.seed
         
-        #initialize top level, import modules
-        self.SurveyEnsemble = get_module(specs['modules']\
-                ['SurveyEnsemble'],'SurveyEnsemble')(**specs)
-        self.SurveySimulation = get_module(specs['modules']\
-                ['SurveySimulation'],'SurveySimulation')(**specs)
+        # start logging, with log file and logging level (default: INFO)
+        self.logfile = specs.get('logfile', None)
+        self.loglevel = specs.get('loglevel', 'INFO').upper()
+        specs['logger'] = self.get_logger(self.logfile, self.loglevel)
+        specs['logger'].info('Start Logging: loglevel = %s'%specs['logger'].level \
+                + ' (%s)'%self.loglevel)
+        
+        # populate outspec
+        for att in self.__dict__.keys():
+            self._outspec[att] = self.__dict__[att]
+        
+        # initialize top level, import modules
+        self.SurveyEnsemble = get_module(specs['modules']['SurveyEnsemble'],
+                'SurveyEnsemble')(**specs)
+        self.SurveySimulation = get_module(specs['modules']['SurveySimulation'],
+                'SurveySimulation')(**specs)
         
         # collect sub-initializations
         SS = self.SurveySimulation
+        self.StarCatalog = SS.StarCatalog
         self.PlanetPopulation = SS.PlanetPopulation
         self.PlanetPhysicalModel = SS.PlanetPhysicalModel
         self.OpticalSystem = SS.OpticalSystem
@@ -119,95 +125,90 @@ class MissionSim(object):
         self.Observatory = SS.Observatory
         self.TimeKeeping = SS.TimeKeeping
         
-        #preserve star catalog name
-        self.StarCatalog = specs['modules']['StarCatalog']
+        # create a dictionary of all modules, except StarCatalog
+        self.modules = SS.modules
+        self.modules['SurveySimulation'] = SS
+        self.modules['SurveyEnsemble'] = self.SurveyEnsemble
 
-    def start_logging(self, specs):
-        r"""Set up logging object so other modules can use logging.info(), logging.warning, etc.
-        
-        Two entries in the specs dictionary are used:
-        logfile: if not present, logging is turned off; if supplied, but empty, a
-            temporary file is generated; otherwise, the named file is opened for writing.
-        loglevel: if present, the given level is used, else the logging level is INFO.
-            Valid levels are: CRITICAL, ERROR, WARNING, INFO, DEBUG (case is ignored).
+    def get_logger(self, logfile, loglevel):
+        r"""Set up logging object so other modules can use logging.info(),
+        logging.warning, etc.
         
         Args:
-            specs: dictionary
-        
+            logfile (string):
+                Path to the log file. If None, logging is turned off. 
+                If supplied but empty string (''), a temporary file is generated.
+            loglevel (string): 
+                The level of log, defaults to 'INFO'. Valid levels are: CRITICAL, 
+                ERROR, WARNING, INFO, DEBUG (case sensitive).
+                
         Returns:
-            logfile: string
-                The name of the log file, or None if there was none, in case the tempfile needs to be recorded.
+            logger (logging object):
+                Mission Simulation logger.
+        
         """
-        # get the logfile name
-        if 'logfile' not in specs:
-            return None # this leaves the default logger in place, so logger.warn will appear on stderr
-        logfile = specs['logfile']
-        if not logfile:
-            (dummy,logfile) = tempfile.mkstemp(suffix='.log', prefix='EXOSIMS.', dir='/tmp', text=True)
+        
+        # this leaves the default logger in place, so logger.warn will appear on stderr
+        if logfile is None:
+            logger = logging.getLogger(__name__)
+            return logger
+        
+        # if empty string, a temporary file is generated
+        if logfile == '':
+            (dummy, logfile) = tempfile.mkstemp(prefix='EXOSIMS.', suffix='.log',
+                    dir='/tmp', text=True)
         else:
             # ensure we can write it
             try:
                 f = open(logfile, 'w')
                 f.close()
             except (IOError, OSError) as e:
-                print '%s: Failed to open logfile "%s"' % (__file__, logfile)
+                print '%s: Failed to open logfile "%s"'%(__file__, logfile)
                 return None
-        # get the logging level
-        if 'loglevel' in specs:
-            loglevel = specs['loglevel'].upper()
-        else:
-            loglevel = 'INFO'
+        print "Logging to '%s' at level '%s'"%(logfile, loglevel.upper())
+        
         # convert string to a logging.* level
-        numeric_level = getattr(logging, loglevel)
+        numeric_level = getattr(logging, loglevel.upper())
         if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % loglevel)
+            raise ValueError('Invalid log level: %s'%loglevel.upper())
         
         # set up the top-level logger
-        root_logger = logging.getLogger(__name__.split('.')[0])
-        root_logger.setLevel(numeric_level)
+        logger = logging.getLogger(__name__.split('.')[0])
+        logger.setLevel(numeric_level)
         # do not propagate EXOSIMS messages to higher loggers in this case
-        root_logger.propagate = False
+        logger.propagate = False
         # create a handler that outputs to the named file
         handler = logging.FileHandler(logfile, mode='w')
         handler.setLevel(numeric_level)
         # logging format
-        formatter = logging.Formatter('%(levelname)s: %(filename)s(%(lineno)s): %(funcName)s: %(message)s')
+        formatter = logging.Formatter('%(levelname)s: %(filename)s(%(lineno)s): '\
+                +'%(funcName)s: %(message)s')
         handler.setFormatter(formatter)
         # add the handler to the logger
-        root_logger.addHandler(handler)
+        logger.addHandler(handler)
         
-        # use the logger
-        print '%s: Beginning logging to "%s" at level %s' % (os.path.basename(__file__), logfile, loglevel)
-        logger = logging.getLogger(__name__)
-        logger.info('Starting log.')
-        return logfile
-
-    def random_seed_initialize(self, specs):
-        r"""Initialize random number seed for simulation repeatability.
-        
-        Algorithm: Get a large but printable integer from the system generator, which is seeded 
-        automatically, and use this number to seed the numpy generator.  Otherwise, if a seed was
-        given explicitly, use it instead."""
-        if 'seed' in specs:
-            seed = specs['seed']
-        else:
-            seed = py_random.randint(1,1e9)
-        print 'MissionSim: Seed is: ', seed
-        # give this seed to numpy
-        np.random.seed(seed)
-        
-        return seed
+        return logger
 
     def genOutSpec(self, tofile=None):
-        """
-        Join all _outspec dicts from all modules into one output dict
+        """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
+        
+        Args:
+           tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (dictionary):
+                Dictionary containing additional user specification values and 
+                desired module names.
+        
         """
         
-        # start with a copy of our own module's _outspec
+        # start with a copy of MissionSim _outspec
         out = copy.copy(self._outspec)
         
-        # add in all module _outspec's
+        # add in all modules _outspec's
         for module in self.modules.values():
             out.update(module._outspec)
         
@@ -221,60 +222,67 @@ class MissionSim(object):
                 mod_name_short = mod_name_full.split('.')[-1]
             else:
                 # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub('\.pyc$', '.py', inspect.getfile(module.__class__))
+                mod_name_short = re.sub('\.pyc$', '.py',
+                        inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
+        # add catalog name
+        out['modules']['StarCatalog'] = self.StarCatalog
         
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
-        #rev = subprocess.Popen("git -C "+path+" log -1 | grep \"commit\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
-        rev = subprocess.Popen("git -C "+path+" log -1", stdout=subprocess.PIPE, shell=True)
+        rev = subprocess.Popen("git -C " + path + " log -1", stdout=subprocess.PIPE,
+                shell=True)
         (gitRev, err) = rev.communicate()
         if isinstance(gitRev, basestring) & (len(gitRev) > 0):
-            tmp = re.compile('\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n').match(gitRev)
+            tmp = re.compile('\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n') \
+                    .match(gitRev)
             if tmp:
-                out['Revision'] = "Github "+tmp.groups()[0]+" "+tmp.groups()[1]
-            #out['Revision'] = "Github commit "
+                out['Revision'] = "Github " + tmp.groups()[0] + " " + tmp.groups()[1]
         else:
-            rev = subprocess.Popen("svn info "+path+"| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE, shell=True)
+            rev = subprocess.Popen("svn info " + path + \
+                    "| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE,
+                    shell=True)
             (svnRev, err) = rev.communicate()
             if isinstance(svnRev, basestring) & (len(svnRev) > 0):
                 out['Revision'] = "SVN revision is " + svnRev[:-1]
             else: 
                 out['Revision'] = "Not a valid Github or SVN revision."
-        print out['Revision']
-        
-        # preserve star catalog name
-        # TODO: why is this special-cased?
-        out['modules']['StarCatalog'] = self.StarCatalog
         
         # dump to file
         if tofile is not None:
             with open(tofile, 'w') as outfile:
-                json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False, separators=(',', ': '),
-                          default=array_encoder)
+                json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False,
+                        separators=(',', ': '), default=array_encoder)
         
-        # return it as well
-        return out
+        # return the Github/SVN revision
+        return out['Revision']
 
     def run_sim(self):
-        """Convenience method that simply calls the SurveySimulation run_sim method."""
+        """Convenience method that simply calls the SurveySimulation run_sim method.
+        
+        """
         
         res = self.SurveySimulation.run_sim()
         
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
-        """Convenience method that simply calls the SurveySimulation reset_sim method."""
+        """Convenience method that simply calls the SurveySimulation reset_sim method.
         
-        res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets, \
+        """
+        
+        res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets,
                 rewindPlanets=rewindPlanets)
         
         return res
 
-    def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
-        """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""
+    def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, 
+            rewindPlanets=True):
+        """Convenience method that simply calls the SurveyEnsemble run_ensemble method.
         
-        res = self.SurveyEnsemble.run_ensemble(self, nb_run_sim, run_one=run_one, \
+        """
+        
+        res = self.SurveyEnsemble.run_ensemble(self, nb_run_sim, run_one=run_one,
                 genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         
         return res
@@ -286,7 +294,9 @@ def array_encoder(obj):
     like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
     like integers, strings, and lists itself, so this code does not see these types.
     Likewise, this routine can and does return such objects, which is OK as long as 
-    they unpack recursively into types for which encoding is known."""
+    they unpack recursively into types for which encoding is known.
+    
+    """
     
     from astropy.time import Time
     if isinstance(obj, Time):

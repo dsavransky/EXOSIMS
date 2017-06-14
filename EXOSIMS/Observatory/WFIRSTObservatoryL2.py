@@ -85,6 +85,7 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         """
         
         # find time from Earth equinox and interpolated position
+        
         dt = (currentTime - self.equinox).to('yr').value
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T

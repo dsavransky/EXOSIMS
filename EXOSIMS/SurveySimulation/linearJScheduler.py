@@ -18,7 +18,8 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], **specs):
+    #def __init__(self, coeffs=[1,1,2,1], **specs):
+    def __init__(self, coeffs=[1,0,0,0], **specs):
         
         SurveySimulation.__init__(self, **specs)
         

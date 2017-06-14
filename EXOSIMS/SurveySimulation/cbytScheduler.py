@@ -37,7 +37,7 @@ class cbytScheduler(SurveySimulation):
         TK = self.TimeKeeping
         
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
         

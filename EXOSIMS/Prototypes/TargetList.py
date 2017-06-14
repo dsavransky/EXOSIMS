@@ -2,6 +2,7 @@
 import numpy as np
 import numbers
 import astropy.units as u
+from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.deltaMag import deltaMag
@@ -50,31 +51,50 @@ class TargetList(object):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
             'true' stellar mass in units of solar mass
-        nStars (int):
+        nStars (integer):
             Number of target stars
+        staticStars (boolean):
+            Boolean used to force static target positions set at mission start time
+        keepStarCatalog (boolean):
+            Boolean used to avoid deleting StarCatalog after TargetList was built
     
     """
 
     _modtype = 'TargetList'
     _outspec = {}
 
-    def __init__(self, keepStarCatalog=False, minComp=0.1, **specs):
-        """
-        Initializes target list
+    def __init__(self, minComp=0.1, missionStart=60634, staticStars=True,
+            keepStarCatalog=False, **specs):
+        """Initializes target list
         
         """
         
         # validate inputs
-        assert isinstance(keepStarCatalog,bool), "keepStarCatalog must be a boolean."
-        assert isinstance(minComp,numbers.Number), "minComp must be a number."
+        assert isinstance(minComp, numbers.Number), "minComp must be a number."
+        assert isinstance(staticStars, bool), "staticStars must be a boolean."
+        assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
+        
+        # default TargetList values
         self.minComp = float(minComp)
+        self.staticStars = bool(staticStars)
+        self.keepStarCatalog = bool(keepStarCatalog)
+        
+        # populate outspec
+        for att in self.__dict__.keys():
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # get desired module names (specific or prototype) and instantiate objects
-        self.StarCatalog = get_module(specs['modules']['StarCatalog'],'StarCatalog')(**specs)
-        self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],'OpticalSystem')(**specs)
-        self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],'ZodiacalLight')(**specs)
-        self.PostProcessing = get_module(specs['modules']['PostProcessing'],'PostProcessing')(**specs)
-        self.Completeness = get_module(specs['modules']['Completeness'],'Completeness')(**specs)
+        self.StarCatalog = get_module(specs['modules']['StarCatalog'],
+                'StarCatalog')(**specs)
+        self.OpticalSystem = get_module(specs['modules']['OpticalSystem'],
+                'OpticalSystem')(**specs)
+        self.ZodiacalLight = get_module(specs['modules']['ZodiacalLight'],
+                'ZodiacalLight')(**specs)
+        self.PostProcessing = get_module(specs['modules']['PostProcessing'],
+                'PostProcessing')(**specs)
+        self.Completeness = get_module(specs['modules']['Completeness'],
+                'Completeness')(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
         self.PlanetPopulation = self.Completeness.PlanetPopulation
@@ -91,31 +111,98 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
-        
         # have target list, no need for catalog now
         if not keepStarCatalog:
-            del self.StarCatalog
-        
-        # populate outspec
+            self.StarCatalog = specs['modules']['StarCatalog']
+        # add nStars to outspec
         self._outspec['nStars'] = self.nStars
-        self._outspec['keepStarCatalog'] = keepStarCatalog
-        self._outspec['minComp'] = self.minComp
+        
+        # if staticStars is True, the star coordinates are taken at mission start, 
+        # and are not propagated during the mission
+        if staticStars:
+            allInds = np.arange(self.nStars)
+            missionStart = Time(float(missionStart), format='mjd', scale='tai')
+            self.starprop = lambda sInds, currentTime, eclip=False, \
+                    c1=self.starprop(allInds, missionStart, eclip=False), \
+                    c2=self.starprop(allInds, missionStart, eclip=True): \
+                    c1[np.array(sInds, ndmin=1)] if eclip==False else \
+                    c2[np.array(sInds, ndmin=1)]
 
     def __str__(self):
         """String representation of the Target List object
         
         When the command 'print' is used on the Target List object, this method
-        will return the values contained in the object"""
+        will return the values contained in the object
+        
+        """
         
         for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Target List class object attributes'
 
+    def starprop(self, sInds, currentTime, eclip=False):
+        """Finds target star positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
+        
+        This method uses ICRS coordinates which is approximately the same as 
+        equatorial coordinates. 
+        
+        Args:
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
+        
+        Returns:
+            r_targ (astropy Quantity nx3 array): 
+                Target star positions vector in heliocentric equatorial (default)
+                or ecliptic frame in units of pc
+        
+        Note: Use eclip=True to get ecliptic coordinates.
+        
+        """
+        
+        # check size of arrays
+        sInds = np.array(sInds, ndmin=1)
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match"
+        
+        # target star ICRS coordinates
+        coord_old = self.coords[sInds]
+        # right ascension and declination
+        ra = coord_old.ra
+        dec = coord_old.dec
+        # directions
+        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
+        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
+        r0 = coord_old.cartesian.xyz/coord_old.distance
+        # proper motion vector
+        mu0 = p0*self.pmra[sInds] + q0*self.pmdec[sInds]
+        # space velocity vector
+        v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
+        # set J2000 epoch
+        j2000 = Time(2000., format='jyear')
+        # target star positions vector in heliocentric equatorial frame
+        dr = v*(currentTime.mjd - j2000.mjd)*u.day
+        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+        
+        if eclip:
+            # transform to heliocentric true ecliptic frame
+            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                    representation='cartesian')
+            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+        
+        return r_targ
+
     def populate_target_list(self, **specs):
-        """ 
-        This function is actually responsible for populating values from the star catalog
-        (or any other source) into the target list attributes.
+        """ This function is actually responsible for populating values from the star 
+        catalog (or any other source) into the target list attributes.
         
         The prototype implementation does the following:
         
@@ -151,22 +238,19 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
 
-    def filter_target_list(self,**specs):
-        """ 
-        This function is responsible for filtering by any required metrics.
+    def filter_target_list(self, **specs):
+        """This function is responsible for filtering by any required metrics.
         
         The prototype implementation does the following:
-        
-        binary stars are removed
-        maximum integration time is calculated
-        Filters applied to star catalog data:
-            *systems with planets inside the IWA removed
-            *systems where maximum delta mag is not in allowable orbital range 
-            removed
-            *systems where integration time is longer than maximum time removed
-            *systems not meeting the completeness threshold removed
+            * binary stars are removed
+            * systems with planets inside the IWA removed
+            * systems where maximum delta mag is not in allowable orbital range 
+              removed
+            * systems where integration time is longer than maximum time removed
+            * systems not meeting the completeness threshold removed
         
         Additional filters can be provided in specific TargetList implementations.
+        
         """
         
         # filter out binary stars
@@ -226,15 +310,17 @@ class TargetList(object):
         """
         
         # indices from Target List to keep
-        i1 = np.where((self.BV < 0.74) & (self.MV < 6*self.BV+1.8))[0]
-        i2 = np.where((self.BV >= 0.74) & (self.BV < 1.37) & (self.MV < 4.3*self.BV+3.05))[0]
-        i3 = np.where((self.BV >= 1.37) & (self.MV < 18*self.BV-15.7))[0]
-        i4 = np.where((self.BV < 0.87) & (self.MV > -8*(self.BV-1.35)**2+7.01))[0]
-        i5 = np.where((self.BV >= 0.87) & (self.BV < 1.45) & (self.MV < 5*self.BV+0.81))[0]
-        i6 = np.where((self.BV >= 1.45) & (self.MV > 18*self.BV-18.04))[0]
+        i1 = np.where((self.BV < 0.74) & (self.MV < 6*self.BV + 1.8))[0]
+        i2 = np.where((self.BV >= 0.74) & (self.BV < 1.37) & \
+                (self.MV < 4.3*self.BV + 3.05))[0]
+        i3 = np.where((self.BV >= 1.37) & (self.MV < 18*self.BV - 15.7))[0]
+        i4 = np.where((self.BV < 0.87) & (self.MV > -8*(self.BV - 1.35)**2 + 7.01))[0]
+        i5 = np.where((self.BV >= 0.87) & (self.BV < 1.45) & \
+                (self.MV < 5*self.BV + 0.81))[0]
+        i6 = np.where((self.BV >= 1.45) & (self.MV > 18*self.BV - 18.04))[0]
         ia = np.append(np.append(i1, i2), i3)
         ib = np.append(np.append(i4, i5), i6)
-        i = np.intersect1d(np.unique(ia),np.unique(ib))
+        i = np.intersect1d(np.unique(ia), np.unique(ib))
         self.revise_lists(i)
 
     def fgk_filter(self):
@@ -271,7 +357,7 @@ class TargetList(object):
         OS = self.OpticalSystem
         
         s = np.tan(OS.IWA)*self.dist
-        L = np.sqrt(self.L) if PPop.scaleOrbits else 1. # stellar luminosity in Solar luminosities
+        L = np.sqrt(self.L) if PPop.scaleOrbits else 1.
         i = np.where(s < L*np.max(PPop.rrange))[0]
         self.revise_lists(i)
 
@@ -301,7 +387,7 @@ class TargetList(object):
         Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
-        i = np.where(deltaMag(p,Rp,d,Phi) < OS.dMagLim)[0]
+        i = np.where(deltaMag(p, Rp, d, Phi) < OS.dMagLim)[0]
         self.revise_lists(i)
 
     def int_cutoff_filter(self):
@@ -385,7 +471,7 @@ class TargetList(object):
         """
         
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         
         Vmag = self.Vmag[sInds]
         BV = self.BV[sInds]

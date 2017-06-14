@@ -6,19 +6,12 @@ from astropy.coordinates import SkyCoord
 from EXOSIMS.Prototypes.TargetList import TargetList
 
 class KnownRVPlanetsTargetList(TargetList):
-    """
-    Target list based on population of known RV planets from IPAC.  
+    """Target list based on population of known RV planets from IPAC.
     Intended for use with the KnownRVPlanets family of modules.
     
     Args: 
         \*\*specs: 
             user specified values
-            
-    Attributes: 
-        See TargetList prototype for attributes.
-                
-    
-    Notes:  
     
     """
 
@@ -39,7 +32,7 @@ class KnownRVPlanetsTargetList(TargetList):
                              'Kmag':'st_k',
                              'dist':'st_dist',
                              'BV':'st_bmvj',
-                             'L':'st_lum', #log(Lsun)
+                             'L':'st_lum', #ln(solLum)
                              'pmra':'st_pmra', #mas/year
                              'pmdec':'st_pmdec', #mas/year
                              'rv': 'st_radv'}
@@ -56,12 +49,12 @@ class KnownRVPlanetsTargetList(TargetList):
         tmp = PPop.allplanetdata[:]
         # filter out targets with planets outside of WA range 
         dist = tmp['st_dist'].filled()*u.pc
-        mask = ~tmp['st_dist'].mask & \
-                (np.arctan(PPop.sma*(1+PPop.eccen)/dist) > OS.IWA) & \
-                (np.arctan(PPop.sma*(1-PPop.eccen)/dist) < OS.OWA)
+        mask = ~tmp['st_dist'].mask \
+                & (np.arctan(PPop.sma*(1 + PPop.eccen)/dist) > OS.IWA) \
+                & (np.arctan(PPop.sma*(1 - PPop.eccen)/dist) < OS.OWA)
         tmp = tmp[mask]
         # filter out redundant targets
-        tmp = tmp[np.unique(tmp['pl_hostname'].data,return_index=True)[1]]
+        tmp = tmp[np.unique(tmp['pl_hostname'].data, return_index=True)[1]]
         
         # filter missing Vmag and BV , for OS.calc_maxintTime
         tmp = tmp[~tmp['st_vj'].mask]
@@ -85,9 +78,10 @@ class KnownRVPlanetsTargetList(TargetList):
         
         self.BC =  -2.5*self.L - 26.832 - self.Vmag
         self.L = 10.**self.L
-        self.MV = self.Vmag  - 5*(np.log10(self.dist.value) - 1)
-        self.coords = SkyCoord(ra=tmp['ra']*u.deg, dec=tmp['dec']*u.deg, distance=self.dist)
-        self.Binary_Cut = np.zeros(self.nStars,dtype=bool)
+        self.MV = self.Vmag  - 5*(np.log10(self.dist.to('pc').value) - 1)
+        self.coords = SkyCoord(ra=tmp['ra']*u.deg, dec=tmp['dec']*u.deg, 
+                distance=self.dist)
+        self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
         
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
@@ -101,7 +95,9 @@ class KnownRVPlanetsTargetList(TargetList):
         self.catalog_atts.append('tint0')
 
     def filter_target_list(self, **specs):
-        """ Filtering is done as part of populating the table, so this helper function
-        is just a dummy."""
+        """ Filtering is done as part of populating the table, so this 
+        helper function is just a dummy.
+        
+        """
         
         pass

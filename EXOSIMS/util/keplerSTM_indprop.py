@@ -63,27 +63,30 @@ class planSys:
         self.beta = 2*self.mu/self.r0norm - sum(v0**2, 0)
 
     def takeStep(self,dt):
-        Phi = self.calcSTM(dt)
-        self.updateState(np.dot(Phi,self.x0))
+        tmp = np.zeros(self.x0.shape)
+        for j in range(self.nplanets):
+            Phi = self.calcSTM(dt,j)
+            tmp[j*6:(j+1)*6] = np.dot(Phi,self.x0[j*6:(j+1)*6])
+
+        self.updateState(tmp)
         
 
-    def calcSTM(self,dt):
+    def calcSTM(self,dt,j):
         #allocate
-        u = np.zeros(self.nplanets)
-        deltaU = np.zeros(self.beta.size)
-        t = np.zeros(self.nplanets)
+        u = 0
+        deltaU = 0
+        t = 0
         counter = 0
         
         #For elliptic orbits, calculate period effects
-        eorbs = self.beta > 0
-        if any(eorbs):
-            P = 2*np.pi*self.mu[eorbs]*self.beta[eorbs]**(-3./2.)
-            n = np.floor((dt + P/2 - 2*self.nu0[eorbs]/self.beta[eorbs])/P)
-            deltaU[eorbs] = 2*np.pi*n*self.beta[eorbs]**(-5./2.)
+        if self.beta[j] >0:
+            P = 2*np.pi*self.mu[j]*self.beta[j]**(-3./2.)
+            n = np.floor((dt + P/2 - 2*self.nu0[j]/self.beta[j])/P)
+            deltaU = 2*np.pi*n*self.beta[j]**(-5./2.)
         
         #loop until convergence of the time array to the time step
         while (np.max(np.abs(t-dt)) > self.epsmult*np.spacing(dt)) and (counter < 1000):
-            q = self.beta*u**2./(1+self.beta*u**2.)
+            q = self.beta[j]*u**2./(1+self.beta[j]*u**2.)
             U0w2 = 1. - 2.*q
             U1w2 = 2.*(1.-q)*u
             temp = self.contFrac(q)
@@ -91,9 +94,9 @@ class planSys:
             U0 = 2.*U0w2**2.-1.
             U1 = 2.*U0w2*U1w2
             U2 = 2.*U1w2**2.
-            U3 = self.beta*U + U1*U2/3.
-            r = self.r0norm*U0 + self.nu0*U1 + self.mu*U2
-            t = self.r0norm*U1 + self.nu0*U2 + self.mu*U3
+            U3 = self.beta[j]*U + U1*U2/3.
+            r = self.r0norm[j]*U0 + self.nu0[j]*U1 + self.mu[j]*U2
+            t = self.r0norm[j]*U1 + self.nu0[j]*U2 + self.mu[j]*U3
             u = u - (t-dt)/(4.*(1.-q)*r)
             counter += 1
         
@@ -101,16 +104,13 @@ class planSys:
             raise ValueError('Failed to converge on t: %e/%e'%(np.max(np.abs(t-dt)), self.epsmult*np.spacing(dt)))
         
         #Kepler solution
-        f = 1 - self.mu/self.r0norm*U2
-        g = self.r0norm*U1 + self.nu0*U2
-        F = -self.mu*U1/r/self.r0norm
-        G = 1 - self.mu/r*U2
+        f = 1 - self.mu[j]/self.r0norm[j]*U2
+        g = self.r0norm[j]*U1 + self.nu0[j]*U2
+        F = -self.mu[j]*U1/r/self.r0norm[j]
+        G = 1 - self.mu[j]/r*U2
         
-        Phi = np.zeros([6*self.nplanets]*2)
-        for j in np.arange(self.nplanets):
-            st = j*6
-            Phi[st:st+6,st:st+6] = np.vstack((np.hstack((np.eye(3)*f[j], np.eye(3)*g[j])),np.hstack((np.eye(3)*F[j], np.eye(3)*G[j]))))
-        
+        Phi = np.vstack((np.hstack((np.eye(3)*f, np.eye(3)*g)),np.hstack((np.eye(3)*F, np.eye(3)*G))))
+       
         return Phi
 
     def contFrac(self, x, a = 5., b = 0., c = 5./2.):

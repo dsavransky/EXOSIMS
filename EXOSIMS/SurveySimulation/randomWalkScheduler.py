@@ -32,7 +32,7 @@ class randomWalkScheduler(SurveySimulation):
         """
         
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         
         # pick one
         sInd = np.random.choice(sInds)

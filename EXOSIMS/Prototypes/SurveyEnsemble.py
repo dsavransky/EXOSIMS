@@ -16,11 +16,8 @@ class SurveyEnsemble(object):
     _outspec = {}
 
     def __init__(self, **specs):
-        #currently nothing to do here
         
-        #add nb_run_sim, genNewPlanets=True, rewindPlanets=True
-        
-        return
+        pass
 
     def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
         

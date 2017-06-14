@@ -27,6 +27,8 @@ class Observatory(object):
             Telescope minimum keepout angle in units of deg
         koAngleMax (astropy Quantity):
             Telescope maximum keepout angle (for occulter) in units of deg
+        koAngleSmall (astropy Quantity):
+            Telescope keepout angle for smaller (angular size) bodies in units of deg
         checkKeepoutEnd (boolean):
             Boolean signifying if the keepout method must be called at the end of 
             each observation
@@ -50,6 +52,10 @@ class Observatory(object):
             Default burn portion
         flowRate (astropy Quantity): 
             Slew flow rate in units of kg/day
+        forceStaticEphem (boolean):
+            Boolean used to force static ephemerides
+        checkKeepoutEnd (boolean):
+            Boolean used to call keepout method at the end of each observation
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -63,46 +69,53 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self,koAngleMin=45,koAngleMax=90,checkKeepoutEnd=True,settlingTime=1,\
-            thrust=450,slewIsp=4160,scMass=6000,dryMass=3400,coMass=5800,occulterSep=55000,\
-            skIsp=220,defburnPortion=0.05,spkpath=None,forceStaticEphem=False,**specs):
+    def __init__(self, koAngleMin=45, koAngleMax=90, koAngleSmall=1, settlingTime=1,
+            thrust=450, slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800,
+            occulterSep=55000, skIsp=220, defburnPortion=0.05, spkpath=None,
+            forceStaticEphem=False, checkKeepoutEnd=True, **specs):
+        
+        # validate inputs
+        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
+        assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
         
         # default Observatory values
         self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
-        self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (for occulter)
-        self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at end of each obs
-        self.settlingTime = settlingTime*u.d        # instrument settling time after repoint (days)
+        self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (occulter)
+        self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
+        self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
-        self.scMass = scMass*u.kg                   # occulter (maneuvering sc) initial (wet) mass (kg)
-        self.dryMass = dryMass*u.kg                 # occulter (maneuvering sc) dry mass (kg)
-        self.coMass = coMass*u.kg                   # telescope (or non-maneuvering sc) mass (kg)
+        self.scMass = scMass*u.kg                   # occulter initial (wet) mass (kg)
+        self.dryMass = dryMass*u.kg                 # occulter dry mass (kg)
+        self.coMass = coMass*u.kg                   # telescope mass (kg)
         self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
         self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
-        self.forceStaticEphem = forceStaticEphem    # boolean used to force static ephem
+        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
+        self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
         self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
         
-        #if jplephem is available, we'll use that for propagating solar system bodies
-        #otherwise, use static ephemeris
+        # if jplephem is available, we'll use that for propagating solar system bodies
+        # otherwise, use static ephemerides
         if not forceStaticEphem:
             try:
                 from jplephem.spk import SPK
                 self.havejplephem = True
             except ImportError:
-                print "WARNING: Module jplephem not found, using static solar system ephemeris."
+                print "WARNING: Module jplephem not found, " \
+                        + "using static solar system ephemerides."
                 self.havejplephem = False
         else:
             self.havejplephem = False
-            print "Using static solar system ephemeris."
+            print "Using static solar system ephemerides."
         
         # populate outspec
         for att in self.__dict__.keys():
             dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)
@@ -113,101 +126,94 @@ class Observatory(object):
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
                 # if the path does not exist, load the default de432s.bsp
-                    classpath = os.path.split(inspect.getfile(self.__class__))[0]
-                    classpath = os.path.normpath(os.path.join(classpath,'..','Observatory'))
-                    filename = 'de432s.bsp'
-                    spkpath = os.path.join(classpath, filename)
+                classpath = os.path.split(inspect.getfile(self.__class__))[0]
+                classpath = os.path.normpath(os.path.join(classpath, '..', 
+                        'Observatory'))
+                filename = 'de432s.bsp'
+                spkpath = os.path.join(classpath, filename)
             self.kernel = SPK.open(spkpath)
         else:
             """All ephemeride data from Vallado Appendix D.4
-            Values are:
-            a     e             I               O                       w                   lM
-            sma   eccentricity  inclination     long. ascending node    long. perihelion    mean longitude
-            AU    N/A           deg             deg                     deg                 deg
+            Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
+                        O = long. ascending node (deg), w = long. perihelion (deg),
+                        lM = mean longitude (deg)
+            
             """
             
-            # Store Mercury ephemerides data (ecliptic)
-            Mercurya = 0.387098310
-            Mercurye = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
-            Mercuryi = [7.004986, -0.0059516, 0.00000081, 0.000000041]
-            MercuryO = [48.330893, -0.1254229, -0.00008833, -0.000000196]
-            Mercuryw = [77.456119, 0.1588643, -0.00001343, 0.000000039]
-            MercurylM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
-            Mercury = self.SolarEph(Mercurya, Mercurye, Mercuryi, MercuryO, Mercuryw, MercurylM)
+            # store ephemerides data in heliocentric true ecliptic frame
+            a = 0.387098310
+            e = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
+            I = [7.004986, -0.0059516, 0.00000081, 0.000000041]
+            O = [48.330893, -0.1254229, -0.00008833, -0.000000196]
+            w = [77.456119, 0.1588643, -0.00001343, 0.000000039]
+            lM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
+            Mercury = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Venus epemerides data (ecliptic)
-            Venusa = 0.723329820
-            Venuse = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
-            Venusi = [3.394662, -0.0008568, -0.00003244, 0.000000010]
-            VenusO = [76.679920, -0.2780080, -0.00014256, -0.000000198]
-            Venusw = [131.563707, 0.0048646, -0.00138232, -0.000005332]
-            VenuslM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
-            Venus = self.SolarEph(Venusa, Venuse, Venusi, VenusO, Venusw, VenuslM)
+            a = 0.723329820
+            e = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
+            I = [3.394662, -0.0008568, -0.00003244, 0.000000010]
+            O = [76.679920, -0.2780080, -0.00014256, -0.000000198]
+            w = [131.563707, 0.0048646, -0.00138232, -0.000005332]
+            lM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
+            Venus = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Earth ephemerides data (ecliptic)
-            Eartha = 1.000001018
-            Earthe = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
-            Earthi = [0., 0.0130546, -0.00000931, -0.000000034]
-            EarthO = [174.873174, -0.2410908, 0.00004067, -0.000001327]
-            Earthw = [102.937348, 0.3225557, 0.00015026, 0.000000478]
-            EarthlM = [100.466449, 35999.3728519, -0.00000568, 0.]
-            Earth = self.SolarEph(Eartha, Earthe, Earthi, EarthO, Earthw, EarthlM)
+            a = 1.000001018
+            e = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
+            I = [0., 0.0130546, -0.00000931, -0.000000034]
+            O = [174.873174, -0.2410908, 0.00004067, -0.000001327]
+            w = [102.937348, 0.3225557, 0.00015026, 0.000000478]
+            lM = [100.466449, 35999.3728519, -0.00000568, 0.]
+            Earth = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Mars ephemerides data (ecliptic)
-            Marsa = 1.523679342
-            Marse = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
-            Marsi = [1.849726, -0.0081479, -0.00002255, -0.000000027]
-            MarsO = [49.558093, -0.2949846, -0.00063993, -0.000002143]
-            Marsw = [336.060234, 0.4438898, -0.00017321, 0.000000300]
-            MarslM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
-            Mars = self.SolarEph(Marsa, Marse, Marsi, MarsO, Marsw, MarslM)
+            a = 1.523679342
+            e = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
+            I = [1.849726, -0.0081479, -0.00002255, -0.000000027]
+            O = [49.558093, -0.2949846, -0.00063993, -0.000002143]
+            w = [336.060234, 0.4438898, -0.00017321, 0.000000300]
+            lM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
+            Mars = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Jupiter ephemerides data (ecliptic)
-            Jupitera = [5.202603191, 0.0000001913]
-            Jupitere = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
-            Jupiteri = [1.303270, -0.0019872, 0.00003318, 0.000000092]
-            JupiterO = [100.464441, 0.1766828, 0.00090387, -0.000007032]
-            Jupiterw = [14.331309, 0.2155525, 0.00072252, -0.000004590]
-            JupiterlM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
-            Jupiter = self.SolarEph(Jupitera, Jupitere, Jupiteri, JupiterO, Jupiterw, JupiterlM)
+            a = [5.202603191, 0.0000001913]
+            e = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
+            I = [1.303270, -0.0019872, 0.00003318, 0.000000092]
+            O = [100.464441, 0.1766828, 0.00090387, -0.000007032]
+            w = [14.331309, 0.2155525, 0.00072252, -0.000004590]
+            lM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
+            Jupiter = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Saturn ephemerides data (ecliptic)
-            Saturna = [9.554909596, -0.0000021389]
-            Saturne = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
-            Saturni = [2.488878, 0.0025515, -0.00004903, 0.000000018]
-            SaturnO = [113.665524, -0.2566649, -0.00018345, 0.000000357]
-            Saturnw = [93.056787, 0.5665496, 0.00052809, 0.000004882]
-            SaturnlM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
-            Saturn = self.SolarEph(Saturna, Saturne, Saturni, SaturnO, Saturnw, SaturnlM)
+            a = [9.554909596, -0.0000021389]
+            e = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
+            I = [2.488878, 0.0025515, -0.00004903, 0.000000018]
+            O = [113.665524, -0.2566649, -0.00018345, 0.000000357]
+            w = [93.056787, 0.5665496, 0.00052809, 0.000004882]
+            lM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
+            Saturn = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Uranus ephemerides data (ecliptic)
-            Uranusa = [19.218446062, -0.0000000372, 0.00000000098]
-            Uranuse = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
-            Uranusi = [0.773196, -0.0016869, 0.00000349, 0.000000016]
-            UranusO = [74.005947, 0.0741461, 0.00040540, 0.000000104]
-            Uranusw = [173.005159, 0.0893206, -0.00009470, 0.000000413]
-            UranuslM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
-            Uranus = self.SolarEph(Uranusa, Uranuse, Uranusi, UranusO, Uranusw, UranuslM)
+            a = [19.218446062, -0.0000000372, 0.00000000098]
+            e = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
+            I = [0.773196, -0.0016869, 0.00000349, 0.000000016]
+            O = [74.005947, 0.0741461, 0.00040540, 0.000000104]
+            w = [173.005159, 0.0893206, -0.00009470, 0.000000413]
+            lM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
+            Uranus = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Neptune ephemerides data (ecliptic)
-            Neptunea = [30.110386869, -0.0000001663, 0.00000000069]
-            Neptunee = [0.00898809, 0.000006408, -0.0000000008]
-            Neptunei = [1.769952, 0.0002257, 0.00000023, -0.000000000]
-            NeptuneO = [131.784057, -0.0061651, -0.00000219, -0.000000078]
-            Neptunew = [48.123691, 0.0291587, 0.00007051, 0.]
-            NeptunelM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
-            Neptune = self.SolarEph(Neptunea, Neptunee, Neptunei, NeptuneO, Neptunew, NeptunelM)
+            a = [30.110386869, -0.0000001663, 0.00000000069]
+            e = [0.00898809, 0.000006408, -0.0000000008]
+            I = [1.769952, 0.0002257, 0.00000023, -0.000000000]
+            O = [131.784057, -0.0061651, -0.00000219, -0.000000078]
+            w = [48.123691, 0.0291587, 0.00007051, 0.]
+            lM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
+            Neptune = self.SolarEph(a, e, I, O, w, lM)
             
-            # Store Pluto ephemerides data (ecliptic)
-            Plutoa = [39.48168677, -0.00076912]
-            Plutoe = [0.24880766, 0.00006465]
-            Plutoi = [17.14175, 0.003075]
-            PlutoO = [110.30347, -0.01036944]
-            Plutow = [224.06676, -0.03673611]
-            PlutolM = [238.92881, 145.2078]
-            Pluto = self.SolarEph(Plutoa, Plutoe, Plutoi, PlutoO, Plutow, PlutolM)
+            a = [39.48168677, -0.00076912]
+            e = [0.24880766, 0.00006465]
+            I = [17.14175, 0.003075]
+            O = [110.30347, -0.01036944]
+            w = [224.06676, -0.03673611]
+            lM = [238.92881, 145.2078]
+            Pluto = self.SolarEph(a, e, I, O, w, lM)
             
-            #store all as dictionary:
+            # store all as dictionary:
             self.planets = {'Mercury': Mercury,
                             'Venus': Venus,
                             'Earth': Earth,
@@ -222,15 +228,71 @@ class Observatory(object):
         """String representation of the Observatory object
         
         When the command 'print' is used on the Observatory object, this method
-        will print the attribute values contained in the object"""
+        will print the attribute values contained in the object
+        
+        """
         
         for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Observatory class object attributes'
 
-    def orbit(self, currentTime):
-        """Finds observatory orbit position vector in heliocentric equatorial frame.
+    def equat2eclip(self, r_equat, currentTime, rotsign=1):
+        """Rotates heliocentric coordinates from equatorial to ecliptic frame.
+        
+        Args:
+            r_equat (astropy Quantity nx3 array):
+                Positions vector in heliocentric equatorial frame in units of AU
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            rotsign (integer):
+                Optional flag, default 1, set -1 to reverse the rotation
+        
+        Returns:
+            r_eclip (astropy Quantity nx3 array):
+                Positions vector in heliocentric ecliptic frame in units of AU
+        
+        """
+        
+        # check size of arrays
+        assert currentTime.size == 1 or currentTime.size == len(r_equat), \
+                "If multiple times and positions, currentTime and r_equat sizes must match"
+        # find Julian centuries from J2000
+        TDB = self.cent(currentTime)
+        # find obliquity of the ecliptic
+        obe = rotsign*np.array(np.radians(self.obe(TDB)), ndmin=1)
+        # positions vector in heliocentric ecliptic frame
+        if currentTime.size == 1:
+            r_eclip = np.array([np.dot(self.rot(obe[0], 1), 
+                r_equat[x,:].to('AU').value) for x in range(len(r_equat))])*u.AU
+        else:
+            r_eclip = np.array([np.dot(self.rot(obe[x], 1), 
+                r_equat[x,:].to('AU').value) for x in range(len(r_equat))])*u.AU
+        
+        return r_eclip
+
+    def eclip2equat(self, r_eclip, currentTime):
+        """Rotates heliocentric coordinates from ecliptic to equatorial frame.
+        
+        Args:
+            r_eclip (astropy Quantity nx3 array):
+                Positions vector in heliocentric ecliptic frame in units of AU
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+        
+        Returns:
+            r_equat (astropy Quantity nx3 array):
+                Positions vector in heliocentric equatorial frame in units of AU
+        
+        """
+        
+        r_equat = self.equat2eclip(r_eclip, currentTime, rotsign=-1)
+        
+        return r_equat
+
+    def orbit(self, currentTime, eclip=False):
+        """Finds observatory orbit positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
         
         This method defines the data type expected, orbits are determined by specific
         instances of Observatory classes.
@@ -238,18 +300,27 @@ class Observatory(object):
         Args:
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_sc (astropy Quantity nx3 array):
-                Observatory (spacecraft) position vector in units of km
+            r_obs (astropy Quantity nx3 array):
+                Observatory orbit positions vector in heliocentric equatorial (default)
+                or ecliptic frame in units of AU
+        
+        Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
-        r_sc = np.vstack((currentTime.mjd, currentTime.mjd, currentTime.mjd)).T*u.km
-        assert np.all(np.isfinite(r_sc)), \
-                "Observatory position vector r_sc has infinite value."
+        # observatory positions vector in heliocentric equatorial frame
+        r_obs = np.ones((currentTime.size, 3))*u.AU
         
-        return r_sc
+        if eclip:
+            # observatory positions vector in heliocentric ecliptic frame
+            r_obs = self.equat2eclip(r_obs, currentTime)
+        
+        return r_obs
 
     def keepout(self, TL, sInds, currentTime, mode):
         """Finds keepout Boolean values for stars of interest.
@@ -276,10 +347,10 @@ class Observatory(object):
         """
         
         # check size of arrays
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
         nStars = sInds.size
         nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+        assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
                 "If multiple times and targets, currentTime and sInds sizes must match"
         
         # build "keepout good" array, check if all elements are Boolean
@@ -289,158 +360,140 @@ class Observatory(object):
         
         return kogood
 
-    def starprop(self, TL, sInds, currentTime):
-        """Finds heliocentric cartesian coordinates (in units of km) of target stars 
-        for current time (MJD).
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-        
-        Returns:
-            r_star (astropy Quantity nx3 array): 
-                Position vectors of stars of interest in heliocentric frame in units of km
-        
-        Note: If multiple times and targets, currentTime and sInds sizes must match.
-        
-        """
-        
-        # check size of arrays
-        sInds = np.array(sInds,ndmin=1)
-        nStars = sInds.size
-        nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
-        # star ICRS coordinates
-        coord = TL.coords[sInds]
-        # right ascension and declination
-        ra = coord.ra
-        dec = coord.dec
-        # set J2000 epoch
-        j2000 = Time(2000., format='jyear')
-        # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
-        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
-        r0 = coord.cartesian.xyz/coord.distance
-        # proper motion vector
-        mu0 = p0*TL.pmra[sInds] + q0*TL.pmdec[sInds]
-        # space velocity vector
-        v = mu0/TL.parx[sInds]*u.AU + r0*TL.rv[sInds]
-        # stellar position vector
-        dr = (v*(currentTime.mjd - j2000.mjd)*u.day).decompose()
-        r_star = (coord.cartesian.xyz + dr).T.to('km')
-        
-        return r_star
-
-    def solarSystem_body_position(self, currentTime, bodyname):
-        """Finds position vector for solar system objects
+    def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
+        """Finds solar system body positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
         
         This passes all arguments to one of spk_body or keplerplanet, depending
         on the value of self.havejplephem.
         
         Args:
-            currentTime (astropy Time):
+            currentTime (astropy Time array):
                 Current absolute mission time in MJD
             bodyname (string):
                 Solar system object name
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
         
         Returns:
             r_body (astropy Quantity nx3 array):
-                Heliocentric equatorial position vector in units of km
+                Solar system body positions in heliocentric equatorial (default)
+                or ecliptic frame in units of AU
+        
+        Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
-        # reshape currentTime
-        currentTime = Time(np.array(currentTime.value,ndmin=1), format='mjd', scale='tai')
+        # heliocentric
+        if bodyname == 'Sun':
+            return np.zeros((currentTime.size, 3))*u.AU
         
+        # choose JPL or static ephemerides
         if self.havejplephem:
-            r_body = self.spk_body(currentTime, bodyname).to('km')
+            r_body = self.spk_body(currentTime, bodyname, eclip=eclip).to('AU')
         else:
-            r_body = self.keplerplanet(currentTime, bodyname).to('km')
+            r_body = self.keplerplanet(currentTime, bodyname, eclip=eclip).to('AU')
         
         return r_body
 
-    def spk_body(self, currentTime, bodyname):
-        """Finds position vector for solar system objects
+    def spk_body(self, currentTime, bodyname, eclip=False):
+        """Finds solar system body positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
         
-        This method uses spice kernel from NAIF to find heliocentric
-        equatorial position vectors (astropy Quantity in km) for solar system
-        objects.
+        This method uses spice kernel from NAIF to find heliocentric 
+        equatorial position vectors for solar system objects.
         
         Args:
-            currentTime (astropy Time):
+            currentTime (astropy Time array):
                 Current absolute mission time in MJD
             bodyname (string):
                 Solar system object name
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
         
         Returns:
             r_body (astropy Quantity nx3 array):
-                Heliocentric equatorial position vector in units of km
+                Solar system body positions in heliocentric equatorial (default)
+                or ecliptic frame in units of AU
+        
+        Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
-        # dictionary of solar system bodies available in spice kernel
-        bodies = {'Mercury':199,
-                  'Venus':299,
-                  'Earth':399,
-                  'Mars':4,
-                  'Jupiter':5,
-                  'Saturn':6,
-                  'Uranus':7,
-                  'Neptune':8,
-                  'Pluto':9,
-                  'Sun':10,
-                  'Moon':301}
-        assert bodies.has_key(bodyname),\
+        # dictionary of solar system bodies available in spice kernel (in km)
+        bodies = {'Mercury': 199,
+                  'Venus': 299,
+                  'Earth': 399,
+                  'Mars': 4,
+                  'Jupiter': 5,
+                  'Saturn': 6,
+                  'Uranus': 7,
+                  'Neptune': 8,
+                  'Pluto': 9,
+                  'Sun': 10,
+                  'Moon': 301}
+        assert bodies.has_key(bodyname), \
                  "%s is not a recognized body name."%(bodyname)
         
+        # julian day time
+        jdtime = np.array(currentTime.jd, ndmin=1)
+        # body positions vector in heliocentric equatorial frame
         if bodies[bodyname] == 199:
-            r_body = (self.kernel[0,1].compute(currentTime.jd) + \
-                    self.kernel[1,199].compute(currentTime.jd) - \
-                    self.kernel[0,10].compute(currentTime.jd))*u.km
+            r_body = (self.kernel[0,1].compute(jdtime) +
+                    self.kernel[1,199].compute(jdtime) -
+                    self.kernel[0,10].compute(jdtime))
         elif bodies[bodyname] == 299:
-            r_body = (self.kernel[0,2].compute(currentTime.jd) + \
-                    self.kernel[2,299].compute(currentTime.jd) - \
-                    self.kernel[0,10].compute(currentTime.jd))*u.km
+            r_body = (self.kernel[0,2].compute(jdtime) +
+                    self.kernel[2,299].compute(jdtime) -
+                    self.kernel[0,10].compute(jdtime))
         elif bodies[bodyname] == 399:
-            r_body = (self.kernel[0,3].compute(currentTime.jd) + \
-                    self.kernel[3,399].compute(currentTime.jd) - \
-                    self.kernel[0,10].compute(currentTime.jd))*u.km
+            r_body = (self.kernel[0,3].compute(jdtime) +
+                    self.kernel[3,399].compute(jdtime) -
+                    self.kernel[0,10].compute(jdtime))
         elif bodies[bodyname] == 301:
-            r_body = (self.kernel[0,3].compute(currentTime.jd) + \
-                    self.kernel[3,301].compute(currentTime.jd) - \
-                    self.kernel[0,10].compute(currentTime.jd))*u.km
+            r_body = (self.kernel[0,3].compute(jdtime) +
+                    self.kernel[3,301].compute(jdtime) -
+                    self.kernel[0,10].compute(jdtime))
         else:
-            r_body = (self.kernel[0,bodies[bodyname]].compute(currentTime.jd) - \
-                    self.kernel[0,10].compute(currentTime.jd))*u.km
-        r_body = r_body.T.to('km')
+            r_body = (self.kernel[0,bodies[bodyname]].compute(jdtime) -
+                    self.kernel[0,10].compute(jdtime))
+        # reshape and convert units
+        r_body = (r_body*u.km).T.to('AU')
+        
+        if eclip:
+            # body positions vector in heliocentric ecliptic frame
+            r_body = self.equat2eclip(r_body, currentTime)
         
         return r_body
 
-    def keplerplanet(self, currentTime, bodyname):
-        """Finds position vector for solar system objects
+    def keplerplanet(self, currentTime, bodyname, eclip=False):
+        """Finds solar system body positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
         
         This method uses algorithms 2 and 10 from Vallado 2013 to find 
-        heliocentric equatorial position vectors (astropy Quantity in km) for 
-        solar system objects.
+        heliocentric equatorial position vectors for solar system objects.
         
         Args:
-            currentTime (astropy Time):
+            currentTime (astropy Time array):
                 Current absolute mission time in MJD
             bodyname (string):
                 Solar system object name
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
         
         Returns:
             r_body (astropy Quantity nx3 array):
-                Heliocentric equatorial position vector in units of km
+                Solar system body positions in heliocentric equatorial (default)
+                or ecliptic frame in units of AU
+        
+        Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
+        # Moon positions based on Earth positions
         if bodyname == 'Moon':
             r_Earth = self.keplerplanet(currentTime, 'Earth')
             return r_Earth + self.moon_earth(currentTime)
@@ -448,59 +501,59 @@ class Observatory(object):
         assert self.planets.has_key(bodyname),\
                 "%s is not a recognized body name."%(bodyname)
         
-        planet = self.planets[bodyname] 
         # find Julian centuries from J2000
         TDB = self.cent(currentTime)
-        # update ephemeride data
-        a = self.propeph(planet.a, TDB)
+        # update ephemerides data (convert sma from km to AU)
+        planet = self.planets[bodyname] 
+        a = (self.propeph(planet.a, TDB)*u.km).to('AU').value
         e = self.propeph(planet.e, TDB)
         I = np.radians(self.propeph(planet.I, TDB))
         O = np.radians(self.propeph(planet.O, TDB))
         w = np.radians(self.propeph(planet.w, TDB))
         lM = np.radians(self.propeph(planet.lM, TDB))
-        # Find mean anomaly and argument of perigee
-        M = np.mod(lM - w,2*np.pi)
-        wp = np.mod(w - O,2*np.pi)
-        # Find eccentric anomaly
+        # find mean anomaly and argument of perigee
+        M = (lM - w) % (2*np.pi)
+        wp = (w - O) % (2*np.pi)
+        # find eccentric anomaly
         E = eccanom(M,e)[0]
-        # Find true anomaly
+        # find true anomaly
         nu = np.arctan2(np.sin(E) * np.sqrt(1 - e**2), np.cos(E) - e)
-        # Find semiparameter
+        # find semiparameter
         p = a*(1 - e**2)
-        # position vector (km) in orbital plane
+        # body positions vector in orbital plane
         rx = p*np.cos(nu)/(1 + e*np.cos(nu))
         ry = p*np.sin(nu)/(1 + e*np.cos(nu))
         rz = np.zeros(currentTime.size)
-        r_body = np.vstack((rx,ry,rz))
-        # position vector (km) in ecliptic plane
-        r_body = np.array([np.dot(np.dot(self.rot(-O[x],3),self.rot(-I[x],1)),\
-                np.dot(self.rot(-wp[x],3),r_body[:,x])) for x in range(currentTime.size)]).T
-        # find obliquity of the ecliptic
-        obe = np.array(np.radians(self.obe(TDB)),ndmin=1)
-        # position vector (km) in heliocentric equatorial frame
-        r_body = np.array([np.dot(self.rot(-obe[x],1),r_body[:,x])\
-                for x in range(currentTime.size)])*u.km
+        r_orb = np.array([rx,ry,rz])
+        # body positions vector in heliocentric ecliptic plane
+        r_body = np.array([np.dot(np.dot(self.rot(-O[x], 3), 
+                self.rot(-I[x], 1)), np.dot(self.rot(-wp[x], 3), 
+                r_orb[:,x])) for x in range(currentTime.size)])*u.AU
+        
+        if not eclip:
+            # body positions vector in heliocentric equatorial frame
+            r_body = self.eclip2equat(r_body, currentTime)
         
         return r_body
 
     def moon_earth(self, currentTime):
-        """Finds geocentric equatorial position vector (km) for Earth's moon
+        """Finds geocentric equatorial positions vector for Earth's moon
         
         This method uses Algorithm 31 from Vallado 2013 to find the geocentric
-        equatorial position vector for Earth's moon.
+        equatorial positions vector for Earth's moon.
         
         Args:
-            currentTime (astropy Time):
+            currentTime (astropy Time array):
                 Current absolute mission time in MJD
         
         Returns:
             r_moon (astropy Quantity nx3 array):
-                Geocentric equatorial position vector in units of km
+                Geocentric equatorial position vector in units of AU
         
         """
         
-        TDB = self.cent(currentTime)
-        la = np.radians(218.32 + 481267.8813*TDB + \
+        TDB = np.array(self.cent(currentTime), ndmin=1)
+        la = np.radians(218.32 + 481267.8813*TDB + 
             6.29*np.sin(np.radians(134.9 + 477198.85*TDB)) - 
             1.27*np.sin(np.radians(259.2 - 413335.38*TDB)) + 
             0.66*np.sin(np.radians(235.7 + 890534.23*TDB)) + 
@@ -517,9 +570,12 @@ class Observatory(object):
             0.0028*np.cos(np.radians(269.9 + 954397.70*TDB)))
         e = np.radians(23.439291 - 0.0130042*TDB - 1.64e-7*TDB**2 + 5.04e-7*TDB**3)
         r = 1./np.sin(P)*6378.137 # km
-        r_moon = (r*np.vstack((np.cos(phi)*np.cos(la),
-            np.cos(e)*np.cos(phi)*np.sin(la) - np.sin(e)*np.sin(phi),
-            np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)))).T*u.km
+        r_moon = r*np.array([np.cos(phi)*np.cos(la), 
+                np.cos(e)*np.cos(phi)*np.sin(la) - np.sin(e)*np.sin(phi), 
+                np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)])
+        
+        # set format and units
+        r_moon = (r_moon*u.km).T.to('AU')
         
         return r_moon
 
@@ -529,7 +585,7 @@ class Observatory(object):
         This quantity is needed for many algorithms from Vallado 2013.
         
         Args:
-            currentTime (astropy Time):
+            currentTime (astropy Time array):
                 Current absolute mission time in MJD
             
         Returns:
@@ -544,10 +600,7 @@ class Observatory(object):
         return TDB
 
     def propeph(self, x, TDB):
-        """Propagates ephemeride to current time and returns this value
-        
-        This method propagates the ephemerides from Vallado 2013 to the current
-        time.
+        """Propagates an ephemeris from Vallado 2013 to current time.
         
         Args:
             x (list):
@@ -577,7 +630,7 @@ class Observatory(object):
         
         # propagated ephem must be an array
         y = x[0] + x[1]*TDB + x[2]*(TDB**2) + x[3]*(TDB**3)
-        y = np.array(y,ndmin=1)
+        y = np.array(y, ndmin=1)
         
         return y
 
@@ -631,16 +684,16 @@ class Observatory(object):
         """
         
         # get spacecraft position vector
-        r_sc = self.orbit(currentTime)[0]
+        r_obs = self.orbit(currentTime)[0]
         # sun -> earth position vector
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
-        r_targ = self.starprop(TL, sInd, currentTime)[0] - r_sc
+        r_targ = TL.starprop_equat(sInd, currentTime)[0] - r_obs
         u_targ = r_targ.value/np.linalg.norm(r_targ)
         # sun -> occulter vector
-        r_Os = r_sc + self.occulterSep*u_targ
+        r_Os = r_obs + self.occulterSep*u_targ
         # Earth-Moon barycenter -> spacecraft vectors
-        r_TE = r_sc - r_Es
+        r_TE = r_obs - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
         Mfactor = -self.scMass*const.M_sun*const.G
@@ -649,7 +702,7 @@ class Observatory(object):
         F_O = F_sO + F_EO
         # force on telescope
         Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_sc/(np.linalg.norm(r_sc)*r_sc.unit)**3 * Mfactor
+        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3 * Mfactor
         F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3 * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
@@ -680,10 +733,11 @@ class Observatory(object):
                 Mass used in station-keeping units of kg
             deltaV (astropy Quantity):
                 Change in velocity required for station-keeping in units of km/s
-                
+        
         """
         
-        intMdot = (1./np.cos(np.radians(45.))*np.cos(np.radians(5.))*dF_lateral/const.g0/self.skIsp).to('kg/s')
+        intMdot = (1./np.cos(np.radians(45))*np.cos(np.radians(5))*
+                dF_lateral/const.g0/self.skIsp).to('kg/s')
         mass_used = (intMdot*t_int).to('kg')
         deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
         
@@ -730,7 +784,9 @@ class Observatory(object):
             
         Each of these lists has a maximum of 4 elements. The values in 
         these lists are used to propagate the solar system planetary 
-        ephemerides for a specific solar system planet."""
+        ephemerides for a specific solar system planet.
+        
+        """
 
         def __init__(self, a, e, I, O, w, lM):
             
@@ -753,7 +809,9 @@ class Observatory(object):
             """String representation of the SolarEph object
             
             When the command 'print' is used on the SolarEph object, this 
-            method will print the attribute values contained in the object"""
+            method will print the attribute values contained in the object
+            
+            """
             
             for att in self.__dict__.keys():
                 print '%s: %r' % (att, getattr(self, att))

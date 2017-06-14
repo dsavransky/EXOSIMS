@@ -57,7 +57,7 @@ class Nemati(OpticalSystem):
         # get SNR threshold
         SNR = mode['SNR']
         # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore',invalid='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):
             intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
@@ -65,7 +65,7 @@ class Nemati(OpticalSystem):
         intTime[intTime < 0] = 0.*u.d
         
         return intTime.to('day')
-    
+
     def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
         """Finds instrument achievable contrast for one integration time per
         star in the input list at one or more working angles.
@@ -98,9 +98,9 @@ class Nemati(OpticalSystem):
         """
         
         # reshape sInds, WA, t_int
-        sInds = np.array(sInds,ndmin=1)
-        WA = np.array(WA.value,ndmin=1)*WA.unit
-        t_int = np.array(t_int.value,ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
         assert len(t_int) == len(sInds), "t_int and sInds must be same length"
         
         # get scienceInstrument and starlightSuppressionSystem
@@ -118,7 +118,7 @@ class Nemati(OpticalSystem):
             WA = WA*lam/syst['lam']
         
         # get star magnitude
-        mV = TL.starMag(sInds,lam)
+        mV = TL.starMag(sInds, lam)
         
         # get signal to noise ratio
         SNR = mode['SNR']
@@ -127,11 +127,12 @@ class Nemati(OpticalSystem):
         C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*self.attenuation
         
         # get core_thruput
-        core_thruput = syst['core_thruput'](lam,WA)
+        core_thruput = syst['core_thruput'](lam, WA)
         
-        C_inst = np.zeros((len(sInds),len(WA)))
+        C_inst = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
             C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, dMag, WA, mode)
-            C_inst[i,:] = (SNR*np.sqrt(C_b/t_int[i] + C_sp**2)/(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value
+            C_inst[i,:] = (SNR*np.sqrt(C_b/t_int[i] + C_sp**2) \
+                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value
         
         return C_inst

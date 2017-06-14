@@ -42,10 +42,10 @@ class KeplerLike1(PlanetPopulation):
 
     def __init__(self, smaknee=30, esigma=0.25, **specs):
         
-        specs['prange'] = [0.083,0.882]
-        specs['Rprange'] = [1,22.6]
+        specs['prange'] = [0.083, 0.882]
+        specs['Rprange'] = [1, 22.6]
         PlanetPopulation.__init__(self, **specs)
-        
+
         # define sma distribution, with decay point (knee)
         smaknee = float(smaknee)
         a = self.arange.to('AU').value
@@ -53,20 +53,20 @@ class KeplerLike1(PlanetPopulation):
                "sma knee value must be in sma range."
         norm = integrate.quad(lambda x,s0=smaknee: x**-0.62*np.exp(-(x/s0)**2),\
                 a[0], a[1])[0]
-        self.adist = lambda x,s0=smaknee,a=a: x**-0.62*np.exp(-(x/s0)**2)\
+
+        self.adist = lambda x,s0=smaknee,a=a,norm=norm: x**-0.62*np.exp(-(x/s0)**2) \
                 / norm * np.array((x >= a[0])&(x <= a[1]),dtype=float, ndmin=1)
         
         # define Rayleigh eccentricity distribution
-        esigma = float(esigma)
-        norm = integrate.quad(lambda x,sig=esigma: x/sig**2*np.exp(-x**2/(2.*sig**2)),\
-                self.erange[0], self.erange[1])[0]
-        self.edist = lambda x,sig=esigma,e=self.erange: x/sig**2*np.exp(-x**2/(2.*sig**2))\
+        self.esigma = float(esigma)
+        norm = np.exp(-self.erange[0]**2/(2.0*self.esigma**2)) - np.exp(-self.erange[1]**2/(2.0*self.esigma**2))
+        self.edist = lambda x,sig=self.esigma,e=self.erange,norm=norm: x/sig**2*np.exp(-x**2/(2.*sig**2))\
                 / norm * np.array((x >= e[0])&(x <= e[1]),dtype=float, ndmin=1)
         
         # define Kepler radius distribution
         Rs = np.array([1,1.4,2.0,2.8,4.0,5.7,8.0,11.3,16,22.6]) #Earth Radii
         Rvals85 = np.array([0.1555,0.1671,0.1739,0.0609,0.0187,0.0071,0.0102,0.0049,0.0014])
-        a85 = ((85.*u.day/2/np.pi)**2*const.M_sun*const.G)**(1./3) #sma of 85 days
+        a85 = ((85.*u.day/2./np.pi)**2*const.M_sun*const.G)**(1./3) #sma of 85 days
         fac1 = integrate.quad(self.adist,0,a85.to('AU').value)[0]
         Rvals = integrate.quad(self.adist,0,a[1])[0]*(Rvals85/fac1)
         Rvals[5:] *= 2.5 #account for longer orbital baseline data
@@ -260,3 +260,85 @@ class KeplerLike1(PlanetPopulation):
         Mp = self.PlanetPhysicalModel.calc_mass_from_radius(Rp).to('kg')
         
         return Mp
+    
+    def gen_eccen_from_sma(self, n, a):
+        """Generate eccentricity values constrained by semi-major axis, such that orbital
+        radius always falls within the provided sma range.
+        
+        This provides a Rayleigh distribution between the minimum and 
+        maximum allowable values.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+            a (astropy Quantity array):
+                Semi-major axis values in units of AU
+            
+        Returns:
+            e (float ndarray):
+                Eccentricity values
+        
+        """
+        n = self.gen_input_check(n)
+        assert len(a) == n, "a input must be of size n."
+        
+        # mean sma value
+        amean = 0.5*(self.arange[0].to('AU').value + self.arange[1].to('AU').value)
+        # upper limit for eccentricity given sma
+        sma = a.to('AU').value
+        elim = np.zeros(sma.shape)
+        elim[sma<=amean] = 1.0-self.arange[0].to('AU').value/sma[sma<=amean]
+        elim[sma>amean] = self.arange[1].to('AU').value/sma[sma>amean] - 1.0
+        
+        # constants
+        C1 = np.exp(-self.erange[0]**2/(2.0*self.esigma**2))
+        C2 = C1 - np.exp(-elim**2/(2.0*self.esigma**2))
+        
+        e = self.esigma*np.sqrt(-2.0*np.log(C1-C2*np.random.uniform(size=n)))
+        
+        return e
+    
+    def edist_from_sma(self, e, a):
+        """Probability density function for eccentricity constrained by 
+        semi-major axis, such that orbital radius always falls within the 
+        provided sma range.
+        
+        This provides a Rayleigh distribution between the minimum and 
+        maximum allowable values.
+        
+        Args:
+            e (ndarray):
+                Eccentricity values
+            a (float):
+                Semi-major axis value in AU
+        
+        Returns:
+            f (ndarray):
+                Probability density of eccentricity constrained by semi-major
+                axis
+        
+        """
+        if not isinstance(e,np.ndarray):
+            e = np.array(e, ndmin=1, copy=False)
+        if not isinstance(a,np.ndarray):
+            a = np.array(a, ndmin=1, copy=False)
+
+        if a.shape == e.shape or (len(a) == 1 and len(e) == e.size):
+            amean = 0.5*(self.arange[0].to('AU').value + self.arange[1].to('AU').value)
+            elim = np.zeros(a.shape)
+            elim[a<=amean] = 1.0-self.arange[0].to('AU').value/a[a<=amean]
+            elim[a>amean] = self.arange[1].to('AU').value/a[a>amean] - 1.0
+            
+            norm = np.exp(-self.erange[0]**2/(2.0*self.esigma**2)) - np.exp(-elim**2/(2.0*self.esigma**2))
+            ins = np.array((e >= self.erange[0])&(e <= elim), dtype=float, ndmin=1)
+            f = ins*e/self.esigma**2*np.exp(-e**2/(2.0*self.esigma**2))/norm
+            
+        elif len(a) == a.size and len(e) == e.size:
+            x, y = np.meshgrid(a,e)
+            f = self.edist_from_sma(y,x)
+        else:
+            print 'Input mismatch between semi-major axis and eccentricity'
+            print 'pdf set to zero'
+            f = np.array([0.0])
+        
+        return f

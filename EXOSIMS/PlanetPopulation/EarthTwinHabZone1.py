@@ -12,9 +12,9 @@ class EarthTwinHabZone1(PlanetPopulation):
     of JSON inputs.
     """
 
-    def __init__(self, **specs):
+    def __init__(self, eta=0.1, **specs):
         
-        specs['eta'] = 0.1
+        specs['eta'] = eta
         specs['arange'] = [0.7, 1.5]
         specs['erange'] = [0,0]
         specs['prange'] = [0.367,0.367]

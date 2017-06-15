@@ -66,12 +66,12 @@ class Nemati(OpticalSystem):
         
         return intTime.to('day')
 
-    def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
-        """Finds instrument achievable contrast for one integration time per
-        star in the input list at one or more working angles.
+    def calc_dMag_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Finds achievable dMag for one integration time per star in the input 
+        list at one or more working angles.
         
-        Instrument contrast is returned as an m x n array where m corresponds 
-        to each star in sInds and n corresponds to each working angle in WA.
+        Achievable dMag is returned as an m x n array where m corresponds to 
+        each star in sInds and n corresponds to each working angle in WA.
         
         Args:
             t_int (astropy Quantity array):
@@ -88,12 +88,10 @@ class Nemati(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            dMag (float):
-                Difference in brightness magnitude between planet and host star
-                
+                            
         Returns:
-            C_inst (ndarray):
-                Instrument contrast for given integration time and working angle
+            dMag (ndarray):
+                Achievable dMag for given integration time and working angle
                 
         """
         
@@ -129,10 +127,47 @@ class Nemati(OpticalSystem):
         # get core_thruput
         core_thruput = syst['core_thruput'](lam, WA)
         
-        C_inst = np.zeros((len(sInds), len(WA)))
+        dMag = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
-            C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, dMag, WA, mode)
-            C_inst[i,:] = (SNR*np.sqrt(C_b/t_int[i] + C_sp**2) \
-                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value
+            C_b, C_sp = self.Cb_Csp(TL, sInds[i], fZ, fEZ, WA, mode)
+            dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/t_int[i] + C_sp**2) \
+                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value)
         
-        return C_inst
+        return dMag
+    
+    def ddMag_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Finds derivative of achievable dMag with respect to integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            
+        Returns:
+            ddMagdt (ndarray):
+                Derivative of achievable dMag with respect to integration time
+        
+        """
+        # reshape sInds, WA, t_int
+        sInds = np.array(sInds, ndmin=1)
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        
+        ddMagdt = np.zeros((len(sInds), len(WA)))
+        for i in xrange(len(sInds)):
+            Cb, Csp = self.Cb_Csp(TL, sInds[i], fZ, fEZ, WA, mode)
+            ddMagdt[i,:] = 2.5/(2.0*np.log(10.0))*(Cb/(Cb*t_int[i] + (Csp*t_int[i])**2)).to('1/s').value
+            
+        return ddMagdt/u.s

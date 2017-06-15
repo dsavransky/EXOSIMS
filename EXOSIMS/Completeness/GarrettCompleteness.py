@@ -74,6 +74,7 @@ class GarrettCompleteness(BrownCompleteness):
         Phis = self.PlanetPhysicalModel.calc_Phi(beta).value
         # Interpolant for phase function which removes astropy Quantity
         self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=1,ext=1)
+        self.Phiinv = interpolate.InterpolatedUnivariateSpline(Phis[::-1],beta.value[::-1],k=1,ext=1)
         # get numerical derivative of phase function
         dPhis = np.zeros(beta.shape)
         db = beta[1].value - beta[0].value
@@ -90,9 +91,17 @@ class GarrettCompleteness(BrownCompleteness):
         self.cdmin3 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2)
         self.cdmax = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2)
         self.val = np.sin(self.bstar)**2*self.Phi(self.bstar)
+        self.d1 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2)
+        self.d2 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2*self.Phi(self.bstar))
+        self.d3 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(self.bstar))
+        self.d4 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
+        self.d5 = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         # vectorize scalar methods
         self.rgrand2v = np.vectorize(self.rgrand2)
         self.f_dmagsv = np.vectorize(self.f_dmags)
+        self.f_sdmagv = np.vectorize(self.f_sdmag)
+        self.f_dmagv = np.vectorize(self.f_dmag)
+        self.mindmagv = np.vectorize(self.mindmag)
         # inverse functions for phase angle
         b1 = np.linspace(0.0, self.bstar, 1000)
         # b < bstar
@@ -157,8 +166,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         # calculate dMags based on limiting dMag
         dMagmax = TL.OpticalSystem.dMagLim
-        mindmag = np.vectorize(self.mindmag)
-        dMagmin = mindmag(smin)
+        dMagmin = self.mindmagv(smin)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
@@ -607,3 +615,202 @@ class GarrettCompleteness(BrownCompleteness):
                 f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=200)[0]
                 
         return f
+    
+    def s_bound(self, dmag, smax):
+        """Calculates the bounding value of projected separation for dMag
+        
+        Args:
+            dmag (float):
+                dMag value
+            smax (float):
+                maximum projected separation (AU)
+        
+        Returns:
+            sb (float):
+                boundary value of projected separation (AU)
+        """
+        
+        if dmag < self.d1:
+            s = 0.0
+        elif (dmag > self.d1) and (dmag <= self.d2):
+            s = self.rmin*np.sin(self.Phiinv(self.rmin**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
+        elif (dmag > self.d2) and (dmag <= self.d3):
+            s = np.sin(self.bstar)*np.sqrt(self.pmax*(self.Rmax*self.x)**2*self.Phi(self.bstar)/10.0**(-0.4*dmag))
+        elif (dmag > self.d3) and (dmag <= self.d4):
+            s = self.rmax*np.sin(self.Phiinv(self.rmax**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
+        elif (dmag > self.d4) and (dmag <= self.d5):
+            s = smax
+        else:
+            s = self.rmax*np.sin(np.pi - self.Phiinv(10.0**(-0.4*dmag)*self.rmax**2/(self.pmin*(self.Rmin*self.x)**2)))
+    
+        return s
+    
+    def f_sdmag(self, s, dmag):
+        """Calculates the joint probability density of projected separation and
+        dMag by flipping the order of f_dmags
+        
+        Args:
+            s (float):
+                Value of projected separation (AU)
+            dmag (float):
+                Value of dMag
+        
+        Returns:
+            f (float):
+                Value of joint probability density
+        
+        """
+        return self.f_dmags(dmag, s)
+    
+    @memoize
+    def f_dmag(self, dmag, smin, smax):
+        """Calculates probability density of dMag by integrating over projected
+        separation
+        
+        Args:
+            dmag (float):
+                Value of dMag
+            smin (float):
+                Value of minimum projected separation (AU) from instrument
+            smax (float):
+                Value of maximum projected separation (AU) from instrument
+        
+        Returns:
+            f (float):
+                Value of probability density
+        
+        """
+        if dmag < self.mindmag(smin):
+            f = 0.0
+        else:
+            su = self.s_bound(dmag, smax)
+            if su > smax:
+                su = smax
+            if su < smin:
+                f = 0.0
+            else:
+                f = integrate.fixed_quad(self.f_sdmagv, smin, su, args=(dmag,), n=20)[0]
+        
+        return f
+    
+    def comp_dmag(self, smin, smax, dmaglim):
+        """Calculates completeness by first integrating over projected 
+        separation and then dMag.
+        
+        Args:
+            smin (ndarray):
+                Values of minimum projected separation (AU) from instrument
+            smax (ndarray):
+                Value of maximum projected separation (AU) from instrument
+            dmaglim (ndarray):
+                dMaglim from instrument
+        
+        Returns:
+            comp (float):
+                Completeness value
+        
+        """
+        # cast to arrays
+        smin = np.array(smin, ndmin=1)
+        smax = np.array(smax, ndmin=1)
+        dmaglim = np.array(dmaglim, ndmin=1)
+        
+        comp = np.zeros(smin.shape)
+        for i in xrange(len(smin)):
+            d1 = self.mindmag(smin[i])
+            if d1 > dmaglim[i]:
+                comp[i] = 0.0
+            else:
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=31)[0]
+        
+        return comp
+    
+    def comp_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates completeness for integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            comp (array):
+                Completeness values
+        
+        """
+        
+        # cast inputs to arrays and check
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
+        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        comp = self.comp_dmag(smin, smax, dMag)
+        
+        return comp
+        
+    def dcomp_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates derivative of completeness with respect to integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            dcomp (array):
+                Derivative of completeness with respect to integration time
+        
+        """
+        
+        # cast inputs to arrays and check
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
+        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        fdmag = np.zeros(t_int.shape)
+        for i in xrange(len(t_int)):
+            fdmag[i] = self.f_dmagv(dMag[i], smin[i], smax[i])
+        ddMag = TL.OpticalSystem.ddMag_dt(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(fdmag),))
+        dcomp = fdmag*ddMag
+        
+        return dcomp

@@ -589,6 +589,98 @@ class OpticalSystem(object):
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
+    
+    def Cb_Csp(self, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates electron count rates for background noise and speckle 
+        residuals.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of mas
+            mode (dict):
+                Selected observing mode
+            returnExtra (boolean):
+                Optional flag, default False, set True to return additional rates for validation
+        
+        Returns:
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+        
+        """
+        # get scienceInstrument and starlightSuppressionSystem
+        inst = mode['inst']
+        syst = mode['syst']
+        
+        # get mode wavelength
+        lam = mode['lam']
+        # get mode bandwidth (including any IFS spectral resolving power)
+        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
+        
+        # if the mode wavelength is different than the wavelength at which the system 
+        # is defined, we need to rescale the working angles
+        if lam != syst['lam']:
+            WA = WA*lam/syst['lam']
+        
+        # solid angle of photometric aperture, specified by core_area(optional), 
+        # otherwise obtained from (lambda/D)^2
+        Omega = syst['core_area'](lam, WA)*u.arcsec**2 if syst['core_area'] else \
+                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+        # number of pixels in the photometric aperture = Omega / theta^2 
+        Npix = (Omega/inst['pixelScale']**2).decompose().value
+        
+        # get coronagraph input parameters
+        occ_trans = syst['occ_trans'](lam, WA)
+        core_thruput = syst['core_thruput'](lam, WA)
+        core_contrast = syst['core_contrast'](lam, WA)
+        
+        # get stellar residual intensity in the planet PSF core
+        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
+        if syst['core_mean_intensity'] == None:
+            core_intensity = core_contrast*core_thruput
+        # OPTION 2: otherwise use core_mean_intensity
+        else:
+            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
+            # if a platesale was specified with the coro parameters, apply correction
+            if syst['core_platescale'] != None:
+                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+                        /(lam/self.pupilDiam)).decompose().value
+            core_intensity = core_mean_intensity*Npix
+        
+        # get star magnitude
+        sInds = np.array(sInds, ndmin=1)
+        mV = TL.starMag(sInds, lam)
+        
+        # ELECTRON COUNT RATES [ s^-1 ]
+        # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
+        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*self.attenuation
+        # starlight residual
+        C_sr = C_F0*10.**(-0.4*mV)*core_intensity
+        # zodiacal light
+        C_z = C_F0*fZ*Omega*occ_trans
+        # exozodiacal light
+        C_ez = C_F0*fEZ*Omega*core_thruput
+        # dark current
+        C_dc = Npix*inst['idark']
+        # clock-induced-charge
+        C_cc = Npix*inst['CIC']/inst['texp']
+        # readout noise
+        C_rn = Npix*inst['sread']/inst['texp']
+        # background
+        C_b = inst['ENF']**2*(C_sr + C_z + C_ez + C_dc + C_cc) + C_rn 
+        # spatial structure to the speckle including post-processing contrast factor
+        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
+        
+        return C_b.to('1/s'), C_sp.to('1/s')
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration time for a specific target system 
@@ -660,13 +752,12 @@ class OpticalSystem(object):
         
         return maxintTime
     
-    def calc_contrast_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode, dMag=25.0):
-        """Finds instrument achievable contrast for one integration time per
-        star in the input list at one or more working angles.
+    def calc_dMag_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Finds achievable dMag for one integration time per star in the 
+        input list at one or more working angles.
         
-        The prototype returns the equivalent contrast of dMagLim as an m x n
-        array where m corresponds to each star in sInds and n corresponds to 
-        each working angle in WA.
+        The prototype returns the dMagLim as an m x n array where m corresponds 
+        to each star in sInds and n corresponds to each working angle in WA.
         
         Args:
             t_int (astropy Quantity array):
@@ -683,12 +774,10 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            dMag (float):
-                Difference in brightness magnitude between planet and host star
                 
         Returns:
-            C_inst (ndarray):
-                Instrument contrast for given integration time and working angle
+            dMag (ndarray):
+                Achievable dMag for given integration time and working angle
                 
         """
         
@@ -698,6 +787,36 @@ class OpticalSystem(object):
         t_int = np.array(t_int.value, ndmin=1)*t_int.unit
         assert len(t_int) == len(sInds), "t_int and sInds must be same length"
         
-        C_inst = 10.0**(-0.4*self.dMagLim)*np.ones((len(sInds), len(WA)))
+        dMag = self.dMagLim*np.ones((len(sInds), len(WA)))
         
-        return C_inst
+        return dMag
+    
+    def ddMag_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Finds derivative of achievable dMag with respect to integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            
+        Returns:
+            ddMagdt (astropy Quantity array):
+                Derivative of achievable dMag with respect to integration time
+                in units of 1/s
+        
+        """
+        
+        ddMagdt = np.zeros((len(sInds),len(WA)))/u.s
+        
+        return ddMagdt

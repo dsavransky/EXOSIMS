@@ -1,4 +1,9 @@
 import numpy as np
+import sys
+try:
+    import EXOSIMS.util.KeplerSTM_C.CyKeplerSTM
+except ImportError:
+    pass
 
 '''
 Kepler State Transition Matrix
@@ -18,6 +23,9 @@ Constructor take the following arguments:
     epsmult (float):
         default multiplier on floating point precision, used as convergence 
         metric.  Higher values mean faster convergence, but sacrifice precision.
+    noc (bool):
+        ignore presence of compiled C code and use native python code only. 
+        default false.
 
 Step function (updateState) takes the following arguments:
     dt (float):
@@ -32,7 +40,7 @@ and continued fraction to solve the Kepler equation.
 '''
 
 class planSys:
-    def __init__(self, x0, mu, epsmult = 4.0):
+    def __init__(self, x0, mu, epsmult = 4.0, noc = False):
         #determine number of planets and validate input
         nplanets = x0.size/6.
         if (nplanets - np.floor(nplanets) > 0):
@@ -47,15 +55,28 @@ class planSys:
             self.mu = np.array(mu)
         
         self.epsmult = epsmult
-        self.updateState(np.squeeze(x0))
+        
+        if not(noc) and ('EXOSIMS.util.KeplerSTM_C.CyKeplerSTM' in sys.modules):
+            self.havec = True
+            self.x0 = np.squeeze(x0)
+        else:
+            self.havec = False
+            self.updateState(np.squeeze(x0))
+
 
     def updateState(self,x0):
         self.x0 = x0
         
         #create position and velocity matrices
-        tmp = np.reshape(self.x0,(self.nplanets,6)).T
-        r0 = tmp[0:3]
-        v0 = tmp[3:6]
+        #tmp = np.reshape(self.x0,(self.nplanets,6)).T
+        #r0 = tmp[0:3]
+        #v0 = tmp[3:6]
+
+        tmp = np.reshape(np.arange(len(self.x0)),(self.nplanets,6)).T
+        self.rinds = tmp[0:3]
+        self.vinds = tmp[3:6]
+        r0 = self.x0[self.rinds]
+        v0 = self.x0[self.vinds]
         
         #constants and allocation
         self.r0norm = np.sqrt(sum(r0**2.,0))
@@ -63,12 +84,15 @@ class planSys:
         self.beta = 2*self.mu/self.r0norm - sum(v0**2, 0)
 
     def takeStep(self,dt):
-        tmp = np.zeros(self.x0.shape)
-        for j in range(self.nplanets):
-            Phi = self.calcSTM(dt,j)
-            tmp[j*6:(j+1)*6] = np.dot(Phi,self.x0[j*6:(j+1)*6])
+        if self.havec:
+            self.x0 = EXOSIMS.util.KeplerSTM_C.CyKeplerSTM.CyKeplerSTM(self.x0, dt, self.mu, self.epsmult)
+        else:
+            tmp = np.zeros(self.x0.shape)
+            for j in range(self.nplanets):
+                Phi = self.calcSTM(dt,j)
+                tmp[j*6:(j+1)*6] = np.dot(Phi,self.x0[j*6:(j+1)*6])
 
-        self.updateState(tmp)
+            self.updateState(tmp)
         
 
     def calcSTM(self,dt,j):

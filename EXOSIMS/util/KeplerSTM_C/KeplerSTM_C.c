@@ -7,6 +7,7 @@
  *      DT      float  : time step (t1 - t0)
  *      MU      float  : Gravitational paramter
  *      X1      6 x 1  : [r_1, v_1]
+ *      EPSMULT float  : tolerance parameter
  *
  * Written by Dmitry Savransky (ds264@cornell.edu)
  * Algorithm from Shepperd, 1984 which employs Goodyear's universal 
@@ -35,7 +36,7 @@ double DOT(double x1[], double x2[], int size) {
 }
 
 
-int KeplerSTM_C (double x0[], double dt, double mu, double x1[] ){
+int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult){
     
     /* Initialize orbit values*/
     double r0[3] = {x0[0],x0[1],x0[2]};
@@ -67,7 +68,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[] ){
     double tol = EPS(dt);
     double u = 0;
     double q, U0w2, U1w2, U, U0, U1, U2, U3, r, A, B, cf, cfprev;
-    while ((fabs(t-dt) > tol) && (counter < 1000)){
+    while ((fabs(t-dt) > epsmult*tol) && (counter < 1000)){
         q = beta*pow(u,2.0)/(1+beta*pow(u,2.0));
         
         /* initialize continued fractions */
@@ -82,7 +83,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[] ){
         n = 4.0*b*(c-a);
 
         /* loop until convergence of continued fraction*/
-        while ((fabs(cf-cfprev) > EPS(cf)) && (counter2 < 1000)){
+        while ((fabs(cf-cfprev) > epsmult*EPS(cf)) && (counter2 < 1000)){
             k = -k;
             l += 2.0;
             d += 4.0*l;

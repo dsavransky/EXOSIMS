@@ -7,6 +7,7 @@
  *      DT      float  : time step (t1 - t0)
  *      MU      float  : Gravitational paramter
  *      X1      6 x 1  : [r_1, v_1]
+ *      EPSMULT float  : tolerance parameter
  *
  * Written by Dmitry Savransky (ds264@cornell.edu)
  * Algorithm from Shepperd, 1984 which employs Goodyear's universal 
@@ -14,4 +15,4 @@
  *
  *=================================================================*/
 
-int KeplerSTM_C (double x0[], double dt, double mu, double x1[] );
+int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult);

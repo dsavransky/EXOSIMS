@@ -1,10 +1,9 @@
-import sys, json
-import logging
+import sys, logging, json, os.path
 import tempfile
 from EXOSIMS.util.get_module import get_module
 import random as py_random
 import numpy as np
-import os.path
+import copy, re, inspect, subprocess
 
 class MissionSim(object):
     """Mission Simulation (backbone) class
@@ -215,3 +214,114 @@ class MissionSim(object):
                 genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         
         return res
+
+    def genOutSpec(self, tofile=None):
+        """Join all _outspec dicts from all modules into one output dict
+        and optionally write out to JSON file on disk.
+        
+        Args:
+           tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (dictionary):
+                Dictionary containing additional user specification values and 
+                desired module names.
+        
+        """
+        
+        # start with a copy of MissionSim _outspec
+        out = copy.copy(self._outspec)
+        
+        # add in all modules _outspec's
+        for module in self.modules.values():
+            out.update(module._outspec)
+        
+        # add in the specific module names used
+        out['modules'] = {}
+        for (mod_name, module) in self.modules.items():
+            # find the module file 
+            mod_name_full = module.__module__
+            if mod_name_full.startswith('EXOSIMS'):
+                # take just its short name if it is in EXOSIMS
+                mod_name_short = mod_name_full.split('.')[-1]
+            else:
+                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+                mod_name_short = re.sub('\.pyc$', '.py',
+                        inspect.getfile(module.__class__))
+            out['modules'][mod_name] = mod_name_short
+        # add catalog name
+        out['modules']['StarCatalog'] = self.StarCatalog
+        
+        # add in the SVN/Git revision
+        path = os.path.split(inspect.getfile(self.__class__))[0]
+        rev = subprocess.Popen("git -C " + path + " log -1", stdout=subprocess.PIPE,
+                shell=True)
+        (gitRev, err) = rev.communicate()
+        if isinstance(gitRev, basestring) & (len(gitRev) > 0):
+            tmp = re.compile('\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n') \
+                    .match(gitRev)
+            if tmp:
+                out['Revision'] = "Github " + tmp.groups()[0] + " " + tmp.groups()[1]
+        else:
+            rev = subprocess.Popen("svn info " + path + \
+                    "| grep \"Revision\" | awk '{print $2}'", stdout=subprocess.PIPE,
+                    shell=True)
+            (svnRev, err) = rev.communicate()
+            if isinstance(svnRev, basestring) & (len(svnRev) > 0):
+                out['Revision'] = "SVN revision is " + svnRev[:-1]
+            else: 
+                out['Revision'] = "Not a valid Github or SVN revision."
+        
+        # dump to file
+        if tofile is not None:
+            with open(tofile, 'w') as outfile:
+                json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False,
+                        separators=(',', ': '), default=array_encoder)
+        
+        # return the Github/SVN revision
+        return out['Revision']
+
+def array_encoder(obj):
+    r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
+    
+    Called from json.dump for types that it does not already know how to represent,
+    like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
+    like integers, strings, and lists itself, so this code does not see these types.
+    Likewise, this routine can and does return such objects, which is OK as long as 
+    they unpack recursively into types for which encoding is known.
+    
+    """
+    
+    from astropy.time import Time
+    if isinstance(obj, Time):
+        # astropy Time -> time string
+        return obj.fits # isot also makes sense here
+    if isinstance(obj, u.quantity.Quantity):
+        # note: it is possible to have a numpy ndarray wrapped in a Quantity.
+        # NB: alternatively, can return (obj.value, obj.unit.name)
+        return obj.value
+    if isinstance(obj, (np.ndarray, np.number)):
+        # ndarray -> list of numbers
+        return obj.tolist()
+    if isinstance(obj, (complex, np.complex)):
+        # complex -> (real, imag) pair
+        return [obj.real, obj.imag]
+    if callable(obj):
+        # this case occurs for interpolants like PSF and QE
+        # We cannot simply "write" the function to JSON, so we make up a string
+        # to keep from throwing an error.
+        # The fix is simple: when generating the interpolant, add a _outspec attribute
+        # to the function (or the lambda), containing (e.g.) the fits filename, or the
+        # explicit number -- whatever string was used.  Then, here, check for that 
+        # attribute and write it out instead of this dummy string.  (Attributes can
+        # be transparently attached to python functions, even lambda's.)
+        return 'interpolant_function'
+    if isinstance(obj, set):
+        return list(obj)
+    if isinstance(obj, bytes):
+        return obj.decode()
+    # nothing worked, bail out
+    
+    return json.JSONEncoder.default(obj)

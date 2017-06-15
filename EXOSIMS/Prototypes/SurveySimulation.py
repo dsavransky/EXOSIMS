@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 import sys, logging
+import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from EXOSIMS.util.get_module import get_module
 import time
-import copy, re, inspect, subprocess, json, os.path
+import json, os.path, copy, re, inspect, subprocess
 
 Logger = logging.getLogger(__name__)
 

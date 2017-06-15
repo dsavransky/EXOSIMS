@@ -79,7 +79,7 @@ class linearJScheduler(SurveySimulation):
         
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            r_ts = Obs.starprop(TL, sInds, TK.currentTimeAbs)
+            r_ts = TL.starprop(sInds, TK.currentTimeAbs)
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
             A[np.ones((nStars),dtype=bool)] = angdists

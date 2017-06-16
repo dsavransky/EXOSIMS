@@ -25,6 +25,7 @@ class BackgroundSources(object):
 
     def __str__(self):
         """String representation of Background Sources module
+        
         """
         
         for att in self.__dict__.keys():

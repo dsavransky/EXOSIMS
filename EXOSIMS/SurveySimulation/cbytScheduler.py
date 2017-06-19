@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
 
-
 class cbytScheduler(SurveySimulation):
     """C-by-t Scheduler 
     
@@ -9,7 +8,7 @@ class cbytScheduler(SurveySimulation):
     Completeness/Integration Time.
     
     """
-
+    
     def __init__(self, **specs):
         
         SurveySimulation.__init__(self, **specs)
@@ -40,14 +39,15 @@ class cbytScheduler(SurveySimulation):
         
         # reshape sInds
         sInds = np.array(sInds, ndmin=1)
+        # calculate dt since previous observation
+        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         
-        # Selection metric being used: completeness/integration time
+        # selection metric being used: completeness/integration time
         selMetric = comps/t_dets
         
-        # Selecting the target star to observe
+        # selecting the target star to observe
         sInd = sInds[selMetric == max(selMetric)][0]
         
         return sInd
-

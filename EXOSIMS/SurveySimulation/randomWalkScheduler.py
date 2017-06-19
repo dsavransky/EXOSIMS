@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
 
-
 class randomWalkScheduler(SurveySimulation):
     """randomWalkScheduler
     
@@ -10,6 +9,7 @@ class randomWalkScheduler(SurveySimulation):
     
     This is useful for mapping out the space of possible mission outcomes
     for a fixed population of planets in order to validate other schedulers.
+    
     """
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):

@@ -23,7 +23,7 @@ class linearJScheduler(SurveySimulation):
         SurveySimulation.__init__(self, **specs)
         
         # verify that coefficients input is iterable 6x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 3):
+        if not(isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 3):
             raise TypeError("coeffs must be a 3 element iterable")
         
         # normalize coefficients
@@ -65,9 +65,10 @@ class linearJScheduler(SurveySimulation):
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
         
+        # calculate dt since previous observation
+        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], 
-                TK.currentTimeNorm)
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         
         # if first target, or if only 1 available target, 
         # choose highest available completeness
@@ -106,4 +107,3 @@ class linearJScheduler(SurveySimulation):
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
         return sInd
-

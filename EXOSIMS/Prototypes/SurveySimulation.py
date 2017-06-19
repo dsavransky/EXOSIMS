@@ -296,7 +296,8 @@ class SurveySimulation(object):
                     DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
                 DRM['char_mode'] = dict(charMode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
-                characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
+                characterized, charSNR, t_char = self.observation_characterization(sInd, 
+                        charMode)
                 assert t_char !=0, "Integration time can't be 0."
                 # update the occulter wet mass
                 if OS.haveOcculter == True and t_char is not None:
@@ -375,6 +376,11 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         
+        # assumed values for detection
+        fEZ = ZL.fEZ0
+        dMag = OS.dMagint
+        WA = OS.WAint
+        
         # in case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         if OS.haveOcculter == True:
@@ -384,20 +390,20 @@ class SurveySimulation(object):
         
         # now, start to look for available targets
         while not TK.mission_is_over():
-            # 0/ initialize arrays
+            # 1/ initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             t_dets = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
-            # 1/ find spacecraft orbital START positions (if occulter, positions 
+            # 2/ find spacecraft orbital START positions (if occulter, positions 
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
                 # find angle between old and new stars, default to pi/2 for first target
                 if old_sInd is None:
-                    sd = np.zeros(TL.nStars)*u.rad
+                    sd = np.array([np.radians(90)]*TL.nStars)*u.rad
                 else:
                     # position vector of previous target star
                     r_old = TL.starprop(old_sInd, TK.currentTimeAbs)[0]
@@ -414,31 +420,6 @@ class SurveySimulation(object):
             # get target indices where keepout angle is good at observation start
             kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
-            
-            # 2/ lucky target selection: choose a target and check if it is observable
-            if np.any(sInds):
-                # choose sInd of next target assuming minimum integration times
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, TL.tint0[sInds])
-                # calculate true t_det for selected target
-                fZ = ZL.fZ(Obs, TL, sInd, startTimes[sInd], mode)
-                fEZ = ZL.fEZ0
-                dMag = OS.dMagint
-                WA = OS.WAint
-                t_det = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)[0]
-                # include integration time multiplier
-                t_tot = t_det*mode['timeMultiplier']
-                # total time must be positive, shorter than integration cut-off,
-                # and it must not exceed the Observing Block end time
-                # and the keepout must be good at the end of integration
-                endTime = startTimes[sInd] + t_tot
-                endTimeNorm = (endTime - TK.missionStart).jd*u.day
-                if ((t_tot > 0) & (t_tot <= OS.intCutoff) & 
-                        (endTimeNorm <= TK.OBendTimes[TK.OBnumber])):
-                    if Obs.checkKeepoutEnd:
-                        if Obs.keepout(TL, sInd, endTime, mode)[0]:
-                            break
-                    else:
-                        break
             
             # 3/ calculate integration times for ALL preselected targets, 
             # and filter out t_tots > integration cutoff
@@ -510,8 +491,9 @@ class SurveySimulation(object):
     def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
         """Helper method for method next_target to simplify alternative implementations.
         
-        Given a subset of targets (pre-filtered by method next_target or some other means),
-        select the best next one. The prototype uses completeness as the sole heuristic.
+        Given a subset of targets (pre-filtered by method next_target or some 
+        other means), select the best next one. The prototype uses completeness 
+        as the sole heuristic.
         
         Args:
             old_sInd (integer):
@@ -545,8 +527,8 @@ class SurveySimulation(object):
         return sInd
 
     def observation_detection(self, sInd, t_det, mode):
-        """Determines SNR and detection status for a given integration time for detetion.
-        Also updates the lastDetected and starRevisit lists.
+        """Determines SNR and detection status for a given integration time 
+        for detetion. Also updates the lastDetected and starRevisit lists.
         
         Args:
             sInd (integer):
@@ -559,8 +541,8 @@ class SurveySimulation(object):
         
         Returns:
             detected (integer list):
-                Detection status for each planet orbiting the observed target star,
-                where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
+                Detection status for each planet orbiting the observed target star:
+                1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
             SNR (float list):
                 Detection signal-to-noise ratio of the observable planets
             FA (boolean):
@@ -638,7 +620,8 @@ class SurveySimulation(object):
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('mas').value, np.minimum(mode['OWA'],
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('mas').value)
-            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA*u.mas)), OS.dMagLim)
+            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA*u.mas)), 
+                    OS.dMagLim)
             fEZ = ZL.fEZ0.to('1/arcsec2').value
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], fEZ)
@@ -646,8 +629,9 @@ class SurveySimulation(object):
             self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], WA)
             sminFA = np.tan(WA*u.mas)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin,sminFA) if smin is not None else sminFA
-            self.logger.info('   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1)))
-            print '   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas,round(dMag,1))
+            log_FA = '   - False Alarm (WA=%s, dMag=%s)'%(int(WA)*u.mas, round(dMag, 1))
+            self.logger.info(log_FA)
+            print log_FA
         
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
@@ -753,8 +737,8 @@ class SurveySimulation(object):
             # total time must be positive, shorter than integration cut-off,
             # and it must not exceed the Observing Block end time
             startTimesNorm = (startTimes - TK.missionStart).jd*u.day
-            tochar = (t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                    (startTimesNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
+            tochar = ((t_tots > 0) & (t_tots <= OS.intCutoff) & 
+                    (startTimesNorm + t_tots <= TK.OBendTimes[TK.OBnumber]))
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
@@ -788,7 +772,7 @@ class SurveySimulation(object):
                 # allocate extra time for timeMultiplier
                 t_extra = t_char*(mode['timeMultiplier'] - 1)
                 TK.allocate_time(t_extra)
-            # if no planet (only false alarm), just observe for t_tot (including time multiplier)
+            # if only a false alarm, just observe for t_tot including time multiplier
             else:
                 SNRobs = np.array([])
                 t_tot = t_char*(mode['timeMultiplier'])

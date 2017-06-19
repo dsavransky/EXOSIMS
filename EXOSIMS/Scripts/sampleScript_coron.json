@@ -1,6 +1,6 @@
 {
-  "logfile": "sampleScript.log",
-  "keepStarCatalog": false,
+  "staticStars": true,
+  "checkKeepoutEnd": false,
   "missionLife": 0.1,
   "missionPortion": 0.5,
   "OBduration": 50,

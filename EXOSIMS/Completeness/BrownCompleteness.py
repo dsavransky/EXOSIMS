@@ -263,8 +263,8 @@ class BrownCompleteness(Completeness):
                 Indices of stars to update
             visits (integer array):
                 Number of visits for each star
-            dt (astropy Quantity):
-                Time since initial completeness
+            dt (astropy Quantity array):
+                Time since previous observation
         
         Returns:
             dcomp (float ndarray):

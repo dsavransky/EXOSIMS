@@ -51,10 +51,13 @@ class SurveySimulation(object):
             Indicates if planet spectra have been captured
         partialSpectra (boolean ndarray):
             Indicates if planet partial spectra have been captured
+        propagTimes (astropy Quantity array):
+            Contains the last time the stellar system was propagated in units of day
+        lastObsTimes (astropy Quantity array):
+            Contains the last observation start time for future completeness update 
+            in units of day
         starVisits (integer ndarray):
             Contains the number of times each target was visited
-        starTimes (astropy Quantity array):
-            Contains the last time the star was observed in units of day
         starRevisit (float nx2 ndarray):
             Contains indices of targets to revisit and revisit times 
             of these targets in units of day
@@ -179,8 +182,9 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
+        self.propagTimes = np.zeros(TL.nStars)*u.d
+        self.lastObsTimes = np.zeros(TL.nStars)*u.d
         self.starVisits = np.zeros(TL.nStars, dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
@@ -240,8 +244,10 @@ class SurveySimulation(object):
         cnt = 0
         while not TK.mission_is_over():
             
-            # acquire the NEXT TARGET star index and create DRM
+            # save the start time of this observation (BEFORE any OH/settling/slew time)
             TK.obsStart = TK.currentTimeNorm.to('day')
+            
+            # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, t_det = self.next_target(sInd, detMode)
             assert t_det != 0, "Integration time can't be 0."
             
@@ -316,7 +322,7 @@ class SurveySimulation(object):
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd-TK.obsStart).to('day')
+                    obsLength = (TK.obsEnd - TK.obsStart).to('day')
                     TK.next_observing_block(dt=obsLength)
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
@@ -373,13 +379,13 @@ class SurveySimulation(object):
         # (add transit time and reduce starshade mass)
         if OS.haveOcculter == True:
             ao = Obs.thrust/Obs.scMass
-            slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. \
-                    - Obs.defburnPortion**2/4.)).decompose().to('d2')
+            slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. - 
+                    Obs.defburnPortion**2/4.)).decompose().to('d2')
         
         # now, start to look for available targets
         while not TK.mission_is_over():
             # 0/ initialize arrays
-            slewTime = np.array([0.])*u.d
+            slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             t_dets = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
@@ -402,19 +408,19 @@ class SurveySimulation(object):
                     # angle between old and new stars
                     sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
                 # calculate slew time
-                slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
-            
-            startTime = TK.currentTimeAbs + slewTime
-            kogoodStart = Obs.keepout(TL, sInds, startTime, mode)
+                slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+            # save observation start times including, slew times
+            startTimes = TK.currentTimeAbs + slewTimes
+            # get target indices where keepout angle is good at observation start
+            kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 2/ lucky target selection: choose a target and check if it is observable
             if np.any(sInds):
-                # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTime, TL.tint0[sInds])
-                # calculate t_det for selected target
-                currentTime = startTime[sInd] if startTime.size > 1 else startTime
-                fZ = ZL.fZ(Obs, TL, sInd, currentTime, mode)
+                # choose sInd of next target assuming minimum integration times
+                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, TL.tint0[sInds])
+                # calculate true t_det for selected target
+                fZ = ZL.fZ(Obs, TL, sInd, startTimes[sInd], mode)
                 fEZ = ZL.fEZ0
                 dMag = OS.dMagint
                 WA = OS.WAint
@@ -423,32 +429,32 @@ class SurveySimulation(object):
                 t_tot = t_det*mode['timeMultiplier']
                 # total time must be positive, shorter than integration cut-off,
                 # and it must not exceed the Observing Block end time
-                endTime = currentTime + t_tot
+                # and the keepout must be good at the end of integration
+                endTime = startTimes[sInd] + t_tot
                 endTimeNorm = (endTime - TK.missionStart).jd*u.day
-                OBend = TK.OBendTimes[TK.OBnumber]
-                if (t_tot > 0) & (t_tot <= OS.intCutoff) & (endTimeNorm <= OBend):
-                    # and the keepout must be good at the end of integration
-                    if not(Obs.checkKeepoutEnd) | Obs.keepout(TL, sInd, endTime, mode)[0]:
-                        # update visited list for current star
-                        self.starVisits[sInd] += 1
+                if ((t_tot > 0) & (t_tot <= OS.intCutoff) & 
+                        (endTimeNorm <= TK.OBendTimes[TK.OBnumber])):
+                    if Obs.checkKeepoutEnd:
+                        if Obs.keepout(TL, sInd, endTime, mode)[0]:
+                            break
+                    else:
                         break
             
             # 3/ calculate integration times for ALL preselected targets, 
             # and filter out t_tots > integration cutoff
             if np.any(sInds):
-                currentTime = startTime[sInds] if startTime.size > 1 else startTime
-                fZ = ZL.fZ(Obs, TL, sInds, currentTime, mode)
+                fZ = ZL.fZ(Obs, TL, sInds, startTimes[sInds], mode)
                 t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 t_tots = t_dets*mode['timeMultiplier']
-                endTime = startTime + t_tots
-                endTimeNorm = (endTime - TK.missionStart).jd*u.day
-                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                        (endTimeNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+                endTimes = startTimes + t_tots
+                endTimesNorm = (endTimes - TK.missionStart).jd*u.day
+                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & 
+                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
             
             # 4/ find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if np.any(sInds) and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTime[sInds], mode)
+                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], mode)
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 5/ filter out all previously (more-)visited targets, unless in 
@@ -457,18 +463,18 @@ class SurveySimulation(object):
                 tovisit[sInds] = (self.starVisits[sInds] == min(self.starVisits[sInds]))
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
+                    startTimesNorm = (startTimes - TK.missionStart).jd*u.day
                     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
+                            if x in sInds]
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
             
             # 6/ choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTime, t_dets[sInds])
-                # update visited list for current star
-                self.starVisits[sInd] += 1
-                # store selected start integration time
+                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, t_dets[sInds])
+                # store selected star integration time
                 t_det = t_dets[sInd]
                 break
             
@@ -479,23 +485,29 @@ class SurveySimulation(object):
         else:
             return DRM, None, None
         
+        # update visited list for selected star
+        self.starVisits[sInd] += 1
+        # store normalized start time for future completeness update
+        self.lastObsTimes[sInd] = (startTimes[sInd] - TK.missionStart).jd*u.day
+        
+        # populate DRM with occulter related values
         if OS.haveOcculter == True:
             # find values related to slew time
-            DRM['slew_time'] = slewTime[sInd].to('day').value
+            DRM['slew_time'] = slewTimes[sInd].to('day').value
             DRM['slew_angle'] = sd[sInd].to('deg').value
-            slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
-            DRM['slew_dV'] = (slewTime[sInd]*ao*Obs.defburnPortion).to('m/s').value
+            slew_mass_used = slewTimes[sInd]*Obs.defburnPortion*Obs.flowRate
+            DRM['slew_dV'] = (slewTimes[sInd]*ao*Obs.defburnPortion).to('m/s').value
             DRM['slew_mass_used'] = slew_mass_used.to('kg').value
             Obs.scMass = Obs.scMass - slew_mass_used
             DRM['scMass'] = Obs.scMass.to('kg').value
             # update current time by adding slew time for the chosen target
-            TK.allocate_time(slewTime[sInd])
+            TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():
                 return DRM, None, None
         
         return DRM, sInd, t_det
 
-    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
+    def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
         """Helper method for method next_target to simplify alternative implementations.
         
         Given a subset of targets (pre-filtered by method next_target or some other means),
@@ -506,11 +518,11 @@ class SurveySimulation(object):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (quantity array):
+            slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
             t_dets (astropy Quantity array):
                 Integration times for detection in units of day
-                
+        
         Returns:
             sInd (integer):
                 Index of next target star
@@ -523,9 +535,10 @@ class SurveySimulation(object):
         
         # reshape sInds
         sInds = np.array(sInds, ndmin=1)
+        # calculate dt since previous observation
+        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], 
-                TK.currentTimeNorm)
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
         
@@ -617,8 +630,8 @@ class SurveySimulation(object):
             print log_det
         
         # populate the lastDetected array by storing det, fEZ, dMag, and WA
-        self.lastDetected[sInd,:] = det, SU.fEZ[pInds].to('1/arcsec2').value, \
-                    SU.dMag[pInds], SU.WA[pInds].to('mas').value
+        self.lastDetected[sInd,:] = [det, SU.fEZ[pInds].to('1/arcsec2').value, 
+                    SU.dMag[pInds], SU.WA[pInds].to('mas').value]
         
         # in case of a FA, generate a random delta mag (between maxFAfluxratio and
         # dMagLim) and working angle (between IWA and min(OWA, a_max))
@@ -721,16 +734,16 @@ class SurveySimulation(object):
         
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
-            startTime = TK.currentTimeAbs
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            startTimes = TK.currentTimeAbs
+            tochar[tochar] = Obs.keepout(TL, sInd, startTimes, mode)
         
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
-            SU.propag_system(sInd, TK.currentTimeNorm - self.starTimes[sInd])
-            self.starTimes[sInd] = TK.currentTimeNorm
+            SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
+            self.propagTimes[sInd] = TK.currentTimeNorm
             # calculate characterization times at the detected fEZ, dMag, and WA
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, sInd, startTimes, mode)
             fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][tochar]
             WA = self.lastDetected[sInd,3][tochar]*u.mas
@@ -739,13 +752,13 @@ class SurveySimulation(object):
             t_tots = t_chars*(mode['timeMultiplier'])
             # total time must be positive, shorter than integration cut-off,
             # and it must not exceed the Observing Block end time
-            startTimeNorm = (startTime - TK.missionStart).jd*u.day
+            startTimesNorm = (startTimes - TK.missionStart).jd*u.day
             tochar = (t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                    (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
+                    (startTimesNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            endTime = startTime + t_tots[tochar]
+            endTime = startTimes + t_tots[tochar]
             tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode)
         
         # 4/ if yes, perform the characterization for the maximum char time
@@ -851,8 +864,8 @@ class SurveySimulation(object):
         # allocate first half of t_int
         TK.allocate_time(t_int/2.)
         # propagate the system to match up with current time
-        SU.propag_system(sInd, TK.currentTimeNorm - self.starTimes[sInd])
-        self.starTimes[sInd] = TK.currentTimeNorm
+        SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
+        self.propagTimes[sInd] = TK.currentTimeNorm
         # find spacecraft position and ZodiacalLight
         fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)
         # find electron counts for planet, background, and speckle residual 

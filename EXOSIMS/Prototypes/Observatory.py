@@ -354,7 +354,7 @@ class Observatory(object):
                 "If multiple times and targets, currentTime and sInds sizes must match"
         
         # build "keepout good" array, check if all elements are Boolean
-        kogood = np.ones(nStars, dtype=bool)
+        kogood = np.ones(np.maximum(nStars, nTimes), dtype=bool)
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), "An element of kogood is not Boolean"
         

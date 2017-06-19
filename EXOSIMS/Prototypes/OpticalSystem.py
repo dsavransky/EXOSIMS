@@ -721,11 +721,12 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_maxintTime(self, TL):
-        """Finds maximum integration times for the whole target list.
+    def calc_minintTime(self, TL):
+        """Finds minimum integration times for the whole target list, at the 
+        limiting delta magnitude (planet flux ratio).
         
         This method is called in the TargetList class object. It calculates the 
-        maximum integration times for all the stars from the target list, at the 
+        minimum integration times for all the stars from the target list, at the 
         limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal 
         noise and at a separation equal to twice the global inner working angle (IWA).
         
@@ -734,8 +735,8 @@ class OpticalSystem(object):
                 TargetList class object
         
         Returns:
-            maxintTime (astropy Quantity array):
-                Maximum integration times for target list stars in units of day
+            minintTime (astropy Quantity array):
+                Minimum integration times for target list stars in units of day
         
         """
         
@@ -747,10 +748,10 @@ class OpticalSystem(object):
         WA = 2.*self.IWA if np.isinf(self.OWA) else (self.IWA + self.OWA)/2.
         # select detection mode
         mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
-        # calculate maximum integration time
-        maxintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        # calculate minimum integration time
+        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
         
-        return maxintTime
+        return minintTime
     
     def calc_dMag_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
         """Finds achievable dMag for one integration time per star in the 

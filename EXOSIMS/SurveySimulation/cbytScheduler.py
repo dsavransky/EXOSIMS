@@ -14,7 +14,7 @@ class cbytScheduler(SurveySimulation):
         
         SurveySimulation.__init__(self, **specs)
 
-    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
+    def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -23,9 +23,11 @@ class cbytScheduler(SurveySimulation):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (float array):
+            slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-                
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
+        
         Returns:
             sInd (integer):
                 Index of next target star

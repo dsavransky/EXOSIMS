@@ -81,7 +81,7 @@ class starkAYO(SurveySimulation):
         self.starVisits = np.zeros(TL.nStars,dtype=int)
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
+        self.propagTimes = np.zeros(TL.nStars)*u.d
         self.starRevisit = np.array([])
         self.starExtended = np.array([])
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
@@ -108,7 +108,7 @@ class starkAYO(SurveySimulation):
         
         #while not TK.mission_is_over():
             # 0/ initialize arrays
-        slewTime = np.zeros(TL.nStars)*u.d#549
+        slewTimes = np.zeros(TL.nStars)*u.d#549
         fZs = np.zeros(TL.nStars)/u.arcsec**2#549
         t_dets = np.zeros(TL.nStars)*u.d
         tovisit = np.zeros(TL.nStars, dtype=bool)
@@ -116,7 +116,7 @@ class starkAYO(SurveySimulation):
 
         ##Removed 1 Occulter Slew Time
 
-        startTime = TK.currentTimeAbs + slewTime#549 create array of times the length of the number of stars (length of slew time)
+        startTime = TK.currentTimeAbs + slewTimes#549 create array of times the length of the number of stars (length of slew time)
             # 5/ Choose best target from remaining
             #Calculate Completeness
         self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)
@@ -256,8 +256,8 @@ class starkAYO(SurveySimulation):
         #Calculate myTint for an initial startimg position#########################
         #self.sInds_startSaved = sInds#Saves the sInds to begin the mission. This is used when dealing directly with starComps and myTint as it is the original list of star indicies
         #WA = OS.WALim
-        slewTime2 = np.zeros(sInds.shape[0])*u.d#initialize slewTime for each star
-        startTime2 = TK.currentTimeAbs + slewTime2#calculate slewTime
+        slewTimes2 = np.zeros(sInds.shape[0])*u.d#initialize slewTimes for each star
+        startTime2 = TK.currentTimeAbs + slewTimes2#calculate slewTimes
         #fZ = ZL.fZ(Obs, TL, sInds, startTime2, self.mode['lam'])#378
         #fEZ = ZL.fEZ0
         #Tint = np.zeros((sInds.shape[0],len(dmag)))#array of #stars by dmags(225)
@@ -322,8 +322,8 @@ class starkAYO(SurveySimulation):
             TK.obsStart = TK.currentTimeNorm.to('day')
             tovisit = np.zeros(TL.nStars, dtype=bool)
 
-            slewTime = np.zeros(TL.nStars)*u.d
-            startTime = TK.currentTimeAbs + slewTime
+            slewTimes = np.zeros(TL.nStars)*u.d
+            startTime = TK.currentTimeAbs + slewTimes
 
 
             ######################################################################################
@@ -397,7 +397,7 @@ class starkAYO(SurveySimulation):
                 # Calculate observation end time, and update target time
                 #print('tmp3')
                 #TK.obsEnd = TK.currentTimeNorm.to('day')
-                #self.starTimes[sInd] = TK.obsEnd
+                #self.propagTimes[sInd] = TK.obsEnd
                 #print('tmp4')
                 ## With prototype TimeKeeping, if no OB duration was specified, advance
                 ## to the next OB with timestep equivalent to time spent on one target
@@ -716,7 +716,7 @@ class starkAYO(SurveySimulation):
         self.schedule = sInds
         return DRM, sInds, sInd, t_det
 
-    def choose_next_target(self,old_sInd,sInds,slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTimes):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -725,9 +725,11 @@ class starkAYO(SurveySimulation):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (float array):
+            slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-                
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
+        
         Returns:
             sInd (integer):
                 Index of next target star

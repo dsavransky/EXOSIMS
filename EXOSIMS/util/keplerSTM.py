@@ -18,6 +18,8 @@ Constructor take the following arguments:
     epsmult (float):
         default multiplier on floating point precision, used as convergence 
         metric.  Higher values mean faster convergence, but sacrifice precision.
+    prefVallado (bool):
+        If True, always try the Vallado algorithm first, otherwise try Shepherd first.
 
 Step function (updateState) takes the following arguments:
     dt (float):
@@ -26,13 +28,17 @@ Step function (updateState) takes the following arguments:
 All units must be complementary (i.e., if position is AU and velocity
 is AU/day, mu must be in AU^3/day^2.
 
-Algorithm from Shepperd, 1984, using Goodyear's universal variables
-and continued fraction to solve the Kepler equation.
+Two algorithms are implemented, both using Batting/Goodyear universal variables. 
+The first is from Shepperd (1984), using continued fraction to solve the Kepler equation.
+The second is from Vallado (2004), using Newton iteration to solve the time equation. 
+One algorithm is used preferentially, and the other is called only in the case of convergence
+failure on the first.  All convergence is calculated to machine precision of the data type and 
+variable size, scaled by a user-selected multiple.
 
 '''
 
 class planSys:
-    def __init__(self, x0, mu, epsmult = 4.0):
+    def __init__(self, x0, mu, epsmult = 4.0, prefVallado = False):
         #determine number of planets and validate input
         nplanets = x0.size/6.
         if (nplanets - np.floor(nplanets) > 0):
@@ -48,11 +54,15 @@ class planSys:
         
         self.epsmult = epsmult
         
+        if prefVallado:
+            self.algOrder = [self.calcSTM_vallado, self.calcSTM]
+        else:
+            self.algOrder = [self.calcSTM, self.calcSTM_vallado]
+
         #create position and velocity index matrices
         tmp = np.reshape(np.arange(self.nplanets*6),(self.nplanets,6)).T
         self.rinds = tmp[0:3]
         self.vinds = tmp[3:6]
-
 
         self.updateState(np.squeeze(x0))
 
@@ -71,7 +81,12 @@ class planSys:
 
         
     def takeStep(self,dt):
-        Phi = self.calcSTM(dt)
+        try:
+            Phi = self.algOrder[0](dt)
+        except ValueError as detail:
+            print "First algorithm error: %s\n Trying second algorithm."%(detail)
+            Phi = self.algOrder[1](dt)
+        
         self.updateState(np.dot(Phi,self.x0))
         
 

@@ -1494,7 +1494,7 @@ static PyObject *__pyx_tuple__12;
 static PyObject *__pyx_tuple__13;
 static PyObject *__pyx_codeobj__14;
 
-/* "CyKeplerSTM.pyx":12
+/* "CyKeplerSTM.pyx":13
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def CyKeplerSTM(np.ndarray[DTYPE_t, ndim=1] x0, DTYPE_t dt, np.ndarray[DTYPE_t, ndim=1] mus, DTYPE_t epsmult):             # <<<<<<<<<<<<<<
@@ -1536,21 +1536,21 @@ static PyObject *__pyx_pw_11CyKeplerSTM_1CyKeplerSTM(PyObject *__pyx_self, PyObj
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_dt)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 1); __PYX_ERR(0, 12, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 1); __PYX_ERR(0, 13, __pyx_L3_error)
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_mus)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 2); __PYX_ERR(0, 12, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 2); __PYX_ERR(0, 13, __pyx_L3_error)
         }
         case  3:
         if (likely((values[3] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_epsmult)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 3); __PYX_ERR(0, 12, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, 3); __PYX_ERR(0, 13, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "CyKeplerSTM") < 0)) __PYX_ERR(0, 12, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "CyKeplerSTM") < 0)) __PYX_ERR(0, 13, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -1561,20 +1561,20 @@ static PyObject *__pyx_pw_11CyKeplerSTM_1CyKeplerSTM(PyObject *__pyx_self, PyObj
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
     __pyx_v_x0 = ((PyArrayObject *)values[0]);
-    __pyx_v_dt = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_dt == ((npy_double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L3_error)
+    __pyx_v_dt = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_dt == ((npy_double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 13, __pyx_L3_error)
     __pyx_v_mus = ((PyArrayObject *)values[2]);
-    __pyx_v_epsmult = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_epsmult == ((npy_double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 12, __pyx_L3_error)
+    __pyx_v_epsmult = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_epsmult == ((npy_double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 13, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 12, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("CyKeplerSTM", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 13, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("CyKeplerSTM.CyKeplerSTM", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x0), __pyx_ptype_5numpy_ndarray, 1, "x0", 0))) __PYX_ERR(0, 12, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mus), __pyx_ptype_5numpy_ndarray, 1, "mus", 0))) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x0), __pyx_ptype_5numpy_ndarray, 1, "x0", 0))) __PYX_ERR(0, 13, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_mus), __pyx_ptype_5numpy_ndarray, 1, "mus", 0))) __PYX_ERR(0, 13, __pyx_L1_error)
   __pyx_r = __pyx_pf_11CyKeplerSTM_CyKeplerSTM(__pyx_self, __pyx_v_x0, __pyx_v_dt, __pyx_v_mus, __pyx_v_epsmult);
 
   /* function exit code */
@@ -1621,6 +1621,7 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   PyObject *__pyx_t_13 = NULL;
   PyObject *__pyx_t_14 = NULL;
   Py_ssize_t __pyx_t_15;
+  Py_ssize_t __pyx_t_16;
   __Pyx_RefNannySetupContext("CyKeplerSTM", 0);
   __pyx_pybuffer_x1.pybuffer.buf = NULL;
   __pyx_pybuffer_x1.refcount = 0;
@@ -1644,29 +1645,29 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   __pyx_pybuffernd_mus.rcbuffer = &__pyx_pybuffer_mus;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_x0.rcbuffer->pybuffer, (PyObject*)__pyx_v_x0, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 12, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_x0.rcbuffer->pybuffer, (PyObject*)__pyx_v_x0, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 13, __pyx_L1_error)
   }
   __pyx_pybuffernd_x0.diminfo[0].strides = __pyx_pybuffernd_x0.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_x0.diminfo[0].shape = __pyx_pybuffernd_x0.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_mus.rcbuffer->pybuffer, (PyObject*)__pyx_v_mus, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 12, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_mus.rcbuffer->pybuffer, (PyObject*)__pyx_v_mus, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 13, __pyx_L1_error)
   }
   __pyx_pybuffernd_mus.diminfo[0].strides = __pyx_pybuffernd_mus.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_mus.diminfo[0].shape = __pyx_pybuffernd_mus.rcbuffer->pybuffer.shape[0];
 
-  /* "CyKeplerSTM.pyx":45
+  /* "CyKeplerSTM.pyx":46
  * 
  *     '''
  *     cdef int N = mus.size             # <<<<<<<<<<<<<<
  * 
  *     assert (x0.dtype == DTYPE) and (x0.size == N*6), "Incompatible inputs."
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_mus), __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_mus), __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_N = __pyx_t_2;
 
-  /* "CyKeplerSTM.pyx":47
+  /* "CyKeplerSTM.pyx":48
  *     cdef int N = mus.size
  * 
  *     assert (x0.dtype == DTYPE) and (x0.size == N*6), "Incompatible inputs."             # <<<<<<<<<<<<<<
@@ -1675,75 +1676,75 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
  */
   #ifndef CYTHON_WITHOUT_ASSERTIONS
   if (unlikely(!Py_OptimizeFlag)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_dtype); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_dtype); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyObject_RichCompare(__pyx_t_1, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_5 = PyObject_RichCompare(__pyx_t_1, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (__pyx_t_6) {
     } else {
       __pyx_t_3 = __pyx_t_6;
       goto __pyx_L3_bool_binop_done;
     }
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_size); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_size); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_PyInt_From_long((__pyx_v_N * 6)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_long((__pyx_v_N * 6)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_1 = PyObject_RichCompare(__pyx_t_5, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_1 = PyObject_RichCompare(__pyx_t_5, __pyx_t_4, Py_EQ); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 48, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_3 = __pyx_t_6;
     __pyx_L3_bool_binop_done:;
     if (unlikely(!__pyx_t_3)) {
       PyErr_SetObject(PyExc_AssertionError, __pyx_kp_s_Incompatible_inputs);
-      __PYX_ERR(0, 47, __pyx_L1_error)
+      __PYX_ERR(0, 48, __pyx_L1_error)
     }
   }
   #endif
 
-  /* "CyKeplerSTM.pyx":51
+  /* "CyKeplerSTM.pyx":52
  * 
  *     #intialize output and intermediate arrays
  *     cdef np.ndarray[DTYPE_t, ndim=1] x1 =  np.zeros(6*N, dtype=DTYPE)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[DTYPE_t, ndim=1] xin =  np.zeros(6, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xout =  np.zeros(6, dtype=DTYPE)
  */
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_long((6 * __pyx_v_N)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_long((6 * __pyx_v_N)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_7) < 0) __PYX_ERR(0, 51, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_7) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_7) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_7, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 51, __pyx_L1_error)
+  if (!(likely(((__pyx_t_7) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_7, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 52, __pyx_L1_error)
   __pyx_t_8 = ((PyArrayObject *)__pyx_t_7);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_x1.rcbuffer->pybuffer, (PyObject*)__pyx_t_8, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_x1 = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_x1.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 51, __pyx_L1_error)
+      __PYX_ERR(0, 52, __pyx_L1_error)
     } else {__pyx_pybuffernd_x1.diminfo[0].strides = __pyx_pybuffernd_x1.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_x1.diminfo[0].shape = __pyx_pybuffernd_x1.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -1751,35 +1752,35 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   __pyx_v_x1 = ((PyArrayObject *)__pyx_t_7);
   __pyx_t_7 = 0;
 
-  /* "CyKeplerSTM.pyx":52
+  /* "CyKeplerSTM.pyx":53
  *     #intialize output and intermediate arrays
  *     cdef np.ndarray[DTYPE_t, ndim=1] x1 =  np.zeros(6*N, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xin =  np.zeros(6, dtype=DTYPE)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[DTYPE_t, ndim=1] xout =  np.zeros(6, dtype=DTYPE)
  * 
  */
-  __pyx_t_7 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = PyDict_New(); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_7 = PyDict_New(); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple_, __pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple_, __pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 52, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 53, __pyx_L1_error)
   __pyx_t_9 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_xin.rcbuffer->pybuffer, (PyObject*)__pyx_t_9, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_xin = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_xin.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 52, __pyx_L1_error)
+      __PYX_ERR(0, 53, __pyx_L1_error)
     } else {__pyx_pybuffernd_xin.diminfo[0].strides = __pyx_pybuffernd_xin.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_xin.diminfo[0].shape = __pyx_pybuffernd_xin.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -1787,35 +1788,35 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   __pyx_v_xin = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "CyKeplerSTM.pyx":53
+  /* "CyKeplerSTM.pyx":54
  *     cdef np.ndarray[DTYPE_t, ndim=1] x1 =  np.zeros(6*N, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xin =  np.zeros(6, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xout =  np.zeros(6, dtype=DTYPE)             # <<<<<<<<<<<<<<
  * 
  *     cdef int res,j, mucounter
  */
-  __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetModuleGlobalName(__pyx_n_s_DTYPE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 53, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 53, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 54, __pyx_L1_error)
   __pyx_t_10 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_xout.rcbuffer->pybuffer, (PyObject*)__pyx_t_10, &__Pyx_TypeInfo_nn___pyx_t_11CyKeplerSTM_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_xout = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_xout.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 53, __pyx_L1_error)
+      __PYX_ERR(0, 54, __pyx_L1_error)
     } else {__pyx_pybuffernd_xout.diminfo[0].strides = __pyx_pybuffernd_xout.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_xout.diminfo[0].shape = __pyx_pybuffernd_xout.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -1823,7 +1824,7 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   __pyx_v_xout = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "CyKeplerSTM.pyx":56
+  /* "CyKeplerSTM.pyx":57
  * 
  *     cdef int res,j, mucounter
  *     mucounter = 0             # <<<<<<<<<<<<<<
@@ -1832,29 +1833,29 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
  */
   __pyx_v_mucounter = 0;
 
-  /* "CyKeplerSTM.pyx":57
+  /* "CyKeplerSTM.pyx":58
  *     cdef int res,j, mucounter
  *     mucounter = 0
  *     for j from 0 <= j < x0.size by 6:             # <<<<<<<<<<<<<<
  *         xin = x0[j:j+6]
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_x0), __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   for (__pyx_v_j = 0; __pyx_v_j < __pyx_t_2; __pyx_v_j+=6) {
 
-    /* "CyKeplerSTM.pyx":58
+    /* "CyKeplerSTM.pyx":59
  *     mucounter = 0
  *     for j from 0 <= j < x0.size by 6:
  *         xin = x0[j:j+6]             # <<<<<<<<<<<<<<
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  *         if (res != 0):
  */
-    __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_x0), __pyx_v_j, (__pyx_v_j + 6), NULL, NULL, NULL, 1, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetSlice(((PyObject *)__pyx_v_x0), __pyx_v_j, (__pyx_v_j + 6), NULL, NULL, NULL, 1, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 58, __pyx_L1_error)
+    if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 59, __pyx_L1_error)
     __pyx_t_9 = ((PyArrayObject *)__pyx_t_1);
     {
       __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -1870,65 +1871,94 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
         }
       }
       __pyx_pybuffernd_xin.diminfo[0].strides = __pyx_pybuffernd_xin.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_xin.diminfo[0].shape = __pyx_pybuffernd_xin.rcbuffer->pybuffer.shape[0];
-      if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 58, __pyx_L1_error)
+      if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 59, __pyx_L1_error)
     }
     __pyx_t_9 = 0;
     __Pyx_DECREF_SET(__pyx_v_xin, ((PyArrayObject *)__pyx_t_1));
     __pyx_t_1 = 0;
 
-    /* "CyKeplerSTM.pyx":59
+    /* "CyKeplerSTM.pyx":60
  *     for j from 0 <= j < x0.size by 6:
  *         xin = x0[j:j+6]
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)             # <<<<<<<<<<<<<<
  *         if (res != 0):
- *             raise Exception("Integration failed.")
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  */
     __pyx_t_15 = __pyx_v_mucounter;
     __pyx_v_res = KeplerSTM_C(((double *)__pyx_v_xin->data), __pyx_v_dt, (*__Pyx_BufPtrStrided1d(__pyx_t_11CyKeplerSTM_DTYPE_t *, __pyx_pybuffernd_mus.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_mus.diminfo[0].strides)), ((double *)__pyx_v_xout->data), __pyx_v_epsmult);
 
-    /* "CyKeplerSTM.pyx":60
+    /* "CyKeplerSTM.pyx":61
  *         xin = x0[j:j+6]
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  *         if (res != 0):             # <<<<<<<<<<<<<<
- *             raise Exception("Integration failed.")
- *         x1[j:j+6] = xout
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):
  */
     __pyx_t_3 = ((__pyx_v_res != 0) != 0);
     if (__pyx_t_3) {
 
-      /* "CyKeplerSTM.pyx":61
+      /* "CyKeplerSTM.pyx":62
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  *         if (res != 0):
- *             raise Exception("Integration failed.")             # <<<<<<<<<<<<<<
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)             # <<<<<<<<<<<<<<
+ *             if (res != 0):
+ *                 raise Exception("Integration failed.")
+ */
+      __pyx_t_16 = __pyx_v_mucounter;
+      __pyx_v_res = KeplerSTM_C_vallado(((double *)__pyx_v_xin->data), __pyx_v_dt, (*__Pyx_BufPtrStrided1d(__pyx_t_11CyKeplerSTM_DTYPE_t *, __pyx_pybuffernd_mus.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_mus.diminfo[0].strides)), ((double *)__pyx_v_xout->data), __pyx_v_epsmult);
+
+      /* "CyKeplerSTM.pyx":63
+ *         if (res != 0):
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):             # <<<<<<<<<<<<<<
+ *                 raise Exception("Integration failed.")
+ *         x1[j:j+6] = xout
+ */
+      __pyx_t_3 = ((__pyx_v_res != 0) != 0);
+      if (__pyx_t_3) {
+
+        /* "CyKeplerSTM.pyx":64
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):
+ *                 raise Exception("Integration failed.")             # <<<<<<<<<<<<<<
  *         x1[j:j+6] = xout
  *         mucounter += 1
  */
-      __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_Raise(__pyx_t_1, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 61, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])), __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_1);
+        __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __PYX_ERR(0, 64, __pyx_L1_error)
 
-      /* "CyKeplerSTM.pyx":60
+        /* "CyKeplerSTM.pyx":63
+ *         if (res != 0):
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):             # <<<<<<<<<<<<<<
+ *                 raise Exception("Integration failed.")
+ *         x1[j:j+6] = xout
+ */
+      }
+
+      /* "CyKeplerSTM.pyx":61
  *         xin = x0[j:j+6]
  *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
  *         if (res != 0):             # <<<<<<<<<<<<<<
- *             raise Exception("Integration failed.")
- *         x1[j:j+6] = xout
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):
  */
     }
 
-    /* "CyKeplerSTM.pyx":62
- *         if (res != 0):
- *             raise Exception("Integration failed.")
+    /* "CyKeplerSTM.pyx":65
+ *             if (res != 0):
+ *                 raise Exception("Integration failed.")
  *         x1[j:j+6] = xout             # <<<<<<<<<<<<<<
  *         mucounter += 1
  * 
  */
-    if (__Pyx_PyObject_SetSlice(((PyObject *)__pyx_v_x1), ((PyObject *)__pyx_v_xout), __pyx_v_j, (__pyx_v_j + 6), NULL, NULL, NULL, 1, 1, 0) < 0) __PYX_ERR(0, 62, __pyx_L1_error)
+    if (__Pyx_PyObject_SetSlice(((PyObject *)__pyx_v_x1), ((PyObject *)__pyx_v_xout), __pyx_v_j, (__pyx_v_j + 6), NULL, NULL, NULL, 1, 1, 0) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
 
-    /* "CyKeplerSTM.pyx":63
- *             raise Exception("Integration failed.")
+    /* "CyKeplerSTM.pyx":66
+ *                 raise Exception("Integration failed.")
  *         x1[j:j+6] = xout
  *         mucounter += 1             # <<<<<<<<<<<<<<
  * 
@@ -1937,7 +1967,7 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
     __pyx_v_mucounter = (__pyx_v_mucounter + 1);
   }
 
-  /* "CyKeplerSTM.pyx":65
+  /* "CyKeplerSTM.pyx":68
  *         mucounter += 1
  * 
  *     return x1             # <<<<<<<<<<<<<<
@@ -1948,7 +1978,7 @@ static PyObject *__pyx_pf_11CyKeplerSTM_CyKeplerSTM(CYTHON_UNUSED PyObject *__py
   __pyx_r = ((PyObject *)__pyx_v_x1);
   goto __pyx_L0;
 
-  /* "CyKeplerSTM.pyx":12
+  /* "CyKeplerSTM.pyx":13
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def CyKeplerSTM(np.ndarray[DTYPE_t, ndim=1] x0, DTYPE_t dt, np.ndarray[DTYPE_t, ndim=1] mus, DTYPE_t epsmult):             # <<<<<<<<<<<<<<
@@ -4580,36 +4610,36 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "CyKeplerSTM.pyx":52
+  /* "CyKeplerSTM.pyx":53
  *     #intialize output and intermediate arrays
  *     cdef np.ndarray[DTYPE_t, ndim=1] x1 =  np.zeros(6*N, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xin =  np.zeros(6, dtype=DTYPE)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[DTYPE_t, ndim=1] xout =  np.zeros(6, dtype=DTYPE)
  * 
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_int_6); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_int_6); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "CyKeplerSTM.pyx":53
+  /* "CyKeplerSTM.pyx":54
  *     cdef np.ndarray[DTYPE_t, ndim=1] x1 =  np.zeros(6*N, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xin =  np.zeros(6, dtype=DTYPE)
  *     cdef np.ndarray[DTYPE_t, ndim=1] xout =  np.zeros(6, dtype=DTYPE)             # <<<<<<<<<<<<<<
  * 
  *     cdef int res,j, mucounter
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_int_6); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_int_6); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "CyKeplerSTM.pyx":61
- *         res = KeplerSTM_C(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
- *         if (res != 0):
- *             raise Exception("Integration failed.")             # <<<<<<<<<<<<<<
+  /* "CyKeplerSTM.pyx":64
+ *             res = KeplerSTM_C_vallado(<double*> xin.data, dt, mus[mucounter], <double*> xout.data, epsmult)
+ *             if (res != 0):
+ *                 raise Exception("Integration failed.")             # <<<<<<<<<<<<<<
  *         x1[j:j+6] = xout
  *         mucounter += 1
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Integration_failed); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Integration_failed); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
@@ -4710,17 +4740,17 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
 
-  /* "CyKeplerSTM.pyx":12
+  /* "CyKeplerSTM.pyx":13
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def CyKeplerSTM(np.ndarray[DTYPE_t, ndim=1] x0, DTYPE_t dt, np.ndarray[DTYPE_t, ndim=1] mus, DTYPE_t epsmult):             # <<<<<<<<<<<<<<
  *     '''
  *     Kepler State Transition Matrix
  */
-  __pyx_tuple__13 = PyTuple_Pack(11, __pyx_n_s_x0, __pyx_n_s_dt, __pyx_n_s_mus, __pyx_n_s_epsmult, __pyx_n_s_N, __pyx_n_s_x1, __pyx_n_s_xin, __pyx_n_s_xout, __pyx_n_s_res, __pyx_n_s_j, __pyx_n_s_mucounter); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(11, __pyx_n_s_x0, __pyx_n_s_dt, __pyx_n_s_mus, __pyx_n_s_epsmult, __pyx_n_s_N, __pyx_n_s_x1, __pyx_n_s_xin, __pyx_n_s_xout, __pyx_n_s_res, __pyx_n_s_j, __pyx_n_s_mucounter); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__13);
   __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(4, 0, 11, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_ds264_Documents_gitrepos, __pyx_n_s_CyKeplerSTM, 12, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(4, 0, 11, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_ds264_Documents_gitrepos, __pyx_n_s_CyKeplerSTM, 13, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4866,16 +4896,16 @@ PyMODINIT_FUNC PyInit_CyKeplerSTM(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_DTYPE, __pyx_t_2) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "CyKeplerSTM.pyx":12
+  /* "CyKeplerSTM.pyx":13
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * def CyKeplerSTM(np.ndarray[DTYPE_t, ndim=1] x0, DTYPE_t dt, np.ndarray[DTYPE_t, ndim=1] mus, DTYPE_t epsmult):             # <<<<<<<<<<<<<<
  *     '''
  *     Kepler State Transition Matrix
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_11CyKeplerSTM_1CyKeplerSTM, NULL, __pyx_n_s_CyKeplerSTM); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_11CyKeplerSTM_1CyKeplerSTM, NULL, __pyx_n_s_CyKeplerSTM); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_CyKeplerSTM, __pyx_t_2) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_CyKeplerSTM, __pyx_t_2) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "CyKeplerSTM.pyx":1

@@ -10,9 +10,14 @@
  *      EPSMULT float  : tolerance parameter
  *
  * Written by Dmitry Savransky (ds264@cornell.edu)
- * Algorithm from Shepperd, 1984 which employs Goodyear's universal 
- * variables and solves the Kepler problem using continued fractions.
- *
+ * Two algorithms are implemented, both using Batting/Goodyear universal variables. 
+ * The first is from Shepperd (1984), using continued fraction to solve the Kepler equation.
+ * The second is from Vallado (2004), using Newton iteration to solve the time equation. 
+ * One algorithm is used preferentially, and the other is called only in the case of convergence
+ * failure on the first.  All convergence is calculated to machine precision of the data type and 
+ * variable size, scaled by a user-selected multiple.
  *=================================================================*/
 
 int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult);
+
+int KeplerSTM_C_vallado (double x0[], double dt, double mu, double x1[], double epsmult);

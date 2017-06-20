@@ -1,4 +1,9 @@
 import numpy as np
+import sys
+try:
+    import EXOSIMS.util.KeplerSTM_C.CyKeplerSTM
+except ImportError:
+    pass
 
 '''
 Kepler State Transition Matrix
@@ -8,7 +13,7 @@ systems) via their gravitational parameters and state vectors.  Contains methods
 for propagating state vectors forward in time via the Kepler state transition
 matrix.
 
-Constructor take the following arguments:
+Constructor takes the following arguments:
     x0 (ndarray):
         6n vector of stacked positions and velocities for n planets
     mu (ndarray):
@@ -20,6 +25,10 @@ Constructor take the following arguments:
         metric.  Higher values mean faster convergence, but sacrifice precision.
     prefVallado (bool):
         If True, always try the Vallado algorithm first, otherwise try Shepherd first.
+        Defaults False;
+    noc (bool):
+        Do not attempt to use cythonized code even if found.  Defaults False.
+
 
 Step function (updateState) takes the following arguments:
     dt (float):
@@ -38,7 +47,7 @@ variable size, scaled by a user-selected multiple.
 '''
 
 class planSys:
-    def __init__(self, x0, mu, epsmult = 4.0, prefVallado = False):
+    def __init__(self, x0, mu, epsmult = 4.0, prefVallado = False, noc = False):
         #determine number of planets and validate input
         nplanets = x0.size/6.
         if (nplanets - np.floor(nplanets) > 0):
@@ -64,6 +73,11 @@ class planSys:
         self.rinds = tmp[0:3]
         self.vinds = tmp[3:6]
 
+        if not(noc) and ('EXOSIMS.util.KeplerSTM_C.CyKeplerSTM' in sys.modules):
+            self.havec = True
+        else:
+            self.havec = False
+
         self.updateState(np.squeeze(x0))
 
     def updateState(self,x0):
@@ -81,6 +95,14 @@ class planSys:
 
         
     def takeStep(self,dt):
+        if self.havec:
+            try:
+                tmp = EXOSIMS.util.KeplerSTM_C.CyKeplerSTM.CyKeplerSTM(self.x0, dt, self.mu, self.epsmult)
+                self.updateState(tmp)
+                return
+            except:
+                print "Cython propagation failed.  Falling back to python."
+
         try:
             Phi = self.algOrder[0](dt)
         except ValueError as detail:
@@ -245,7 +267,7 @@ class planSys:
             c2[pos] = (1 - np.cos(psi12[pos]))/psi0[pos]
             c3[pos] = (psi12[pos] - np.sin(psi12[pos]))/psi12[pos]**3.
         if any(neg):
-            c2[neg] = (1 - inp.cosh(psi12[neg]))/psi0[neg]
+            c2[neg] = (1 - np.cosh(psi12[neg]))/psi0[neg]
             c3[neg] = (np.sinh(psi12[neg]) - psi12[neg])/psi12[neg]**3.
 
         tmp = c2+c3 == 0

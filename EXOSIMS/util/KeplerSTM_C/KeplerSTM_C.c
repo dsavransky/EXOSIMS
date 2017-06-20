@@ -10,8 +10,12 @@
  *      EPSMULT float  : tolerance parameter
  *
  * Written by Dmitry Savransky (ds264@cornell.edu)
- * Algorithm from Shepperd, 1984 which employs Goodyear's universal 
- * variables and solves the Kepler problem using continued fractions.
+ * Two algorithms are implemented, both using Batting/Goodyear universal variables. 
+ * The first is from Shepperd (1984), using continued fraction to solve the Kepler equation.
+ * The second is from Vallado (2004), using Newton iteration to solve the time equation. 
+ * One algorithm is used preferentially, and the other is called only in the case of convergence
+ * failure on the first.  All convergence is calculated to machine precision of the data type and 
+ * variable size, scaled by a user-selected multiple.
  *
  * This function is intended for use with CyKeplerSTM 
  * See CyKeplerSTM.pyx/CyKeplerSTM_setup.py for compilation notes.
@@ -24,6 +28,10 @@
 
 #if !defined(EPS)
 #define EPS(X) pow(2,log(fabs(X))/log(2) - 52.0)
+#endif
+
+#if !defined(MAX)
+#define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
 double DOT(double x1[], double x2[], int size) {
@@ -95,7 +103,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
             counter2 += 1;
         }
         if (counter2 == 1000){
-            printf("Failed to converge on continued fraction.");
+            /*printf("Failed to converge on continued fraction.");*/
             return -1;
         }
 
@@ -112,8 +120,8 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
         counter += 1;
     }
     if (counter == 1000){
-        printf("Failed to converge on time step.");
-        printf("t-dt = %6.6e\n", t-dt);
+        /*printf("Failed to converge on time step.");
+        printf("t-dt = %6.6e\n", t-dt);*/
         return -2;
     }
  
@@ -132,4 +140,96 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
     }
     
     return 0;
+}
+
+int KeplerSTM_C_vallado (double x0[], double dt, double mu, double x1[], double epsmult){
+    
+    double epsval = 1.0e-12;
+
+    /* Initialize orbit values*/
+    double r0[3] = {x0[0],x0[1],x0[2]};
+    double v0[3] = {x0[3],x0[4],x0[5]};
+    
+    double r0norm =  sqrt(pow(r0[0], 2)+pow(r0[1], 2)+pow(r0[2], 2));
+    double v0norm2 =  DOT(v0,v0,3);
+    double nu0 = DOT(r0,v0,3);
+    double beta = 2.0*mu/r0norm - v0norm2;
+    double alpha = beta/mu;
+    double nu0osmu = nu0/sqrt(mu);
+
+    /*initialize universal var*/
+    double xi;
+    if (alpha >= epsval){
+        /* ellipses */
+        xi = sqrt(mu*dt*alpha);
+        if (fabs(alpha - 1.0) > epsval){
+            /* near circs */
+            xi *= 0.97;
+        }
+    } else if (fabs(alpha) < epsval){
+        /* parabolae */
+        double h2 = pow(r0[0]*v0[1] - r0[1]*v0[0],2) + pow(r0[0]*v0[2] - r0[2]*v0[0],2) + pow(r0[1]*v0[2] - r0[2]*v0[1],2); 
+        double p = h2/mu;
+        double s = atan2(1.0,(3.0*sqrt(mu/pow(p,3.0))*dt))/2.0;
+        double w = atan(pow(tan(s),1.0/3.0));
+        xi = sqrt(p)*2.0/tan(2.0*w);
+        alpha = 0.0;
+    } else{
+        /*hyperbolae*/
+        double a = 1.0/alpha;
+        double sn = dt/fabs(dt);
+        xi = sn*sqrt(-a)*log(-2*mu*alpha*dt/(nu0 + sn*sqrt(-mu*alpha)*(1.0 - r0norm*alpha)));
+    }
+
+
+    /*loop*/
+    int counter = 0;
+    double r = r0norm;
+    double xiup = MAX(fabs(xi),fabs(r))*10.0;
+    double psi, c2, c3, psi12;
+    while ((fabs(xiup) > epsmult*EPS(MAX(fabs(xi),fabs(r)))) && (counter < 1000)){
+
+        psi = pow(xi,2.0)*alpha;
+        psi12 = sqrt(fabs(psi));
+        if (psi >= 0){
+            c2 =  (1 - cos(psi12))/psi;
+            c3 = (psi12 - sin(psi12))/pow(psi12,3.0);
+        }else{
+            c2 = (1 - cosh(psi12))/psi;
+            c3 = (sinh(psi12) - psi12)/pow(psi12,3.0);
+        }
+
+        if (c2+c3 == 0.){
+            c2 = 1.0/2.0;
+            c3 = 1.0/6.0;
+        }
+
+        r = pow(xi,2.0)*c2 + nu0osmu*xi*(1 - psi*c3) + r0norm*(1 - psi*c2);
+        xiup = (sqrt(mu)*dt - pow(xi,3.0)*c3 - nu0osmu*pow(xi,2.0)*c2 - r0norm*xi*(1 - psi*c3))/r;
+
+        xi += xiup;
+        counter += 1;
+
+    }
+    if (counter == 1000){
+        /*printf("Failed to converge on xi.");
+        printf("xiup = %6.6e\n", xiup);*/
+        return -3;
+    }
+
+    double f = 1.0 - pow(xi,2.0)/r0norm*c2;
+    double g = dt - pow(xi,3.0)/sqrt(mu)*c3;
+    double F = sqrt(mu)/r/r0norm*xi*(psi*c3 - 1.0);
+    double G = 1.0 - pow(xi,2.0)/r*c2;
+        
+    int i;
+    for (i=0; i<3; i++) {
+        x1[i] = x0[i]*f + x0[i+3]*g;
+    }
+    for (i=3; i<6; i++) {
+        x1[i] = x0[i-3]*F + x0[i]*G;
+    }
+    
+    return 0;
+
 }

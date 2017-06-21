@@ -43,7 +43,7 @@
   ],
   "starlightSuppressionSystems": [
     { "name": "HLC-565",
-      "optics": 0.472298107,
+      "optics": 0.983647,
       "lam": 565,
       "BW": 0.10,
       "IWA": 0.15,

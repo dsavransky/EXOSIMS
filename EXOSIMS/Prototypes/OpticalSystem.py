@@ -622,15 +622,17 @@ class OpticalSystem(object):
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
         
-        # C_b = NOISE BUDGET
-        C_b = inst['ENF']**2*(C_sr + C_z + C_ez + C_dc + C_cc) + C_rn 
+        # C_b = NOISE VARIANCE RATE
+        # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
+        # k_SZ for speckle and zodi light, and k_det for detector
+        k_SZ = 1 + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
+        k_det = 1 + self.ref_Time
+        # calculate Cb
+        ENF2 = inst['ENF']**2
+        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:
-            C_b = C_b + C_p0*mode['inst']['ENF']**2
-        # correction for Ref star Differential Imaging
-        # e.g. for WFIRST, dMag=3 and 20% time on ref
-        RDIcorr = 1 + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
-        C_b *= RDIcorr
+            C_b = C_b + ENF2*C_p0
         
         # C_sp = spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)

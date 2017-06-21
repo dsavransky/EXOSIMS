@@ -2,6 +2,11 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 import itertools
+from scipy import interpolate
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class tieredScheduler(SurveySimulation):
     """tieredScheduler 
@@ -145,17 +150,29 @@ class tieredScheduler(SurveySimulation):
                         DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
                         DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
                         DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+                    # add star back into the revisit list
+                    if 1 in characterized or -1 in characterized:
+                        sp = SU.s.mean() # XXX use smin here
+                        Mp = SU.Mp.mean()
+                        mu = const.G*(Mp + Ms)
+                        T = 2.*np.pi*np.sqrt(sp**3/mu)
+                        t_rev = TK.currentTimeNorm + 0.75*T
+                        revisit = np.array([sInd, t_rev.to('day').value])
+                        if self.starRevisit.size == 0:
+                            self.starRevisit = np.array([revisit])
+                        else:
+                            self.starRevisit = np.vstack((self.starRevisit, revisit))
                     # Populate the DRM with characterization results
                     DRM['char_time'] = t_char.to('day').value if t_char else 0.
                     DRM['char_status'] = characterized
                     DRM['char_SNR'] = charSNR
-                
+
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
-                
+
                 # Calculate observation end time
                 TK.obsEnd = TK.currentTimeNorm.to('day')
-                
+
                 # With prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
@@ -166,16 +183,16 @@ class tieredScheduler(SurveySimulation):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
                     break
-        
+
         else:
             dtsim = (time.time()-t0)*u.s
             mission_end = "Mission complete: no more time available.\n"\
                     + "Simulation duration: %s.\n" %dtsim.astype('int')\
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
-                    
+
             Logger.info(mission_end)
             print mission_end
-        
+
             return mission_end
 
     def next_target(self, old_sInd, old_occ_sInd, mode):
@@ -247,10 +264,10 @@ class tieredScheduler(SurveySimulation):
                     sd = np.zeros(TL.nStars)*u.rad
                 else:
                     # position vector of previous target star
-                    r_old = Obs.starprop(TL, old_occ_sInd, TK.currentTimeAbs)[0]
+                    r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
                     u_old = r_old.value/np.linalg.norm(r_old)
                     # position vector of new target stars
-                    r_new = Obs.starprop(TL, occ_sInds, TK.currentTimeAbs)
+                    r_new = TL.starprop(occ_sInds, TK.currentTimeAbs)
                     u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
                     # angle between old and new stars
                     sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
@@ -267,11 +284,11 @@ class tieredScheduler(SurveySimulation):
             
             # 2/ Calculate integration times for the preselected targets, 
             # and filter out t_tots > integration cutoff
+            fEZ = ZL.fEZ0
+            dMag = OS.dMagint
+            WA = OS.WAint
             if np.any(occ_sInds):
                 fZ = ZL.fZ(TL, occ_sInds, mode['lam'], Obs.orbit(occ_startTime[occ_sInds]))
-                fEZ = ZL.fEZ0
-                dMag = OS.dMagint
-                WA = OS.WAint
                 t_dets[occ_sInds] = OS.calc_intTime(TL, occ_sInds, fZ, fEZ, dMag, WA, mode)
                 # include integration time multiplier
                 t_tots = t_dets*mode['timeMultiplier']
@@ -283,9 +300,6 @@ class tieredScheduler(SurveySimulation):
 
             if np.any(sInds):
                 fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
-                fEZ = ZL.fEZ0
-                dMag = OS.dMagint
-                WA = OS.WAint
                 t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 # include integration time multiplier
                 t_tots = t_dets*mode['timeMultiplier']
@@ -348,6 +362,10 @@ class tieredScheduler(SurveySimulation):
                 Comp.visits[sInd] += 1
                 # store relevant values
                 t_det = t_dets[sInd]
+                fZ = ZL.fZ(TL, sInds, mode['lam'], Obs.orbit(startTime[sInds]))
+                int_time = calc_int_inflection(sInd, fEZ, WA, mode)
+                if int_time < t_det:
+                    t_det = int_time
                 break
 
             # if no observable target, call the TimeKeeping.wait() method
@@ -436,7 +454,7 @@ class tieredScheduler(SurveySimulation):
 
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            r_ts = Obs.starprop(TL, occ_sInds, TK.currentTimeAbs)
+            r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs)
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
             A[np.ones((nStars),dtype=bool)] = angdists
@@ -522,13 +540,19 @@ class tieredScheduler(SurveySimulation):
         
         return sInd
 
-    def calc_int_inflection(self, sInd, fZ, fEZ, WA, mode):
+    def calc_int_inflection(self, sInd, fEZ, WA, mode):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
         
         Args:
             sInd (integer):
                 Index of the target star
-                
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+
         Returns:
             int_time (float):
                 The suggested integration time
@@ -547,21 +571,48 @@ class tieredScheduler(SurveySimulation):
         dMags = np.linspace(dMagmin, dMagmax, num_points)
 
         # calculate t_det as a function of dMag
+        fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)
         t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
 
         # calculate comp as a function of dMag
         smin = TL.dist[sInd] * np.tan(mode['IWA'])
         smax = TL.dist[sInd] * np.tan(mode['OWA'])
 
-        EVPOC = np.vectorize(Comp.EVPOCpdf.integral)
+        bins = 1000
+        # xedges is array of separation values for interpolant
+        xedges = np.linspace(0., Comp.PlanetPopulation.rrange[1].value, bins)*\
+                Comp.PlanetPopulation.arange.unit
+        xedges = xedges.to('AU').value
+
+        # yedges is array of delta magnitude values for interpolant
+        ymin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
+                Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
+        ymax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
+                Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2*1e-11))
+        yedges = np.linspace(ymin, ymax, bins)
+
+        # number of planets for each Monte Carlo simulation
+        nplan = int(np.min([1e6,Comp.Nplanets]))
+        # number of simulations to perform (must be integer)
+        steps = int(Comp.Nplanets/nplan)
+        
+        # path to 2D completeness pdf array for interpolation
+        Cpath = os.path.join(Comp.classpath, Comp.filename+'.comp')
+        Cpdf = pickle.load(open(Cpath, 'rb'))
+
+        EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
+        EVPOC = np.vectorize(EVPOCpdf.integral)
+
         comps = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
 
+        # find the inflection point of the completeness graph
+        int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]]
+
+        # update star completeness
+        idx = (np.abs(t_dets-int_time*self.starVisits[sInd])).argmin()
+        comp = comps[idx]
+        TL.comp[sInd] = comp
+
         return int_time
-
-
-
-
-
-
 
 

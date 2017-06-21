@@ -61,7 +61,6 @@ class BrownCompleteness(Completeness):
             extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
-        self.EVPOCpdf = None
 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -102,9 +101,9 @@ class BrownCompleteness(Completeness):
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
-        
-        self.EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
-        EVPOC = np.vectorize(self.EVPOCpdf.integral)
+
+        EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
+        EVPOC = np.vectorize(EVPOCpdf.integral)
             
         # calculate separations based on IWA
         OS = TL.OpticalSystem

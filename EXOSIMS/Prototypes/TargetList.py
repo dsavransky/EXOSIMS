@@ -44,6 +44,8 @@ class TargetList(object):
         tint0 (astropy Quantity array):
             Maximum integration time for each target star in units of day
         comp0 (ndarray):
+            Initial completeness value for each target star
+        comp (ndarray):
             Completeness value for each target star
         minComp (float): 
             Minimum completeness value for inclusion in target list
@@ -78,6 +80,7 @@ class TargetList(object):
         self.minComp = float(minComp)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
+        self.comp = np.array([0.0]*TL.nStars)
         
         # populate outspec
         for att in self.__dict__.keys():

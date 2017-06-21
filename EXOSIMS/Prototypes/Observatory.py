@@ -688,7 +688,8 @@ class Observatory(object):
         # sun -> earth position vector
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
-        r_targ = TL.starprop_equat(sInd, currentTime)[0] - r_obs
+        # r_targ = TL.starprop_equat(sInd, currentTime)[0] - r_obs
+        r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
         u_targ = r_targ.value/np.linalg.norm(r_targ)
         # sun -> occulter vector
         r_Os = r_obs + self.occulterSep*u_targ

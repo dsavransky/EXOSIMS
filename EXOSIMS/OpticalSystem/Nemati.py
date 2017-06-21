@@ -50,9 +50,6 @@ class Nemati(OpticalSystem):
         
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
-        # for characterization, Cb must include the planet
-        if mode['detectionMode'] == False:
-            C_b = C_b + C_p*mode['inst']['ENF']**2
         
         # get SNR threshold
         SNR = mode['SNR']
@@ -107,7 +104,9 @@ class Nemati(OpticalSystem):
         
         # get mode wavelength
         lam = mode['lam']
-        # get mode bandwidth (including any IFS spectral resolving power)
+        # get mode bandwidth
+        # include any IFS spectral resolving power, which is equivalent to 
+        # using f_sr from Nemati
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
         # if the mode wavelength is different than the wavelength at which the system 
@@ -121,15 +120,16 @@ class Nemati(OpticalSystem):
         # get signal to noise ratio
         SNR = mode['SNR']
         
-        # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*self.attenuation
+        # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
+        attenuation = inst['optics']*syst['optics']
+        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         
         # get core_thruput
         core_thruput = syst['core_thruput'](lam, WA)
         
         dMag = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
-            C_b, C_sp = self.Cb_Csp(TL, sInds[i], fZ, fEZ, WA, mode)
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)
             dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/t_int[i] + C_sp**2) \
                     /(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value)
         

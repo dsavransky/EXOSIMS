@@ -12,7 +12,7 @@ Install and Quick Start Guide
 - https://github.com/dsavransky/EXOSIMS/blob/master/documentation/install.rst
 - https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
 
-Interface Control Documentation
--------------------------------
+Interface Control and Documentation
+-------------------------------------
 - https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf
 - https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 

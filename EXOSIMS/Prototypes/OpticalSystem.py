@@ -402,6 +402,8 @@ class OpticalSystem(object):
             if mode['lam'] != mode['syst']['lam']:
                 mode['IWA'] = mode['IWA']*mode['lam']/mode['syst']['lam']
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
+            # radiation dosage,  goes from 0 (beginning of mission) to 1 (end of mission)
+            mode['radDos'] = float(mode.get('radDos', radDos))
         
         # check for only one detection mode
         allModes = self.observingModes
@@ -543,73 +545,6 @@ class OpticalSystem(object):
         
         """
         
-        # get Cb and Csp
-        C_b, C_sp = self.Cb_Csp(TL, sInds, fZ, fEZ, WA, mode)
-        
-        # get scienceInstrument and starlightSuppressionSystem
-        inst = mode['inst']
-        syst = mode['syst']
-        
-        # get mode wavelength
-        lam = mode['lam']
-        # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
-        # get star magnitude
-        sInds = np.array(sInds, ndmin=1)
-        mV = TL.starMag(sInds, lam)
-        # get core_throughput
-        core_thruput = syst['core_thruput'](lam, WA)
-        
-        # ELECTRON COUNT RATES [ s^-1 ]
-        # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
-        attenuation = inst['optics']*syst['optics']
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
-        
-        # organize components into an optional fourth result
-        C_extra = dict(C_sr = C_sr.to('1/s'),
-                       C_z = C_z.to('1/s'),
-                       C_ez = C_ez.to('1/s'),
-                       C_dc = C_dc.to('1/s'),
-                       C_cc = C_cc.to('1/s'),
-                       C_rn = C_rn.to('1/s'))
-        
-        if returnExtra:
-            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
-        else:
-            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
-    
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
-        """ Calculates electron count rates for planet signal, background noise, 
-        and speckle residuals.
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of mas
-            mode (dict):
-                Selected observing mode
-            returnExtra (boolean):
-                Optional flag, default False, set True to return additional rates for validation
-        
-        Returns:
-            C_p (astropy Quantity array):
-                Planet signal electron count rate in units of 1/s
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-        
-        """
-        
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']
@@ -678,7 +613,7 @@ class OpticalSystem(object):
         # photon counting efficiency
         PCeff = inst['PCeff']
         # radiation dosage
-        radDos = inst['radDos']
+        radDos = mode['radDos']
         # photon-converted 1 frame
         phConv = (C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']
         # net charge transfer efficiency

@@ -152,11 +152,16 @@ class tieredScheduler(SurveySimulation):
                         DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
                     # add star back into the revisit list
                     if 1 in characterized or -1 in characterized:
-                        sp = SU.s.mean() # XXX use smin here
-                        Mp = SU.Mp.mean()
+                        char = np.where((characterized == 1) | (characterized == -1))[0]
+                        pInds = np.where(SU.plan2star == sInd)[0]
+                        smin = np.min(SU.s[pInds[char]])
+                        pInd_smin = pInds[np.argmin(SU.s[pInds[char]])]
+
+                        sp = smin
+                        Mp = SU.Mp[pInd_smin]
                         mu = const.G*(Mp + Ms)
                         T = 2.*np.pi*np.sqrt(sp**3/mu)
-                        t_rev = TK.currentTimeNorm + 0.75*T
+                        t_rev = TK.currentTimeNorm + T/2.
                         revisit = np.array([sInd, t_rev.to('day').value])
                         if self.starRevisit.size == 0:
                             self.starRevisit = np.array([revisit])

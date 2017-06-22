@@ -191,7 +191,12 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
-        
+       
+        # populate outspec
+        if WAint: self._outspec['WAint'] = WAint
+        if dMagint: self._outspec['dMagint'] = dMagint
+        if nt_flux: self._outspec['nt_flux'] = nt_flux
+
         # load the integration values: working angle (WAint), delta magnitude (dMagint)
         # default to detection mode IWA and dMadLim
         # must be of size equal to TargetList.nStars
@@ -205,10 +210,7 @@ class SurveySimulation(object):
         # observation time sampling (must be an integer)
         self.nt_flux = int(nt_flux)
         
-        # populate outspec
-        self._outspec['WAint'] = self.WAint
-        self._outspec['dMagint'] = self.dMagint
-        self._outspec['nt_flux'] = self.nt_flux
+
 
     def __str__(self):
         """String representation of the Survey Simulation object

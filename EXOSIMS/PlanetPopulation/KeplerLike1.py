@@ -78,6 +78,9 @@ class KeplerLike1(PlanetPopulation):
         self._outspec['smaknee'] = smaknee
         self._outspec['esigma'] = esigma
 
+        self.dist_albedo_built = False
+        self.dist_radius_built = False
+
     def pdist(self, x):
         """Probability density function for albedo
         
@@ -90,39 +93,46 @@ class KeplerLike1(PlanetPopulation):
                 Albedo probability density
                 
         """
-        gen = self.gen_albedo(int(1e6))
-        lim = tuple(self.prange)
-        hist, edges = np.histogram(gen, bins=2000, range=lim, normed=True)
-        edges = 0.5*(edges[1:] + edges[:-1])
-        edges = np.hstack((lim[0], edges, lim[1]))
-        hist = np.hstack((0., hist, 0.))
-        self.pdist = interpolate.InterpolatedUnivariateSpline(edges,hist,k=1,ext=1)
-        f = self.pdist(x)
+        if not self.dist_albedo_built:
+            # define distribution for albedo
+            p = self.gen_albedo(int(1e6))
+            hp, pedges = np.histogram(p, bins=2000, range=(self.prange.min(),self.prange.max()), normed=True)
+            pedges = 0.5*(pedges[1:]+pedges[:-1])
+            pedges = np.hstack((self.prange.min(), pedges, self.prange.max()))
+            hp = np.hstack((0.0, hp, 0.0))
+            self.dist_albedo = interpolate.InterpolatedUnivariateSpline(pedges, hp, k=1, ext=1)
+            self.dist_albedo_built = True
         
+        f = self.dist_albedo(x)
         return f
+
 
     def Rpdist(self, x):
         """Probability density function for planetary radius
         
         Args:
             x (float/ndarray):
-                Planetary radius value(s)
+                Planetary radius value(s) in km
                 
         Returns:
             f (ndarray):
                 Planetary radius probability density
         
         """
-        gen = self.gen_radius(int(1e6)).to('km').value
-        lim = tuple(self.Rprange.to('km').value)
-        hist, edges = np.histogram(gen, bins=2000, range=lim, normed=True)
-        edges = 0.5*(edges[1:] + edges[:-1])
-        edges = np.hstack((lim[0], edges, lim[1]))
-        hist = np.hstack((0., hist, 0.))
-        self.Rpdist = interpolate.InterpolatedUnivariateSpline(edges,hist,k=1,ext=1)
-        f = self.Rpdist(x)
+
+        if not self.dist_radius_built:
+            # define distribution for radius
+            R = self.gen_radius(int(1e6))
+            hR, Redges = np.histogram(R.to('km').value, bins=2000, range=(self.Rprange.min().to('km').value, self.Rprange.max().to('km').value), normed=True)
+            Redges = 0.5*(Redges[1:]+Redges[:-1])
+            Redges = np.hstack((self.Rprange.min().to('km').value, Redges, self.Rprange.max().to('km').value))
+            hR = np.hstack((0.0, hR, 0.0))
+            self.dist_radius = interpolate.InterpolatedUnivariateSpline(Redges, hR, k=1, ext=1)
+            self.dist_radius_built = True
         
+        f = self.dist_radius(x)
         return f
+
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU

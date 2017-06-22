@@ -31,9 +31,9 @@ class PlanetPopulation(object):
         prange (1x2 ndarray):
             Albedo range
         Rprange (astropy Quantity 1x2 array):
-            Planet radius range in units of km
+            Planet radius range in units of Earth Radii
         Mprange (astropy Quantity 1x2 array):
-            Planet mass range in units of kg
+            Planet mass range in units of Earth Masses
         rrange (astropy Quantity 1x2 array):
             Orbital radius range in units of AU
         scaleOrbits (boolean):
@@ -61,11 +61,9 @@ class PlanetPopulation(object):
     _modtype = 'PlanetPopulation'
     _outspec = {}
 
-    def __init__(self, arange=[0.1,100], erange=[0.01,0.99], Irange=[0,180],
-            Orange=[0,360], wrange=[0,360], prange=[0.1,0.6], Rprange=[1,30],
-            Mprange=[1,4131], adist=None, edist=None, Idist=None, Odist=None,
-            wdist=None, pdist=None, Rpdist=None, Mpdist=None, rdist=None,
-            scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
+    def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
+            Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
+            Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
         
         # check range of parameters
         self.arange = self.checkranges(arange,'arange')*u.AU
@@ -86,12 +84,6 @@ class PlanetPopulation(object):
                 dtype=float, ndmin=1) / (v[1] - v[0])
         self.logunif = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
                 dtype=float, ndmin=1) / (x*np.log(v[1]/v[0]))
-        self.adist = lambda x,v=self.arange.to('AU').value: self.logunif(x,v)
-        self.edist = lambda x,v=self.erange: self.uniform(x,v)
-        self.pdist = lambda x,v=self.prange: self.uniform(x,v)
-        self.Rpdist = lambda x,v=self.Rprange.to('km').value: self.logunif(x,v)
-        # mass distribution function (in Jupiter masses)
-        self.Mpdist = lambda x: x**(-1.3)
         
         assert isinstance(scaleOrbits, bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
@@ -394,3 +386,96 @@ class PlanetPopulation(object):
             f = np.array([0.0])
         
         return f
+
+    def adist(self, x):
+        """Probability density function for semi-major axis in AU
+        
+        The prototype provides a log-uniform distribution between the minimum
+        and maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Semi-major axis value(s) in AU
+                
+        Returns:
+            f (ndarray):
+                Semi-major axis probability density
+        
+        """
+
+        return self.logunif(x,self.arange.to('AU'))
+        
+          
+    def edist(self, x):
+        """Probability density function for eccentricity
+        
+        The prototype provides a uniform distribution between the minimum and
+        maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Eccentricity value(s)
+        
+        Returns:
+            f (ndarray):
+                Eccentricity probability density
+        
+        """
+
+        return self.uniform(x,self.erange)
+
+        
+    def pdist(self, x):
+        """Probability density function for albedo
+        
+        The prototype provides a uniform distribution between the minimum and
+        maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Albedo value(s)
+        
+        Returns:
+            f (ndarray):
+                Albedo probability density
+                
+        """
+       
+        return self.uniform(x,self.prange)
+        
+    def Rpdist(self, x):
+        """Probability density function for planetary radius
+        
+        The prototype provides a log-uniform distribution between the minimum
+        and maximum values.
+        
+        Args:
+            x (float/ndarray):
+                Planetary radius value(s)
+                
+        Returns:
+            f (ndarray):
+                Planetary radius probability density
+        
+        """
+       
+        return self.logunif(x,self.Rprange.to('km').value)
+    
+    def Mpdist(self,x):
+        """Probability density function for planetary Mass
+        
+        The prototype provides an unbounded power law distribution. Note
+        that this should really be a function of a density model and the radius 
+        distribution for all implementations that use it.
+
+        Args:
+            x (float/ndarray):
+                Planetary mass value(s) in Jupiter masses
+                
+        Returns:
+            f (ndarray):
+                Planetary mass probability density
+        
+        """
+       
+        return x**(-1.3)

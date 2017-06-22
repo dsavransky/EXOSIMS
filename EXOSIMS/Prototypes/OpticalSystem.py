@@ -287,7 +287,7 @@ class OpticalSystem(object):
             syst['core_thruput'] = syst.get('core_thruput', core_thruput)
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
             syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
-            syst['core_area'] = syst.get('core_area') # no default
+            syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
             syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
@@ -558,10 +558,10 @@ class OpticalSystem(object):
         if lam != syst['lam']:
             WA = WA*lam/syst['lam']
         
-        # solid angle of photometric aperture, specified by core_area(optional), 
-        # otherwise obtained from (lambda/D)^2
-        Omega = syst['core_area'](lam, WA)*u.arcsec**2 if syst['core_area'] else \
-                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+        # solid angle of photometric aperture, specified by core_area (optional)
+        Omega = syst['core_area'](lam, WA)*u.arcsec**2
+        # if zero, get omega from (lambda/D)^2
+        Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels per lenslet
         mpix = inst['lenslSamp']**2
         # number of pixels in the photometric aperture = Omega / theta^2 
@@ -617,8 +617,6 @@ class OpticalSystem(object):
         phConv = (C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']
         # net charge transfer efficiency
         NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
-        NCTE[np.isnan(NCTE)] = 1.
-        NCTE = np.clip(NCTE, 0., 1.)
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
         

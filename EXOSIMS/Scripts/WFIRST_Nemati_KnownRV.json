@@ -81,8 +81,8 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KeplerLike2",
-    "StarCatalog": "EXOCAT1",
+    "PlanetPopulation": "KnownRVPlanets",
+    "StarCatalog": " ",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": " ",
@@ -91,9 +91,9 @@
     "TimeKeeping": " ",
     "PostProcessing": " ",
     "Completeness": "GarrettCompleteness",
-    "TargetList": " ",
-    "SimulatedUniverse": "KeplerLikeUniverse",
-    "SurveySimulation": " ",
+    "TargetList": "KnownRVPlanetsTargetList",
+    "SimulatedUniverse": "KnownRVPlanetsUniverse",
+    "SurveySimulation": "KnownRVSurvey",
     "SurveyEnsemble": " "
   }
 }

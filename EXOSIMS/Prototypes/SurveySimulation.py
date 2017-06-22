@@ -45,8 +45,6 @@ class SurveySimulation(object):
             Observatory class object
         TimeKeeping (TimeKeeping module):
             TimeKeeping class object
-        nt_flux (integer):
-            Observation time sampling, to determine the integration time interval
         fullSpectra (boolean ndarray):
             Indicates if planet spectra have been captured
         partialSpectra (boolean ndarray):
@@ -70,18 +68,22 @@ class SurveySimulation(object):
             (in units of mas)
         DRM (list of dicts):
             The Design Reference Mission, contains the results of a survey simulation
+        WAint (astropy Quantity):
+            Working angle used for integration time calculation in units of arcsec
+        dMagint (astropy Quantity):
+            Delta magnitude used for integration time calculation
+        nt_flux (integer):
+            Observation time sampling, to determine the integration time interval
         
     """
 
     _modtype = 'SurveySimulation'
     _outspec = {}
 
-    def __init__(self, nt_flux=1, scriptfile=None, **specs):
+    def __init__(self, scriptfile=None, WAint=None, dMagint=None, nt_flux=1, **specs):
         """Initializes Survey Simulation with default values
         
         Input: 
-            nt_flux (integer):
-                Observation time sampling, to determine the integration time interval
             scriptfile (string):
                 JSON script file. If not set, assumes that dictionary has been 
                 passed through specs.
@@ -177,6 +179,7 @@ class SurveySimulation(object):
         
         # list of simulation results, each item is a dictionary
         self.DRM = []
+        
         # initialize arrays updated in run_sim()
         TL = self.TargetList
         SU = self.SimulatedUniverse
@@ -189,10 +192,22 @@ class SurveySimulation(object):
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
         
+        # load the integration values: working angle (WAint), delta magnitude (dMagint)
+        # default to detection mode IWA and dMadLim
+        # must be of size equal to TargetList.nStars
+        OS = self.OpticalSystem
+        detMode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        WAint = float(WAint)*u.arcsec if WAint else detMode['IWA']
+        self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
+        dMagint = float(dMagint) if dMagint else OS.dMagLim
+        self.dMagint = np.array([dMagint]*TL.nStars)
+        
         # observation time sampling (must be an integer)
         self.nt_flux = int(nt_flux)
         
-        # populate outspec with nt_flux
+        # populate outspec
+        self._outspec['WAint'] = self.WAint
+        self._outspec['dMagint'] = self.dMagint
         self._outspec['nt_flux'] = self.nt_flux
 
     def __str__(self):
@@ -376,11 +391,6 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         
-        # assumed values for detection
-        fEZ = ZL.fEZ0
-        dMag = OS.dMagint
-        WA = OS.WAint
-        
         # in case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         if OS.haveOcculter == True:
@@ -424,7 +434,11 @@ class SurveySimulation(object):
             # 3/ calculate integration times for ALL preselected targets, 
             # and filter out t_tots > integration cutoff
             if np.any(sInds):
+                # assumed values for detection
                 fZ = ZL.fZ(Obs, TL, sInds, startTimes[sInds], mode)
+                fEZ = ZL.fEZ0
+                dMag = self.dMagint[sInds]
+                WA = self.WAint[sInds]
                 t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 t_tots = t_dets*mode['timeMultiplier']
                 endTimes = startTimes + t_tots

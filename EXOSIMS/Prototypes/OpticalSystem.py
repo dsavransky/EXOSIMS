@@ -43,10 +43,6 @@ class OpticalSystem(object):
             Fundamental Outer Working Angle in units of arcsec
         dMagLim (float):
             Limiting planet-to-star delta magnitude value
-        WAint (astropy Quantity):
-            Working angle used for integration time calculation in units of arcsec
-        dMagint (astropy Quantity):
-            Delta magnitude used for integration time calculation
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -184,7 +180,7 @@ class OpticalSystem(object):
             ENF=1, PCeff=0.8, radDos=0.5, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
-            OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, WAint=None, dMagint=None, **specs):
+            OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, **specs):
         
         # load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor (fraction of PM area)
@@ -435,13 +431,6 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental OWA.")
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
-        
-        # load the integration values: working angle (WAint), delta magnitude (dMagint)
-        # default to detection mode IWA and dMadLim
-        detMode = filter(lambda mode: mode['detectionMode'] == True,
-                self.observingModes)[0]
-        self.WAint = float(WAint)*u.arcsec if WAint else detMode['IWA']
-        self.dMagint = float(dMagint) if dMagint else dMagLim
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():

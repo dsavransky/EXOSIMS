@@ -181,7 +181,7 @@ class OpticalSystem(object):
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, optics=0.5,
             intCutoff=50, Ndark=10, scienceInstruments=None, QE=0.9, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, texp=100,
-            ENF=1, PCeff=0.8, radDos=1, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
+            ENF=1, PCeff=0.8, radDos=0.5, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
             OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, WAint=None, dMagint=None, **specs):
@@ -248,7 +248,6 @@ class OpticalSystem(object):
             inst['texp'] = float(inst.get('texp', texp))*u.s    # exposure time per frame
             inst['ENF'] = float(inst.get('ENF', ENF))           # excess noise factor
             inst['PCeff'] = float(inst.get('PCeff', PCeff))     # photon counting efficiency
-            inst['radDos'] = float(inst.get('radDos', radDos))  # radiation dosage
             
             # parameters specific to spectrograph
             if 'spec' in inst['name'].lower():
@@ -617,8 +616,9 @@ class OpticalSystem(object):
         # photon-converted 1 frame
         phConv = (C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']
         # net charge transfer efficiency
-        NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv)+0.0147233)
-        NCTE[NCTE>1] = 1.
+        NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
+        NCTE[np.isnan(NCTE)] = 1.
+        NCTE = np.clip(NCTE, 0., 1.)
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
         

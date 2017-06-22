@@ -38,7 +38,8 @@
       "CIC": 1e-2,
       "texp": 100,
       "ENF": 1,
-      "Rs": 50
+      "Rs": 50,
+      "lenslSamp": 2
     }
   ],
   "starlightSuppressionSystems": [

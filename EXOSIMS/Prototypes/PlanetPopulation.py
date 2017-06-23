@@ -79,12 +79,6 @@ class PlanetPopulation(object):
         a = self.arange.to('AU').value
         self.rrange = [a[0]*(1.-self.erange[1]),a[1]*(1.+self.erange[1])]*u.AU
         
-        # define prototype distributions of parameters (uniform and log-uniform)
-        self.uniform = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
-                dtype=float, ndmin=1) / (v[1] - v[0])
-        self.logunif = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
-                dtype=float, ndmin=1) / (x*np.log(v[1]/v[0]))
-        
         assert isinstance(scaleOrbits, bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
         self.scaleOrbits = scaleOrbits
@@ -103,6 +97,12 @@ class PlanetPopulation(object):
         for att in self.__dict__.keys():
             dat = copy.copy(self.__dict__[att])
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+                
+        # define prototype distributions of parameters (uniform and log-uniform)
+        self.uniform = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
+                dtype=float, ndmin=1) / (v[1] - v[0])
+        self.logunif = lambda x,v: np.array((x >= v[0])&(x <= v[1]),
+                dtype=float, ndmin=1) / (x*np.log(v[1]/v[0]))
         
         # import PlanetPhysicalModel
         self.PlanetPhysicalModel = get_module(specs['modules']['PlanetPhysicalModel'],
@@ -403,7 +403,7 @@ class PlanetPopulation(object):
         
         """
 
-        return self.logunif(x,self.arange.to('AU'))
+        return self.logunif(x,self.arange.to('AU').value)
         
           
     def edist(self, x):

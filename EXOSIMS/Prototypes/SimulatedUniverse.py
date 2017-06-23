@@ -253,10 +253,10 @@ class SimulatedUniverse(object):
         prop = planSys(x0, mu, epsmult=10.)
         try:
             prop.takeStep(dt.to('day').value)
-#            if sInd == 0: print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
+            #if sInd == 0: print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
         except ValueError:
             #try again with larger epsmult and two steps to force convergence 
-#            print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
+            #print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
             prop = planSys(x0, mu, epsmult=100.)
             try:
                 prop.takeStep(dt.to('day').value/2.)
@@ -281,117 +281,26 @@ class SimulatedUniverse(object):
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')
 
-#########
-
-    def propag_system1(self, sInd, dt):
-        """Propagates planet time-dependant parameters: position, velocity, 
-        planet-star distance, apparent separation, phase function, surface brightness 
-        of exo-zodiacal light, delta magnitude, working angle, and the planet 
-        current time array.
-        
-        This method uses the Kepler state transition matrix to propagate a 
-        planet's state (position and velocity vectors) forward in time using 
-        the Kepler state transition matrix.
+    def dump_systems(self):
+        """Create a dictionary of planetary properties for archiving use.
         
         Args:
-            sInd (integer):
-                Index of the target system of interest
-            dt (astropy Quantity):
-                Time increment in units of day, for planet position propagation
-        
+            None
+        Returns:
+            systems (dict)
         """
         
-        PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
-        TL = self.TargetList
+        out = {'a':self.a,
+               'e':self.e,
+               'I':self.I,
+               'O':self.O,
+               'w':self.w,
+               'M0':self.M0,
+               'Mp':self.Mp,
+               'mu':(const.G*(self.Mp + self.TargetList.MsTrue[self.plan2star])).decompose(),
+               'Rp':self.Rp,
+               'p':self.p,
+               'plan2star':self.plan2star,
+               'star':self.TargetList.Name[self.plan2star]}
         
-        assert np.isscalar(sInd), \
-                "Can only propagate one system at a time, sInd must be scalar."
-        # check for planets around this target
-        pInds = np.where(self.plan2star == sInd)[0]
-        if not np.any(pInds):
-            return
-        # check for positive time increment
-        assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
-        if dt == 0:
-            return
-        
-        # Calculate initial positions in AU and velocities in AU/day
-        r0 = self.r[pInds].to('AU').value
-        v0 = self.v[pInds].to('AU/day').value
-        # stack dimensionless positions and velocities
-        nPlans = pInds.size
-        x0 = np.reshape(np.concatenate((r0, v0), axis=1), nPlans*6)
-        
-        # Calculate vector of gravitational parameter in AU3/day2
-        Ms = TL.MsTrue[[sInd]]
-        Mp = self.Mp[pInds]
-        mu = (const.G*(Mp + Ms)).to('AU3/day2').value
-        print 'sInd=%s,dt=%s,nPlans=%s'%(sInd, dt.to('day'), nPlans)
-#        print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
-        
-        rnorm = np.linalg.norm(r0, axis=1)
-        vnorm = np.linalg.norm(v0, axis=1)
-        a  = (2/rnorm - vnorm**2/mu)**(-1)
-        alpha = 1/a
-        R = r0
-        V = v0
-        DT  = dt.to('day').value
-        T   = np.sqrt(mu) * DT
-        n   = 0
-        xn  = 10
-        err = 1000
-        
-        while err > 1e-6:
-            axn = alpha*xn**2
-            [s,c] = self.SandC(axn)
-            
-            r0v0 = np.array([np.dot(r0[i,:], v0[i,:]) for i in range(nPlans)])
-            
-            Tn  = r0v0*xn**2*c/np.sqrt(mu)  + (1 - rnorm*alpha)*xn**3*s + rnorm*xn
-            dTn = r0v0*(xn - alpha*xn**3*s)/np.sqrt(mu) + (1 - rnorm*alpha)*xn**2*c + rnorm
-            
-            xN  = xn - (Tn - T)/dTn
-            err = max(abs(xN - xn))
-            xn  = xN
-            
-            n += 1
-        
-        X1 = xn
-        [S,C] = self.SandC(alpha*X1**2)
-        R1 = ((1 - X1**2*C/rnorm)*R.T   +   (DT - X1**3*S/np.sqrt(mu))*V.T).T*u.AU
-        r1norm = np.linalg.norm(R1, axis=1)
-        V1 = (np.sqrt(mu)*(alpha*X1**3*S - X1)/(rnorm*r1norm)*R.T + (1 - X1**2*C/r1norm)*V.T).T*u.AU/u.day
-        
-        self.r[pInds] = R1
-        self.v[pInds] = V1
-        self.d[pInds] = np.linalg.norm(self.r[pInds],axis=1)*self.r.unit
-        self.s[pInds] = np.linalg.norm(self.r[pInds,0:2],axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
-        self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
-        self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')
-
-    def SandC(self, X):
-        
-        S = np.zeros(X.size)
-        C = np.zeros(X.size)
-        
-        if np.any(X > 0):
-            x = X[X > 0]
-            S[X > 0] = (np.sqrt(x) - np.sin(np.sqrt(x)) ) / np.sqrt(x)**3
-            C[X > 0] = (1          - np.cos(np.sqrt(x)) ) / x
-    #        print 'Elliptical!'
-        
-        if np.any(X < 0):
-            x = X[X < 0]
-            S[X < 0] = (np.sinh(np.sqrt(-x)) - np.sqrt(-x) ) / np.sqrt(-x)**3
-            C[X < 0] = (np.cosh(np.sqrt(-x)) - 1 )           / (-x)
-    #        print 'Hyperbolic!'
-        
-        if np.any(X == 0):
-            S[X == 0] = 1/6.
-            C[X == 0] = 1/2.
-        
-        return S, C
-
+        return out

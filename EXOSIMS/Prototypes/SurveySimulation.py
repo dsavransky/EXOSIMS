@@ -1022,8 +1022,7 @@ class SurveySimulation(object):
                 json.dump(out, outfile, sort_keys=True, indent=4, ensure_ascii=False,
                         separators=(',', ': '), default=array_encoder)
         
-        # return the Github/SVN revision
-        return out['Revision']
+        return out
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.

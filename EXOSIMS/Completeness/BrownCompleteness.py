@@ -82,16 +82,16 @@ class BrownCompleteness(Completeness):
         # bins for interpolant
         bins = 1000
         # xedges is array of separation values for interpolant
-        xedges = np.linspace(0., self.PlanetPopulation.rrange[1].value, bins)*\
+        xedges = np.linspace(0., self.PlanetPopulation.rrange[1].value, bins+1)*\
                 self.PlanetPopulation.arange.unit
         xedges = xedges.to('AU').value
         
         # yedges is array of delta magnitude values for interpolant
         ymin = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
-                self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
+                (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0]))**2))
         ymax = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
-                self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2*1e-11))
-        yedges = np.linspace(ymin, ymax, bins)
+                (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11))
+        yedges = np.linspace(ymin, ymax, bins+1)
         
         # number of planets for each Monte Carlo simulation
         nplan = int(np.min([1e6,self.Nplanets]))
@@ -102,7 +102,13 @@ class BrownCompleteness(Completeness):
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
         
-        EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, Cpdf.T)
+        xcent = 0.5*(xedges2[1:]+xedges2[:-1])
+        ycent = 0.5*(yedges2[1:]+yedges2[:-1])
+        xnew = np.hstack((0.0,xcent,self.PlanetPopulation.rrange[1].to('AU').value))
+        ynew = np.hstack((ymin,ycent,ymax))
+        Cpdf = np.pad(Cpdf,1,mode='constant')
+
+        EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         EVPOC = np.vectorize(EVPOCpdf.integral)
             
         # calculate separations based on IWA

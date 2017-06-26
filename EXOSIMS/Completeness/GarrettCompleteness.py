@@ -344,6 +344,8 @@ class GarrettCompleteness(BrownCompleteness):
             mindmag = self.cdmin2+5.0*np.log10(s)
         elif s <= self.rmax:
             mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.arcsin(s/self.rmax)))
+        elif s == self.rmax:
+            mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.pi/2.0))
         else:
             mindmag = np.inf
         
@@ -363,7 +365,7 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         maxdmag = self.cdmax-2.5*np.log10(self.Phi(np.pi - np.arcsin(s/self.rmax)))
-
+        
         return maxdmag
 
     def Jac(self, b):
@@ -636,9 +638,9 @@ class GarrettCompleteness(BrownCompleteness):
             s = self.rmin*np.sin(self.Phiinv(self.rmin**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
         elif (dmag > self.d2) and (dmag <= self.d3):
             s = np.sin(self.bstar)*np.sqrt(self.pmax*(self.Rmax*self.x)**2*self.Phi(self.bstar)/10.0**(-0.4*dmag))
-        elif (dmag > self.d3) and (dmag <= self.d4):
+        elif (dmag > self.d3) and (dmag < self.d4):
             s = self.rmax*np.sin(self.Phiinv(self.rmax**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
-        elif (dmag > self.d4) and (dmag <= self.d5):
+        elif (dmag >= self.d4) and (dmag <= self.d5):
             s = smax
         else:
             s = self.rmax*np.sin(np.pi - self.Phiinv(10.0**(-0.4*dmag)*self.rmax**2/(self.pmin*(self.Rmin*self.x)**2)))

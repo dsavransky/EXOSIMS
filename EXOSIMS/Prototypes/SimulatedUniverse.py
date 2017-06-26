@@ -253,10 +253,8 @@ class SimulatedUniverse(object):
         prop = planSys(x0, mu, epsmult=10.)
         try:
             prop.takeStep(dt.to('day').value)
-            #if sInd == 0: print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
         except ValueError:
             #try again with larger epsmult and two steps to force convergence 
-            #print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
             prop = planSys(x0, mu, epsmult=100.)
             try:
                 prop.takeStep(dt.to('day').value/2.)

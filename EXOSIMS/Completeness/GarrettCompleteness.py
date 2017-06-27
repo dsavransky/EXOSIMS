@@ -15,7 +15,7 @@ except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
 
-class GarrettCompleteness(BrownCompleteness):
+class GarrettCompleteness2(BrownCompleteness):
     """Analytical Completeness class
     
     This class contains all variables and methods necessary to perform 
@@ -64,6 +64,10 @@ class GarrettCompleteness(BrownCompleteness):
         self.dist_eccen_con = self.PlanetPopulation.edist_from_sma
         self.dist_albedo = self.PlanetPopulation.pdist
         self.dist_radius = self.PlanetPopulation.Rpdist
+#        self.dist_sma = self.PlanetPopulation.dist_sma
+#        self.dist_eccen = self.PlanetPopulation.dist_eccen
+#        self.dist_albedo = self.PlanetPopulation.dist_albedo
+#        self.dist_radius = self.PlanetPopulation.dist_radius
         # are any of a, e, p, Rp constant?
         self.aconst = self.amin == self.amax
         self.econst = self.emin == self.emax
@@ -73,15 +77,15 @@ class GarrettCompleteness(BrownCompleteness):
         beta = np.linspace(0.0,np.pi,1000)*u.rad
         Phis = self.PlanetPhysicalModel.calc_Phi(beta).value
         # Interpolant for phase function which removes astropy Quantity
-        self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=1,ext=1)
-        self.Phiinv = interpolate.InterpolatedUnivariateSpline(Phis[::-1],beta.value[::-1],k=1,ext=1)
+        self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
+        self.Phiinv = interpolate.InterpolatedUnivariateSpline(Phis[::-1],beta.value[::-1],k=3,ext=1)
         # get numerical derivative of phase function
         dPhis = np.zeros(beta.shape)
         db = beta[1].value - beta[0].value
         dPhis[0:1] = (-25.0*Phis[0:1]+48.0*Phis[1:2]-36.0*Phis[2:3]+16.0*Phis[3:4]-3.0*Phis[4:5])/(12.0*db)
         dPhis[-2:-1] = (25.0*Phis[-2:-1]-48.0*Phis[-3:-2]+36.0*Phis[-4:-3]-16.0*Phis[-5:-4]+3.0*Phis[-6:-5])/(12.0*db)
         dPhis[2:-2] = (Phis[0:-4]-8.0*Phis[1:-3]+8.0*Phis[3:-1]-Phis[4:])/(12.0*db)
-        self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=1,ext=1)
+        self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=3,ext=1)
         # solve for bstar        
         f = lambda b: 2.0*np.sin(b)*np.cos(b)*self.Phi(b) + np.sin(b)**2*self.dPhi(b)
         self.bstar = float(optimize.root(f,np.pi/3.0).x)
@@ -102,11 +106,12 @@ class GarrettCompleteness(BrownCompleteness):
         self.f_sdmagv = np.vectorize(self.f_sdmag)
         self.f_dmagv = np.vectorize(self.f_dmag)
         self.mindmagv = np.vectorize(self.mindmag)
+        self.maxdmagv = np.vectorize(self.maxdmag)
         # inverse functions for phase angle
-        b1 = np.linspace(0.0, self.bstar, 1000)
+        b1 = np.linspace(0.0, self.bstar, 20000)
         # b < bstar
         self.binv1 = interpolate.InterpolatedUnivariateSpline(np.sin(b1)**2*self.Phi(b1), b1, k=1, ext=1)
-        b2 = np.linspace(self.bstar, np.pi, 1000)
+        b2 = np.linspace(self.bstar, np.pi, 20000)
         b2val = np.sin(b2)**2*self.Phi(b2)
         # b > bstar
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
@@ -124,7 +129,7 @@ class GarrettCompleteness(BrownCompleteness):
         fz = np.zeros(z.shape)
         for i in xrange(len(z)):
             fz[i] = self.f_z(z[i])
-        self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=1, ext=1)
+        self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
         print 'Finished pdf of albedo times planetary radius squared'
                 
     def target_completeness(self, TL):
@@ -210,7 +215,7 @@ class GarrettCompleteness(BrownCompleteness):
             fs = np.zeros(s.shape)
             for i in xrange(len(s)):
                 fs[i] = self.f_s(s[i],TL.OpticalSystem.dMagLim)
-            dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=1, ext=1)
+            dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             print 'Finished marginalization'
             H = {'dist_s': dist_s}
             pickle.dump(H, open(Cpath, 'wb'))
@@ -266,7 +271,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)):
+        if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)) or (s == 0.0):
             f = 0.0
         else:
             ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
@@ -344,8 +349,6 @@ class GarrettCompleteness(BrownCompleteness):
             mindmag = self.cdmin2+5.0*np.log10(s)
         elif s <= self.rmax:
             mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.arcsin(s/self.rmax)))
-        elif s == self.rmax:
-            mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.pi/2.0))
         else:
             mindmag = np.inf
         
@@ -355,17 +358,23 @@ class GarrettCompleteness(BrownCompleteness):
         """Calculates the maximum value of dMag for projected separation
         
         Args:
-            s (ndarray):
-                Projected separations (AU)
+            s (float):
+                Projected separation (AU)
         
         Returns:
-            maxdmag (ndarray):
+            maxdmag (float):
                 Maximum value of dMag
         
         """
         
-        maxdmag = self.cdmax-2.5*np.log10(self.Phi(np.pi - np.arcsin(s/self.rmax)))
-        
+#        print s
+        if s == 0.0:
+            maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi))
+        elif s < self.rmax:
+            maxdmag = self.cdmax - 2.5*np.log10(np.abs(self.Phi(np.pi-np.arcsin(s/self.rmax))))
+        else:
+            maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi/2.0))
+
         return maxdmag
 
     def Jac(self, b):
@@ -441,9 +450,9 @@ class GarrettCompleteness(BrownCompleteness):
                 if emin1 > elim:
                     f = 0.0
                 else:
-                    f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1,emin1,elim, args=(a,r), n=50)[0]
+                    f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1,emin1,elim, args=(a,r), n=60)[0]
             else:
-                f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=50)[0]
+                f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=60)[0]
 
         return f
         
@@ -532,7 +541,7 @@ class GarrettCompleteness(BrownCompleteness):
                             low = self.emin
                         else:
                             low = etest2
-                    f = integrate.fixed_quad(self.rgrandac, low, self.emax, args=(self.amin,r), n=40)[0]
+                    f = integrate.fixed_quad(self.rgrandac, low, self.emax, args=(self.amin,r), n=60)[0]
             elif self.econst:
                 if self.emin == 0.0:
                     f = self.dist_sma(r)
@@ -547,7 +556,7 @@ class GarrettCompleteness(BrownCompleteness):
                         low = atest2
                     else:
                         low = self.amin
-                    f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=40)[0]
+                    f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=60)[0]
             else:
                 if self.PlanetPopulation.constrainOrbits:
                     a1 = 0.5*(self.amin+r)
@@ -559,7 +568,7 @@ class GarrettCompleteness(BrownCompleteness):
                         a1 = self.amin
                     if a2 > self.amax:
                         a2 = self.amax
-                f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=40)[0]
+                f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=60)[0]
     
         return f
         
@@ -614,7 +623,7 @@ class GarrettCompleteness(BrownCompleteness):
                     p1 = self.pmin
                 if p2 > self.pmax:
                     p2 = self.pmax
-                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=200)[0]
+                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=40)[0]
                 
         return f
     
@@ -638,9 +647,9 @@ class GarrettCompleteness(BrownCompleteness):
             s = self.rmin*np.sin(self.Phiinv(self.rmin**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
         elif (dmag > self.d2) and (dmag <= self.d3):
             s = np.sin(self.bstar)*np.sqrt(self.pmax*(self.Rmax*self.x)**2*self.Phi(self.bstar)/10.0**(-0.4*dmag))
-        elif (dmag > self.d3) and (dmag < self.d4):
+        elif (dmag > self.d3) and (dmag <= self.d4):
             s = self.rmax*np.sin(self.Phiinv(self.rmax**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
-        elif (dmag >= self.d4) and (dmag <= self.d5):
+        elif (dmag > self.d4) and (dmag <= self.d5):
             s = smax
         else:
             s = self.rmax*np.sin(np.pi - self.Phiinv(10.0**(-0.4*dmag)*self.rmax**2/(self.pmin*(self.Rmin*self.x)**2)))
@@ -691,7 +700,7 @@ class GarrettCompleteness(BrownCompleteness):
             if su < smin:
                 f = 0.0
             else:
-                f = integrate.fixed_quad(self.f_sdmagv, smin, su, args=(dmag,), n=20)[0]
+                f = integrate.fixed_quad(self.f_sdmagv, smin, su, args=(dmag,), n=50)[0]
         
         return f
     
@@ -723,7 +732,7 @@ class GarrettCompleteness(BrownCompleteness):
             if d1 > dmaglim[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=31)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=10)[0]
         
         return comp
     

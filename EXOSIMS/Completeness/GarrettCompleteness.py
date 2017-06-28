@@ -15,7 +15,7 @@ except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
 
-class GarrettCompleteness2(BrownCompleteness):
+class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
     
     This class contains all variables and methods necessary to perform 

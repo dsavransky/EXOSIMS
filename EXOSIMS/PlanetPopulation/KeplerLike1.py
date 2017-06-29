@@ -233,7 +233,8 @@ class KeplerLike1(PlanetPopulation):
         
         Args:
             n (integer):
-                Number of samples to generate
+                Number of target systems. Total number of samples generated will be,
+                on average, n*self.eta
                 
         Returns:
             Rp (astropy Quantity array):
@@ -246,6 +247,8 @@ class KeplerLike1(PlanetPopulation):
             nsamp = np.random.poisson(lam=self.Rvals[j]*n)
             Rp = np.hstack((Rp, np.exp(np.random.uniform(low=np.log(self.Rs[j]),\
                     high=np.log(self.Rs[j+1]),size=nsamp))))
+            
+        np.random.shuffle(Rp) #randomize elements
         Rp = Rp*const.R_earth.to('km')
         
         return Rp

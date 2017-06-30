@@ -80,7 +80,6 @@ class TargetList(object):
         self.minComp = float(minComp)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
-        self.comp = np.array([0.0]*TL.nStars)
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -119,6 +118,7 @@ class TargetList(object):
             self.StarCatalog = specs['modules']['StarCatalog']
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars
+        self.comp = np.array([0.0]*self.nStars)
         
         # if staticStars is True, the star coordinates are taken at mission start, 
         # and are not propagated during the mission

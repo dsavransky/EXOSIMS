@@ -228,10 +228,9 @@ class PlanetPopulation(object):
         
         """
         n = self.gen_input_check(n)
-        v = self.Irange.to('deg').value
-        I = np.random.uniform(low=v[0], high=v[1], size=n)*u.deg
+        I = np.arccos(1.0-2.0*np.random.uniform(size=n))*u.rad
         
-        return I
+        return I.to('deg')
 
     def gen_O(self, n):
         """Generate longitude of the ascending node in degrees

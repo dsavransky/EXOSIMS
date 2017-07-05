@@ -31,9 +31,9 @@ class PlanetPopulation(object):
         prange (1x2 ndarray):
             Albedo range
         Rprange (astropy Quantity 1x2 array):
-            Planet radius range in units of Earth Radii
+            Planet radius range in units of Earth radius
         Mprange (astropy Quantity 1x2 array):
-            Planet mass range in units of Earth Masses
+            Planet mass range in units of Earth mass
         rrange (astropy Quantity 1x2 array):
             Orbital radius range in units of AU
         scaleOrbits (boolean):
@@ -47,14 +47,6 @@ class PlanetPopulation(object):
             Uniform distribution over a given range
         logunif (float, callable):
             Log-uniform distribution over a given range
-        adist (float, callable):
-            Semi-major axis distribution
-        edist (float, callable):
-            Eccentricity distribution
-        Rpdist (float, callable):
-            Planet radius distribution
-        Mpdist (float, callable):
-            Planet mass distribution
         
     """
 
@@ -188,7 +180,7 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         v = self.erange
-        e = np.random.uniform(low=v[0],high=v[1],size=n)
+        e = np.random.uniform(low=v[0], high=v[1], size=n)
         
         return e
 
@@ -216,7 +208,7 @@ class PlanetPopulation(object):
         elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
                 (self.arange[1]/a).decompose().value - 1)),axis=0)
         
-        e = np.random.uniform(low=self.erange[0],high=elim,size=n)
+        e = np.random.uniform(low=self.erange[0], high=elim, size=n)
         
         return e
 
@@ -237,7 +229,7 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         v = self.Irange.to('deg').value
-        I = np.random.uniform(low=v[0],high=v[1],size=n)*u.deg
+        I = np.random.uniform(low=v[0], high=v[1], size=n)*u.deg
         
         return I
 
@@ -258,7 +250,7 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         v = self.Orange.to('deg').value
-        O = np.random.uniform(low=v[0],high=v[1],size=n)*u.deg
+        O = np.random.uniform(low=v[0], high=v[1], size=n)*u.deg
         
         return O
 
@@ -279,7 +271,7 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         v = self.wrange.to('deg').value
-        w = np.random.uniform(low=v[0],high=v[1],size=n)*u.deg
+        w = np.random.uniform(low=v[0], high=v[1], size=n)*u.deg
         
         return w
 
@@ -300,12 +292,12 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         v = self.prange
-        p = np.random.uniform(low=v[0],high=v[1],size=n)
+        p = np.random.uniform(low=v[0], high=v[1], size=n)
         
         return p
 
     def gen_radius(self, n):
-        """Generate planetary radius values in m
+        """Generate planetary radius values in units of Earth radius.
         
         The prototype provides a log-uniform distribution between the minimum and 
         maximum values.
@@ -316,17 +308,18 @@ class PlanetPopulation(object):
                 
         Returns:
             Rp (astropy Quantity array):
-                Planet radius values in units of km
+                Planet radius values in units of Earth radius
         
         """
         n = self.gen_input_check(n)
-        v = self.Rprange.to('km').value
-        Rp = np.exp(np.random.uniform(low=np.log(v[0]),high=np.log(v[1]),size=n))*u.km
+        v = self.Rprange.to('earthRad').value
+        Rp = np.exp(np.random.uniform(low=np.log(v[0]), high=np.log(v[1]), 
+                size=n))*u.earthRad
         
         return Rp
 
     def gen_mass(self, n):
-        """Generate planetary mass values in kg
+        """Generate planetary mass values in units of Earth mass.
         
         The prototype provides a log-uniform distribution between the minimum and 
         maximum values.
@@ -337,16 +330,17 @@ class PlanetPopulation(object):
                 
         Returns:
             Mp (astropy Quantity array):
-                Planet mass values in units of kg
+                Planet mass values in units of Earth mass.
         
         """
         n = self.gen_input_check(n)
-        v = self.Mprange.to('kg').value
-        Mp = np.exp(np.random.uniform(low=np.log(v[0]),high=np.log(v[1]),size=n))*u.kg
+        v = self.Mprange.to('earthMass').value
+        Mp = np.exp(np.random.uniform(low=np.log(v[0]), high=np.log(v[1]), 
+                size=n))*u.earthMass
         
         return Mp
     
-    def edist_from_sma(self, e, a):
+    def dist_eccen_from_sma(self, e, a):
         """Probability density function for eccentricity constrained by 
         semi-major axis, such that orbital radius always falls within the 
         provided sma range.
@@ -358,7 +352,7 @@ class PlanetPopulation(object):
             e (ndarray):
                 Eccentricity values
             a (float):
-                Semi-major axis value in AU
+                Semi-major axis value in AU. Not an astropy quantity.
         
         Returns:
             f (ndarray):
@@ -366,20 +360,20 @@ class PlanetPopulation(object):
                 axis
         
         """
-        if not isinstance(e,np.ndarray):
+        if not isinstance(e, np.ndarray):
             e = np.array(e, ndmin=1, copy=False)
-        if not isinstance(a,np.ndarray):
+        if not isinstance(a, np.ndarray):
             a = np.array(a, ndmin=1, copy=False)
-
+        
         if a.shape == e.shape or (len(a) == 1 and len(e) == e.size):
-            amean = 0.5*(self.arange[0].to('AU').value + self.arange[1].to('AU').value)
+            amean = np.mean(self.arange).to('AU').value
             elim = np.zeros(a.shape)
-            elim[a<=amean] = 1.0-self.arange[0].to('AU').value/a[a<=amean]
+            elim[a<=amean] = 1. - self.arange[0].to('AU').value/a[a<=amean]
             elim[a>amean] = self.arange[1].to('AU').value/a[a>amean] - 1.0
-            f = self.uniform(e,(self.erange[0],elim))
+            f = self.uniform(e, (self.erange[0],elim))
         elif len(a) == a.size and len(e) == e.size:
-            x, y = np.meshgrid(a,e)
-            f = self.edist_from_sma(y,x)
+            x, y = np.meshgrid(a, e)
+            f = self.dist_eccen_from_sma(y, x)
         else:
             print 'Input mismatch between semi-major axis and eccentricity'
             print 'pdf set to zero'
@@ -387,7 +381,7 @@ class PlanetPopulation(object):
         
         return f
 
-    def adist(self, x):
+    def dist_sma(self, x):
         """Probability density function for semi-major axis in AU
         
         The prototype provides a log-uniform distribution between the minimum
@@ -395,18 +389,17 @@ class PlanetPopulation(object):
         
         Args:
             x (float/ndarray):
-                Semi-major axis value(s) in AU
+                Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
             f (ndarray):
                 Semi-major axis probability density
         
         """
-
-        return self.logunif(x,self.arange.to('AU').value)
         
-          
-    def edist(self, x):
+        return self.logunif(x, self.arange.to('AU').value)
+
+    def dist_eccen(self, x):
         """Probability density function for eccentricity
         
         The prototype provides a uniform distribution between the minimum and
@@ -421,11 +414,10 @@ class PlanetPopulation(object):
                 Eccentricity probability density
         
         """
-
-        return self.uniform(x,self.erange)
-
         
-    def pdist(self, x):
+        return self.uniform(x, self.erange)
+
+    def dist_albedo(self, x):
         """Probability density function for albedo
         
         The prototype provides a uniform distribution between the minimum and
@@ -441,17 +433,17 @@ class PlanetPopulation(object):
                 
         """
        
-        return self.uniform(x,self.prange)
-        
-    def Rpdist(self, x):
-        """Probability density function for planetary radius
+        return self.uniform(x, self.prange)
+
+    def dist_radius(self, x):
+        """Probability density function for planetary radius in Earth radius
         
         The prototype provides a log-uniform distribution between the minimum
         and maximum values.
         
         Args:
             x (float/ndarray):
-                Planetary radius value(s)
+                Planetary radius value(s) in Earth radius. Not an astropy quantity.
                 
         Returns:
             f (ndarray):
@@ -459,23 +451,26 @@ class PlanetPopulation(object):
         
         """
        
-        return self.logunif(x,self.Rprange.to('km').value)
-    
-    def Mpdist(self,x):
-        """Probability density function for planetary Mass
+        return self.logunif(x, self.Rprange.to('earthRad').value)
+
+    def dist_mass(self, x):
+        """Probability density function for planetary mass in Earth mass
         
         The prototype provides an unbounded power law distribution. Note
         that this should really be a function of a density model and the radius 
         distribution for all implementations that use it.
-
+        
         Args:
             x (float/ndarray):
-                Planetary mass value(s) in Jupiter masses
+                Planetary mass value(s) in Earth mass. Not an astropy quantity.
                 
         Returns:
             f (ndarray):
                 Planetary mass probability density
         
         """
-       
-        return x**(-1.3)
+        
+        # convert to Jupiter mass
+        x_jup = (x*u.earthMass).to('jupiterMass').value
+        
+        return x_jup**(-1.3)

@@ -3,8 +3,7 @@ import numpy as np
 import astropy.units as u
 
 class EarthTwinHabZone1(PlanetPopulation):
-    """
-    Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
+    """Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
     On circular Habitable zone orbits (0.7 to 1.5 AU)
     
     Note that these values may not be overwritten by user inputs.
@@ -24,7 +23,7 @@ class EarthTwinHabZone1(PlanetPopulation):
         PlanetPopulation.__init__(self, **specs)
         
         # the Earth-twin population assumes a uniform distribution
-        self.adist = lambda x,v=self.arange.to('AU').value: self.uniform(x,v)
+        self.dist_sma = lambda x,v=self.arange.to('AU').value: self.uniform(x,v)
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -43,6 +42,6 @@ class EarthTwinHabZone1(PlanetPopulation):
         """
         n = self.gen_input_check(n)
         v = self.arange.to('AU').value
-        a = np.random.uniform(low=v[0],high=v[1],size=n)*u.AU
+        a = np.random.uniform(low=v[0], high=v[1], size=n)*u.AU
         
         return a

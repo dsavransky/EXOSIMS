@@ -1,6 +1,5 @@
 from EXOSIMS.Prototypes.PlanetPhysicalModel import PlanetPhysicalModel
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 import scipy.interpolate as interpolate
 import os, inspect
@@ -12,8 +11,7 @@ from scipy.io import loadmat
 
 
 class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
-    """
-    Planet density models based on Fortney & Marley, albedo models based on 
+    """Planet density models based on Fortney & Marley, albedo models based on 
     Cahoy.  Intended for use with the Kepler-like planet population modules.
     
     Args: 
@@ -37,10 +35,10 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         #define albedo interpolant:
         smas = [0.8,2,5,10]
         fes = [1,3,10,30]
-        ps = np.array([[0.322, 0.241, 0.209, 0.142],\
-              [0.742, 0.766, 0.728, 0.674],\
-              [0.567, 0.506, 0.326, 0.303],\
-              [0.386, 0.260, 0.295, 0.279]])
+        ps = np.array([[0.322, 0.241, 0.209, 0.142],
+                [0.742, 0.766, 0.728, 0.674],
+                [0.567, 0.506, 0.326, 0.303],
+                [0.386, 0.260, 0.295, 0.279]])
         
         grid_a, grid_fe = np.meshgrid(smas,fes)
         self.albedo_pts = np.vstack((grid_a.flatten(),grid_fe.flatten())).T
@@ -76,27 +74,27 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
             pickle.dump( self.ggdat, open( datapath, 'wb' ) )
         
         self.ggdat['dist'] = self.ggdat['dist']*u.AU
-        self.ggdat['planet_mass'] = self.ggdat['planet_mass']*const.M_earth
-        
-        Rtmp = self.ggdat['radii'].copy()
-        Rtmp *= (const.R_jup/const.R_earth).value
-        Rtmp[Rtmp != Rtmp] = 0.
-        self.giant_pts = np.vstack((self.ggdat['x1'].flatten().astype(float),\
-                                    self.ggdat['x3'].flatten().astype(float),\
-                                    Rtmp.flatten().astype(float))).T
+        self.ggdat['planet_mass'] = self.ggdat['planet_mass']*u.earthMass
+        self.ggdat['radii'] = self.ggdat['radii']*u.jupiterRad
+        # convert to Earth radius
+        Rtmp = self.ggdat['radii'].to('earthRad').value
+        # remove NANs
+        Rtmp[np.isnan(Rtmp)] = 0.
+        self.giant_pts = np.array([self.ggdat['x1'].flatten().astype(float),
+                                    self.ggdat['x3'].flatten().astype(float),
+                                    Rtmp.flatten().astype(float)]).T
         self.giant_vals = self.ggdat['x2'].flatten()
         
-        self.giant_pts2 = np.vstack((self.ggdat['x1'].flatten().astype(float),\
-                                    self.ggdat['x3'].flatten().astype(float),\
-                                    self.ggdat['x2'].flatten().astype(float))).T
+        self.giant_pts2 = np.array([self.ggdat['x1'].flatten().astype(float),
+                                    self.ggdat['x3'].flatten().astype(float),
+                                    self.ggdat['x2'].flatten().astype(float)]).T
         self.giant_vals2 = Rtmp.flatten().astype(float)
-        
-        self.ggdat['radii'] = self.ggdat['radii']*const.R_jup
 
-    def calc_albedo_from_sma(self,a):
-        """
-        Helper function for calculating albedo. We assume a uniform distribution 
-        of metallicities, and then interpolate the grid from Cahoy et al. 2010.
+    def calc_albedo_from_sma(self, a):
+        """Helper function for calculating albedo. 
+        
+        We assume a uniform distribution of metallicities, and then interpolate the 
+        grid from Cahoy et al. 2010.
         
         Args:
             a (astropy Quanitity array):
@@ -108,32 +106,30 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         
         """
         
-        #grab the sma values and constrain to grid
-        atmp = a.to('AU').value
-        atmp[atmp < 0.8] = 0.8;
-        atmp[atmp > 10] = 10;
+        # grab the sma values and constrain to grid
+        atmp = np.clip(a.to('AU').value, 0.8, 10.)
         
         #generate uniform fe grid:
-        fetmp = np.random.uniform(size=atmp.size,low=1,high=30)
+        fetmp = np.random.uniform(size=atmp.size, low=1, high=30)
         
-        p = interpolate.griddata(self.albedo_pts, self.albedo_vals,\
-                (atmp,fetmp), method='cubic')
+        p = interpolate.griddata(self.albedo_pts, self.albedo_vals, 
+                (atmp, fetmp), method='cubic')
         
         return p
 
     def calc_mass_from_radius(self, Rp):
-        """
-        Helper function for calculating mass given the radius.  The calculation
-        is done in two steps, first covering all things that can only ice/rock/iron, 
-        and then things that can be giants.
+        """Helper function for calculating mass given the radius. 
+        
+        The calculation is done in two steps, first covering all things that can 
+        only be ice/rock/iron, and then things that can be giants.
         
         Args:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         """
         
@@ -141,59 +137,59 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         
         #first, the things up to the min giant radius but greater 
         #than 2 Earth radii (assumed to be icy)
-        inds = (Rp <= np.nanmin(self.ggdat['radii'])) & (Rp > 2*const.R_earth)
+        inds = (Rp <= np.nanmin(self.ggdat['radii'])) & (Rp > 2*u.earthRad)
         Rtmp = Rp[inds]
-        fracs = np.random.uniform(size=Rtmp.size, low=0.5,high=1.)
-        Mp[inds] = self.M_ir(fracs,(Rtmp/const.R_earth).decompose().value)
+        fracs = np.random.uniform(size=Rtmp.size, low=0.5, high=1.)
+        Mp[inds] = self.M_ir(fracs, Rtmp.to('earthRad').value)
         
         #everything under 2 Earth radii can by ice/rock/iron
-        inds = Rp <= 2*const.R_earth
+        inds = Rp <= 2*u.earthRad
         Rtmp = Rp[inds]
         Mtmp = np.zeros(Rtmp.shape)
-        fracs = np.random.uniform(size=Rtmp.size, low=-1.,high=1.)
+        fracs = np.random.uniform(size=Rtmp.size, low=-1., high=1.)
         
         #ice/rock and rock/iron
         icerock = fracs < 0
-        Mtmp[icerock] = self.M_ir(np.abs(fracs[icerock]),\
-                (Rtmp[icerock]/const.R_earth).decompose().value)
+        Mtmp[icerock] = self.M_ir(np.abs(fracs[icerock]), 
+                Rtmp[icerock].to('earthRad').value)
         rockiron = fracs >= 0
-        Mtmp[rockiron] = self.M_ri(np.abs(fracs[rockiron]),\
-                (Rtmp[rockiron]/const.R_earth).decompose().value)
+        Mtmp[rockiron] = self.M_ri(np.abs(fracs[rockiron]), 
+                Rtmp[rockiron].to('earthRad').value)
         Mp[inds] = Mtmp
         
         #everything else is a giant.  those above the table limit 
         #are inflated close-in things that are undetectable
         inds = Rp > np.nanmax(self.ggdat['radii'])
-        Mp[inds] = (np.max(self.ggdat['planet_mass'])/const.M_earth).value
+        Mp[inds] = np.max(self.ggdat['planet_mass']).to('earthMass').value
         
         inds = (Rp > np.nanmin(self.ggdat['radii'])) & (Rp <= np.nanmax(self.ggdat['radii'])) 
         Rtmp = Rp[inds]
-        Mtmp = interpolate.griddata(self.giant_pts, self.giant_vals,\
-                (np.random.uniform(low=0,high=100,size=Rtmp.size),\
-                 np.exp(np.log(0.02)+(np.log(9.5)-np.log(0.02))*np.random.uniform(size=Rtmp.size)),\
-                 (Rtmp/const.R_earth).decompose().value))
+        Mtmp = interpolate.griddata(self.giant_pts, self.giant_vals, 
+                (np.random.uniform(low=0, high=100, size=Rtmp.size), np.exp(np.log(0.02) + 
+                (np.log(9.5) - np.log(0.02))*np.random.uniform(size=Rtmp.size)), 
+                Rtmp.to('earthRad').value))
         if np.any(np.isnan(Mtmp)):
             inds2 = np.isnan(Mtmp)
-            Mtmp[inds2] = (((1.33*u.g/u.cm**3.)*4*np.pi*Rtmp[inds2]**3./3.).decompose()/const.M_earth).value
+            Mtmp[inds2] = (1.33*u.g/u.cm**3.*4*np.pi*Rtmp[inds2]**3./3.).to('earthMass').value
         Mp[inds] = Mtmp
         
-        Mp = Mp*const.M_earth.to('kg')
+        Mp = Mp*u.earthMass
         
         return Mp
 
     def calc_radius_from_mass(self, Mp):
-        """
-        Helper function for calculating radius given the mass.  The calculation
-        is done in two steps, first covering all things that can only ice/rock/iron, 
-        and then things that can be giants.
+        """Helper function for calculating radius given the mass. 
+        
+        The calculation is done in two steps, first covering all things that can 
+        only be ice/rock/iron, and then things that can be giants.
         
         Args:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         """
         
@@ -204,32 +200,31 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         inds = Mp <= np.nanmin(self.ggdat['planet_mass'])
         Mtmp = Mp[inds]
         Rtmp = np.zeros(Mtmp.shape)
-        fracs = np.random.uniform(size=Mtmp.size, low=-1.,high=1.)
+        fracs = np.random.uniform(size=Mtmp.size, low=-1., high=1.)
         
         #ice/rock and rock/iron
         icerock = fracs < 0
-        Rtmp[icerock] = self.R_ir(np.abs(fracs[icerock]),\
-                (Mtmp[icerock]/const.M_earth).decompose().value)
+        Rtmp[icerock] = self.R_ir(np.abs(fracs[icerock]), 
+                Mtmp[icerock].to('earthMass').value)
         rockiron = fracs >= 0
-        Rtmp[rockiron] = self.R_ri(np.abs(fracs[rockiron]),\
-                (Mtmp[rockiron]/const.M_earth).decompose().value)
+        Rtmp[rockiron] = self.R_ri(np.abs(fracs[rockiron]), 
+                Mtmp[rockiron].to('earthMass').value)
         Rp[inds] = Rtmp
         
         #everything else is a giant. 
         inds = Mp > np.nanmin(self.ggdat['planet_mass'])
         Mtmp = Mp[inds]
-        Rp[inds] = interpolate.griddata(self.giant_pts2, self.giant_vals2,\
-                (np.random.uniform(low=0,high=100,size=Mtmp.size),\
-                 np.exp(np.log(0.02)+(np.log(9.5)-np.log(0.02))*np.random.uniform(size=Mtmp.size)),\
-                 (Mtmp/const.M_earth).decompose().value))
+        Rp[inds] = interpolate.griddata(self.giant_pts2, self.giant_vals2, 
+                (np.random.uniform(low=0, high=100, size=Mtmp.size), np.exp(np.log(0.02) + 
+                (np.log(9.5) - np.log(0.02))*np.random.uniform(size=Mtmp.size)), 
+                Mtmp.to('earthMass').value))
         
         #things that failed
         inds = np.isnan(Rp) | (Rp == 0.)
         if np.any(inds):
             rho = 1.33*u.g/u.cm**3.
-            Rp[inds] = ((3*Mp[inds]/rho/np.pi/4.)**(1/3.)/const.R_earth).decompose().value
+            Rp[inds] = ((3*Mp[inds]/rho/np.pi/4.)**(1/3.)).to('earthRad').value
         
-        Rp = Rp*const.R_earth.to('km')
+        Rp = Rp*u.earthRad
         
         return Rp
-

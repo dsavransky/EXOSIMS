@@ -59,15 +59,11 @@ class GarrettCompleteness(BrownCompleteness):
         # conversion factor
         self.x = float(u.km.to('AU'))
         # distributions needed
-        self.dist_sma = self.PlanetPopulation.adist
-        self.dist_eccen = self.PlanetPopulation.edist
-        self.dist_eccen_con = self.PlanetPopulation.edist_from_sma
-        self.dist_albedo = self.PlanetPopulation.pdist
-        self.dist_radius = self.PlanetPopulation.Rpdist
-#        self.dist_sma = self.PlanetPopulation.dist_sma
-#        self.dist_eccen = self.PlanetPopulation.dist_eccen
-#        self.dist_albedo = self.PlanetPopulation.dist_albedo
-#        self.dist_radius = self.PlanetPopulation.dist_radius
+        self.dist_sma = self.PlanetPopulation.dist_sma
+        self.dist_eccen = self.PlanetPopulation.dist_eccen
+        self.dist_eccen_con = self.PlanetPopulation.dist_eccen_from_sma
+        self.dist_albedo = self.PlanetPopulation.dist_albedo
+        self.dist_radius = self.PlanetPopulation.dist_radius
         # are any of a, e, p, Rp constant?
         self.aconst = self.amin == self.amax
         self.econst = self.emin == self.emax

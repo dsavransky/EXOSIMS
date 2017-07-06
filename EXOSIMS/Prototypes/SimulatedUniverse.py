@@ -199,7 +199,7 @@ class SimulatedUniverse(object):
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
         self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
         self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))         # planet phase
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))         # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('mas')# working angle
@@ -273,7 +273,7 @@ class SimulatedUniverse(object):
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
         self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
+        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])

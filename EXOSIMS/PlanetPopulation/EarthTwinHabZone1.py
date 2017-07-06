@@ -22,9 +22,6 @@ class EarthTwinHabZone1(PlanetPopulation):
         specs['scaleOrbits'] = True
         PlanetPopulation.__init__(self, **specs)
         
-        # the Earth-twin population assumes a uniform distribution
-        self.dist_sma = lambda x,v=self.arange.to('AU').value: self.uniform(x,v)
-
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
         
@@ -45,3 +42,20 @@ class EarthTwinHabZone1(PlanetPopulation):
         a = np.random.uniform(low=v[0], high=v[1], size=n)*u.AU
         
         return a
+
+    def dist_sma(self, x):
+        """Probability density function for uniform semi-major axis distribution in AU
+        
+        
+        Args:
+            x (float/ndarray):
+                Semi-major axis value(s) in AU. Not an astropy quantity.
+                
+        Returns:
+            f (ndarray):
+                Semi-major axis probability density
+        
+        """
+        
+        return self.uniform(x, self.arange.to('AU').value)
+

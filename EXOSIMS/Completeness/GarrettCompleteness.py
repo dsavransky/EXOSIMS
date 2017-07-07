@@ -101,6 +101,7 @@ class GarrettCompleteness(BrownCompleteness):
         self.f_dmagsv = np.vectorize(self.f_dmags)
         self.f_sdmagv = np.vectorize(self.f_sdmag)
         self.f_dmagv = np.vectorize(self.f_dmag)
+        self.f_sv = np.vectorize(self.f_s)
         self.mindmagv = np.vectorize(self.mindmag)
         self.maxdmagv = np.vectorize(self.maxdmag)
         # inverse functions for phase angle
@@ -117,7 +118,8 @@ class GarrettCompleteness(BrownCompleteness):
         fr = np.zeros(r.shape)
         for i in xrange(len(r)):
             fr[i] = self.f_r(r[i])
-        self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=1, ext=1)
+        self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
+
         print 'Finished pdf of orbital radius'
         # get pdf of p*R**2
         print 'Generating pdf of albedo times planetary radius squared'
@@ -126,6 +128,7 @@ class GarrettCompleteness(BrownCompleteness):
         for i in xrange(len(z)):
             fz[i] = self.f_z(z[i])
         self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
+
         print 'Finished pdf of albedo times planetary radius squared'
                 
     def target_completeness(self, TL):
@@ -159,23 +162,26 @@ class GarrettCompleteness(BrownCompleteness):
         dist_sv = np.vectorize(dist_s.integral)
         
         # calculate separations based on IWA
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist).to('AU').value
-        if np.isinf(TL.OpticalSystem.OWA):
+        OS = TL.OpticalSystem
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist).to('AU').value
+        if np.isinf(OWA):
             smax = self.rmax
         else:
-            smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist).to('AU').value
+            smax = (np.tan(OWA)*TL.dist).to('AU').value
 
         # calculate dMags based on limiting dMag
         dMagmax = TL.OpticalSystem.dMagLim
-        dMagmin = self.mindmagv(smin)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
-        
-        comp0 = dist_sv(smin, smax)
+            comp0 = self.comp_s(smin, smax, dMagmax)
+        else:
+            comp0 = dist_sv(smin, smax)
 
         return comp0
         
@@ -218,6 +224,34 @@ class GarrettCompleteness(BrownCompleteness):
             print 'Completeness data stored in %s' % Cpath
             
         return dist_s
+    
+    def comp_s(self, smin, smax, dMag):
+        """Calculates completeness by first integrating over dMag and then
+        projected separation.
+        
+        Args:
+            smin (ndarray):
+                Values of minimum projected separation (AU) from instrument
+            smax (ndarray):
+                Value of maximum projected separation (AU) from instrument
+            dMag (ndarray):
+                dMaglim from instrument
+        
+        Returns:
+            comp (ndarray):
+                Completeness values
+        
+        """
+        # cast to arrays
+        smin = np.array(smin, ndmin=1)
+        smax = np.array(smax, ndmin=1)
+        dMag = np.array(dMag, ndmin=1)
+        
+        comp = np.zeros(smin.shape)
+        for i in xrange(len(smin)):
+            comp[i] = integrate.fixed_quad(self.f_sv, smin[i], smax[i], args=(dMag[i],), n=50)[0]
+        
+        return comp
             
     @memoize    
     def f_s(self, s, dmaglim):
@@ -246,7 +280,7 @@ class GarrettCompleteness(BrownCompleteness):
             if d1 > d2:
                 f = 0.0
             else:
-                f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=31)[0]
+                f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=50)[0]
         
         return f
     
@@ -339,9 +373,9 @@ class GarrettCompleteness(BrownCompleteness):
         """
         if s == 0.0:
             mindmag = self.cdmin1
-        elif s <= self.rmin*np.sin(self.bstar):
+        elif s < self.rmin*np.sin(self.bstar):
             mindmag = self.cdmin1-2.5*np.log10(self.Phi(np.arcsin(s/self.rmin)))
-        elif s <= self.rmax*np.sin(self.bstar):
+        elif s < self.rmax*np.sin(self.bstar):
             mindmag = self.cdmin2+5.0*np.log10(s)
         elif s <= self.rmax:
             mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.arcsin(s/self.rmax)))
@@ -363,7 +397,6 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-#        print s
         if s == 0.0:
             maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi))
         elif s < self.rmax:
@@ -713,14 +746,17 @@ class GarrettCompleteness(BrownCompleteness):
                 dMaglim from instrument
         
         Returns:
-            comp (float):
-                Completeness value
+            comp (ndarray):
+                Completeness values
         
         """
         # cast to arrays
         smin = np.array(smin, ndmin=1)
         smax = np.array(smax, ndmin=1)
         dmaglim = np.array(dmaglim, ndmin=1)
+        dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+                (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
+        dmaglim[dmaglim>dmax] = dmax
         
         comp = np.zeros(smin.shape)
         for i in xrange(len(smin)):
@@ -728,7 +764,7 @@ class GarrettCompleteness(BrownCompleteness):
             if d1 > dmaglim[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=10)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=50)[0]
         
         return comp
     

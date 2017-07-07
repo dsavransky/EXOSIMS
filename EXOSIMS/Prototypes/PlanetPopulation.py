@@ -67,10 +67,6 @@ class PlanetPopulation(object):
         self.Rprange = self.checkranges(Rprange,'Rprange')*u.earthRad
         self.Mprange = self.checkranges(Mprange,'Mprange')*u.earthMass
         
-        # derive orbital radius range from quantities above
-        a = self.arange.to('AU').value
-        self.rrange = [a[0]*(1.-self.erange[1]),a[1]*(1.+self.erange[1])]*u.AU
-        
         assert isinstance(scaleOrbits, bool), "scaleOrbits must be boolean"
         # scale planetary orbits by sqrt(L)
         self.scaleOrbits = scaleOrbits
@@ -78,7 +74,12 @@ class PlanetPopulation(object):
         assert isinstance(constrainOrbits,bool), "constrainOrbits must be boolean"
         # constrain planetary orbital radii to sma range
         self.constrainOrbits = constrainOrbits
-        
+        # derive orbital radius range from quantities above
+        a = self.arange.to('AU').value
+        if self.constrainOrbits:
+            self.rrange = [a[0],a[1]]*u.AU
+        else:
+            self.rrange = [a[0]*(1.0-self.erange[1]),a[1]*(1.0+self.erange[1])]*u.AU
         assert isinstance(eta,numbers.Number) and (eta > 0),\
                 "eta must be strictly positive"
         # global occurrence rate defined as expected number of planets per 
@@ -204,10 +205,16 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         assert len(a) == n, "a input must be of size n."
-        
-        elim = np.min(np.vstack((1 - (self.arange[0]/a).decompose().value,\
-                (self.arange[1]/a).decompose().value - 1)),axis=0)
-        
+        # unitless sma range
+        alim = self.arange.to('AU').value
+        # mean sma value
+        amean = np.mean(alim)
+        # upper limit for eccentricity given sma
+        sma = a.to('AU').value
+        elim = np.zeros(sma.shape)
+        elim[sma<=amean] = 1.0 - alim[0]/sma[sma<=amean]
+        elim[sma>amean] = alim[1]/sma[sma>amean] - 1.0
+                
         e = np.random.uniform(low=self.erange[0], high=elim, size=n)
         
         return e

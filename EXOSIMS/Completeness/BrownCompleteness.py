@@ -82,17 +82,17 @@ class BrownCompleteness(Completeness):
         # bins for interpolant
         bins = 1000
         # xedges is array of separation values for interpolant
-        xedges = np.linspace(0., self.PlanetPopulation.rrange[1].value, bins+1)*\
-                self.PlanetPopulation.arange.unit
-        xedges = xedges.to('AU').value
+        if self.PlanetPopulation.constrainOrbits:
+            xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
+        else:
+            xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
         
         # yedges is array of delta magnitude values for interpolant
-        ymin = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
-                (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0]))**2))
-        ymax = np.round(-2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
-                (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11))
+        ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
+                (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
+        ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+                (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
         yedges = np.linspace(ymin, ymax, bins+1)
-        
         # number of planets for each Monte Carlo simulation
         nplan = int(np.min([1e6,self.Nplanets]))
         # number of simulations to perform (must be integer)
@@ -101,35 +101,40 @@ class BrownCompleteness(Completeness):
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.classpath, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
-        
+
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
         xnew = np.hstack((0.0,xcent,self.PlanetPopulation.rrange[1].to('AU').value))
         ynew = np.hstack((ymin,ycent,ymax))
         Cpdf = np.pad(Cpdf,1,mode='constant')
 
-        EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-        EVPOC = np.vectorize(EVPOCpdf.integral)
+        self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
+
+        self.EVPOC = np.vectorize(self.EVPOCpdf.integral)
             
         # calculate separations based on IWA
         OS = TL.OpticalSystem
-        smin = np.tan(OS.IWA)*TL.dist
-        if np.isinf(OS.OWA):
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = np.tan(IWA)*TL.dist
+        if np.isinf(OWA):
             smax = xedges[-1]*u.AU
         else:
-            smax = np.tan(OS.OWA)*TL.dist
+            smax = np.tan(OWA)*TL.dist
         
         # calculate dMags based on limiting dMag
-        dMagmax = OS.dMagLim #np.array([OS.dMagLim]*TL.nStars)
-        dMagmin = ymin
+        dMagmax = OS.dMagLim 
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
-            
-        comp0 = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMagmax)
+            comp0 = np.zeros(smin.shape)
+            comp0[dMagmax>ymin] = self.EVPOC(smin[dMagmax>ymin].to('AU').value, smax[dMagmax>ymin].to('AU').value, 0.0, dMagmax[dMagmax>ymin])
+        else:
+            comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagmax)
+        comp0[comp0<1e-6] = 0.0
         
         return comp0
 
@@ -177,7 +182,10 @@ class BrownCompleteness(Completeness):
             dt = 1e9*u.day
             # sample quantities which do not change in time
             a = PPop.gen_sma(nplan) # AU
-            e = PPop.gen_eccen(nplan)
+            if PPop.constrainOrbits:
+                e = PPop.gen_eccen_from_sma(nplan,a)
+            else:
+                e = PPop.gen_eccen(nplan)
             I = PPop.gen_I(nplan) # deg
             O = PPop.gen_O(nplan) # deg
             w = PPop.gen_w(nplan) # deg
@@ -234,7 +242,7 @@ class BrownCompleteness(Completeness):
                     beta = np.arccos(r[:,2]/d) # phase angle
                     Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
                     dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
-                    
+
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                     toremovedmag = np.where(dMag < OS.dMagLim)[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
@@ -389,15 +397,14 @@ class BrownCompleteness(Completeness):
         nplan = int(nplan)
         
         # sample uniform distribution of mean anomaly
-        M = np.random.uniform(high=2.*np.pi,size=nplan)
+        M = np.random.uniform(high=2.0*np.pi,size=nplan)
         # sample semi-major axis
         a = PPop.gen_sma(nplan).to('AU').value
-        
         # sample other necessary orbital parameters
         if np.sum(PPop.erange) == 0:
             # all circular orbits
             r = a
-            e = 0.
+            e = 0.0
             E = M
         else:
             # sample eccentricity
@@ -408,40 +415,16 @@ class BrownCompleteness(Completeness):
             # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
-            r = a*(1-e*np.cos(E))
-        
-        # orbit angle sampling
-        O = PPop.gen_O(nplan).to('rad').value
-        w = PPop.gen_w(nplan).to('rad').value
-        I = PPop.gen_I(nplan).to('rad').value
-        
-        r1 = a*(np.cos(E) - e)
-        r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-        r2 = a*np.sin(E)*np.sqrt(1. -  e**2)
-        r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-        
-        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.sin(w)*np.cos(I)
-        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.sin(w)*np.cos(I)
-        a3 = np.sin(w)*np.sin(I)
-        A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-        
-        b1 = -np.cos(O)*np.sin(w) - np.sin(O)*np.cos(w)*np.cos(I)
-        b2 = -np.sin(O)*np.sin(w) + np.cos(O)*np.cos(w)*np.cos(I)
-        b3 = np.cos(w)*np.sin(I)
-        B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-        
-        # planet position, planet-star distance, apparent separation
-        r = (A*r1 + B*r2)*u.AU
-        d = np.linalg.norm(r,axis=1)*r.unit
-        s = np.linalg.norm(r[:,0:2],axis=1)*r.unit
-        
+            r = a*(1.0-e*np.cos(E))
+
+        beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
+        s = r*np.sin(beta)*u.AU
         # sample albedo, planetary radius, phase function
         p = PPop.gen_albedo(nplan)
         Rp = PPop.gen_radius(nplan)
-        beta = np.arccos(r[:,2]/d)
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
         
         # calculate dMag
-        dMag = deltaMag(p,Rp,d,Phi)
-        
+        dMag = deltaMag(p,Rp,r*u.AU,Phi)
+
         return s, dMag

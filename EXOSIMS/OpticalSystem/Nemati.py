@@ -167,7 +167,7 @@ class Nemati(OpticalSystem):
         
         ddMagdt = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
-            Cb, Csp = self.Cb_Csp(TL, sInds[i], fZ, fEZ, WA, mode)
+            _, Cb, Csp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)
             ddMagdt[i,:] = 2.5/(2.0*np.log(10.0))*(Cb/(Cb*t_int[i] + (Csp*t_int[i])**2)).to('1/s').value
             
         return ddMagdt/u.s

@@ -11,7 +11,6 @@ except:
 import time
 from EXOSIMS.util.deltaMag import deltaMag
 
-
 class tieredScheduler(SurveySimulation):
     """tieredScheduler 
     
@@ -29,7 +28,7 @@ class tieredScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1], occHIPs=[], **specs):
+    def __init__(self, coeffs=[2,1], occHIPs=[], **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -57,6 +56,7 @@ class tieredScheduler(SurveySimulation):
         self.is_phase1 = True
         self.FA_status = np.zeros(TL.nStars,dtype=bool)
         self.GA_percentage = .25
+        self.EVPOC = None
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -77,8 +77,7 @@ class tieredScheduler(SurveySimulation):
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
-            self.currentSep = Obs.occulterSep
+        self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
         detMode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
@@ -154,11 +153,11 @@ class tieredScheduler(SurveySimulation):
                         DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
                     DRM['char_mode'] = dict(charMode)
                     del DRM['char_mode']['inst'], DRM['char_mode']['syst']
-                    detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
+                    # detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                     characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
                     assert t_char !=0, "Integration time can't be 0."
                     # Update the occulter wet mass
-                    if OS.haveOcculter == True and t_char is not None:
+                    if t_char is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
                     # if any false alarm, store its characterization status, fEZ, dMag, and WA
                     if self.FA_status[sInd]:
@@ -202,7 +201,7 @@ class tieredScheduler(SurveySimulation):
                     TK.next_observing_block(dt=obsLength)
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
+                if Obs.scMass < Obs.dryMass:
                     print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
                     break
 
@@ -263,10 +262,10 @@ class tieredScheduler(SurveySimulation):
         
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
-        if OS.haveOcculter == True:
-            ao = Obs.thrust/Obs.scMass
-            slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. \
-                    - Obs.defburnPortion**2/4.)).decompose().to('d2')
+        assert OS.haveOcculter == True
+        ao = Obs.thrust/Obs.scMass
+        slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. \
+                - Obs.defburnPortion**2/4.)).decompose().to('d2')
         
         # Now, start to look for available targets
         while not TK.mission_is_over():
@@ -280,21 +279,20 @@ class tieredScheduler(SurveySimulation):
             # 1/ Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = None
-            if OS.haveOcculter == True:
-                # find angle between old and new stars, default to pi/2 for first target
-                if old_occ_sInd is None:
-                    sd = np.zeros(TL.nStars)*u.rad
-                else:
-                    # position vector of previous target star
-                    r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
-                    u_old = r_old.value/np.linalg.norm(r_old)
-                    # position vector of new target stars
-                    r_new = TL.starprop(sInds, TK.currentTimeAbs)
-                    u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-                    # angle between old and new stars
-                    sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
-                # calculate slew time
-                slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
+            # find angle between old and new stars, default to pi/2 for first target
+            if old_occ_sInd is None:
+                sd = np.zeros(TL.nStars)*u.rad
+            else:
+                # position vector of previous target star
+                r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
+                u_old = r_old.value/np.linalg.norm(r_old)
+                # position vector of new target stars
+                r_new = TL.starprop(sInds, TK.currentTimeAbs)
+                u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
+                # angle between old and new stars
+                sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
+            # calculate slew time
+            slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
             occ_startTime = TK.currentTimeAbs + slewTime
             kogoodStart = Obs.keepout(TL, sInds, occ_startTime, mode)
@@ -305,6 +303,9 @@ class tieredScheduler(SurveySimulation):
             startTime = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
             kogoodStart = Obs.keepout(TL, sInds, startTime, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
+
+            print(slewTime[occ_sInds])
+            print(slewTime[occ_sInds]*Obs.defburnPortion*Obs.flowRate)
             
             # 2/ Calculate integration times for the preselected targets, 
             # and filter out t_tots > integration cutoff
@@ -392,6 +393,15 @@ class tieredScheduler(SurveySimulation):
                         self.occ_arrives = occ_startTime[occ_sInd]
                         self.occ_starVisits[occ_sInd] += 1
 
+                        # find values related to slew time
+                        DRM['slew_time'] = slewTime[occ_sInd].to('day').value
+                        DRM['slew_angle'] = sd[occ_sInd].to('deg').value
+                        slew_mass_used = slewTime[occ_sInd]*Obs.defburnPortion*Obs.flowRate
+                        DRM['slew_dV'] = (slewTime[occ_sInd]*ao*Obs.defburnPortion).to('m/s').value
+                        DRM['slew_mass_used'] = slew_mass_used.to('kg').value
+                        Obs.scMass = Obs.scMass - slew_mass_used
+                        DRM['scMass'] = Obs.scMass.to('kg').value
+
                 # update visited list for current star
                 self.starVisits[sInd] += 1
                 break
@@ -404,21 +414,11 @@ class tieredScheduler(SurveySimulation):
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
             return DRM, None, None, None
-        
-        if OS.haveOcculter == True:
-            # find values related to slew time
-            DRM['slew_time'] = slewTime[occ_sInd].to('day').value
-            DRM['slew_angle'] = sd[occ_sInd].to('deg').value
-            slew_mass_used = slewTime[occ_sInd]*Obs.defburnPortion*Obs.flowRate
-            DRM['slew_dV'] = (slewTime[occ_sInd]*ao*Obs.defburnPortion).to('m/s').value
-            DRM['slew_mass_used'] = slew_mass_used.to('kg').value
-            Obs.scMass = Obs.scMass - slew_mass_used
-            DRM['scMass'] = Obs.scMass.to('kg').value
 
-            if TK.mission_is_over():
-                self.logger.info('Mission complete: no more time available')
-                print 'Mission complete: no more time available'
-                return DRM, None, None, None
+        if TK.mission_is_over():
+            self.logger.info('Mission complete: no more time available')
+            print 'Mission complete: no more time available'
+            return DRM, None, None, None
 
         return DRM, sInd, occ_sInd, t_dets[sInd]
 
@@ -477,12 +477,11 @@ class tieredScheduler(SurveySimulation):
         A = np.zeros((nStars,nStars))
 
         # only consider slew distance when there's an occulter
-        if OS.haveOcculter:
-            r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs)
-            u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
-            angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
-            A[np.ones((nStars),dtype=bool)] = angdists
-            A = self.coeffs[0]*(A)/np.pi
+        r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs)
+        u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
+        angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
+        A[np.ones((nStars),dtype=bool)] = angdists
+        A = self.coeffs[0]*(A)/np.pi
 
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
@@ -556,7 +555,7 @@ class tieredScheduler(SurveySimulation):
 
         return sInd
 
-    def calc_int_inflection(self, sInd, fEZ, fZ, WA, mode):
+    def calc_int_inflection(self, sInd, fEZ, fZ, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
         
         Args:
@@ -564,6 +563,7 @@ class tieredScheduler(SurveySimulation):
                 Index of the target star
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fZ ():
             WA (astropy Quantity array):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -589,12 +589,37 @@ class tieredScheduler(SurveySimulation):
         dMags = np.linspace(dMagmin, dMagmax, num_points)
 
         # calculate t_det as a function of dMag
-        #fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)
+        # fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)
         t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
 
         # calculate comp as a function of dMag
         smin = TL.dist[sInd] * np.tan(mode['IWA'])
         smax = TL.dist[sInd] * np.tan(mode['OWA'])
+
+        if self.EVPOC is None:
+            self.calc_EVPOC()
+
+        comps = self.EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
+
+        # find the inflection point of the completeness graph
+        if ischar is False:
+            int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]][0]
+            #int_time = int_time*self.starVisits[sInd]
+
+            # update star completeness
+            idx = (np.abs(t_dets-int_time)).argmin()
+            comp = comps[idx]
+        else:
+            idx = np.abs(comps - max(comps)*.9).argmin()
+            int_time = t_dets[idx]
+            comp = comps[idx]
+
+        TL.comp[sInd] = comp
+
+        return int_time, t_dets, comps, np.gradient(comps)
+
+    def calc_EVPOC(self):
+        Comp = self.Completeness
 
         bins = 1000
         # xedges is array of separation values for interpolant
@@ -616,22 +641,10 @@ class tieredScheduler(SurveySimulation):
         
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.comp')
         H, xedges, yedges = self.genC(Cpath, nplan, xedges, yedges, steps)
-        # Cpdf = pickle.load(open(Cpath, 'rb'))
-
         EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, H.T)
         EVPOC = np.vectorize(EVPOCpdf.integral)
 
-        comps = EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
-
-        # find the inflection point of the completeness graph
-        int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]][0]
-
-        # update star completeness
-        idx = (np.abs(t_dets-int_time*self.starVisits[sInd])).argmin()
-        comp = comps[idx]
-        TL.comp[sInd] = comp
-
-        return int_time
+        self.EVPOC = EVPOC
 
     def genC(self, Cpath, nplan, xedges, yedges, steps):
         """Gets completeness interpolant for initial completeness
@@ -795,4 +808,170 @@ class tieredScheduler(SurveySimulation):
         
         return s, dMag
 
+    def observation_characterization(self, sInd, mode):
+        """Finds if characterizations are possible and relevant information
+        
+        Args:
+            sInd (integer):
+                Integer index of the star of interest
+            mode (dict):
+                Selected observing mode for characterization
+        
+        Returns:
+            characterized (integer list):
+                Characterization status for each planet orbiting the observed 
+                target star including False Alarm if any, where 1 is full spectrum, 
+                -1 partial spectrum, and 0 not characterized
+            SNR (float list):
+                Characterization signal-to-noise ratio of the observable planets. 
+                Defaults to None.
+            t_char (astropy Quantity):
+                Selected star characterization time in units of day. Defaults to None.
+        
+        """
+        
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        
+        # find indices of planets around the target
+        pInds = np.where(SU.plan2star == sInd)[0]
+        # get the last detected planets, and check if there was a FA
+        #det = self.lastDetected[sInd,0]
+        det = np.ones(pInds.size, dtype=bool)
+        fEZs = SU.fEZ[pInds].to('1/arcsec2').value
+        dMags = SU.dMag[pInds]
+        WAs = SU.WA[pInds].to('mas').value
+
+        FA = (det.size == pInds.size + 1)
+        if FA == True:
+            pInds = np.append(pInds, -1)
+
+        # initialize outputs, and check if any planet to characterize
+        characterized = np.zeros(det.size, dtype=int)
+        SNR = np.zeros(det.size)
+        t_char = None
+        if not np.any(pInds):
+            return characterized.tolist(), SNR.tolist(), t_char
+        
+        # look for last detected planets that have not been fully characterized
+        tochar = np.zeros(len(det), dtype=bool)
+        if (FA == False):
+            tochar[det] = (self.fullSpectra[pInds[det]] != 1)
+        elif pInds[det].size > 1:
+            tochar[det] = np.append((self.fullSpectra[pInds[det][:-1]] != 1), True)
+        else:
+            tochar[det] = np.array([True])
+        
+        # 1/ find spacecraft orbital START position and check keepout angle
+        if np.any(tochar):
+            startTime = TK.currentTimeAbs
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+        
+        # 2/ if any planet to characterize, find the characterization times
+        if np.any(tochar):
+            # propagate the whole system to match up with current time
+            SU.propag_system(sInd, TK.currentTimeNorm - self.starTimes[sInd])
+            self.starTimes[sInd] = TK.currentTimeNorm
+            # calculate characterization times at the detected fEZ, dMag, and WA
+            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            # fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
+            # dMag = self.lastDetected[sInd,2][tochar]
+            # WA = self.lastDetected[sInd,3][tochar]*u.mas
+            fEZ = fEZs[tochar]/u.arcsec**2
+            dMag = dMags[tochar]
+            WA = WAs[tochar]*u.mas
+
+            t_chars = np.zeros(len(pInds))*u.d
+            t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            t_tots = t_chars*(mode['timeMultiplier'])
+            # total time must be positive, shorter than integration cut-off,
+            # and it must not exceed the Observing Block end time
+            startTimeNorm = (startTime - TK.missionStart).jd*u.day
+            tochar = (t_tots > 0) & (t_tots <= OS.intCutoff) & \
+                    (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber])
+        
+        # 3/ is target still observable at the end of any char time?
+        if np.any(tochar) and Obs.checkKeepoutEnd:
+            endTime = startTime + t_tots[tochar]
+            tochar[tochar] = Obs.keepout(TL, sInd, endTime, mode)
+        
+        # 4/ if yes, perform the characterization for the maximum char time
+        if np.any(tochar):
+            t_char = np.max(t_chars[tochar])
+            pIndsChar = pInds[tochar]
+            log_char = '   - Charact. planet(s) %s (%s/%s)'%(pIndsChar, 
+                    len(pIndsChar), len(pInds))
+            self.logger.info(log_char)
+            print log_char
+            
+            # SNR CALCULATION:
+            # first, calculate SNR for observable planets (without false alarm)
+            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+            if np.any(planinds):
+                Signal = np.zeros((self.nt_flux, len(planinds)))
+                Noise = np.zeros((self.nt_flux, len(planinds)))
+                # integrate the signal (planet flux) and noise
+                dt = t_char/self.nt_flux
+                for i in range(self.nt_flux):
+                    s,n = self.calc_signal_noise(sInd, planinds, dt, mode)
+                    Signal[i,:] = s
+                    Noise[i,:] = n
+                # calculate SNRobs
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    SNRobs = Signal.sum(0) / Noise.sum(0)
+                # allocate extra time for timeMultiplier
+                t_extra = t_char*(mode['timeMultiplier'] - 1)
+                TK.allocate_time(t_extra)
+            # if no planet (only false alarm), just observe for t_tot (including time multiplier)
+            else:
+                SNRobs = np.array([])
+                t_tot = t_char*(mode['timeMultiplier'])
+                TK.allocate_time(t_tot)
+            
+            # append the false alarm SNR (if any)
+            if pIndsChar[-1] == -1:
+                # fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2
+                # dMag = self.lastDetected[sInd,2][-1]
+                # WA = self.lastDetected[sInd,3][-1]*u.mas
+                fEZ = fEZs[-1]/u.arcsec**2
+                dMag = dMags[-1]
+                WA = WAs[-1]*u.mas
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                SNRfa = (C_p*t_char).decompose().value
+                SNRfa[SNRfa > 0] /= np.sqrt(C_b*t_char + (C_sp*t_char)**2) \
+                        .decompose().value[SNRfa > 0]
+                SNRobs = np.append(SNRobs, SNRfa)
+            
+            # now, store characterization status: 1 for full spectrum, 
+            # -1 for partial spectrum, 0 for not characterized
+            if np.any(SNRobs):
+                SNR[tochar] = SNRobs
+                char = (SNR >= mode['SNR'])
+                if np.any(SNR):
+                    # initialize with partial spectra
+                    characterized[char] = -1
+                    # check for full spectra
+                    # WA = self.lastDetected[sInd,3]*u.mas
+                    WA = WAs*u.mas
+                    IWA_max = mode['IWA']*(1 + mode['BW']/2.)
+                    OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+                    char[char] = (WA[char] > IWA_max) & (WA[char] < OWA_min)
+                    characterized[char] = 1
+                    # encode results in spectra lists
+                    partial = pInds[characterized == -1]
+                    if np.any(partial != -1):
+                        partial = partial[:-1] if partial[-1] == -1 else partial
+                        self.partialSpectra[partial] += 1
+                    full = pInds[np.where(characterized == 1)[0]]
+                    if np.any(full != -1):
+                        full = full[:-1] if full[-1] == -1 else full
+                        self.fullSpectra[full] += 1
+
+            print '   - Charact. result(s) are %s'%(characterized)
+        
+        return characterized.tolist(), SNR.tolist(), t_char
 

@@ -177,7 +177,7 @@ class OpticalSystem(object):
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, optics=0.5,
             intCutoff=50, Ndark=10, scienceInstruments=None, QE=0.9, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, texp=100,
-            ENF=1, PCeff=0.8, radDos=0.5, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
+            ENF=1, PCeff=0.8, radDos=0.0, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
             OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, **specs):

@@ -131,7 +131,7 @@ class Nemati(OpticalSystem):
         for i in xrange(len(sInds)):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)
             dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/t_int[i] + C_sp**2) \
-                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput)).decompose().value)
+                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput*inst['PCeff'])).decompose().value)
         
         return dMag
     

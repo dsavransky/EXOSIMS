@@ -620,6 +620,26 @@ class GarrettCompleteness(BrownCompleteness):
         f = 1.0/(2.0*np.sqrt(z*p))*self.dist_radius(np.sqrt(z/p))*self.dist_albedo(p)
         
         return f
+    
+    def Rgrand(self, R, z):
+        """Calculates integrand for determining probability density of albedo
+        times planetary radius squared
+        
+        Args:
+            R (ndarray):
+                Values of planetary radius
+            z (float):
+                Value of albedo times planetary radius squared
+        
+        Returns:
+            f (ndarray):
+                Values of integrand
+        
+        """
+        
+        f = self.dist_albedo(z/R**2)*self.dist_radius(R)/R**2
+        
+        return f
   
     def f_z(self, z):
         """Calculates probability density of albedo times planetary radius 
@@ -646,13 +666,24 @@ class GarrettCompleteness(BrownCompleteness):
             elif self.Rconst:
                 f = 1.0/self.Rmin**2*self.dist_albedo(z/self.Rmin**2)
             else:
-                p1 = z/self.Rmax**2
-                p2 = z/self.Rmin**2
-                if p1 < self.pmin:
-                    p1 = self.pmin
-                if p2 > self.pmax:
-                    p2 = self.pmax
-                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=40)[0]
+#                p1 = z/self.Rmax**2
+#                p2 = z/self.Rmin**2
+#                if p1 < self.pmin:
+#                    p1 = self.pmin
+#                if p2 > self.pmax:
+#                    p2 = self.pmax
+#                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=40)[0]
+                R1 = np.sqrt(z/self.pmax)
+                R2 = np.sqrt(z/self.pmin)
+                if R1 < self.Rmin:
+                    R1 = self.Rmin
+                if R2 > self.Rmax:
+                    R2 = self.Rmax
+                if R1 > R2:
+                    f = 0.0
+                else:
+                    f = integrate.fixed_quad(self.Rgrand,R1,R2,args=(z,),n=61)[0]
+                
                 
         return f
     

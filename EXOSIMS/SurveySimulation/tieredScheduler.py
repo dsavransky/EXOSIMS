@@ -304,8 +304,8 @@ class tieredScheduler(SurveySimulation):
             kogoodStart = Obs.keepout(TL, sInds, startTime, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
 
-            print(slewTime[occ_sInds])
-            print(slewTime[occ_sInds]*Obs.defburnPortion*Obs.flowRate)
+            # print(slewTime[occ_sInds])
+            # print(slewTime[occ_sInds]*Obs.defburnPortion*Obs.flowRate)
             
             # 2/ Calculate integration times for the preselected targets, 
             # and filter out t_tots > integration cutoff
@@ -381,10 +381,10 @@ class tieredScheduler(SurveySimulation):
                 # if it is the first target or if there is not enough time to make another detection
                 # store relevant values
                 t_det = t_dets[sInd]
-                # fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)                       # XXX seems to be too low a threshold
-                # int_time = self.calc_int_inflection(sInd, fEZ, fZ, WA, mode)
-                # if int_time < t_det:
-                #     t_det = int_time
+                fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)
+                int_time = self.calc_int_inflection(sInd, fEZ, fZ, WA, mode)
+                if int_time < t_det:
+                    t_det = int_time
                 # print("  " +str((TK.currentTimeAbs, t_det, t_dets[sInd], self.occ_arrives)))
                 if np.any(occ_sInds) or old_occ_sInd is None:
                     if old_occ_sInd is None or (TK.currentTimeAbs + t_det) >= self.occ_arrives: 
@@ -604,7 +604,7 @@ class tieredScheduler(SurveySimulation):
         # find the inflection point of the completeness graph
         if ischar is False:
             int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]][0]
-            #int_time = int_time*self.starVisits[sInd]
+            int_time = int_time*self.starVisits[sInd]
 
             # update star completeness
             idx = (np.abs(t_dets-int_time)).argmin()
@@ -886,7 +886,8 @@ class tieredScheduler(SurveySimulation):
             WA = WAs[tochar]*u.mas
 
             t_chars = np.zeros(len(pInds))*u.d
-            t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            t_chars[tochar] = self.calc_int_inflection(sInd, fEZ, fZ, WA, mode, ischar=True)
             t_tots = t_chars*(mode['timeMultiplier'])
             # total time must be positive, shorter than integration cut-off,
             # and it must not exceed the Observing Block end time

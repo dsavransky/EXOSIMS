@@ -119,19 +119,15 @@ class KeplerLike1(PlanetPopulation):
         
         """
         
-        if not self.dist_radius_built:
-            # define distribution for radius
-            R = self.gen_radius(int(1e6)).to('earthRad').value
-            Rlim = self.Rprange.to('earthRad').value
-            hR, Redges = np.histogram(R, bins=2000, range=(Rlim[0], Rlim[1]), normed=True)
-            Redges = 0.5*(Redges[1:]+Redges[:-1])
-            Redges = np.hstack((Rlim[0], Redges, Rlim[1]))
-            hR = np.hstack((0., hR, 0.))
-            self.dist_radius = interpolate.InterpolatedUnivariateSpline(Redges, 
-                    hR, k=1, ext=1)
-            self.dist_radius_built = True
+        if not isinstance(x, np.ndarray):
+            x = np.array(x, ndmin=1, copy=False)
+            
+        f = np.zeros(x.shape)
         
-        f = self.dist_radius(x)
+        for i in xrange(len(self.Rvals)):
+            inds = (x >= self.Rs[i]) & (x <= self.Rs[i+1])
+            f[inds] = self.Rvals[i]/(x[inds]*np.log(self.Rs[i+1]/self.Rs[i])*self.eta)
+        
         return f
 
     def gen_sma(self, n):

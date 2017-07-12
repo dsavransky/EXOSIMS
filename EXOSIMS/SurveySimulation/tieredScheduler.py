@@ -133,6 +133,8 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_dMag'] = SU.dMag[pInds].tolist()
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
+                    if np.any(detected):
+                        print('  Det. results are: {}'.format(detected))
                     # Update the occulter wet mass
                     # if OS.haveOcculter == True:
                     #     DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
@@ -590,6 +592,7 @@ class tieredScheduler(SurveySimulation):
 
         # calculate t_det as a function of dMag
         # fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], mode)
+
         t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
 
         # calculate comp as a function of dMag
@@ -616,7 +619,7 @@ class tieredScheduler(SurveySimulation):
 
         TL.comp[sInd] = comp
 
-        return int_time, t_dets, comps, np.gradient(comps)
+        return int_time
 
     def calc_EVPOC(self):
         Comp = self.Completeness
@@ -883,11 +886,12 @@ class tieredScheduler(SurveySimulation):
             # WA = self.lastDetected[sInd,3][tochar]*u.mas
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
-            WA = WAs[tochar]*u.mas
+            WAp = WAs[tochar]*u.mas
 
             t_chars = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
-            t_chars[tochar] = self.calc_int_inflection(sInd, fEZ, fZ, WA, mode, ischar=True)
+            for i,j in enumerate(WAp):
+                t_chars[tochar][i] = self.calc_int_inflection(sInd, fEZ[i], fZ, j, mode, ischar=True)
             t_tots = t_chars*(mode['timeMultiplier'])
             # total time must be positive, shorter than integration cut-off,
             # and it must not exceed the Observing Block end time

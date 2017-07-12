@@ -602,8 +602,8 @@ class OpticalSystem(object):
         PCeff = inst['PCeff']
         # radiation dosage
         radDos = mode['radDos']
-        # photon-converted 1 frame
-        phConv = (C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']
+        # photon-converted 1 frame (minimum 1 photon)
+        phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']).decompose().value, 1, None)
         # net charge transfer efficiency
         NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate

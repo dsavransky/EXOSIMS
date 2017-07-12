@@ -101,6 +101,10 @@ class SimulatedUniverse(object):
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
         
+        # list of possible planet attributes
+        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Rp', 'Mp', 'p',
+                'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
+        
         # generate orbital elements, albedos, radii, and masses
         self.gen_physical_properties(**specs)
         
@@ -199,7 +203,7 @@ class SimulatedUniverse(object):
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
         self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
         self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))         # planet phase
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('mas')# working angle
@@ -302,3 +306,38 @@ class SimulatedUniverse(object):
                'star':self.TargetList.Name[self.plan2star]}
         
         return out
+
+    def revise_planets_list(self, pInds):
+        """Replaces Simulated Universe planet attributes with filtered values, 
+        and updates the number of planets.
+        
+        Args:
+            pInds (ndarray):
+                1D numpy ndarray of indices to keep
+        
+        """
+       
+        if len(pInds) == 0:
+            raise IndexError("Planets list filtered to empty.")
+        
+        for att in self.planet_atts:
+            if getattr(self, att).size != 0:
+                setattr(self, att, getattr(self, att)[pInds])
+        self.nPlans = len(pInds)
+        assert self.nPlans, "Planets list is empty: nPlans = %r"%self.nPlans
+
+    def revise_stars_list(self, sInds):
+        """Revises the TargetList with filtered values, and updates the 
+        planets list accordingly. 
+        
+        Args:
+            sInds (ndarray):
+                1D numpy ndarray of indices to keep
+        
+        """
+        
+        self.TargetList.revise_lists(sInds)
+        pInds = np.sort(np.concatenate([np.where(self.plan2star == x)[0] for x in sInds]))
+        self.revise_planets_list(pInds)
+        for i,ind in enumerate(sInds):
+            self.plan2star[np.where(self.plan2star == ind)[0]] = i

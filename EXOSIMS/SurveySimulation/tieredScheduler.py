@@ -106,6 +106,14 @@ class tieredScheduler(SurveySimulation):
             
             if sInd is not None:
                 cnt += 1
+
+                # clean up revisit list when one occurs to prevent repeats
+                if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
+                    s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
+                    dt_max = 1.*u.week
+                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
+                    self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
+                    
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and self.starExtended.shape[0] == 0:
                     for i in range(len(self.DRM)):
@@ -175,7 +183,7 @@ class tieredScheduler(SurveySimulation):
                         pInds = np.where(SU.plan2star == sInd)[0]
                         smin = np.min(SU.s[pInds[char]])
                         pInd_smin = pInds[np.argmin(SU.s[pInds[char]])]
-                        
+
                         Ms = TL.MsTrue[sInd]
                         sp = smin
                         Mp = SU.Mp[pInd_smin]
@@ -350,7 +358,7 @@ class tieredScheduler(SurveySimulation):
                 kogoodEnd = Obs.keepout(TL, sInds, endTime, detmode)
                 sInds = sInds[np.where(kogoodEnd)[0]]
 
-            # If we are in detection phase two, start adding new targets to occulter target list
+            # 3a/ If we are in detection phase two, start adding new targets to occulter target list
             if TK.currentTimeAbs > self.phase1_end:
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
@@ -540,11 +548,11 @@ class tieredScheduler(SurveySimulation):
 
         weights = (comps + f2_uv/6.)/t_dets
         sInd = np.random.choice(sInds[weights == max(weights)])
-        print(comps[sInds==sInd])
-        print(f2_uv[sInds==sInd])
-        print(t_dets[sInds==sInd])
-        print(weights[sInds==sInd])
-        #print(np.sort(weights))
+        # print(comps[sInds==sInd])
+        # print(f2_uv[sInds==sInd])
+        # print(t_dets[sInds==sInd])
+        # print(weights[sInds==sInd])
+        # print(np.sort(weights))
 
         return sInd
 

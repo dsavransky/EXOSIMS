@@ -296,13 +296,14 @@ class SurveySimulation(object):
                     DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['det_dMag'] = SU.dMag[pInds].tolist()
                     DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
+                detected, detfZ, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                 # update the occulter wet mass
                 if OS.haveOcculter == True:
                     DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
                 # populate the DRM with detection results
                 DRM['det_time'] = t_det.to('day').value
                 DRM['det_status'] = detected
+                DRM['det_fZ'] = detfZ
                 DRM['det_SNR'] = detSNR
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -559,6 +560,8 @@ class SurveySimulation(object):
             detected (integer list):
                 Detection status for each planet orbiting the observed target star:
                 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
+            fZ (astropy Quantity):
+                Zodiacal brightness at detection
             SNR (float list):
                 Detection signal-to-noise ratio of the observable planets
             FA (boolean):
@@ -592,7 +595,7 @@ class SurveySimulation(object):
             # integrate the signal (planet flux) and noise
             dt = t_det/self.nt_flux
             for i in range(self.nt_flux):
-                s,n = self.calc_signal_noise(sInd, pInds[obs], dt, mode)
+                s, n, fZ = self.calc_signal_noise(sInd, pInds[obs], dt, mode)
                 Signal[i,:] = s
                 Noise[i,:] = n
             # calculate SNRobs
@@ -604,6 +607,7 @@ class SurveySimulation(object):
             TK.allocate_time(t_extra)
         # if no planet, just observe for t_tot (including time multiplier)
         else:
+            fZ = 0/u.arcsec**2
             SNRobs = np.array([])
             t_tot = t_det*(mode['timeMultiplier'])
             TK.allocate_time(t_tot)
@@ -677,7 +681,7 @@ class SurveySimulation(object):
         else:
             self.starRevisit = np.vstack((self.starRevisit, revisit))
         
-        return detected.tolist(), SNR.tolist(), FA
+        return detected.tolist(), fZ, SNR.tolist(), FA
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -851,6 +855,8 @@ class SurveySimulation(object):
                 Counts of signal
             Noise (float)
                 Counts of background noise variance
+            fZ (astropy Quantity):
+                Zodiacal brightness at detection
         
         """
         
@@ -877,7 +883,7 @@ class SurveySimulation(object):
         # allocate second half of t_int
         TK.allocate_time(t_int/2.)
         
-        return Signal, Noise
+        return Signal, Noise, fZ[0]
 
     def update_occulter_mass(self, DRM, sInd, t_int, skMode):
         """Updates the occulter wet mass in the Observatory module, and stores all 

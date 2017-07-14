@@ -288,11 +288,13 @@ class SimulatedUniverse(object):
         
         Args:
             None
+        
         Returns:
             systems (dict)
+        
         """
         
-        out = {'a':self.a,
+        systems = {'a':self.a,
                'e':self.e,
                'I':self.I,
                'O':self.O,
@@ -305,7 +307,32 @@ class SimulatedUniverse(object):
                'plan2star':self.plan2star,
                'star':self.TargetList.Name[self.plan2star]}
         
-        return out
+        return systems
+
+    def dump_system_params(self, sInd):
+        """Create a dictionnary of time-dependant planet properties for a specific target
+        
+        Args:
+            sInd (integer):
+                Index of the target system of interest
+        
+        Returns:
+            system_params (dict)
+        
+        """
+        
+        pInds = np.where(self.plan2star == sInd)[0]
+        
+        system_params = {'r':self.r[pInds],
+                'v':self.v[pInds],
+                'd':self.d[pInds],
+                's':self.s[pInds],
+                'phi':self.phi[pInds],
+                'fEZ':self.fEZ[pInds],
+                'dMag':self.dMag[pInds],
+                'WA':self.WA[pInds]}
+        
+        return system_params
 
     def revise_planets_list(self, pInds):
         """Replaces Simulated Universe planet attributes with filtered values, 

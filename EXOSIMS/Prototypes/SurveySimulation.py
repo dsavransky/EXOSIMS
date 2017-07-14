@@ -303,7 +303,7 @@ class SurveySimulation(object):
                 # populate the DRM with detection results
                 DRM['det_time'] = t_det.to('day').value
                 DRM['det_status'] = detected
-                DRM['det_fZ'] = detfZ
+                DRM['det_fZ'] = detfZ.to('1/arcsec2').value
                 DRM['det_SNR'] = detSNR
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute

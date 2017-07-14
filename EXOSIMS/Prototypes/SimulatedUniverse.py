@@ -323,10 +323,7 @@ class SimulatedUniverse(object):
         
         pInds = np.where(self.plan2star == sInd)[0]
         
-        system_params = {'r':self.r[pInds],
-                'v':self.v[pInds],
-                'd':self.d[pInds],
-                's':self.s[pInds],
+        system_params = {'d':self.d[pInds],
                 'phi':self.phi[pInds],
                 'fEZ':self.fEZ[pInds],
                 'dMag':self.dMag[pInds],

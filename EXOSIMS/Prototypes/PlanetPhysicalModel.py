@@ -98,11 +98,12 @@ class PlanetPhysicalModel(object):
                 in units of rad
                 
         Returns:
-            Phi (astropy Quantity array):
+            Phi (ndarray):
                 Planet phase function
         
         """
         
-        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        beta = beta.to('rad').value
+        Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         return Phi

@@ -26,7 +26,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.rc = Client()
         self.dview = self.rc[:]
         self.dview.block = True
-        with self.dview.sync_imports(): import EXOSIMS,EXOSIMS.util.get_module
+        with self.dview.sync_imports(): import EXOSIMS,EXOSIMS.util.get_module,os,os.path,time,random,cPickle
         specs.pop('logger')
         self.dview.push(dict(specs=specs))
         self.dview.execute("SS = EXOSIMS.util.get_module.get_module(specs['modules']\

@@ -783,7 +783,7 @@ class SurveySimulation(object):
                 # integrate the signal (planet flux) and noise
                 dt = t_char/self.nt_flux
                 for i in range(self.nt_flux):
-                    s,n = self.calc_signal_noise(sInd, planinds, dt, mode)
+                    s,n,_, = self.calc_signal_noise(sInd, planinds, dt, mode)
                     Signal[i,:] = s
                     Noise[i,:] = n
                 # calculate SNRobs

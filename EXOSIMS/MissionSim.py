@@ -205,13 +205,13 @@ class MissionSim(object):
         return res
 
     def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, 
-            rewindPlanets=True):
+            rewindPlanets=True,kwargs={}):
         """Convenience method that simply calls the SurveyEnsemble run_ensemble method.
         
         """
         
         res = self.SurveyEnsemble.run_ensemble(self, nb_run_sim, run_one=run_one,
-                genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
+                genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets,kwargs=kwargs)
         
         return res
 

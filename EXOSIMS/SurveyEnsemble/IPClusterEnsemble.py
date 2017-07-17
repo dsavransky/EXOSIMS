@@ -26,19 +26,22 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.rc = Client()
         self.dview = self.rc[:]
         self.dview.block = True
-        with self.dview.sync_imports(): import EXOSIMS,EXOSIMS.util.get_module,os,os.path,time,random,cPickle
+        with self.dview.sync_imports(): import EXOSIMS,EXOSIMS.util.get_module,\
+                os,os.path,time,random,cPickle,traceback
         specs.pop('logger')
         self.dview.push(dict(specs=specs))
         self.dview.execute("SS = EXOSIMS.util.get_module.get_module(specs['modules']\
                 ['SurveySimulation'],'SurveySimulation')(**specs)")
         self.lview = self.rc.load_balanced_view()
 
-    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
+    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,\
+            rewindPlanets=True,kwargs={}):
         
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
-            ar = self.lview.apply_async(run_one)
+            ar = self.lview.apply_async(run_one,genNewPlanets=genNewPlanets,\
+                    rewindPlanets=rewindPlanets,**kwargs)
             async_res.append(ar)
         
         print "Submitted tasks: ", len(async_res)

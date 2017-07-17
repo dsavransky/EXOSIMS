@@ -71,7 +71,7 @@ class GarrettCompleteness(BrownCompleteness):
         self.Rconst = self.Rmin == self.Rmax
         # solve for bstar
         beta = np.linspace(0.0,np.pi,1000)*u.rad
-        Phis = self.PlanetPhysicalModel.calc_Phi(beta).value
+        Phis = self.PlanetPhysicalModel.calc_Phi(beta)
         # Interpolant for phase function which removes astropy Quantity
         self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
         self.Phiinv = interpolate.InterpolatedUnivariateSpline(Phis[::-1],beta.value[::-1],k=3,ext=1)

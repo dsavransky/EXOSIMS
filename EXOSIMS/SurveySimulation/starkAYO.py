@@ -129,7 +129,7 @@ class starkAYO(SurveySimulation):
         rmax = amax*(1+emax)
         SMH = self.SimulatedUniverse.Completeness#using this because I had to port over a lot of code. Equivalent to self.Completeness...
         beta = np.linspace(0.0,np.pi,1000)*u.rad
-        Phis = SMH.PlanetPhysicalModel.calc_Phi(beta).value
+        Phis = SMH.PlanetPhysicalModel.calc_Phi(beta)
         SMH.Phi = scipy.interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
         SMH.val = np.sin(SMH.bstar)**2*SMH.Phi(SMH.bstar)
         b1 = np.linspace(0.0, SMH.bstar, 25000)

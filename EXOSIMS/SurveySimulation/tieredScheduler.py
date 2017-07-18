@@ -62,7 +62,7 @@ class tieredScheduler(SurveySimulation):
         self.EVPOC = None
         self.ao = None
 
-        self.read_to_update = False
+        self.ready_to_update = False
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -107,12 +107,13 @@ class tieredScheduler(SurveySimulation):
              
             # Acquire the NEXT TARGET star index and create DRM
             TK.obsStart = TK.currentTimeNorm.to('day')
-            DRM, sInd, occ_sInd, t_det, slewTime, sd = self.next_target(sInd, occ_sInd, detMode, charMode)
+            prev_occ_sInd = occ_sInd
+            DRM, sInd, occ_sInd, t_det, slewTime, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
             assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives:
+            if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
-                self.read_to_update = True
+                self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs
             
@@ -436,12 +437,10 @@ class tieredScheduler(SurveySimulation):
 
                 # if the starshade has arrived at its destination, or it is the first observation
                 if np.any(occ_sInds) or old_occ_sInd is None:
-                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.read_to_update): 
+                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update): 
                         occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, t_dets)
-                        #sInd = occ_sInd
-                        #sInd = old_occ_sInd
                         self.occ_arrives = occ_startTime[occ_sInd]
-                        self.read_to_update = False
+                        self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
 
                 # update visited list for current star
@@ -455,14 +454,14 @@ class tieredScheduler(SurveySimulation):
         else:
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None
+            return DRM, None, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None
+            return DRM, None, None, None, None, None, None
 
-        return DRM, sInd, occ_sInd, t_dets[sInd], slewTime, sd
+        return DRM, sInd, occ_sInd, t_dets[sInd], slewTime, sd, occ_sInds
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
         """Choose next target for the occulter based on truncated 

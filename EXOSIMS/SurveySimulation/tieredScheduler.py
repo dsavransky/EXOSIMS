@@ -57,7 +57,12 @@ class tieredScheduler(SurveySimulation):
         self.is_phase1 = True
         self.FA_status = np.zeros(TL.nStars,dtype=bool)
         self.GA_percentage = .25
+        self.GAtime = 0.*u.d
+        self.goal_GAtime = None
         self.EVPOC = None
+        self.ao = None
+
+        self.read_to_update = False
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -97,12 +102,19 @@ class tieredScheduler(SurveySimulation):
         sInd = None
         occ_sInd = None
         cnt = 0
+        self.occ_arrives = TK.currentTimeAbs
         while not TK.mission_is_over():
              
             # Acquire the NEXT TARGET star index and create DRM
             TK.obsStart = TK.currentTimeNorm.to('day')
-            DRM, sInd, occ_sInd, t_det = self.next_target(sInd, occ_sInd, detMode, charMode)
+            DRM, sInd, occ_sInd, t_det, slewTime, sd = self.next_target(sInd, occ_sInd, detMode, charMode)
             assert t_det !=0, "Integration time can't be 0."
+
+            if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives:
+                sInd = occ_sInd
+                self.read_to_update = True
+
+            time2arrive = self.occ_arrives - TK.currentTimeAbs
             
             if sInd is not None:
                 cnt += 1
@@ -113,7 +125,7 @@ class tieredScheduler(SurveySimulation):
                     dt_max = 1.*u.week
                     t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
-                    
+
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and self.starExtended.shape[0] == 0:
                     for i in range(len(self.DRM)):
@@ -127,7 +139,6 @@ class tieredScheduler(SurveySimulation):
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
-                occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
@@ -143,10 +154,9 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                     if np.any(detected):
-                        print('  Det. results are: {}'.format(detected))
-                    # Update the occulter wet mass
-                    # if OS.haveOcculter == True:
-                    #     DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
+                        print '  Det. results are: %s'%(detected)
+                    # update GAtime
+                    self.GAtime = self.GAtime + t_det.to('day')*.07
                     # Populate the DRM with detection results
                     self.FA_status[sInd] = FA
                     DRM['det_time'] = t_det.to('day').value
@@ -156,8 +166,23 @@ class tieredScheduler(SurveySimulation):
                 elif sInd == occ_sInd:
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
+                    occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
+                    sInd = occ_sInd
+
+                    # update GAtime
+                    if time2arrive > 0*u.d:
+                        self.GAtime = self.GAtime + time2arrive.to('day')
+
+                    DRM['slew_time'] = slewTime[sInd].to('day').value
+                    DRM['slew_angle'] = sd[sInd].to('deg').value
+                    slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
+                    DRM['slew_dV'] = (slewTime[sInd]*self.ao*Obs.defburnPortion).to('m/s').value
+                    DRM['slew_mass_used'] = slew_mass_used.to('kg').value
+                    Obs.scMass = Obs.scMass - slew_mass_used
+                    DRM['scMass'] = Obs.scMass.to('kg').value
+
                     self.logger.info('  Starshade and telescope aligned at target star')
-                    print('  Starshade and telescope aligned at target star')
+                    print '  Starshade and telescope aligned at target star'
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -167,8 +192,9 @@ class tieredScheduler(SurveySimulation):
                     # detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                     characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
                     assert t_char !=0, "Integration time can't be 0."
-                    # Update the occulter wet mass
+                    # Update the occulter wet mass and GAtime
                     if t_char is not None:
+                        self.GAtime = self.GAtime + t_char.to('day')*.10
                         DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
                     # if any false alarm, store its characterization status, fEZ, dMag, and WA
                     if self.FA_status[sInd]:
@@ -199,6 +225,15 @@ class tieredScheduler(SurveySimulation):
                     DRM['char_time'] = t_char.to('day').value if t_char else 0.
                     DRM['char_status'] = characterized
                     DRM['char_SNR'] = charSNR
+
+                self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.to('day')
+                goal_GAdiff = self.goal_GAtime - self.GAtime
+
+                # allocate extra time to GA if we are falling behind
+                if goal_GAdiff > 1*u.d and goal_GAdiff < time2arrive:
+                    print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
+                    self.GAtime = self.GAtime + goal_GAdiff
+                    TK.allocate_time(goal_GAdiff)
 
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
@@ -269,7 +304,7 @@ class tieredScheduler(SurveySimulation):
         DRM = {}
         
         # Allocate settling time + overhead time
-        if old_sInd == old_occ_sInd:
+        if old_sInd == old_occ_sInd and old_occ_sInd is not None:
             TK.allocate_time(Obs.settlingTime + charmode['syst']['ohTime'])
         else:
             TK.allocate_time(0.0 + detmode['syst']['ohTime'])
@@ -277,8 +312,8 @@ class tieredScheduler(SurveySimulation):
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
-        ao = Obs.thrust/Obs.scMass
-        slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. \
+        self.ao = Obs.thrust/Obs.scMass
+        slewTime_fac = (2.*Obs.occulterSep/np.abs(self.ao)/(Obs.defburnPortion/2. \
                 - Obs.defburnPortion**2/4.)).decompose().to('d2')
         
         # Now, start to look for available targets
@@ -296,15 +331,16 @@ class tieredScheduler(SurveySimulation):
             # find angle between old and new stars, default to pi/2 for first target
             if old_occ_sInd is None:
                 sd = np.zeros(TL.nStars)*u.rad
+                r_old = TL.starprop(np.where(TL.Name == self.occHIPs[0])[0][0], TK.currentTimeAbs)[0]
             else:
                 # position vector of previous target star
                 r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
-                u_old = r_old.value/np.linalg.norm(r_old)
-                # position vector of new target stars
-                r_new = TL.starprop(sInds, TK.currentTimeAbs)
-                u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-                # angle between old and new stars
-                sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, TK.currentTimeAbs)
+            u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
             # calculate slew time
             slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
@@ -400,20 +436,13 @@ class tieredScheduler(SurveySimulation):
 
                 # if the starshade has arrived at its destination, or it is the first observation
                 if np.any(occ_sInds) or old_occ_sInd is None:
-                    if old_occ_sInd is None or (TK.currentTimeAbs + t_det) >= self.occ_arrives: 
+                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.read_to_update): 
                         occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, t_dets)
-                        sInd = occ_sInd
+                        #sInd = occ_sInd
+                        #sInd = old_occ_sInd
                         self.occ_arrives = occ_startTime[occ_sInd]
+                        self.read_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
-
-                        # find values related to slew time
-                        DRM['slew_time'] = slewTime[occ_sInd].to('day').value
-                        DRM['slew_angle'] = sd[occ_sInd].to('deg').value
-                        slew_mass_used = slewTime[occ_sInd]*Obs.defburnPortion*Obs.flowRate
-                        DRM['slew_dV'] = (slewTime[occ_sInd]*ao*Obs.defburnPortion).to('m/s').value
-                        DRM['slew_mass_used'] = slew_mass_used.to('kg').value
-                        Obs.scMass = Obs.scMass - slew_mass_used
-                        DRM['scMass'] = Obs.scMass.to('kg').value
 
                 # update visited list for current star
                 self.starVisits[sInd] += 1
@@ -426,14 +455,14 @@ class tieredScheduler(SurveySimulation):
         else:
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None
+            return DRM, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None
+            return DRM, None, None, None, None, None
 
-        return DRM, sInd, occ_sInd, t_dets[sInd]
+        return DRM, sInd, occ_sInd, t_dets[sInd], slewTime, sd
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
         """Choose next target for the occulter based on truncated 
@@ -548,11 +577,6 @@ class tieredScheduler(SurveySimulation):
 
         weights = (comps + f2_uv/6.)/t_dets
         sInd = np.random.choice(sInds[weights == max(weights)])
-        # print(comps[sInds==sInd])
-        # print(f2_uv[sInds==sInd])
-        # print(t_dets[sInds==sInd])
-        # print(weights[sInds==sInd])
-        # print(np.sort(weights))
 
         return sInd
 

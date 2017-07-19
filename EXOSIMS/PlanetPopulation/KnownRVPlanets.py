@@ -87,18 +87,20 @@ class KnownRVPlanets(KeplerLike1):
         
         #store G x Ms product
         GMs = const.G*data['st_mass'].data*u.solMass # units of solar mass
-        
+        p2sma = lambda mu,T: ((mu*T**2/(4*np.pi**2))**(1/3.)).to('AU')
+
         #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
         mask = data['pl_orbsmax'].mask
         T = data['pl_orbper'].data[mask]*u.day
-        self.sma[mask] = ((GMs[mask]*T**2/(4*np.pi**2))**(1/3.)).to('AU')
+        self.sma[mask] = p2sma(GMs[mask],T) 
         assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
         #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
         mask = data['pl_orbsmaxerr1'].mask
-        T = data['pl_orbpererr1'].data[mask]*u.day
-        self.smaerr[mask] = ((GMs[mask]*T**2/(4*np.pi**2))**(1/3.)).to('AU')
+        T = data['pl_orbper'].data[mask]*u.day
+        Terr = data['pl_orbpererr1'].data[mask]*u.day
+        self.smaerr[mask] = np.abs(p2sma(GMs[mask],T+Terr) - p2sma(GMs[mask],T))
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
         
         #save eccentricities

@@ -87,6 +87,7 @@ class MissionSim(object):
         
         # set up numpy random number seed at top
         self.seed = specs.get('seed', py_random.randint(1, 1e9))
+        specs['seed'] = self.seed
         print 'MissionSim seed is: ', self.seed
         
         # start logging, with log file and logging level (default: INFO)
@@ -230,10 +231,7 @@ class MissionSim(object):
                 desired module names.
         
         """
-
         
         out = self.SurveySimulation.genOutSpec(tofile=tofile)
         
         return out
-
-

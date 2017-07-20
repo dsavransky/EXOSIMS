@@ -26,7 +26,11 @@ class KnownRVSurvey(SurveySimulation):
         # calculate estimates of shortest WAint and largest dMagint for each target
         for sInd in range(TL.nStars):
             pInds = np.where(SU.plan2star == sInd)[0]
-            self.WAint[sInd] = np.arctan(np.min(SU.a[pInds])/TL.dist[sInd]).to('mas')
+            self.WAint[sInd] = np.arctan(np.min(SU.a[pInds])/TL.dist[sInd]).to('arcsec')
             phis = np.array([np.pi/2]*pInds.size)
             dMags = deltaMag(SU.p[pInds], SU.Rp[pInds], SU.a[pInds], phis)
             self.dMagint[sInd] = np.min(dMags)
+        
+        # populate outspec with arrays
+        self._outspec['WAint'] = self.WAint.value
+        self._outspec['dMagint'] = self.dMagint

@@ -356,7 +356,7 @@ class starkAYO(SurveySimulation):
                 if len(pInds) > 0:
                     DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['det_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
+                    DRM['det_WA'] = SU.WA[pInds].to('arcsec').value.tolist()
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                 # Update the occulter wet mass
                 if OS.haveOcculter == True:
@@ -371,7 +371,7 @@ class starkAYO(SurveySimulation):
                 if len(pInds) > 0:
                     DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['char_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
+                    DRM['char_WA'] = SU.WA[pInds].to('arcsec').value.tolist()
                 DRM['char_mode'] = dict(charMode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)

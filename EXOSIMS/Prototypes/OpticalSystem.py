@@ -542,13 +542,15 @@ class OpticalSystem(object):
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
-        # if the mode wavelength is different than the wavelength at which the system 
-        # is defined, we need to rescale the working angles
-        if lam != syst['lam']:
-            WA = WA*lam/syst['lam']
+        # rescale WA to match the coronagraph parameter curves
+        WAeff = WA*syst['lam']/lam
+        occ_trans = syst['occ_trans'](lam, WAeff)
+        core_thruput = syst['core_thruput'](lam, WAeff)
+        core_contrast = syst['core_contrast'](lam, WAeff)
+        core_area = syst['core_area'](lam, WAeff)
         
         # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = syst['core_area'](lam, WA)*u.arcsec**2
+        Omega = core_area*u.arcsec**2
         # if zero, get omega from (lambda/D)^2
         Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels per lenslet
@@ -556,18 +558,13 @@ class OpticalSystem(object):
         # number of pixels in the photometric aperture = Omega / theta^2 
         Npix = mpix*(Omega/inst['pixelScale']**2).decompose().value
         
-        # get coronagraph input parameters
-        occ_trans = syst['occ_trans'](lam, WA)
-        core_thruput = syst['core_thruput'](lam, WA)
-        core_contrast = syst['core_contrast'](lam, WA)
-        
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
             core_intensity = core_contrast*core_thruput
         # OPTION 2: otherwise use core_mean_intensity
         else:
-            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
+            core_mean_intensity = syst['core_mean_intensity'](lam, WAeff)
             # if a platesale was specified with the coro parameters, apply correction
             if syst['core_platescale'] != None:
                 core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \

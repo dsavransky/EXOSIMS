@@ -353,7 +353,7 @@ class starkAYO(SurveySimulation):
                 #print('TACO')
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
-                if np.any(pInds):
+                if len(pInds) > 0:
                     DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['det_dMag'] = SU.dMag[pInds].tolist()
                     DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
@@ -368,7 +368,7 @@ class starkAYO(SurveySimulation):
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute.
                 # First store fEZ, dMag, WA, and characterization mode
-                if np.any(pInds):
+                if len(pInds) > 0:
                     DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['char_dMag'] = SU.dMag[pInds].tolist()
                     DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
@@ -527,7 +527,7 @@ class starkAYO(SurveySimulation):
         
         sInds1 = sInds
         #Filter out previously visited stars#######################################
-        if np.any(sInds):
+        if len(sInds) > 0:
             tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
             if self.starRevisit.size != 0:
                 dt_max = 1.*u.week

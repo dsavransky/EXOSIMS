@@ -234,7 +234,7 @@ class SimulatedUniverse(object):
                 "Can only propagate one system at a time, sInd must be scalar."
         # check for planets around this target
         pInds = np.where(self.plan2star == sInd)[0]
-        if not np.any(pInds):
+        if len(pInds) == 0:
             return
         # check for positive time increment
         assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
@@ -309,20 +309,27 @@ class SimulatedUniverse(object):
         
         return systems
 
-    def dump_system_params(self, sInd):
-        """Create a dictionnary of time-dependant planet properties for a specific target
+    def dump_system_params(self, sInd=None):
+        """Create a dictionary of time-dependant planet properties for a specific target
         
         Args:
             sInd (integer):
-                Index of the target system of interest
+                Index of the target system of interest. Default value (None) will 
+                return an empty dictionary with the selected parameters and their units.
         
         Returns:
-            system_params (dict)
+            system_params (dict):
+                Dictionary of time-dependant planet properties
         
         """
         
-        pInds = np.where(self.plan2star == sInd)[0]
+        # get planet indices
+        if sInd == None:
+            pInds = np.array([], dtype=int)
+        else:
+            pInds = np.where(self.plan2star == sInd)[0]
         
+        # build dictionary
         system_params = {'d':self.d[pInds],
                 'phi':self.phi[pInds],
                 'fEZ':self.fEZ[pInds],

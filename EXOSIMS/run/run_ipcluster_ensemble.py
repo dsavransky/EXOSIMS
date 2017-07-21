@@ -75,6 +75,7 @@ if __name__ == "__main__":
     parser.add_argument('numruns', nargs=1, type=int, help='Number of runs (int).')
     parser.add_argument('--outpath',nargs=1,type=str, help='Full path to output directory (string). Defaults to the basename of the scriptfile in the working directory, otherwise is created if it does not exist.')
     parser.add_argument('--email',nargs=1,type=str,help='Email address to notify when run is complete.')
+    parser.add_argument('--toemail',nargs=1,type=str,help='Additional email to notify when run is complete.')
 
 
     args = parser.parse_args()
@@ -118,15 +119,20 @@ if __name__ == "__main__":
         server.ehlo()
         server.starttls()
         server.login(email,passwd)
+        
+        if args.toemail is not None:
+            toemail = [email,args.toemail[0]]
+        else:
+            toemail = [email]
 
         msg = "\r\n".join([
           "From: %s"%email,
-          "To: %s"%email,
+          "To: %s"%";".join(toemail),
           "Subject: Run Completed",
           "",
-          "Run submitted on %s completed on %s. Come see what I've done."%(subtime,time.ctime())
+          "Run submitted on %s completed on %s. Results stored in %s. Come see what I've done."%(subtime,time.ctime(),outpath)
           ])
-        server.sendmail(email, [email], msg)
+        server.sendmail(email, toemail, msg)
         server.quit()
 
     

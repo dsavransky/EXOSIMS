@@ -55,6 +55,7 @@ class KeplerLike1(PlanetPopulation):
         self.dist_sma = lambda x,s0=smaknee,a=a,norm=norm: x**-0.62*np.exp(-(x/s0)**2) \
                 / norm * np.array((x >= a[0])&(x <= a[1]),dtype=float, ndmin=1)
         
+        self.smaknee = smaknee
         # define Rayleigh eccentricity distribution
         self.esigma = float(esigma)
         norm = np.exp(-self.erange[0]**2/(2.0*self.esigma**2)) - np.exp(-self.erange[1]**2/(2.0*self.esigma**2))

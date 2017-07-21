@@ -147,10 +147,11 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         # important PlanetPopulation attributes
-        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+        atts = self.PlanetPopulation.__dict__.keys()
         extstr = ''
-        for att in atts:
-            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
+                extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         # include dMagLim
         extstr += '%s: ' % 'dMagLim' + str(getattr(TL.OpticalSystem, 'dMagLim')) + ' '
         ext = hashlib.md5(extstr).hexdigest()
@@ -666,13 +667,6 @@ class GarrettCompleteness(BrownCompleteness):
             elif self.Rconst:
                 f = 1.0/self.Rmin**2*self.dist_albedo(z/self.Rmin**2)
             else:
-#                p1 = z/self.Rmax**2
-#                p2 = z/self.Rmin**2
-#                if p1 < self.pmin:
-#                    p1 = self.pmin
-#                if p2 > self.pmax:
-#                    p2 = self.pmax
-#                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=40)[0]
                 R1 = np.sqrt(z/self.pmax)
                 R2 = np.sqrt(z/self.pmin)
                 if R1 < self.Rmin:

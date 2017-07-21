@@ -54,13 +54,21 @@ class BrownCompleteness(Completeness):
                         specs['modules']['OpticalSystem'] + \
                         specs['modules']['StarCatalog'] + \
                         specs['modules']['TargetList']
-        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
-        
+        atts = self.PlanetPopulation.__dict__.keys()
         extstr = ''
-        for att in atts:
-            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
+                extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
+        
+#        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+#        
+#        extstr = ''
+#        for att in atts:
+#            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+#        ext = hashlib.md5(extstr).hexdigest()
+#        self.filename += ext
 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -152,10 +160,11 @@ class BrownCompleteness(Completeness):
         PPop = TL.PlanetPopulation
         
         # get name for stored dynamic completeness updates array
-        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+        atts = PPop.__dict__.keys()
         extstr = ''
-        for att in atts:
-            extstr += '%s: ' % att + str(getattr(PPop, att)) + ' '
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(PPop, att)) and att != 'PlanetPhysicalModel':
+                extstr += '%s: ' % att + str(getattr(PPop, att))
         atts2 = ['IWA','OWA','dMagLim']
         for att in atts2:
             extstr += '%s: ' % att + str(getattr(OS, att)) + ' '
@@ -205,6 +214,8 @@ class BrownCompleteness(Completeness):
                         (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
             # fill dynamic completeness values
             for sInd in xrange(TL.nStars):
+                mu = const.G*(Mp + TL.MsTrue[sInd])
+                n = np.sqrt(mu/a**3)
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
@@ -255,9 +266,7 @@ class BrownCompleteness(Completeness):
                         self.updates[sInd, num] = float(len(toremove))/nplan
                     
                     # update M
-                    mu = const.G*(Mp[pInds] + TL.MsTrue[sInd])
-                    n = np.sqrt(mu/a[pInds]**3)
-                    newM[pInds] = (newM[pInds] + n*dt)/(2*np.pi) % 1 * 2.*np.pi
+                    newM[pInds] = (newM[pInds] + n[pInds]*dt)/(2*np.pi) % 1 * 2.*np.pi
                     
                 if (sInd+1) % 50 == 0:
                     print 'stars: %r / %r' % (sInd+1,TL.nStars)

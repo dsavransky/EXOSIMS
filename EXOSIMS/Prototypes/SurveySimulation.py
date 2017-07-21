@@ -85,7 +85,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, WAint=None, dMagint=None, ntFlux=1,
-            charMargin=0.25, seed=None, **specs):
+            charMargin=0.15, seed=None, **specs):
         """Initializes Survey Simulation with default values
         
         Input: 
@@ -327,12 +327,12 @@ class SurveySimulation(object):
                 # populate the DRM with characterization results
                 DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                 DRM['char_status'] = characterized[:-1] if FA else characterized
-                DRM['char_SNR'] = char_SNR[:-1] if FA else characterized
+                DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                 DRM['char_fZ'] = char_fZ.to('1/arcsec2')
                 DRM['char_params'] = char_systemParams
                 # populate the DRM with FA results (if any)
                 if FA == True:
-                    DRM['FA_status'] = characterized[-1]
+                    DRM['FA_char_status'] = characterized[-1]
                     DRM['FA_SNR'] = char_SNR[-1]
                     DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
                     DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
@@ -780,10 +780,10 @@ class SurveySimulation(object):
         
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
-            tochar = (self.fullSpectra[pIndsDet] != 1)
+            tochar = (self.fullSpectra[pIndsDet] == 0)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
-            tochar = np.append((self.fullSpectra[truePlans] != 1), True)
+            tochar = np.append((self.fullSpectra[truePlans] == 0), True)
         
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
@@ -802,8 +802,10 @@ class SurveySimulation(object):
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
-            # add a predetermined margin, and apply time multiplier
-            totTimes = intTimes*(1 + self.charMargin)*(mode['timeMultiplier'])
+            # add a predetermined margin to the integration times
+            intTimes = intTimes*(1 + self.charMargin)
+            # apply time multiplier
+            totTimes = intTimes*(mode['timeMultiplier'])
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes
@@ -884,23 +886,28 @@ class SurveySimulation(object):
                 SNRfa = S/N if N > 0 else 0.
             
             # save all SNRs (planets and FA) to one array
-            SNR[det][tochar] = np.append(SNRplans, SNRfa)
+            SNRinds = np.where(det)[0][tochar]
+            SNR[SNRinds] = np.append(SNRplans, SNRfa)
             
             # now, store characterization status: 1 for full spectrum, 
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])
             # initialize with full spectra
             characterized = char.astype(int)
-            # check for partial spectra
             WAchar = self.lastDetected[sInd,3][char]*u.arcsec
+            # find the current WAs of characterized planets
+            WAs = systemParams['WA']
+            if FA:
+                WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
+            # check for partial spectra
             IWA_max = mode['IWA']*(1 + mode['BW']/2.)
             OWA_min = mode['OWA']*(1 - mode['BW']/2.)
             char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
             characterized[char] = -1
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
-            self.fullSpectra[pInds][charplans == 1] += 1
-            self.partialSpectra[pInds][charplans == -1] += 1
+            self.fullSpectra[pInds[charplans == 1]] += 1
+            self.partialSpectra[pInds[charplans == -1]] += 1
         
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

@@ -292,10 +292,10 @@ class SurveySimulation(object):
                                     self.DRM[i]['star_ind']))
                 
                 # beginning of observation, start to populate DRM
-                DRM['OB#'] = TK.OBnumber + 1
-                DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
+                DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
+                DRM['OB_nb'] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, target #%s/%s with %s planet(s), ' \
@@ -330,13 +330,13 @@ class SurveySimulation(object):
                 DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                 DRM['char_fZ'] = char_fZ.to('1/arcsec2')
                 DRM['char_params'] = char_systemParams
-                # populate the DRM with FA results (if any)
-                if FA == True:
-                    DRM['FA_char_status'] = characterized[-1]
-                    DRM['FA_SNR'] = char_SNR[-1]
-                    DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
-                    DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
-                    DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+                # populate the DRM with FA results
+                DRM['FA_status'] = int(FA)
+                DRM['FA_char_status'] = characterized[-1] if FA else 0
+                DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
+                DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
                 
                 # populate the DRM with observation modes
                 DRM['det_mode'] = dict(det_mode)

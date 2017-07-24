@@ -3,6 +3,7 @@ import tempfile
 from EXOSIMS.util.get_module import get_module
 import random as py_random
 import numpy as np
+import astropy.units as u
 import copy, re, inspect, subprocess
 
 class MissionSim(object):
@@ -221,7 +222,7 @@ class MissionSim(object):
         and optionally write out to JSON file on disk.
         
         Args:
-           tofile (string):
+            tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Default to None.
                 
@@ -235,3 +236,44 @@ class MissionSim(object):
         out = self.SurveySimulation.genOutSpec(tofile=tofile)
         
         return out
+
+    def DRM2array(self, key):
+        """Creates an array corresponding to one element of the DRM dictionary. 
+        
+        Args:
+            key (string):
+                Name of an element of the DRM dictionary
+                
+        Returns:
+            elem (ndarray / astropy Quantity array):
+                Array containing all the DRM values of the selected element
+        
+        """
+        
+        DRM = self.SurveySimulation.DRM
+        assert DRM != [], 'DRM is empty. Use MissionSim.run_sim() to start simulation.'
+        
+        # lists of relevant DRM elements
+        keysStar = ['star_ind', 'star_name', 'arrival_time', 'OB_nb', 
+                    'det_time', 'det_fZ', 'char_time', 'char_fZ']
+        keysPlans = ['plan_inds', 'det_status', 'det_SNR', 'char_status', 'char_SNR']
+        keysParams = ['det_fEZ', 'det_dMag', 'det_WA', 'det_d', 
+                      'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
+        keysFA = ['FA_status', 'FA_char_status', 'FA_char_SNR', 
+                  'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
+        
+        assert key in (keysStar + keysPlans + keysParams + keysFA), 'Wrong DRM keyword.'
+        
+        # extract arrays for each relevant keyword in the DRM
+        if key in keysParams:
+            if 'det' in key:
+                elem = np.array([DRM[x]['det_params'][key[4:]] for x in range(len(DRM))])
+            elif 'char' in key:
+                elem = np.array([DRM[x]['char_params'][key[5:]] for x in range(len(DRM))])
+        elif isinstance(DRM[0][key], u.Quantity):
+            elem = np.array([DRM[x][key].value for x in range(len(DRM))])*DRM[x][key].unit
+        else:
+            elem = np.array([DRM[x][key] for x in range(len(DRM))])
+            
+        return elem
+

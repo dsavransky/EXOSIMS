@@ -259,21 +259,81 @@ class MissionSim(object):
         keysPlans = ['plan_inds', 'det_status', 'det_SNR', 'char_status', 'char_SNR']
         keysParams = ['det_fEZ', 'det_dMag', 'det_WA', 'det_d', 
                       'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
-        keysFA = ['FA_status', 'FA_char_status', 'FA_char_SNR', 
+        keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR', 
                   'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
         
-        assert key in (keysStar + keysPlans + keysParams + keysFA), 'Wrong DRM keyword.'
+        assert key in (keysStar + keysPlans + keysParams + keysFA), \
+                "'%s' is not a relevant DRM keyword."
         
         # extract arrays for each relevant keyword in the DRM
         if key in keysParams:
-            if 'det' in key:
+            if 'det_' in key:
                 elem = np.array([DRM[x]['det_params'][key[4:]] for x in range(len(DRM))])
-            elif 'char' in key:
+            elif 'char_' in key:
                 elem = np.array([DRM[x]['char_params'][key[5:]] for x in range(len(DRM))])
         elif isinstance(DRM[0][key], u.Quantity):
-            elem = np.array([DRM[x][key].value for x in range(len(DRM))])*DRM[x][key].unit
+            elem = np.array([DRM[x][key].value for x in range(len(DRM))])*DRM[0][key].unit
         else:
             elem = np.array([DRM[x][key] for x in range(len(DRM))])
             
         return elem
 
+
+    def filter_status(self, key, status, obsMode=None):
+        """Finds the values of one DRM element, corresponding to a status value, 
+        for detection or characterization.
+        
+        Args:
+            key (string):
+                Name of an element of the DRM dictionary
+            status (integer):
+                Status value for detection or characterization
+            obsMode (string):
+                Observing mode type ('det' or 'char')
+                
+        Returns:
+            elemStat (ndarray / astropy Quantity array):
+                Array containing all the DRM values of the selected element,
+                and filtered by the value of the corresponding status array
+        
+        """
+        
+        # assign default observing mode type ('det' or 'char')
+        if obsMode is None: 
+            obsMode = 'char' if 'char_' in key else 'det'
+        assert obsMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
+        
+        # get DRM detection status array
+        det = self.DRM2array('FA_det_status') if 'FA_' in key \
+                else self.DRM2array('det_status')
+        # get DRM characterization status array
+        char = self.DRM2array('FA_char_status') if 'FA_' in key \
+                else self.DRM2array('char_status')
+        # get DRM key element array
+        elem = self.DRM2array(key)
+        
+        # reshape elem array, for keys with 1 value per observation
+        if elem[0].shape is ():
+            if isinstance(elem[0], u.Quantity):
+                elem = np.array([np.array([elem[x].value]*len(det[x]))*elem[0].unit \
+                         for x in range(len(elem))])
+            else:
+                elem = np.array([np.array([elem[x]]*len(det[x])) for x in range(len(elem))])
+        
+        # now, find the values of elem corresponding to the specified status value
+        if obsMode is 'det':
+            if isinstance(elem[0], u.Quantity):
+                elemStat = np.concatenate([elem[x][det[x] == status].value \
+                        for x in range(len(elem))])*elem[0].unit
+            else:
+                elemStat = np.concatenate([elem[x][det[x] == status] for x in range(len(elem))])
+        else: # if obsMode is 'char'
+            if isinstance(elem[0], u.Quantity):
+                elemDet = np.concatenate([elem[x][det[x] == 1].value \
+                        for x in range(len(elem))])*elem[0].unit
+            else:
+                elemDet = np.concatenate([elem[x][det[x] == 1] for x in range(len(elem))])
+            charDet = np.concatenate([char[x][det[x] == 1] for x in range(len(elem))])
+            elemStat = elemDet[charDet == status]
+        
+        return elemStat

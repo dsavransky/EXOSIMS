@@ -331,7 +331,7 @@ class SurveySimulation(object):
                 DRM['char_fZ'] = char_fZ.to('1/arcsec2')
                 DRM['char_params'] = char_systemParams
                 # populate the DRM with FA results
-                DRM['FA_status'] = int(FA)
+                DRM['FA_det_status'] = int(FA)
                 DRM['FA_char_status'] = characterized[-1] if FA else 0
                 DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
                 DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
@@ -984,7 +984,7 @@ class SurveySimulation(object):
                 Selected star integration time (for detection or characterization)
                 in units of day
             skMode (string):
-                Station keeping observing mode type
+                Station keeping observing mode type ('det' or 'char')
                 
         Returns:
             DRM (dicts):
@@ -995,6 +995,8 @@ class SurveySimulation(object):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        assert skMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
         
         # find disturbance forces on occulter
         dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)

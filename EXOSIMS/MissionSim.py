@@ -237,12 +237,14 @@ class MissionSim(object):
         
         return out
 
-    def DRM2array(self, key):
+    def DRM2array(self, key, DRM=None):
         """Creates an array corresponding to one element of the DRM dictionary. 
         
         Args:
             key (string):
                 Name of an element of the DRM dictionary
+            DRM (list of dicts):
+                Design Reference Mission, contains the results of a survey simulation
                 
         Returns:
             elem (ndarray / astropy Quantity array):
@@ -250,7 +252,9 @@ class MissionSim(object):
         
         """
         
-        DRM = self.SurveySimulation.DRM
+        # if the DRM was not specified, get it from the current SurveySimulation
+        if DRM is None:
+            DRM = self.SurveySimulation.DRM
         assert DRM != [], 'DRM is empty. Use MissionSim.run_sim() to start simulation.'
         
         # lists of relevant DRM elements
@@ -278,8 +282,7 @@ class MissionSim(object):
             
         return elem
 
-
-    def filter_status(self, key, status, obsMode=None):
+    def filter_status(self, key, status, DRM=None, obsMode=None):
         """Finds the values of one DRM element, corresponding to a status value, 
         for detection or characterization.
         
@@ -288,6 +291,8 @@ class MissionSim(object):
                 Name of an element of the DRM dictionary
             status (integer):
                 Status value for detection or characterization
+            DRM (list of dicts):
+                Design Reference Mission, contains the results of a survey simulation
             obsMode (string):
                 Observing mode type ('det' or 'char')
                 
@@ -298,19 +303,14 @@ class MissionSim(object):
         
         """
         
-        # assign default observing mode type ('det' or 'char')
-        if obsMode is None: 
-            obsMode = 'char' if 'char_' in key else 'det'
-        assert obsMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
-        
         # get DRM detection status array
-        det = self.DRM2array('FA_det_status') if 'FA_' in key \
-                else self.DRM2array('det_status')
+        det = self.DRM2array('FA_det_status', DRM=DRM) if 'FA_' in key \
+                else self.DRM2array('det_status', DRM=DRM)
         # get DRM characterization status array
-        char = self.DRM2array('FA_char_status') if 'FA_' in key \
-                else self.DRM2array('char_status')
+        char = self.DRM2array('FA_char_status', DRM=DRM) if 'FA_' in key \
+                else self.DRM2array('char_status', DRM=DRM)
         # get DRM key element array
-        elem = self.DRM2array(key)
+        elem = self.DRM2array(key, DRM=DRM)
         
         # reshape elem array, for keys with 1 value per observation
         if elem[0].shape is ():
@@ -319,6 +319,11 @@ class MissionSim(object):
                          for x in range(len(elem))])
             else:
                 elem = np.array([np.array([elem[x]]*len(det[x])) for x in range(len(elem))])
+        
+        # assign a default observing mode type ('det' or 'char')
+        if obsMode is None: 
+            obsMode = 'char' if 'char_' in key else 'det'
+        assert obsMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
         
         # now, find the values of elem corresponding to the specified status value
         if obsMode is 'det':

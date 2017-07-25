@@ -67,7 +67,7 @@ class SurveySimulation(object):
             exozodi brightness (in units of 1/arcsec2), delta magnitude, 
             and working angles (in units of arcsec)
         DRM (list of dicts):
-            The Design Reference Mission, contains the results of a survey simulation
+            Design Reference Mission, contains the results of a survey simulation
         ntFlux (integer):
             Observation time sampling, to determine the integration time interval
         charMargin (float):
@@ -383,8 +383,9 @@ class SurveySimulation(object):
                 Selected observing mode for detection
                 
         Returns:
-            DRM (array of dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
             sInd (integer):
                 Index of next target star. Defaults to None.
             intTime (astropy Quantity):
@@ -976,8 +977,9 @@ class SurveySimulation(object):
         the occulter related values in the DRM array.
         
         Args:
-            DRM (dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
             sInd (integer):
                 Integer index of the star of interest
             t_int (astropy Quantity):
@@ -987,8 +989,9 @@ class SurveySimulation(object):
                 Station keeping observing mode type ('det' or 'char')
                 
         Returns:
-            DRM (dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
         
         """
         

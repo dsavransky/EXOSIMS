@@ -47,8 +47,8 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
 
-    def __init__(self, missionStart=60634, missionLife=6, extendedLife=0, 
-            missionPortion=1/6., OBduration=np.inf, **specs):
+    def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
+            missionPortion=1, OBduration=np.inf, **specs):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife

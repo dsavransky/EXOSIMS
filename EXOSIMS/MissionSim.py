@@ -313,7 +313,7 @@ class MissionSim(object):
         elem = self.DRM2array(key, DRM=DRM)
         
         # reshape elem array, for keys with 1 value per observation
-        if elem[0].shape is ():
+        if elem[0].shape is () and 'FA_' not in key:
             if isinstance(elem[0], u.Quantity):
                 elem = np.array([np.array([elem[x].value]*len(det[x]))*elem[0].unit \
                          for x in range(len(elem))])

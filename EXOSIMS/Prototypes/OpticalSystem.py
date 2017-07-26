@@ -176,9 +176,10 @@ class OpticalSystem(object):
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, optics=0.5,
             intCutoff=50, Ndark=10, scienceInstruments=None, QE=0.9, FoV=10,
-            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, texp=100,
-            ENF=1, PCeff=0.8, radDos=0.0, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=1e-2, core_contrast=1e-9, core_platescale=None, PSF=np.ones((3,3)),
+            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
+            texp=100, ENF=1, PCeff=0.8, radDos=0, Rs=50, lenslSamp=2, 
+            starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
+            core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
             OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, **specs):
         
@@ -332,15 +333,9 @@ class OpticalSystem(object):
                 assert np.any(syst['PSF']), "PSF must be != 0"
                 syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
             
-            # default IWA/OWA if not specified or calculated
-            if not(syst.get('IWA')):
-                syst['IWA'] = IWA if IWA else 0.
-            if not(syst.get('OWA')):
-                syst['OWA'] = OWA if OWA else np.Inf
-            
             # loading system specifications
-            syst['IWA'] = float(syst.get('IWA'))*u.arcsec           # inner WA
-            syst['OWA'] = float(syst.get('OWA'))*u.arcsec           # outer WA
+            syst['IWA'] = syst.get('IWA', 0. if IWA is None else IWA)*u.arcsec    # inner WA
+            syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
             syst['samp'] = float(syst.get('samp', samp))*u.arcsec   # PSF sampling
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
@@ -397,7 +392,7 @@ class OpticalSystem(object):
             if mode['lam'] != mode['syst']['lam']:
                 mode['IWA'] = mode['IWA']*mode['lam']/mode['syst']['lam']
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
-            # radiation dosage,  goes from 0 (beginning of mission) to 1 (end of mission)
+            # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
             mode['radDos'] = float(mode.get('radDos', radDos))
         
         # check for only one detection mode

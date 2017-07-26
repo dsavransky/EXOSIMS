@@ -162,7 +162,6 @@ class SimulatedUniverse(object):
         # at 5 AU for characterization. 
         # Also generates at least one Jupiter if no planet was generated.
         if TL.Name[0] == 'Prototype' or self.nPlans == 0:
-            print plan2star
             self.plan2star = np.array([0], dtype=int)
             self.sInds = np.unique(self.plan2star)
             self.nPlans = len(self.plan2star)

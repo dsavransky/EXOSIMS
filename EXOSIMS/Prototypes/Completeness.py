@@ -78,8 +78,8 @@ class Completeness(object):
                 Indices of stars to update
             visits (integer array):
                 Number of visits for each star
-            dt (astropy Quantity):
-                Time since initial completeness
+            dt (astropy Quantity array):
+                Time since previous observation
         
         Returns:
             comp0 (float ndarray):

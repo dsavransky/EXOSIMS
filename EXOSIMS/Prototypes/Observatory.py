@@ -354,7 +354,7 @@ class Observatory(object):
                 "If multiple times and targets, currentTime and sInds sizes must match"
         
         # build "keepout good" array, check if all elements are Boolean
-        kogood = np.ones(nStars, dtype=bool)
+        kogood = np.ones(np.maximum(nStars, nTimes), dtype=bool)
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), "An element of kogood is not Boolean"
         
@@ -688,7 +688,6 @@ class Observatory(object):
         # sun -> earth position vector
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
-        # r_targ = TL.starprop_equat(sInd, currentTime)[0] - r_obs
         r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
         u_targ = r_targ.value/np.linalg.norm(r_targ)
         # sun -> occulter vector

@@ -45,7 +45,7 @@ class GalaxiesFaintStars(BackgroundSources):
         mag = np.array(intDepths, ndmin=1)
         dN = super(GalaxiesFaintStars, self).dNbackground(coords, mag)
         # make sure mag is within [15,25]
-        mag = np.clip(mag,15.,25.)
+        mag = np.clip(mag, 15., 25.)
         
         #retrieve the galactic latitude in degrees from input coords
         lat = abs(coords.galactic.b.degree)
@@ -56,19 +56,19 @@ class GalaxiesFaintStars(BackgroundSources):
         path = os.path.split(inspect.getfile(self.__class__))[0]
         table = np.loadtxt(os.path.join(path, 'stellar_cnts.txt'))
         # create data point coordinates
-        lat_pts = np.array([0.,5,10,20,30,60,90]) # deg
-        mag_pts = np.array([15.,16,17,18,19,20,21,22,23,24,25])
+        lat_pts = np.array([0., 5, 10, 20, 30, 60, 90]) # deg
+        mag_pts = np.array([15., 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
         y_pts, x_pts = np.meshgrid(mag_pts, lat_pts)
         points = np.array(zip(np.concatenate(x_pts), np.concatenate(y_pts)))
         # create data values
         values = table.reshape(table.size)
         # interpolates 2D
         C_st = griddata(points,values,zip(lat,mag)) # log values
-        C_st = 10**C_st / 3600
+        C_st = 10**C_st/3600
         
         # Galaxy count per square arcmin, from Windhorst et al 2011 
         # who derived numbers based on Deep Field HST data
-        C_gal = 2 * 2.1**(mag - 12.5) / 3600
+        C_gal = 2*2.1**(mag - 12.5)/3600
         
         # total counts
         dN = C_st + C_gal

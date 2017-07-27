@@ -64,6 +64,16 @@ def run_e2e_tests():
             print "\n\n\n"
             results.append("FAIL - Execution")
             continue
+
+        try:
+            sim.reset_sim()
+        except:
+            print "Reset failed."
+            print sys.exc_info()[0]
+            print "\n\n\n"
+            results.append("FAIL - Reset")
+            continue
+
         
         results.append("PASS")
         print "\n\n\n"

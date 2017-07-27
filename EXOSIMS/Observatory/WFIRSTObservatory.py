@@ -87,6 +87,11 @@ class WFIRSTObservatory(Observatory):
         
         """
         
+        # if multiple time values, check they are different otherwise reduce to scalar
+        if currentTime.size > 1:
+            if np.all(currentTime == currentTime[0]):
+                currentTime = currentTime[0]
+        
         # check size of arrays
         sInds = np.array(sInds, ndmin=1)
         nStars = sInds.size

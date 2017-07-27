@@ -56,7 +56,7 @@ class KnownRVPlanetsTargetList(TargetList):
         # filter out redundant targets
         tmp = tmp[np.unique(tmp['pl_hostname'].data, return_index=True)[1]]
         
-        # filter missing Vmag and BV , for OS.calc_maxintTime
+        # filter missing Vmag and BV, for integration time calculation
         tmp = tmp[~tmp['st_vj'].mask]
         tmp = tmp[~tmp['st_bmvj'].mask]
         
@@ -86,7 +86,7 @@ class KnownRVPlanetsTargetList(TargetList):
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
-        self.tint0 = OS.calc_maxintTime(self)
+        self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

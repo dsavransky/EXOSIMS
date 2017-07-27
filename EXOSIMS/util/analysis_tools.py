@@ -2,7 +2,15 @@ import EXOSIMS,EXOSIMS.MissionSim
 import os.path,json
 from scipy.stats import norm
 from matplotlib.pyplot import *
+import pickle
 
+def save_obj(obj, name):
+    with open(name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name):
+    with open(name + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
 def genOutSpec_ensemble(scriptfile, savefolder, nb_run_sim=1, **specs):
     """ Run an ensemble of simulations, and store results in save folder. 
@@ -55,6 +63,42 @@ def obs_ensemble(savefolder):
            det.append(len([x for x in DRM[i]['det_status'] if x == det_status]))
     
     return obs
+
+
+def det_ensemble2(obj, status=None):
+    """ Load the detection results stored in save folder and build lists of ensemble results.
+    
+    Args:
+        savefolder (boolean):
+            Path to save folder
+        status (integer)
+            Seleted detection status:
+            1:detection, 0:missed detection, -1:outside IWA, -2:outside OWA
+    
+    Returns:
+        det (list):
+            List of detection results, depending on the detection status
+    
+    """
+    
+    det = []
+    for i in range(len(obj)):
+        DRM = obj[i]
+        nobs = len(DRM)
+        ndet = 0
+        plan_inds = np.array([],dtype=int)
+        for i in xrange(nobs):
+            det_status = DRM[i]['det_status']
+            if status is None: # unique detections
+                mask = [j for j,k in enumerate([x==1 for x in det_status]) if k == True]
+                plan_inds = np.append(plan_inds, np.array(DRM[i]['plan_inds'])[mask])
+                ndet = np.unique(plan_inds).size
+            else:
+                ndet += sum([int(x==status) for x in det_status])
+        det.append(ndet)
+    
+    return det
+
 
 
 def det_ensemble(savefolder, status=None):

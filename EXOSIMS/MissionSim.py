@@ -3,6 +3,7 @@ import tempfile
 from EXOSIMS.util.get_module import get_module
 import random as py_random
 import numpy as np
+import astropy.units as u
 import copy, re, inspect, subprocess
 
 class MissionSim(object):
@@ -87,6 +88,8 @@ class MissionSim(object):
         
         # set up numpy random number seed at top
         self.seed = specs.get('seed', py_random.randint(1, 1e9))
+        np.random.seed(self.seed)
+        # add seed to specs
         specs['seed'] = self.seed
         print 'MissionSim seed is: ', self.seed
         
@@ -221,7 +224,7 @@ class MissionSim(object):
         and optionally write out to JSON file on disk.
         
         Args:
-           tofile (string):
+            tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Default to None.
                 
@@ -235,3 +238,109 @@ class MissionSim(object):
         out = self.SurveySimulation.genOutSpec(tofile=tofile)
         
         return out
+
+    def DRM2array(self, key, DRM=None):
+        """Creates an array corresponding to one element of the DRM dictionary. 
+        
+        Args:
+            key (string):
+                Name of an element of the DRM dictionary
+            DRM (list of dicts):
+                Design Reference Mission, contains the results of a survey simulation
+                
+        Returns:
+            elem (ndarray / astropy Quantity array):
+                Array containing all the DRM values of the selected element
+        
+        """
+        
+        # if the DRM was not specified, get it from the current SurveySimulation
+        if DRM is None:
+            DRM = self.SurveySimulation.DRM
+        assert DRM != [], 'DRM is empty. Use MissionSim.run_sim() to start simulation.'
+        
+        # lists of relevant DRM elements
+        keysStar = ['star_ind', 'star_name', 'arrival_time', 'OB_nb', 
+                    'det_time', 'det_fZ', 'char_time', 'char_fZ']
+        keysPlans = ['plan_inds', 'det_status', 'det_SNR', 'char_status', 'char_SNR']
+        keysParams = ['det_fEZ', 'det_dMag', 'det_WA', 'det_d', 
+                      'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
+        keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR', 
+                  'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
+        
+        assert key in (keysStar + keysPlans + keysParams + keysFA), \
+                "'%s' is not a relevant DRM keyword."
+        
+        # extract arrays for each relevant keyword in the DRM
+        if key in keysParams:
+            if 'det_' in key:
+                elem = np.array([DRM[x]['det_params'][key[4:]] for x in range(len(DRM))])
+            elif 'char_' in key:
+                elem = np.array([DRM[x]['char_params'][key[5:]] for x in range(len(DRM))])
+        elif isinstance(DRM[0][key], u.Quantity):
+            elem = np.array([DRM[x][key].value for x in range(len(DRM))])*DRM[0][key].unit
+        else:
+            elem = np.array([DRM[x][key] for x in range(len(DRM))])
+            
+        return elem
+
+    def filter_status(self, key, status, DRM=None, obsMode=None):
+        """Finds the values of one DRM element, corresponding to a status value, 
+        for detection or characterization.
+        
+        Args:
+            key (string):
+                Name of an element of the DRM dictionary
+            status (integer):
+                Status value for detection or characterization
+            DRM (list of dicts):
+                Design Reference Mission, contains the results of a survey simulation
+            obsMode (string):
+                Observing mode type ('det' or 'char')
+                
+        Returns:
+            elemStat (ndarray / astropy Quantity array):
+                Array containing all the DRM values of the selected element,
+                and filtered by the value of the corresponding status array
+        
+        """
+        
+        # get DRM detection status array
+        det = self.DRM2array('FA_det_status', DRM=DRM) if 'FA_' in key \
+                else self.DRM2array('det_status', DRM=DRM)
+        # get DRM characterization status array
+        char = self.DRM2array('FA_char_status', DRM=DRM) if 'FA_' in key \
+                else self.DRM2array('char_status', DRM=DRM)
+        # get DRM key element array
+        elem = self.DRM2array(key, DRM=DRM)
+        
+        # reshape elem array, for keys with 1 value per observation
+        if elem[0].shape is () and 'FA_' not in key:
+            if isinstance(elem[0], u.Quantity):
+                elem = np.array([np.array([elem[x].value]*len(det[x]))*elem[0].unit \
+                         for x in range(len(elem))])
+            else:
+                elem = np.array([np.array([elem[x]]*len(det[x])) for x in range(len(elem))])
+        
+        # assign a default observing mode type ('det' or 'char')
+        if obsMode is None: 
+            obsMode = 'char' if 'char_' in key else 'det'
+        assert obsMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
+        
+        # now, find the values of elem corresponding to the specified status value
+        if obsMode is 'det':
+            if isinstance(elem[0], u.Quantity):
+                elemStat = np.concatenate([elem[x][det[x] == status].value \
+                        for x in range(len(elem))])*elem[0].unit
+            else:
+                elemStat = np.concatenate([elem[x][det[x] == status] for x in range(len(elem))])
+        else: # if obsMode is 'char'
+            if isinstance(elem[0], u.Quantity):
+                elemDet = np.concatenate([elem[x][det[x] == 1].value \
+                        for x in range(len(elem))])*elem[0].unit
+            else:
+                elemDet = np.concatenate([elem[x][det[x] == 1] for x in range(len(elem))])
+            charDet = np.concatenate([char[x][det[x] == 1] for x in range(len(elem))])
+            elemStat = elemDet[charDet == status]
+        
+        return elemStat

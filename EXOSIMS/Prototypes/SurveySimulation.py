@@ -67,7 +67,7 @@ class SurveySimulation(object):
             exozodi brightness (in units of 1/arcsec2), delta magnitude, 
             and working angles (in units of arcsec)
         DRM (list of dicts):
-            The Design Reference Mission, contains the results of a survey simulation
+            Design Reference Mission, contains the results of a survey simulation
         ntFlux (integer):
             Observation time sampling, to determine the integration time interval
         charMargin (float):
@@ -292,10 +292,10 @@ class SurveySimulation(object):
                                     self.DRM[i]['star_ind']))
                 
                 # beginning of observation, start to populate DRM
-                DRM['OB#'] = TK.OBnumber + 1
-                DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
+                DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
+                DRM['OB_nb'] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, target #%s/%s with %s planet(s), ' \
@@ -330,13 +330,13 @@ class SurveySimulation(object):
                 DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                 DRM['char_fZ'] = char_fZ.to('1/arcsec2')
                 DRM['char_params'] = char_systemParams
-                # populate the DRM with FA results (if any)
-                if FA == True:
-                    DRM['FA_char_status'] = characterized[-1]
-                    DRM['FA_SNR'] = char_SNR[-1]
-                    DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
-                    DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
-                    DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+                # populate the DRM with FA results
+                DRM['FA_det_status'] = int(FA)
+                DRM['FA_char_status'] = characterized[-1] if FA else 0
+                DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
+                DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
                 
                 # populate the DRM with observation modes
                 DRM['det_mode'] = dict(det_mode)
@@ -383,8 +383,9 @@ class SurveySimulation(object):
                 Selected observing mode for detection
                 
         Returns:
-            DRM (array of dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
             sInd (integer):
                 Index of next target star. Defaults to None.
             intTime (astropy Quantity):
@@ -976,25 +977,29 @@ class SurveySimulation(object):
         the occulter related values in the DRM array.
         
         Args:
-            DRM (dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
             sInd (integer):
                 Integer index of the star of interest
             t_int (astropy Quantity):
                 Selected star integration time (for detection or characterization)
                 in units of day
             skMode (string):
-                Station keeping observing mode type
+                Station keeping observing mode type ('det' or 'char')
                 
         Returns:
-            DRM (dicts):
-                Contains the results of survey simulation
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
         
         """
         
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        assert skMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
         
         # find disturbance forces on occulter
         dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)

@@ -19,18 +19,19 @@ class SurveyEnsemble(object):
         
         pass
 
-    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,\
+    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,
             rewindPlanets=True, kwargs={}):
         
         SS = sim.SurveySimulation
         t1 = time.time()
         res = []
         for j in range(nb_run_sim):
-            print '\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim))
-            ar = self.run_one(SS, genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
+            print '\nSurvey simulation number %s/%s'%(j + 1, int(nb_run_sim))
+            ar = self.run_one(SS, genNewPlanets=genNewPlanets, 
+                    rewindPlanets=rewindPlanets)
             res.append(ar)
         t2 = time.time()
-        print "%s survey simulations, completed in %d sec" %(int(nb_run_sim), t2-t1)
+        print "%s survey simulations, completed in %d sec"%(int(nb_run_sim), t2 - t1)
         
         return res
 

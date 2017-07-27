@@ -141,9 +141,6 @@ class SimulatedUniverse(object):
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))
-        # must generate at least one planet
-        if plan2star.size == 0:
-            plan2star = np.array([0])
         self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
@@ -159,6 +156,24 @@ class SimulatedUniverse(object):
         self.Rp = PPop.gen_radius(self.nPlans)              # radius
         self.Mp = PPop.gen_mass(self.nPlans)                # mass
         self.p = PPop.gen_albedo(self.nPlans)               # albedo
+        
+        # The prototype StarCatalog module is made of one single G star at 1pc. 
+        # In that case, the SimulatedUniverse prototype generates one Jupiter 
+        # at 5 AU for characterization. 
+        # Also generates at least one Jupiter if no planet was generated.
+        if TL.Name[0] == 'Prototype' or self.nPlans == 0:
+            self.plan2star = np.array([0], dtype=int)
+            self.sInds = np.unique(self.plan2star)
+            self.nPlans = len(self.plan2star)
+            self.a = np.array([5.])*u.AU
+            self.e = np.array([0.])
+            self.I = np.array([0.])*u.deg # face-on
+            self.O = np.array([0.])*u.deg
+            self.w = np.array([0.])*u.deg
+            self.M0 = np.array([0.])*u.deg
+            self.Rp = np.array([10.])*u.earthRad
+            self.Mp = np.array([300.])*u.earthMass
+            self.p = np.array([0.6])
 
     def init_systems(self):
         """Finds initial time-dependant parameters. Assigns each planet an 

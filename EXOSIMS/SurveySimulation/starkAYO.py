@@ -81,7 +81,7 @@ class starkAYO(SurveySimulation):
         self.starVisits = np.zeros(TL.nStars,dtype=int)
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
+        self.propagTimes = np.zeros(TL.nStars)*u.d
         self.starRevisit = np.array([])
         self.starExtended = np.array([])
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
@@ -108,7 +108,7 @@ class starkAYO(SurveySimulation):
         
         #while not TK.mission_is_over():
             # 0/ initialize arrays
-        slewTime = np.zeros(TL.nStars)*u.d#549
+        slewTimes = np.zeros(TL.nStars)*u.d#549
         fZs = np.zeros(TL.nStars)/u.arcsec**2#549
         t_dets = np.zeros(TL.nStars)*u.d
         tovisit = np.zeros(TL.nStars, dtype=bool)
@@ -116,7 +116,7 @@ class starkAYO(SurveySimulation):
 
         ##Removed 1 Occulter Slew Time
 
-        startTime = TK.currentTimeAbs + slewTime#549 create array of times the length of the number of stars (length of slew time)
+        startTime = TK.currentTimeAbs + slewTimes#549 create array of times the length of the number of stars (length of slew time)
             # 5/ Choose best target from remaining
             #Calculate Completeness
         self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)
@@ -129,7 +129,7 @@ class starkAYO(SurveySimulation):
         rmax = amax*(1+emax)
         SMH = self.SimulatedUniverse.Completeness#using this because I had to port over a lot of code. Equivalent to self.Completeness...
         beta = np.linspace(0.0,np.pi,1000)*u.rad
-        Phis = SMH.PlanetPhysicalModel.calc_Phi(beta).value
+        Phis = SMH.PlanetPhysicalModel.calc_Phi(beta)
         SMH.Phi = scipy.interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
         SMH.val = np.sin(SMH.bstar)**2*SMH.Phi(SMH.bstar)
         b1 = np.linspace(0.0, SMH.bstar, 25000)
@@ -256,8 +256,8 @@ class starkAYO(SurveySimulation):
         #Calculate myTint for an initial startimg position#########################
         #self.sInds_startSaved = sInds#Saves the sInds to begin the mission. This is used when dealing directly with starComps and myTint as it is the original list of star indicies
         #WA = OS.WALim
-        slewTime2 = np.zeros(sInds.shape[0])*u.d#initialize slewTime for each star
-        startTime2 = TK.currentTimeAbs + slewTime2#calculate slewTime
+        slewTimes2 = np.zeros(sInds.shape[0])*u.d#initialize slewTimes for each star
+        startTime2 = TK.currentTimeAbs + slewTimes2#calculate slewTimes
         #fZ = ZL.fZ(Obs, TL, sInds, startTime2, self.mode['lam'])#378
         #fEZ = ZL.fEZ0
         #Tint = np.zeros((sInds.shape[0],len(dmag)))#array of #stars by dmags(225)
@@ -322,8 +322,8 @@ class starkAYO(SurveySimulation):
             TK.obsStart = TK.currentTimeNorm.to('day')
             tovisit = np.zeros(TL.nStars, dtype=bool)
 
-            slewTime = np.zeros(TL.nStars)*u.d
-            startTime = TK.currentTimeAbs + slewTime
+            slewTimes = np.zeros(TL.nStars)*u.d
+            startTime = TK.currentTimeAbs + slewTimes
 
 
             ######################################################################################
@@ -353,10 +353,10 @@ class starkAYO(SurveySimulation):
                 #print('TACO')
                 # PERFORM DETECTION and populate revisit list attribute.
                 # First store fEZ, dMag, WA
-                if np.any(pInds):
+                if len(pInds) > 0:
                     DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['det_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
+                    DRM['det_WA'] = SU.WA[pInds].to('arcsec').value.tolist()
                 detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
                 # Update the occulter wet mass
                 if OS.haveOcculter == True:
@@ -368,10 +368,10 @@ class starkAYO(SurveySimulation):
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute.
                 # First store fEZ, dMag, WA, and characterization mode
-                if np.any(pInds):
+                if len(pInds) > 0:
                     DRM['char_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                     DRM['char_dMag'] = SU.dMag[pInds].tolist()
-                    DRM['char_WA'] = SU.WA[pInds].to('mas').value.tolist()
+                    DRM['char_WA'] = SU.WA[pInds].to('arcsec').value.tolist()
                 DRM['char_mode'] = dict(charMode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
@@ -397,7 +397,7 @@ class starkAYO(SurveySimulation):
                 # Calculate observation end time, and update target time
                 #print('tmp3')
                 #TK.obsEnd = TK.currentTimeNorm.to('day')
-                #self.starTimes[sInd] = TK.obsEnd
+                #self.propagTimes[sInd] = TK.obsEnd
                 #print('tmp4')
                 ## With prototype TimeKeeping, if no OB duration was specified, advance
                 ## to the next OB with timestep equivalent to time spent on one target
@@ -527,7 +527,7 @@ class starkAYO(SurveySimulation):
         
         sInds1 = sInds
         #Filter out previously visited stars#######################################
-        if np.any(sInds):
+        if len(sInds) > 0:
             tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
             if self.starRevisit.size != 0:
                 dt_max = 1.*u.week
@@ -716,7 +716,7 @@ class starkAYO(SurveySimulation):
         self.schedule = sInds
         return DRM, sInds, sInd, t_det
 
-    def choose_next_target(self,old_sInd,sInds,slewTime):
+    def choose_next_target(self, old_sInd, sInds, slewTimes):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -725,9 +725,11 @@ class starkAYO(SurveySimulation):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (float array):
+            slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-                
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
+        
         Returns:
             sInd (integer):
                 Index of next target star

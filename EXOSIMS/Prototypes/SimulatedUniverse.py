@@ -73,7 +73,7 @@ class SimulatedUniverse(object):
         dMag (float ndarray):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
-            Working angles of the planets of interest in units of mas
+            Working angles of the planets of interest in units of arcsec
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -100,6 +100,10 @@ class SimulatedUniverse(object):
         self.BackgroundSources = TL.BackgroundSources
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
+        
+        # list of possible planet attributes
+        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Rp', 'Mp', 'p',
+                'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
         
         # generate orbital elements, albedos, radii, and masses
         self.gen_physical_properties(**specs)
@@ -137,9 +141,6 @@ class SimulatedUniverse(object):
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))
-        # must generate at least one planet
-        if plan2star.size == 0:
-            plan2star = np.array([0])
         self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
@@ -155,6 +156,24 @@ class SimulatedUniverse(object):
         self.Rp = PPop.gen_radius(self.nPlans)              # radius
         self.Mp = PPop.gen_mass(self.nPlans)                # mass
         self.p = PPop.gen_albedo(self.nPlans)               # albedo
+        
+        # The prototype StarCatalog module is made of one single G star at 1pc. 
+        # In that case, the SimulatedUniverse prototype generates one Jupiter 
+        # at 5 AU for characterization. 
+        # Also generates at least one Jupiter if no planet was generated.
+        if TL.Name[0] == 'Prototype' or self.nPlans == 0:
+            self.plan2star = np.array([0], dtype=int)
+            self.sInds = np.unique(self.plan2star)
+            self.nPlans = len(self.plan2star)
+            self.a = np.array([5.])*u.AU
+            self.e = np.array([0.])
+            self.I = np.array([0.])*u.deg # face-on
+            self.O = np.array([0.])*u.deg
+            self.w = np.array([0.])*u.deg
+            self.M0 = np.array([0.])*u.deg
+            self.Rp = np.array([10.])*u.earthRad
+            self.Mp = np.array([300.])*u.earthMass
+            self.p = np.array([0.6])
 
     def init_systems(self):
         """Finds initial time-dependant parameters. Assigns each planet an 
@@ -199,10 +218,10 @@ class SimulatedUniverse(object):
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
         self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
         self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arcsin(self.s/self.d))         # planet phase
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
-        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('mas')# working angle
+        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
 
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
@@ -230,7 +249,7 @@ class SimulatedUniverse(object):
                 "Can only propagate one system at a time, sInd must be scalar."
         # check for planets around this target
         pInds = np.where(self.plan2star == sInd)[0]
-        if not np.any(pInds):
+        if len(pInds) == 0:
             return
         # check for positive time increment
         assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
@@ -253,10 +272,8 @@ class SimulatedUniverse(object):
         prop = planSys(x0, mu, epsmult=10.)
         try:
             prop.takeStep(dt.to('day').value)
-#            if sInd == 0: print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
         except ValueError:
             #try again with larger epsmult and two steps to force convergence 
-#            print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
             prop = planSys(x0, mu, epsmult=100.)
             try:
                 prop.takeStep(dt.to('day').value/2.)
@@ -275,123 +292,98 @@ class SimulatedUniverse(object):
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
         self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
+        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')
+        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
-#########
-
-    def propag_system1(self, sInd, dt):
-        """Propagates planet time-dependant parameters: position, velocity, 
-        planet-star distance, apparent separation, phase function, surface brightness 
-        of exo-zodiacal light, delta magnitude, working angle, and the planet 
-        current time array.
-        
-        This method uses the Kepler state transition matrix to propagate a 
-        planet's state (position and velocity vectors) forward in time using 
-        the Kepler state transition matrix.
+    def dump_systems(self):
+        """Create a dictionary of planetary properties for archiving use.
         
         Args:
-            sInd (integer):
-                Index of the target system of interest
-            dt (astropy Quantity):
-                Time increment in units of day, for planet position propagation
+            None
+        
+        Returns:
+            systems (dict)
         
         """
         
-        PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
-        TL = self.TargetList
+        systems = {'a':self.a,
+               'e':self.e,
+               'I':self.I,
+               'O':self.O,
+               'w':self.w,
+               'M0':self.M0,
+               'Mp':self.Mp,
+               'mu':(const.G*(self.Mp + self.TargetList.MsTrue[self.plan2star])).decompose(),
+               'Rp':self.Rp,
+               'p':self.p,
+               'plan2star':self.plan2star,
+               'star':self.TargetList.Name[self.plan2star]}
         
-        assert np.isscalar(sInd), \
-                "Can only propagate one system at a time, sInd must be scalar."
-        # check for planets around this target
-        pInds = np.where(self.plan2star == sInd)[0]
-        if not np.any(pInds):
-            return
-        # check for positive time increment
-        assert dt >= 0, "Time increment (dt) to propagate a planet must be positive."
-        if dt == 0:
-            return
-        
-        # Calculate initial positions in AU and velocities in AU/day
-        r0 = self.r[pInds].to('AU').value
-        v0 = self.v[pInds].to('AU/day').value
-        # stack dimensionless positions and velocities
-        nPlans = pInds.size
-        x0 = np.reshape(np.concatenate((r0, v0), axis=1), nPlans*6)
-        
-        # Calculate vector of gravitational parameter in AU3/day2
-        Ms = TL.MsTrue[[sInd]]
-        Mp = self.Mp[pInds]
-        mu = (const.G*(Mp + Ms)).to('AU3/day2').value
-        print 'sInd=%s,dt=%s,nPlans=%s'%(sInd, dt.to('day'), nPlans)
-#        print 'sInd=%s,dt=%s,x0=%s,mu=%s'%(sInd,dt.to('day'),x0,mu)
-        
-        rnorm = np.linalg.norm(r0, axis=1)
-        vnorm = np.linalg.norm(v0, axis=1)
-        a  = (2/rnorm - vnorm**2/mu)**(-1)
-        alpha = 1/a
-        R = r0
-        V = v0
-        DT  = dt.to('day').value
-        T   = np.sqrt(mu) * DT
-        n   = 0
-        xn  = 10
-        err = 1000
-        
-        while err > 1e-6:
-            axn = alpha*xn**2
-            [s,c] = self.SandC(axn)
-            
-            r0v0 = np.array([np.dot(r0[i,:], v0[i,:]) for i in range(nPlans)])
-            
-            Tn  = r0v0*xn**2*c/np.sqrt(mu)  + (1 - rnorm*alpha)*xn**3*s + rnorm*xn
-            dTn = r0v0*(xn - alpha*xn**3*s)/np.sqrt(mu) + (1 - rnorm*alpha)*xn**2*c + rnorm
-            
-            xN  = xn - (Tn - T)/dTn
-            err = max(abs(xN - xn))
-            xn  = xN
-            
-            n += 1
-        
-        X1 = xn
-        [S,C] = self.SandC(alpha*X1**2)
-        R1 = ((1 - X1**2*C/rnorm)*R.T   +   (DT - X1**3*S/np.sqrt(mu))*V.T).T*u.AU
-        r1norm = np.linalg.norm(R1, axis=1)
-        V1 = (np.sqrt(mu)*(alpha*X1**3*S - X1)/(rnorm*r1norm)*R.T + (1 - X1**2*C/r1norm)*V.T).T*u.AU/u.day
-        
-        self.r[pInds] = R1
-        self.v[pInds] = V1
-        self.d[pInds] = np.linalg.norm(self.r[pInds],axis=1)*self.r.unit
-        self.s[pInds] = np.linalg.norm(self.r[pInds,0:2],axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arcsin(self.s[pInds]/self.d[pInds]))
-        self.fEZ[pInds] = ZL.fEZ(TL, sInd, self.I[pInds],self.d[pInds])
-        self.dMag[pInds] = deltaMag(self.p[pInds],self.Rp[pInds],self.d[pInds],self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('mas')
+        return systems
 
-    def SandC(self, X):
+    def dump_system_params(self, sInd=None):
+        """Create a dictionary of time-dependant planet properties for a specific target
         
-        S = np.zeros(X.size)
-        C = np.zeros(X.size)
+        Args:
+            sInd (integer):
+                Index of the target system of interest. Default value (None) will 
+                return an empty dictionary with the selected parameters and their units.
         
-        if np.any(X > 0):
-            x = X[X > 0]
-            S[X > 0] = (np.sqrt(x) - np.sin(np.sqrt(x)) ) / np.sqrt(x)**3
-            C[X > 0] = (1          - np.cos(np.sqrt(x)) ) / x
-    #        print 'Elliptical!'
+        Returns:
+            system_params (dict):
+                Dictionary of time-dependant planet properties
         
-        if np.any(X < 0):
-            x = X[X < 0]
-            S[X < 0] = (np.sinh(np.sqrt(-x)) - np.sqrt(-x) ) / np.sqrt(-x)**3
-            C[X < 0] = (np.cosh(np.sqrt(-x)) - 1 )           / (-x)
-    #        print 'Hyperbolic!'
+        """
         
-        if np.any(X == 0):
-            S[X == 0] = 1/6.
-            C[X == 0] = 1/2.
+        # get planet indices
+        if sInd == None:
+            pInds = np.array([], dtype=int)
+        else:
+            pInds = np.where(self.plan2star == sInd)[0]
         
-        return S, C
+        # build dictionary
+        system_params = {'d':self.d[pInds],
+                'phi':self.phi[pInds],
+                'fEZ':self.fEZ[pInds],
+                'dMag':self.dMag[pInds],
+                'WA':self.WA[pInds]}
+        
+        return system_params
 
+    def revise_planets_list(self, pInds):
+        """Replaces Simulated Universe planet attributes with filtered values, 
+        and updates the number of planets.
+        
+        Args:
+            pInds (ndarray):
+                1D numpy ndarray of indices to keep
+        
+        """
+       
+        if len(pInds) == 0:
+            raise IndexError("Planets list filtered to empty.")
+        
+        for att in self.planet_atts:
+            if getattr(self, att).size != 0:
+                setattr(self, att, getattr(self, att)[pInds])
+        self.nPlans = len(pInds)
+        assert self.nPlans, "Planets list is empty: nPlans = %r"%self.nPlans
+
+    def revise_stars_list(self, sInds):
+        """Revises the TargetList with filtered values, and updates the 
+        planets list accordingly. 
+        
+        Args:
+            sInds (ndarray):
+                1D numpy ndarray of indices to keep
+        
+        """
+        
+        self.TargetList.revise_lists(sInds)
+        pInds = np.sort(np.concatenate([np.where(self.plan2star == x)[0] for x in sInds]))
+        self.revise_planets_list(pInds)
+        for i,ind in enumerate(sInds):
+            self.plan2star[np.where(self.plan2star == ind)[0]] = i

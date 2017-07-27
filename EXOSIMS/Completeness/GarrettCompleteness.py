@@ -46,8 +46,8 @@ class GarrettCompleteness(BrownCompleteness):
         self.emax = float(self.PlanetPopulation.erange.max())
         self.pmin = float(self.PlanetPopulation.prange.min())
         self.pmax = float(self.PlanetPopulation.prange.max())
-        self.Rmin = float(self.PlanetPopulation.Rprange.min().to('km').value)
-        self.Rmax = float(self.PlanetPopulation.Rprange.max().to('km').value)
+        self.Rmin = float(self.PlanetPopulation.Rprange.min().to('earthRad').value)
+        self.Rmax = float(self.PlanetPopulation.Rprange.max().to('earthRad').value)
         if self.PlanetPopulation.constrainOrbits:
             self.rmin = self.amin
             self.rmax = self.amax
@@ -57,13 +57,13 @@ class GarrettCompleteness(BrownCompleteness):
         self.zmin = self.pmin*self.Rmin**2
         self.zmax = self.pmax*self.Rmax**2
         # conversion factor
-        self.x = float(u.km.to('AU'))
+        self.x = float(u.earthRad.to('AU'))
         # distributions needed
-        self.dist_sma = self.PlanetPopulation.adist
-        self.dist_eccen = self.PlanetPopulation.edist
-        self.dist_eccen_con = self.PlanetPopulation.edist_from_sma
-        self.dist_albedo = self.PlanetPopulation.pdist
-        self.dist_radius = self.PlanetPopulation.Rpdist
+        self.dist_sma = self.PlanetPopulation.dist_sma
+        self.dist_eccen = self.PlanetPopulation.dist_eccen
+        self.dist_eccen_con = self.PlanetPopulation.dist_eccen_from_sma
+        self.dist_albedo = self.PlanetPopulation.dist_albedo
+        self.dist_radius = self.PlanetPopulation.dist_radius
         # are any of a, e, p, Rp constant?
         self.aconst = self.amin == self.amax
         self.econst = self.emin == self.emax
@@ -71,16 +71,17 @@ class GarrettCompleteness(BrownCompleteness):
         self.Rconst = self.Rmin == self.Rmax
         # solve for bstar
         beta = np.linspace(0.0,np.pi,1000)*u.rad
-        Phis = self.PlanetPhysicalModel.calc_Phi(beta).value
+        Phis = self.PlanetPhysicalModel.calc_Phi(beta)
         # Interpolant for phase function which removes astropy Quantity
-        self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=1,ext=1)
+        self.Phi = interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
+        self.Phiinv = interpolate.InterpolatedUnivariateSpline(Phis[::-1],beta.value[::-1],k=3,ext=1)
         # get numerical derivative of phase function
         dPhis = np.zeros(beta.shape)
         db = beta[1].value - beta[0].value
         dPhis[0:1] = (-25.0*Phis[0:1]+48.0*Phis[1:2]-36.0*Phis[2:3]+16.0*Phis[3:4]-3.0*Phis[4:5])/(12.0*db)
         dPhis[-2:-1] = (25.0*Phis[-2:-1]-48.0*Phis[-3:-2]+36.0*Phis[-4:-3]-16.0*Phis[-5:-4]+3.0*Phis[-6:-5])/(12.0*db)
         dPhis[2:-2] = (Phis[0:-4]-8.0*Phis[1:-3]+8.0*Phis[3:-1]-Phis[4:])/(12.0*db)
-        self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=1,ext=1)
+        self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=3,ext=1)
         # solve for bstar        
         f = lambda b: 2.0*np.sin(b)*np.cos(b)*self.Phi(b) + np.sin(b)**2*self.dPhi(b)
         self.bstar = float(optimize.root(f,np.pi/3.0).x)
@@ -90,14 +91,24 @@ class GarrettCompleteness(BrownCompleteness):
         self.cdmin3 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2)
         self.cdmax = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2)
         self.val = np.sin(self.bstar)**2*self.Phi(self.bstar)
+        self.d1 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2)
+        self.d2 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmin)**2*self.Phi(self.bstar))
+        self.d3 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(self.bstar))
+        self.d4 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
+        self.d5 = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         # vectorize scalar methods
         self.rgrand2v = np.vectorize(self.rgrand2)
         self.f_dmagsv = np.vectorize(self.f_dmags)
+        self.f_sdmagv = np.vectorize(self.f_sdmag)
+        self.f_dmagv = np.vectorize(self.f_dmag)
+        self.f_sv = np.vectorize(self.f_s)
+        self.mindmagv = np.vectorize(self.mindmag)
+        self.maxdmagv = np.vectorize(self.maxdmag)
         # inverse functions for phase angle
-        b1 = np.linspace(0.0, self.bstar, 1000)
+        b1 = np.linspace(0.0, self.bstar, 20000)
         # b < bstar
         self.binv1 = interpolate.InterpolatedUnivariateSpline(np.sin(b1)**2*self.Phi(b1), b1, k=1, ext=1)
-        b2 = np.linspace(self.bstar, np.pi, 1000)
+        b2 = np.linspace(self.bstar, np.pi, 20000)
         b2val = np.sin(b2)**2*self.Phi(b2)
         # b > bstar
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
@@ -107,7 +118,8 @@ class GarrettCompleteness(BrownCompleteness):
         fr = np.zeros(r.shape)
         for i in xrange(len(r)):
             fr[i] = self.f_r(r[i])
-        self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=1, ext=1)
+        self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
+
         print 'Finished pdf of orbital radius'
         # get pdf of p*R**2
         print 'Generating pdf of albedo times planetary radius squared'
@@ -115,7 +127,8 @@ class GarrettCompleteness(BrownCompleteness):
         fz = np.zeros(z.shape)
         for i in xrange(len(z)):
             fz[i] = self.f_z(z[i])
-        self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=1, ext=1)
+        self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
+
         print 'Finished pdf of albedo times planetary radius squared'
                 
     def target_completeness(self, TL):
@@ -134,10 +147,11 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         # important PlanetPopulation attributes
-        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
+        atts = self.PlanetPopulation.__dict__.keys()
         extstr = ''
-        for att in atts:
-            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
+                extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         # include dMagLim
         extstr += '%s: ' % 'dMagLim' + str(getattr(TL.OpticalSystem, 'dMagLim')) + ' '
         ext = hashlib.md5(extstr).hexdigest()
@@ -149,24 +163,26 @@ class GarrettCompleteness(BrownCompleteness):
         dist_sv = np.vectorize(dist_s.integral)
         
         # calculate separations based on IWA
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist).to('AU').value
-        if np.isinf(TL.OpticalSystem.OWA):
+        OS = TL.OpticalSystem
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist).to('AU').value
+        if np.isinf(OWA):
             smax = self.rmax
         else:
-            smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist).to('AU').value
+            smax = (np.tan(OWA)*TL.dist).to('AU').value
 
         # calculate dMags based on limiting dMag
         dMagmax = TL.OpticalSystem.dMagLim
-        mindmag = np.vectorize(self.mindmag)
-        dMagmin = mindmag(smin)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagmin -= 2.5*np.log10(L)
             dMagmax -= 2.5*np.log10(L)
-        
-        comp0 = dist_sv(smin, smax)
+            comp0 = self.comp_s(smin, smax, dMagmax)
+        else:
+            comp0 = dist_sv(smin, smax)
 
         return comp0
         
@@ -202,13 +218,41 @@ class GarrettCompleteness(BrownCompleteness):
             fs = np.zeros(s.shape)
             for i in xrange(len(s)):
                 fs[i] = self.f_s(s[i],TL.OpticalSystem.dMagLim)
-            dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=1, ext=1)
+            dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             print 'Finished marginalization'
             H = {'dist_s': dist_s}
             pickle.dump(H, open(Cpath, 'wb'))
             print 'Completeness data stored in %s' % Cpath
             
         return dist_s
+    
+    def comp_s(self, smin, smax, dMag):
+        """Calculates completeness by first integrating over dMag and then
+        projected separation.
+        
+        Args:
+            smin (ndarray):
+                Values of minimum projected separation (AU) from instrument
+            smax (ndarray):
+                Value of maximum projected separation (AU) from instrument
+            dMag (ndarray):
+                dMaglim from instrument
+        
+        Returns:
+            comp (ndarray):
+                Completeness values
+        
+        """
+        # cast to arrays
+        smin = np.array(smin, ndmin=1)
+        smax = np.array(smax, ndmin=1)
+        dMag = np.array(dMag, ndmin=1)
+        
+        comp = np.zeros(smin.shape)
+        for i in xrange(len(smin)):
+            comp[i] = integrate.fixed_quad(self.f_sv, smin[i], smax[i], args=(dMag[i],), n=50)[0]
+        
+        return comp
             
     @memoize    
     def f_s(self, s, dmaglim):
@@ -237,7 +281,7 @@ class GarrettCompleteness(BrownCompleteness):
             if d1 > d2:
                 f = 0.0
             else:
-                f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=31)[0]
+                f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=50)[0]
         
         return f
     
@@ -258,7 +302,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)):
+        if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)) or (s == 0.0):
             f = 0.0
         else:
             ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
@@ -330,9 +374,9 @@ class GarrettCompleteness(BrownCompleteness):
         """
         if s == 0.0:
             mindmag = self.cdmin1
-        elif s <= self.rmin*np.sin(self.bstar):
+        elif s < self.rmin*np.sin(self.bstar):
             mindmag = self.cdmin1-2.5*np.log10(self.Phi(np.arcsin(s/self.rmin)))
-        elif s <= self.rmax*np.sin(self.bstar):
+        elif s < self.rmax*np.sin(self.bstar):
             mindmag = self.cdmin2+5.0*np.log10(s)
         elif s <= self.rmax:
             mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.arcsin(s/self.rmax)))
@@ -345,16 +389,21 @@ class GarrettCompleteness(BrownCompleteness):
         """Calculates the maximum value of dMag for projected separation
         
         Args:
-            s (ndarray):
-                Projected separations (AU)
+            s (float):
+                Projected separation (AU)
         
         Returns:
-            maxdmag (ndarray):
+            maxdmag (float):
                 Maximum value of dMag
         
         """
         
-        maxdmag = self.cdmax-2.5*np.log10(self.Phi(np.pi - np.arcsin(s/self.rmax)))
+        if s == 0.0:
+            maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi))
+        elif s < self.rmax:
+            maxdmag = self.cdmax - 2.5*np.log10(np.abs(self.Phi(np.pi-np.arcsin(s/self.rmax))))
+        else:
+            maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi/2.0))
 
         return maxdmag
 
@@ -431,9 +480,9 @@ class GarrettCompleteness(BrownCompleteness):
                 if emin1 > elim:
                     f = 0.0
                 else:
-                    f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1,emin1,elim, args=(a,r), n=50)[0]
+                    f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1,emin1,elim, args=(a,r), n=60)[0]
             else:
-                f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=50)[0]
+                f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=60)[0]
 
         return f
         
@@ -522,7 +571,7 @@ class GarrettCompleteness(BrownCompleteness):
                             low = self.emin
                         else:
                             low = etest2
-                    f = integrate.fixed_quad(self.rgrandac, low, self.emax, args=(self.amin,r), n=40)[0]
+                    f = integrate.fixed_quad(self.rgrandac, low, self.emax, args=(self.amin,r), n=60)[0]
             elif self.econst:
                 if self.emin == 0.0:
                     f = self.dist_sma(r)
@@ -537,7 +586,7 @@ class GarrettCompleteness(BrownCompleteness):
                         low = atest2
                     else:
                         low = self.amin
-                    f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=40)[0]
+                    f = integrate.fixed_quad(self.rgrandec, low, high, args=(self.emin,r), n=60)[0]
             else:
                 if self.PlanetPopulation.constrainOrbits:
                     a1 = 0.5*(self.amin+r)
@@ -549,7 +598,7 @@ class GarrettCompleteness(BrownCompleteness):
                         a1 = self.amin
                     if a2 > self.amax:
                         a2 = self.amax
-                f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=40)[0]
+                f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=60)[0]
     
         return f
         
@@ -570,6 +619,26 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         f = 1.0/(2.0*np.sqrt(z*p))*self.dist_radius(np.sqrt(z/p))*self.dist_albedo(p)
+        
+        return f
+    
+    def Rgrand(self, R, z):
+        """Calculates integrand for determining probability density of albedo
+        times planetary radius squared
+        
+        Args:
+            R (ndarray):
+                Values of planetary radius
+            z (float):
+                Value of albedo times planetary radius squared
+        
+        Returns:
+            f (ndarray):
+                Values of integrand
+        
+        """
+        
+        f = self.dist_albedo(z/R**2)*self.dist_radius(R)/R**2
         
         return f
   
@@ -598,12 +667,218 @@ class GarrettCompleteness(BrownCompleteness):
             elif self.Rconst:
                 f = 1.0/self.Rmin**2*self.dist_albedo(z/self.Rmin**2)
             else:
-                p1 = z/self.Rmax**2
-                p2 = z/self.Rmin**2
-                if p1 < self.pmin:
-                    p1 = self.pmin
-                if p2 > self.pmax:
-                    p2 = self.pmax
-                f = integrate.fixed_quad(self.pgrand,p1,p2,args=(z,),n=200)[0]
+                R1 = np.sqrt(z/self.pmax)
+                R2 = np.sqrt(z/self.pmin)
+                if R1 < self.Rmin:
+                    R1 = self.Rmin
+                if R2 > self.Rmax:
+                    R2 = self.Rmax
+                if R1 > R2:
+                    f = 0.0
+                else:
+                    f = integrate.fixed_quad(self.Rgrand,R1,R2,args=(z,),n=61)[0]
+                
                 
         return f
+    
+    def s_bound(self, dmag, smax):
+        """Calculates the bounding value of projected separation for dMag
+        
+        Args:
+            dmag (float):
+                dMag value
+            smax (float):
+                maximum projected separation (AU)
+        
+        Returns:
+            sb (float):
+                boundary value of projected separation (AU)
+        """
+        
+        if dmag < self.d1:
+            s = 0.0
+        elif (dmag > self.d1) and (dmag <= self.d2):
+            s = self.rmin*np.sin(self.Phiinv(self.rmin**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
+        elif (dmag > self.d2) and (dmag <= self.d3):
+            s = np.sin(self.bstar)*np.sqrt(self.pmax*(self.Rmax*self.x)**2*self.Phi(self.bstar)/10.0**(-0.4*dmag))
+        elif (dmag > self.d3) and (dmag <= self.d4):
+            s = self.rmax*np.sin(self.Phiinv(self.rmax**2*10.0**(-0.4*dmag)/(self.pmax*(self.Rmax*self.x)**2)))
+        elif (dmag > self.d4) and (dmag <= self.d5):
+            s = smax
+        else:
+            s = self.rmax*np.sin(np.pi - self.Phiinv(10.0**(-0.4*dmag)*self.rmax**2/(self.pmin*(self.Rmin*self.x)**2)))
+    
+        return s
+    
+    def f_sdmag(self, s, dmag):
+        """Calculates the joint probability density of projected separation and
+        dMag by flipping the order of f_dmags
+        
+        Args:
+            s (float):
+                Value of projected separation (AU)
+            dmag (float):
+                Value of dMag
+        
+        Returns:
+            f (float):
+                Value of joint probability density
+        
+        """
+        return self.f_dmags(dmag, s)
+    
+    @memoize
+    def f_dmag(self, dmag, smin, smax):
+        """Calculates probability density of dMag by integrating over projected
+        separation
+        
+        Args:
+            dmag (float):
+                Value of dMag
+            smin (float):
+                Value of minimum projected separation (AU) from instrument
+            smax (float):
+                Value of maximum projected separation (AU) from instrument
+        
+        Returns:
+            f (float):
+                Value of probability density
+        
+        """
+        if dmag < self.mindmag(smin):
+            f = 0.0
+        else:
+            su = self.s_bound(dmag, smax)
+            if su > smax:
+                su = smax
+            if su < smin:
+                f = 0.0
+            else:
+                f = integrate.fixed_quad(self.f_sdmagv, smin, su, args=(dmag,), n=50)[0]
+        
+        return f
+    
+    def comp_dmag(self, smin, smax, dmaglim):
+        """Calculates completeness by first integrating over projected 
+        separation and then dMag.
+        
+        Args:
+            smin (ndarray):
+                Values of minimum projected separation (AU) from instrument
+            smax (ndarray):
+                Value of maximum projected separation (AU) from instrument
+            dmaglim (ndarray):
+                dMaglim from instrument
+        
+        Returns:
+            comp (ndarray):
+                Completeness values
+        
+        """
+        # cast to arrays
+        smin = np.array(smin, ndmin=1)
+        smax = np.array(smax, ndmin=1)
+        dmaglim = np.array(dmaglim, ndmin=1)
+        dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+                (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
+        dmaglim[dmaglim>dmax] = dmax
+        
+        comp = np.zeros(smin.shape)
+        for i in xrange(len(smin)):
+            d1 = self.mindmag(smin[i])
+            if d1 > dmaglim[i]:
+                comp[i] = 0.0
+            else:
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=50)[0]
+        
+        return comp
+    
+    def comp_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates completeness for integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            comp (array):
+                Completeness values
+        
+        """
+        
+        # cast inputs to arrays and check
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
+        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        comp = self.comp_dmag(smin, smax, dMag)
+        
+        return comp
+        
+    def dcomp_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates derivative of completeness with respect to integration time
+        
+        Args:
+            t_int (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            dcomp (array):
+                Derivative of completeness with respect to integration time
+        
+        """
+        
+        # cast inputs to arrays and check
+        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
+        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        fdmag = np.zeros(t_int.shape)
+        for i in xrange(len(t_int)):
+            fdmag[i] = self.f_dmagv(dMag[i], smin[i], smax[i])
+        ddMag = TL.OpticalSystem.ddMag_dt(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(fdmag),))
+        dcomp = fdmag*ddMag
+        
+        return dcomp

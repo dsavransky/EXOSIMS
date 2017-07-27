@@ -50,9 +50,6 @@ class KasdinBraems(OpticalSystem):
         
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
-        # for characterization, Cb must include the planet
-        if mode['detectionMode'] == False:
-            C_b = C_b + C_p*mode['inst']['ENF']**2
         
         # Kasdin06+ method
         inst = mode['inst']                         # scienceInstrument

@@ -42,7 +42,8 @@ class TargetList(object):
         Completeness (Completeness module):
             Completeness class object
         tint0 (astropy Quantity array):
-            Maximum integration time for each target star in units of day
+            Minimum integration time values at the limiting planet flux ratio 
+            for each target star in units of day
         comp0 (ndarray):
             Completeness value for each target star
         minComp (float): 
@@ -230,7 +231,7 @@ class TargetList(object):
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
-        self.tint0 = OS.calc_maxintTime(self)
+        self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -259,7 +260,7 @@ class TargetList(object):
         self.outside_IWA_filter()
         # filter out systems where maximum delta mag is not in allowable orbital range
         self.max_dmag_filter()
-        # filter out systems where integration time is longer than maximum time
+        # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
@@ -391,7 +392,7 @@ class TargetList(object):
         self.revise_lists(i)
 
     def int_cutoff_filter(self):
-        """Includes stars if calculated integration time is less than cutoff
+        """Includes stars if calculated minimum integration time is less than cutoff
         
         """
         

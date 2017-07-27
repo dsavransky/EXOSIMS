@@ -1,6 +1,5 @@
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 
 class PlanetPhysicalModel(object):
     """Planet Physical Model class template
@@ -52,46 +51,44 @@ class PlanetPhysicalModel(object):
         return p
 
     def calc_radius_from_mass(self, Mp):
-        """
-        Helper function for calculating radius given the mass.
+        """Helper function for calculating radius given the mass.
         
         Prototype provides only a dummy function that assumes a density of water.
         
         Args:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         """
         
         rho = 1000*u.kg/u.m**3.
-        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).decompose()
+        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).to('earthRad')
         
-        return Rp.to('km')
+        return Rp
 
     def calc_mass_from_radius(self, Rp):
-        """
-        Helper function for calculating mass given the radius.
+        """Helper function for calculating mass given the radius.
         
         Args:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         """
         
-        rho = 1000*u.kg/u.m**3.
-        Mp = (rho*4*np.pi*Rp**3./3.).decompose()
+        rho = 1*u.tonne/u.m**3.
+        Mp = (rho*4*np.pi*Rp**3./3.).to('earthMass')
         
-        return Mp.to('kg')
+        return Mp
 
-    def calc_Phi(self,beta):
+    def calc_Phi(self, beta):
         """Calculate the phase function. Prototype method uses the Lambert phase 
         function from Sobolev 1975.
         
@@ -101,10 +98,12 @@ class PlanetPhysicalModel(object):
                 in units of rad
                 
         Returns:
-            Phi (astropy Quantity array):
+            Phi (ndarray):
                 Planet phase function
+        
         """
-        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        
+        beta = beta.to('rad').value
+        Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         return Phi
-

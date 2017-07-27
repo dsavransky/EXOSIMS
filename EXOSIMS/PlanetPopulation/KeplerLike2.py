@@ -1,7 +1,6 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
 
@@ -46,10 +45,10 @@ class KeplerLike2(KeplerLike1):
         
         KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
-        # get sma range values, in units of AU
-        a = self.arange.to('AU').value
-        self.sma_sampler = InverseTransformSampler(self.adist, a[0],a[1])
-        self.e_sampler = InverseTransformSampler(self.edist, self.erange[0], self.erange[1])
+        # unitless sma range
+        alim = self.arange.to('AU').value
+        self.sma_sampler = InverseTransformSampler(self.dist_sma, alim[0], alim[1])
+        self.e_sampler = InverseTransformSampler(self.dist_eccen, self.erange[0], self.erange[1])
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU

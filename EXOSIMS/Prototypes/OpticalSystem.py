@@ -549,9 +549,9 @@ class OpticalSystem(object):
         # if zero, get omega from (lambda/D)^2
         Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
         # number of pixels per lenslet
-        mpix = inst['lenslSamp']**2
+        pixPerLens = inst['lenslSamp']**2
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = mpix*(Omega/inst['pixelScale']**2).decompose().value
+        Npix = pixPerLens*(Omega/inst['pixelScale']**2).decompose().value
         
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
@@ -566,8 +566,9 @@ class OpticalSystem(object):
                         /(lam/self.pupilDiam)).decompose().value
             core_intensity = core_mean_intensity*Npix
         
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         # get star magnitude
-        sInds = np.array(sInds, ndmin=1)
         mV = TL.starMag(sInds, lam)
         
         # ELECTRON COUNT RATES [ s^-1 ]
@@ -657,13 +658,10 @@ class OpticalSystem(object):
         
         """
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # default intTimes are 1 day
         intTime = np.ones(len(sInds))*u.day
-        # infinite and NAN are set to zero
-        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
-        # negative values are set to zero
-        intTime[intTime < 0] = 0.*u.d
         
         return intTime
 
@@ -701,7 +699,7 @@ class OpticalSystem(object):
         
         return minintTime
     
-    def calc_dMag_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Finds achievable dMag for one integration time per star in the 
         input list at one or more working angles.
         
@@ -709,7 +707,7 @@ class OpticalSystem(object):
         to each star in sInds and n corresponds to each working angle in WA.
         
         Args:
-            t_int (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times
             TL (TargetList module):
                 TargetList class object
@@ -730,21 +728,21 @@ class OpticalSystem(object):
                 
         """
         
-        # reshape sInds, WA, t_int
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds, WA and intTimes to arrays
+        sInds = np.array(sInds, ndmin=1, copy=False)
         WA = np.array(WA.value, ndmin=1)*WA.unit
-        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
-        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
         
         dMag = self.dMagLim*np.ones((len(sInds), len(WA)))
         
         return dMag
-    
-    def ddMag_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Finds derivative of achievable dMag with respect to integration time
         
         Args:
-            t_int (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times
             TL (TargetList module):
                 TargetList class object

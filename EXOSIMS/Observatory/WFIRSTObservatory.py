@@ -92,8 +92,9 @@ class WFIRSTObservatory(Observatory):
             if np.all(currentTime == currentTime[0]):
                 currentTime = currentTime[0]
         
-        # check size of arrays
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
         nBodies = 11

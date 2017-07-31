@@ -42,7 +42,7 @@ class GalaxiesFaintStars(BackgroundSources):
         """
         
         # check whether inputs are valid arrays
-        mag = np.array(intDepths, ndmin=1)
+        mag = np.array(intDepths, ndmin=1, copy=False)
         dN = super(GalaxiesFaintStars, self).dNbackground(coords, mag)
         # make sure mag is within [15,25]
         mag = np.clip(mag, 15., 25.)

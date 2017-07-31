@@ -346,8 +346,9 @@ class Observatory(object):
         
         """
         
-        # check size of arrays
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
         assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
@@ -628,9 +629,10 @@ class Observatory(object):
                 x.append(0.)
                 i += 1
         
-        # propagated ephem must be an array
+        # propagated ephem
         y = x[0] + x[1]*TDB + x[2]*(TDB**2) + x[3]*(TDB**3)
-        y = np.array(y, ndmin=1)
+        # cast to array
+        y = np.array(y, ndmin=1, copy=False)
         
         return y
 

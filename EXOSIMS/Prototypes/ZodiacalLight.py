@@ -78,8 +78,10 @@ class ZodiacalLight(object):
         
         """
         
-        # check size of arrays
-        nStars = np.array(sInds, ndmin=1).size
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
+        nStars = sInds.size
         nTimes = currentTime.size
         assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
                 "If multiple times and targets, currentTime and sInds sizes must match."
@@ -107,7 +109,7 @@ class ZodiacalLight(object):
         """
         
         # apparent magnitude of the star (in the V band)
-        MV = np.array(MV, ndmin=1)
+        MV = np.array(MV, ndmin=1, copy=False)
         # apparent magnitude of the Sun (in the V band)
         MVsun = 4.83
         

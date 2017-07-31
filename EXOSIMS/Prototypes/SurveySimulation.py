@@ -547,8 +547,8 @@ class SurveySimulation(object):
         TL = self.TargetList
         TK = self.TimeKeeping
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values

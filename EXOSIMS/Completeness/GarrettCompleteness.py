@@ -244,9 +244,9 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         # cast to arrays
-        smin = np.array(smin, ndmin=1)
-        smax = np.array(smax, ndmin=1)
-        dMag = np.array(dMag, ndmin=1)
+        smin = np.array(smin, ndmin=1, copy=False)
+        smax = np.array(smax, ndmin=1, copy=False)
+        dMag = np.array(dMag, ndmin=1, copy=False)
         
         comp = np.zeros(smin.shape)
         for i in xrange(len(smin)):
@@ -776,9 +776,9 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         # cast to arrays
-        smin = np.array(smin, ndmin=1)
-        smax = np.array(smax, ndmin=1)
-        dmaglim = np.array(dmaglim, ndmin=1)
+        smin = np.array(smin, ndmin=1, copy=False)
+        smax = np.array(smax, ndmin=1, copy=False)
+        dmaglim = np.array(dmaglim, ndmin=1, copy=False)
         dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
         dmaglim[dmaglim>dmax] = dmax
@@ -793,11 +793,11 @@ class GarrettCompleteness(BrownCompleteness):
         
         return comp
     
-    def comp_per_intTime(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Calculates completeness for integration time
         
         Args:
-            t_int (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times
             TL (TargetList module):
                 TargetList class object
@@ -819,28 +819,28 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         # cast inputs to arrays and check
-        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
-        sInds = np.array(sInds, ndmin=1)
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         fZ = np.array(fZ.value, ndmin=1)*fZ.unit
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
-        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
-        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
         smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
         comp = self.comp_dmag(smin, smax, dMag)
         
         return comp
         
-    def dcomp_dt(self, t_int, TL, sInds, fZ, fEZ, WA, mode):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
-            t_int (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times
             TL (TargetList module):
                 TargetList class object
@@ -862,23 +862,23 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         # cast inputs to arrays and check
-        t_int = np.array(t_int.value, ndmin=1)*t_int.unit
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1)*fZ.unit
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(t_int) == len(sInds), "t_int and sInds must be same length"
-        assert len(t_int) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as t_int"
-        assert len(t_int) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as t_int"
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(t_int),))
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
         smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
-        fdmag = np.zeros(t_int.shape)
-        for i in xrange(len(t_int)):
+        fdmag = np.zeros(intTimes.shape)
+        for i in xrange(len(intTimes)):
             fdmag[i] = self.f_dmagv(dMag[i], smin[i], smax[i])
-        ddMag = TL.OpticalSystem.ddMag_dt(t_int, TL, sInds, fZ, fEZ, WA, mode).reshape((len(fdmag),))
+        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(fdmag),))
         dcomp = fdmag*ddMag
         
         return dcomp

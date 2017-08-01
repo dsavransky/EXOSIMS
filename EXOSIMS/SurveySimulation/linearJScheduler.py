@@ -33,7 +33,7 @@ class linearJScheduler(SurveySimulation):
         
         self.coeffs = coeffs
 
-    def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
+    def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Choose next target based on truncated depth first search 
         of linear cost function.
         
@@ -44,7 +44,7 @@ class linearJScheduler(SurveySimulation):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            t_dets (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times for detection in units of day
         
         Returns:
@@ -59,8 +59,8 @@ class linearJScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):

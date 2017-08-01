@@ -129,8 +129,8 @@ class TargetList(object):
             self.starprop = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \
                     c2=self.starprop(allInds, missionStart, eclip=True): \
-                    c1[np.array(sInds, ndmin=1)] if eclip==False else \
-                    c2[np.array(sInds, ndmin=1)]
+                    c1[np.array(sInds, ndmin=1, copy=False)] if eclip==False else \
+                    c2[np.array(sInds, ndmin=1, copy=False)]
 
     def __str__(self):
         """String representation of the Target List object
@@ -170,8 +170,9 @@ class TargetList(object):
         
         """
         
-        # check size of arrays
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
         assert nStars==1 or nTimes==1 or nTimes==nStars, \
@@ -474,8 +475,8 @@ class TargetList(object):
         
         """
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         
         Vmag = self.Vmag[sInds]
         BV = self.BV[sInds]
@@ -488,3 +489,25 @@ class TargetList(object):
         mV = Vmag + b*BV*(1/lam_um - 1.818)
         
         return mV
+
+    def stellarTeff(self,sInds):
+
+        """
+        Calculate the effective stellar temperature based on B-V color.
+
+        This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+
+        Returns:
+            Teff (Quantity array):
+                Stellar effective temperatures in degrees K
+
+        """
+
+        Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
+
+        return Teff
+

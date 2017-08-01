@@ -12,7 +12,7 @@ class randomWalkScheduler(SurveySimulation):
     
     """
 
-    def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
+    def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Choose next target at random
         
         Args:
@@ -22,7 +22,7 @@ class randomWalkScheduler(SurveySimulation):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            t_dets (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times for detection in units of day
         
         Returns:
@@ -31,8 +31,8 @@ class randomWalkScheduler(SurveySimulation):
         
         """
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         
         # pick one
         sInd = np.random.choice(sInds)

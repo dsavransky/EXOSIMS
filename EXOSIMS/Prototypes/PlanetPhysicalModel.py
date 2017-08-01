@@ -1,5 +1,6 @@
 import numpy as np
 import astropy.units as u
+import astropy.constants as const
 
 class PlanetPhysicalModel(object):
     """Planet Physical Model class template
@@ -107,3 +108,37 @@ class PlanetPhysicalModel(object):
         Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         return Phi
+
+    def calc_Teff(self,starL,r,p):
+        """
+        Calcluates the effective planet temperature given the stellar luminosity,
+        planet albedo and star-planet distance.
+
+        This calculation represents a basic balckbody power balance, and does not
+        take into account the actual emmisivity of the planet, or any non-equilibrium
+        effects or temperature variations over the surface.
+
+        Note:  The input albedo is taken to be the bond albedo, as required by the equilibrium
+        calculation. For an isotropic scatterer (Lambert phase function) the Bond albedo is 
+        1.5 times the geometric albedo. However, the Bond albedo must be strictly defined between
+        0 and 1, and an albedo of 1 produces a zero effective temperature.
+
+        Args:
+            starL (ndarray):
+                Stellar luminosities in units of solar luminosity
+            r (astropy quantity):
+                Star-planet distances
+            p (ndarray):
+                Planet albedos
+
+        Returns:
+            Teff (astropy quantity):
+                Planet effective temperature in degrees K
+        """
+        
+        Teff = ((const.L_sun*starL*(1 - ps)/16.0/np.pi/const.sigma_sb/(rs.to(u.AU))**2.0)**(1./4.)).decompose().to(u.K)
+
+        return Teff
+
+    
+

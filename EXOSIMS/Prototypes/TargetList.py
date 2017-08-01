@@ -485,3 +485,25 @@ class TargetList(object):
         mV = Vmag + b*BV*(1/lam_um - 1.818)
         
         return mV
+
+    def stellarTeff(self,sInds):
+
+        """
+        Calculate the effective stellar temperature based on B-V color.
+
+        This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+
+        Returns:
+            Teff (Quantity array):
+                Stellar effective temperatures in degrees K
+
+        """
+
+        Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
+
+        return Teff
+

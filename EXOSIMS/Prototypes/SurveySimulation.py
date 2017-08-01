@@ -342,9 +342,11 @@ class SurveySimulation(object):
                 DRM['FA_det_status'] = int(FA)
                 DRM['FA_char_status'] = characterized[-1] if FA else 0
                 DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
+                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
+                        if FA else 0./u.arcsec**2
                 DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
+                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
+                        if FA else 0.*u.arcsec
                 
                 # populate the DRM with observation modes
                 DRM['det_mode'] = dict(det_mode)

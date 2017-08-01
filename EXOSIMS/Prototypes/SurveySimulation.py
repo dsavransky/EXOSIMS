@@ -318,8 +318,16 @@ class SurveySimulation(object):
                 DRM['det_params'] = det_systemParams
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
-                characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                        self.observation_characterization(sInd, char_mode)
+                if char_mode['SNR'] not in [0, np.inf]:
+                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                            self.observation_characterization(sInd, char_mode)
+                else:
+                    char_intTime = None
+                    lenChar = len(pInds) + 1 if FA else len(pInds)
+                    characterized = np.zeros(lenChar, dtype=float)
+                    char_SNR = np.zeros(lenChar, dtype=float)
+                    char_fZ = 0./u.arcsec**2
+                    char_systemParams = SU.dump_system_params(sInd)
                 assert char_intTime != 0, "Integration time can't be 0."
                 # update the occulter wet mass
                 if OS.haveOcculter == True and char_intTime is not None:
@@ -334,9 +342,11 @@ class SurveySimulation(object):
                 DRM['FA_det_status'] = int(FA)
                 DRM['FA_char_status'] = characterized[-1] if FA else 0
                 DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
+                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
+                        if FA else 0./u.arcsec**2
                 DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
+                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
+                        if FA else 0.*u.arcsec
                 
                 # populate the DRM with observation modes
                 DRM['det_mode'] = dict(det_mode)
@@ -547,8 +557,8 @@ class SurveySimulation(object):
         TL = self.TargetList
         TK = self.TimeKeeping
         
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
@@ -602,7 +612,7 @@ class SurveySimulation(object):
         # initialize outputs
         detected = np.array([], dtype=int)
         fZ = 0./u.arcsec**2
-        systemParams = SU.dump_system_params() # empty dictionary
+        systemParams = SU.dump_system_params(sInd) # write current system params by default
         SNR = np.zeros(len(pInds))
         
         # if any planet, calculate SNR

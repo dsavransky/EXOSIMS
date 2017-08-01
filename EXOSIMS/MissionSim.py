@@ -49,7 +49,7 @@ class MissionSim(object):
     _modtype = 'MissionSim'
     _outspec = {}
 
-    def __init__(self, scriptfile=None, **specs):
+    def __init__(self, scriptfile=None, nopar=False, **specs):
         """Initializes all modules from a given script file or specs dictionary.
         
         Args: 
@@ -59,6 +59,9 @@ class MissionSim(object):
             specs (dictionary):
                 Dictionary containing additional user specification values and 
                 desired module names.
+            nopar (bool):
+                If True, ignore any provided ensemble module in the script or specs
+                and force the prototype ensemble.
         
         """
         
@@ -105,6 +108,9 @@ class MissionSim(object):
             self._outspec[att] = self.__dict__[att]
         
         # initialize top level, import modules
+        if nopar:
+            specs['modules']['SurveyEnsemble'] = ' '
+            
         self.SurveyEnsemble = get_module(specs['modules']['SurveyEnsemble'],
                 'SurveyEnsemble')(**specs)
         self.SurveySimulation = get_module(specs['modules']['SurveySimulation'],

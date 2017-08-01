@@ -448,9 +448,10 @@ class OpticalSystem(object):
         return 'Optical System class object attributes'
 
     def get_coro_param(self, syst, param_name, fill=0.):
-        """ For a given starlightSuppressionSystem, loads an input parameter that
-        depends on the angular separation and updates the system. Also updates the 
-        IWA and OWA of the system.
+        """For a given starlightSuppressionSystem, this method loads an input 
+        parameter from a table (fits file) or a scalar value. It then creates a
+        callable lambda function, which depends on the wavelength of the system
+        and the angular separation of the observed planet.
         
         Args:
             syst (dict):
@@ -464,6 +465,11 @@ class OpticalSystem(object):
             syst (dict):
                 Updated dictionary of parameters
         
+        Note 1: The created lambda function handles the specified wavelength by 
+            rescaling the specified working angle by a factor syst['lam']/mode['lam'].
+        Note 2: If the input parameter is taken from a table, the IWA and OWA of that 
+            system are constrained by the limits of the allowed WA on that table.
+        
         """
         
         assert isinstance(param_name, basestring), "param_name must be a string."
@@ -476,12 +482,13 @@ class OpticalSystem(object):
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
             assert np.all(D >= 0) and np.all(D <= 1), \
                     param_name + " must be positive and smaller than 1."
-            # parameter values outside of WA
+            # table interpolate function
             Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float),
                     kind='cubic', fill_value=fill, bounds_error=False)
-            syst[param_name] = lambda l, s: np.array(Dinterp(s.to('arcsec').value),
-                    ndmin=1)
-            # update IWA and OWA
+            # create a callable lambda function
+            syst[param_name] = lambda l, s: np.array(Dinterp((s \
+                    *syst['lam']/l).to('arcsec').value), ndmin=1)
+            # IWA and OWA are constrained by the limits of the allowed WA on that table
             syst['IWA'] = max(np.min(WA), syst.get('IWA', np.min(WA)))
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
             
@@ -489,7 +496,8 @@ class OpticalSystem(object):
             assert syst[param_name] >= 0 and syst[param_name] <= 1, \
                     param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \
-                    ((s >= syst['IWA']) & (s <= syst['OWA']))*(D - fill) + fill
+                    ((s*syst['lam']/l >= syst['IWA']) & \
+                    (s*syst['lam']/l <= syst['OWA']))*(D - fill) + fill
             
         else:
             syst[param_name] = None
@@ -537,12 +545,11 @@ class OpticalSystem(object):
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
-        # rescale WA to match the coronagraph parameter curves
-        WAeff = WA*syst['lam']/lam
-        occ_trans = syst['occ_trans'](lam, WAeff)
-        core_thruput = syst['core_thruput'](lam, WAeff)
-        core_contrast = syst['core_contrast'](lam, WAeff)
-        core_area = syst['core_area'](lam, WAeff)
+        # coronagraph parameters
+        occ_trans = syst['occ_trans'](lam, WA)
+        core_thruput = syst['core_thruput'](lam, WA)
+        core_contrast = syst['core_contrast'](lam, WA)
+        core_area = syst['core_area'](lam, WA)
         
         # solid angle of photometric aperture, specified by core_area (optional)
         Omega = core_area*u.arcsec**2
@@ -559,7 +566,7 @@ class OpticalSystem(object):
             core_intensity = core_contrast*core_thruput
         # OPTION 2: otherwise use core_mean_intensity
         else:
-            core_mean_intensity = syst['core_mean_intensity'](lam, WAeff)
+            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
             # if a platesale was specified with the coro parameters, apply correction
             if syst['core_platescale'] != None:
                 core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \

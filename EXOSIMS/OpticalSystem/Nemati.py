@@ -107,10 +107,6 @@ class Nemati(OpticalSystem):
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
-        # rescale WA to match the coronagraph parameter curves
-        WAeff = WA*syst['lam']/lam
-        core_thruput = syst['core_thruput'](lam, WAeff)
-        
         # get star magnitude
         mV = TL.starMag(sInds, lam)
         
@@ -120,6 +116,9 @@ class Nemati(OpticalSystem):
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
         C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
+        
+        # get core_thruput
+        core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet flux ratio
         dMag = np.zeros((len(sInds), len(WA)))

@@ -815,7 +815,7 @@ class tieredScheduler(SurveySimulation):
         return s, dMag
 
     def observation_characterization(self, sInd, mode):
-        """Finds if characterizations are possible and relevant information
+       """Finds if characterizations are possible and relevant information
         
         Args:
             sInd (integer):
@@ -828,13 +828,19 @@ class tieredScheduler(SurveySimulation):
                 Characterization status for each planet orbiting the observed 
                 target star including False Alarm if any, where 1 is full spectrum, 
                 -1 partial spectrum, and 0 not characterized
-            SNR (float list):
+            fZ (astropy Quantity):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            systemParams (dict):
+                Dictionary of time-dependant planet properties averaged over the 
+                duration of the integration
+            SNR (float ndarray):
                 Characterization signal-to-noise ratio of the observable planets. 
                 Defaults to None.
-            t_char (astropy Quantity):
+            intTime (astropy Quantity):
                 Selected star characterization time in units of day. Defaults to None.
         
         """
+        
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList

@@ -78,7 +78,6 @@ class KeplerLike1(PlanetPopulation):
         self._outspec['esigma'] = esigma
         
         self.dist_albedo_built = False
-        self.dist_radius_built = False
 
     def dist_albedo(self, x):
         """Probability density function for albedo

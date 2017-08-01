@@ -55,20 +55,12 @@ class BrownCompleteness(Completeness):
                         specs['modules']['StarCatalog'] + \
                         specs['modules']['TargetList']
         atts = self.PlanetPopulation.__dict__.keys()
-        extstr = ''
+        self.extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
-                extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+                self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        ext = hashlib.md5(self.extstr).hexdigest()
         self.filename += ext
-        
-#        atts = ['arange','erange','prange','Rprange','Mprange','scaleOrbits','constrainOrbits']
-#        
-#        extstr = ''
-#        for att in atts:
-#            extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-#        ext = hashlib.md5(extstr).hexdigest()
-#        self.filename += ext
 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -122,7 +114,7 @@ class BrownCompleteness(Completeness):
         self.xnew = xnew
         self.ynew = ynew  
             
-        # calculate separations based on IWA
+        # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         IWA = mode['IWA']
@@ -162,14 +154,11 @@ class BrownCompleteness(Completeness):
         PPop = TL.PlanetPopulation
         
         # get name for stored dynamic completeness updates array
-        atts = PPop.__dict__.keys()
-        extstr = ''
-        for att in sorted(atts, key=str.lower):
-            if not callable(getattr(PPop, att)) and att != 'PlanetPhysicalModel':
-                extstr += '%s: ' % att + str(getattr(PPop, att))
-        atts2 = ['IWA','OWA','dMagLim']
-        for att in atts2:
-            extstr += '%s: ' % att + str(getattr(OS, att)) + ' '
+        # inner and outer working angles for detection mode
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + ' dMagLim: ' + str(OS.dMagLim) + ' '
         extstr += 'nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
@@ -208,9 +197,9 @@ class BrownCompleteness(Completeness):
             M = np.random.uniform(high=2.*np.pi,size=nplan)
             newM = np.zeros((nplan,))
             # population values
-            smin = (np.tan(OS.IWA)*TL.dist).to('AU')
-            if np.isfinite(OS.OWA):
-                smax = (np.tan(OS.OWA)*TL.dist).to('AU')
+            smin = (np.tan(IWA)*TL.dist).to('AU')
+            if np.isfinite(OWA):
+                smax = (np.tan(OWA)*TL.dist).to('AU')
             else:
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)*u.AU

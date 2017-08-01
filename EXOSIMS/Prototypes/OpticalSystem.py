@@ -490,7 +490,6 @@ class OpticalSystem(object):
                     param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \
                     ((s >= syst['IWA']) & (s <= syst['OWA']))*(D - fill) + fill
-            
         else:
             syst[param_name] = None
         

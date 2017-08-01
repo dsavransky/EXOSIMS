@@ -152,16 +152,18 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                         DRM['det_dMag'] = SU.dMag[pInds].tolist()
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                    detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
+                    detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, detMode)
                     if np.any(detected):
                         print '  Det. results are: %s'%(detected)
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*.07
-                    # Populate the DRM with detection results
-                    self.FA_status[sInd] = FA
-                    DRM['det_time'] = t_det.to('day').value
+                    # populate the DRM with detection results
+                    DRM['det_time'] = t_det.to('day')
                     DRM['det_status'] = detected
-                    DRM['det_SNR'] = detSNR
+                    DRM['det_SNR'] = det_SNR
+                    DRM['det_fZ'] = det_fZ.to('1/arcsec2')
+                    DRM['det_params'] = det_systemParams
+                    DRM['FA_det_status'] = int(FA)
                 
                 elif sInd == occ_sInd:
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
@@ -189,20 +191,31 @@ class tieredScheduler(SurveySimulation):
                         DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
                     DRM['char_mode'] = dict(charMode)
                     del DRM['char_mode']['inst'], DRM['char_mode']['syst']
-                    # detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
-                    characterized, charSNR, t_char = self.observation_characterization(sInd, charMode)
-                    assert t_char !=0, "Integration time can't be 0."
-                    # Update the occulter wet mass and GAtime
-                    if t_char is not None:
-                        self.GAtime = self.GAtime + t_char.to('day')*.10
-                        DRM = self.update_occulter_mass(DRM, sInd, t_char, 'char')
-                    # if any false alarm, store its characterization status, fEZ, dMag, and WA
-                    if self.FA_status[sInd]:
-                        DRM['FA_status'] = characterized.pop()
-                        DRM['FA_SNR'] = charSNR.pop()
-                        DRM['FA_fEZ'] = self.lastDetected[sInd,1][-1]
-                        DRM['FA_dMag'] = self.lastDetected[sInd,2][-1]
-                        DRM['FA_WA'] = self.lastDetected[sInd,3][-1]
+
+                     # PERFORM CHARACTERIZATION and populate spectra list attribute
+                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                            self.observation_characterization(sInd, charMode)
+                    if np.any(characterized):
+                        print '  Char. results are: %s'%(characterized)
+                    assert char_intTime != 0, "Integration time can't be 0."
+                    # update the occulter wet mass
+                    if OS.haveOcculter == True and char_intTime is not None:
+                        DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
+                    FA = False
+                    # populate the DRM with characterization results
+                    DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                    DRM['char_status'] = characterized[:-1] if FA else characterized
+                    DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
+                    DRM['char_fZ'] = char_fZ.to('1/arcsec2')
+                    DRM['char_params'] = char_systemParams
+                    # populate the DRM with FA results
+                    DRM['FA_det_status'] = int(FA)
+                    DRM['FA_char_status'] = characterized[-1] if FA else 0
+                    DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                    DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
+                    DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                    DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
+
                     # add star back into the revisit list
                     if np.any(characterized):
                         char = np.where(characterized)[0]
@@ -221,10 +234,6 @@ class tieredScheduler(SurveySimulation):
                             self.starRevisit = np.array([revisit])
                         else:
                             self.starRevisit = np.vstack((self.starRevisit, revisit))
-                    # Populate the DRM with characterization results
-                    DRM['char_time'] = t_char.to('day').value if t_char else 0.
-                    DRM['char_status'] = characterized
-                    DRM['char_SNR'] = charSNR
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime
@@ -358,17 +367,17 @@ class tieredScheduler(SurveySimulation):
             # and filter out t_tots > integration cutoff
             fEZ = ZL.fEZ0
             dMag = self.dMagint[occ_sInds]
-            WA = self.WAint[occ_sInds]
+            WAc = OS.starlightSuppressionSystems[1]['IWA']*2
             if np.any(occ_sInds):
                 fZ = ZL.fZ(Obs, TL, occ_sInds, occ_startTime[occ_sInds], charmode)
-                t_dets[occ_sInds] = OS.calc_intTime(TL, occ_sInds, fZ, fEZ, dMag, WA, charmode)
+                t_dets[occ_sInds] = OS.calc_intTime(TL, occ_sInds, fZ, fEZ, dMag, WAc, charmode)
                 # include integration time multiplier
-                t_tots = t_dets*charmode['timeMultiplier']
+                occ_t_tots = t_dets*charmode['timeMultiplier']
                 # total time must be positive, shorter than integration cut-off,
                 # and it must not exceed the Observing Block end time 
                 startTimeNorm = (occ_startTime - TK.missionStart).jd*u.day
-                occ_sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                            (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
+                occ_sInds = np.where((occ_t_tots > 0) & (occ_t_tots <= OS.intCutoff) & \
+                            (startTimeNorm + occ_t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
 
             dMag = self.dMagint[sInds]
             WA = self.WAint[sInds]
@@ -386,7 +395,7 @@ class tieredScheduler(SurveySimulation):
             # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if np.any(occ_sInds):
-                endTime = occ_startTime[occ_sInds] + t_tots[occ_sInds]
+                endTime = occ_startTime[occ_sInds] + occ_t_tots[occ_sInds]
                 kogoodEnd = Obs.keepout(TL, occ_sInds, endTime, charmode)
                 occ_sInds = occ_sInds[np.where(kogoodEnd)[0]]
 
@@ -431,6 +440,8 @@ class tieredScheduler(SurveySimulation):
                 t_det = t_dets[sInd]
                 fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], detmode)
                 WA = self.WAint[sInd]
+                # update visited list for current star
+                self.starVisits[sInd] += 1
                 int_time = self.calc_int_inflection(sInd, fEZ, fZ, WA, detmode)
 
                 if int_time < t_det:
@@ -443,9 +454,6 @@ class tieredScheduler(SurveySimulation):
                         self.occ_arrives = occ_startTime[occ_sInd]
                         self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
-
-                # update visited list for current star
-                self.starVisits[sInd] += 1
                 break
 
             # if no observable target, call the TimeKeeping.wait() method
@@ -775,15 +783,14 @@ class tieredScheduler(SurveySimulation):
         nplan = int(nplan)
         
         # sample uniform distribution of mean anomaly
-        M = np.random.uniform(high=2.*np.pi,size=nplan)
+        M = np.random.uniform(high=2.0*np.pi,size=nplan)
         # sample semi-major axis
         a = PPop.gen_sma(nplan).to('AU').value
-        
         # sample other necessary orbital parameters
         if np.sum(PPop.erange) == 0:
             # all circular orbits
             r = a
-            e = 0.
+            e = 0.0
             E = M
         else:
             # sample eccentricity
@@ -794,42 +801,17 @@ class tieredScheduler(SurveySimulation):
             # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
-            r = a*(1-e*np.cos(E))
-        
-        # orbit angle sampling
-        O = PPop.gen_O(nplan).to('rad').value
-        w = PPop.gen_w(nplan).to('rad').value
-        I = PPop.gen_I(nplan).to('rad').value
-        
-        r1 = a*(np.cos(E) - e)
-        r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
-        r2 = a*np.sin(E)*np.sqrt(1. -  e**2)
-        r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-        
-        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.sin(w)*np.cos(I)
-        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.sin(w)*np.cos(I)
-        a3 = np.sin(w)*np.sin(I)
-        A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-        
-        b1 = -np.cos(O)*np.sin(w) - np.sin(O)*np.cos(w)*np.cos(I)
-        b2 = -np.sin(O)*np.sin(w) + np.cos(O)*np.cos(w)*np.cos(I)
-        b3 = np.cos(w)*np.sin(I)
-        B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-        
-        # planet position, planet-star distance, apparent separation
-        r = (A*r1 + B*r2)*u.AU
-        d = np.linalg.norm(r,axis=1)*r.unit
-        s = np.linalg.norm(r[:,0:2],axis=1)*r.unit
-        
+            r = a*(1.0-e*np.cos(E))
+
+        beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
+        s = r*np.sin(beta)*u.AU
         # sample albedo, planetary radius, phase function
         p = PPop.gen_albedo(nplan)
         Rp = PPop.gen_radius(nplan)
-        beta = np.arccos(r[:,2]/d)
-        Phi = self.PlanetPhysicalModel.calc_Phi(beta)
+        Phi = self.Completeness.PlanetPhysicalModel.calc_Phi(beta)
         
         # calculate dMag
-        dMag = deltaMag(p,Rp,d,Phi)
-        
+        dMag = deltaMag(p,Rp,r*u.AU,Phi)
         return s, dMag
 
     def observation_characterization(self, sInd, mode):
@@ -867,7 +849,7 @@ class tieredScheduler(SurveySimulation):
         det = np.ones(pInds.size, dtype=bool)
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
-        WAs = SU.WA[pInds].to('mas').value
+        WAs = SU.WA[pInds].to('arcsec').value
 
         FA = (det.size == pInds.size + 1)
         if FA == True:
@@ -1018,7 +1000,7 @@ class tieredScheduler(SurveySimulation):
             char = (SNR >= mode['SNR'])
             # initialize with full spectra
             characterized = char.astype(int)
-            WAchar = self.lastDetected[sInd,3][char]*u.arcsec
+            WAchar = WAs[char]*u.arcsec
             # find the current WAs of characterized planets
             WA = WAs*u.arcsec
             if FA:
@@ -1032,6 +1014,6 @@ class tieredScheduler(SurveySimulation):
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
-        
+
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

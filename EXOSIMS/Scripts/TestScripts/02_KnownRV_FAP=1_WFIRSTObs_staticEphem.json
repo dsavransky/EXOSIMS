@@ -5,22 +5,15 @@
   "minComp": 0.025,
   "ppFact": 0.1,
   "FAP": 1,
+  "forceStaticEphem": true,
   "scienceInstruments": [
     {
-      "name": "imager"
-    }  
+     "name": "imaging"
+    }
   ],
   "starlightSuppressionSystems": [
     {
-      "name": "coronagraph",
-      "lam": 550,
-      "BW": 0.10,
-      "IWA": 0.1,
-      "OWA": 0.5,
-      "occ_trans": 0.2,
-      "core_thruput": 0.02,
-      "core_mean_intensity": 1e-12,
-      "core_area": 0.005
+      "name": "coronagraph"
     }
   ],
   "modules": {
@@ -30,7 +23,7 @@
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
     "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
-    "Observatory": "WFIRSTObservatoryL2",
+    "Observatory": "WFIRSTObservatory",
     "TimeKeeping": " ",
     "PostProcessing": " ",
     "Completeness": " ",

@@ -815,7 +815,7 @@ class tieredScheduler(SurveySimulation):
         return s, dMag
 
     def observation_characterization(self, sInd, mode):
-       """Finds if characterizations are possible and relevant information
+        """Finds if characterizations are possible and relevant information
         
         Args:
             sInd (integer):
@@ -838,9 +838,8 @@ class tieredScheduler(SurveySimulation):
                 Defaults to None.
             intTime (astropy Quantity):
                 Selected star characterization time in units of day. Defaults to None.
-        
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList

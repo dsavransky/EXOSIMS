@@ -116,9 +116,11 @@ class BrownCompleteness(Completeness):
         ynew = np.hstack((ymin,ycent,ymax))
         Cpdf = np.pad(Cpdf,1,mode='constant')
 
+        #save interpolant to object
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral)
+        self.xnew = xnew
+        self.ynew = ynew  
             
         # calculate separations based on IWA
         OS = TL.OpticalSystem

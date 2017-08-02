@@ -46,8 +46,8 @@ class KeplerLike2(KeplerLike1):
         KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
         # unitless sma range
-        alim = self.arange.to('AU').value
-        self.sma_sampler = InverseTransformSampler(self.dist_sma, alim[0], alim[1])
+        ar = self.arange.to('AU').value
+        self.sma_sampler = InverseTransformSampler(self.dist_sma, ar[0], ar[1])
         self.e_sampler = InverseTransformSampler(self.dist_eccen, self.erange[0], self.erange[1])
 
     def gen_sma(self, n):

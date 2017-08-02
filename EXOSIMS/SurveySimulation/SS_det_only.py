@@ -150,3 +150,50 @@ class SS_det_only(SurveySimulation):
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
             print log_end
+
+
+    def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
+        """Choose next telescope target based on star completeness and integration time.
+        
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            sInds (integer array):
+                Indices of available targets
+            slewTime (float array):
+                slew times to all stars (must be indexed by sInds)
+            t_dets (astropy Quantity array):
+                Integration times for detection in units of day
+                
+        Returns:
+            sInd (integer):
+                Index of next target star
+        
+        """
+        
+        Comp = self.Completeness
+        TL = self.TargetList
+        TK = self.TimeKeeping
+
+        nStars = len(sInds)
+
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+
+        # 1/ Choose next telescope target
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+
+        # add weight for star revisits
+        ind_rev = []
+        if self.starRevisit.size != 0:
+            dt_max = 1.*u.week
+            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
+                          self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+
+        weights = (comps + f2_uv/6.)/t_dets
+        sInd = np.random.choice(sInds[weights == max(weights)])
+
+        return sInd

@@ -20,6 +20,7 @@ class KeplerLike2(KeplerLike1):
     Attributes:
         smaknee (float):
             Location (in AU) of semi-major axis decay point (knee).
+            Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
     

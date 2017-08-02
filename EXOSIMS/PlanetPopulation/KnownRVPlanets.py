@@ -33,8 +33,9 @@ class KnownRVPlanets(KeplerLike1):
             user specified values
             
     Attributes: 
-        smaknee (float): 
+        smaknee (float):
             Location (in AU) of semi-major axis decay point (knee).
+            Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
         rvplanetfilepath (string):

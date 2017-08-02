@@ -17,6 +17,7 @@ class KeplerLike1(PlanetPopulation):
     Attributes: 
         smaknee (float):
             Location (in AU) of semi-major axis decay point (knee).
+            Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
         
@@ -44,17 +45,25 @@ class KeplerLike1(PlanetPopulation):
         specs['Rprange'] = [1, 22.6]
         PlanetPopulation.__init__(self, **specs)
         
-        # sma decay point (knee)
-        self.smaknee = float(smaknee)*u.AU
-        # eccentricity Rayleigh distribution sigma parameter
+        # calculate norm for sma distribution with decay point (knee)
+        self.smaknee = float(smaknee)
+        ar = self.arange.to('AU').value
+        assert (self.smaknee >= ar[0]) and (self.smaknee <= ar[1]), \
+               "sma knee value must be in sma range."
+        self.smanorm = integrate.quad(lambda x,s0=self.smaknee: \
+                x**-0.62*np.exp(-(x/s0)**2), ar[0], ar[1])[0]
+        
+        # calculate norm for eccentricity Rayleigh distribution 
         self.esigma = float(esigma)
+        er = self.erange
+        self.enorm = np.exp(-er[0]**2/(2.*self.esigma**2)) \
+                - np.exp(-er[1]**2/(2.*self.esigma**2))
         
         # define Kepler radius distribution
         Rs = np.array([1,1.4,2.0,2.8,4.0,5.7,8.0,11.3,16,22.6]) #Earth Radii
         Rvals85 = np.array([0.1555,0.1671,0.1739,0.0609,0.0187,0.0071,0.0102,0.0049,0.0014])
         a85 = ((85.*u.day/2./np.pi)**2*u.solMass*const.G)**(1./3) #sma of 85 days
         fac1 = integrate.quad(self.dist_sma, 0, a85.to('AU').value)[0]
-        ar = self.arange.to('AU').value
         Rvals = integrate.quad(self.dist_sma, 0, ar[1])[0]*(Rvals85/fac1)
         Rvals[5:] *= 2.5 #account for longer orbital baseline data
         self.Rs = Rs
@@ -62,62 +71,11 @@ class KeplerLike1(PlanetPopulation):
         self.eta = np.sum(Rvals)
         
         # populate outspec with attributes specific to KeplerLike1
-        self._outspec['smaknee'] = self.smaknee.to('AU').value
+        self._outspec['smaknee'] = self.smaknee
         self._outspec['esigma'] = self.esigma
         self._outspec['eta'] = self.eta
         
         self.dist_albedo_built = None
-
-    def dist_albedo(self, p):
-        """Probability density function for albedo
-        
-        Args:
-            p (float ndarray):
-                Albedo value(s)
-        
-        Returns:
-            f (float ndarray):
-                Albedo probability density
-                
-        """
-        
-        # if called for the first time, define distribution for albedo
-        if self.dist_albedo_built is None:
-            pgen = self.gen_albedo(int(1e6))
-            pr = self.prange
-            hp, pedges = np.histogram(pgen, bins=2000, range=(pr[0], pr[1]), normed=True)
-            pedges = 0.5*(pedges[1:] + pedges[:-1])
-            pedges = np.hstack((pr[0], pedges, pr[1]))
-            hp = np.hstack((0., hp, 0.))
-            self.dist_albedo_built = interpolate.InterpolatedUnivariateSpline(pedges, 
-                    hp, k=1, ext=1)
-        
-        f = self.dist_albedo_built(p)
-        
-        return f
-
-    def dist_radius(self, Rp):
-        """Probability density function for planetary radius in Earth radius
-        
-        Args:
-            Rp (float ndarray):
-                Planetary radius value(s) in Earth radius. Not an astropy quantity.
-                
-        Returns:
-            f (float ndarray):
-                Planetary radius probability density
-        
-        """
-        
-        # cast Rp to array
-        Rp = np.array(Rp, ndmin=1, copy=False)
-            
-        f = np.zeros(Rp.shape)
-        for i in xrange(len(self.Rvals)):
-            inds = (Rp >= self.Rs[i]) & (Rp <= self.Rs[i+1])
-            f[inds] = self.Rvals[i]/(Rp[inds]*np.log(self.Rs[i+1]/self.Rs[i])*self.eta)
-        
-        return f
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -197,17 +155,15 @@ class KeplerLike1(PlanetPopulation):
         
         """
         n = self.gen_input_check(n)
-        Rp = np.array([])
-        for j in range(len(self.Rvals)):
-            nsamp = int(np.ceil(n*self.Rvals[j]/np.sum(self.Rvals)))
-            Rp = np.hstack((Rp, np.exp(np.random.uniform(low=np.log(self.Rs[j]),
-                    high=np.log(self.Rs[j+1]), size=nsamp))))
+        RvalsNormed = self.Rvals/np.sum(self.Rvals)
+        logRs = np.log(self.Rs)
+        Rp = np.concatenate([np.exp(np.random.uniform(low=logRs[j], high=logRs[j+1], 
+                size=int(np.ceil(n*RvalsNormed[j])))) for j in range(len(self.Rvals))])
         
         if len(Rp) > n:
-            Rp = Rp[np.random.choice(range(len(Rp)), size=n, replace=False)]
-        Rp = Rp*u.earthRad
+            Rp = Rp[np.random.choice(len(Rp), size=n, replace=False)]
         
-        return Rp
+        return Rp*u.earthRad
 
     def gen_radius_nonorm(self, n):
         """Generate planetary radius values in Earth radius.
@@ -301,6 +257,55 @@ class KeplerLike1(PlanetPopulation):
         
         return e
 
+    def dist_sma(self, a):
+        """Probability density function for semi-major axis in AU
+        
+        Args:
+            a (float ndarray):
+                Semi-major axis value(s) in AU. Not an astropy quantity.
+                
+        Returns:
+            f (float ndarray):
+                Semi-major axis probability density
+        
+        """
+        
+        # cast to array
+        a = np.array(a, ndmin=1, copy=False)
+        
+        # unitless sma range
+        ar = self.arange.to('AU').value
+        
+        # RV-like semi-major axis distribution with exponential decay
+        f = np.zeros(np.size(a))
+        mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
+        f[mask] = a[mask]**-0.62*np.exp(-(a[mask]/self.smaknee)**2)/self.smanorm
+        
+        return f
+
+    def dist_eccen(self, e):
+        """Probability density function for eccentricity
+        
+        Args:
+            e (float ndarray):
+                Eccentricity value(s)
+        
+        Returns:
+            f (float ndarray):
+                Eccentricity probability density
+        
+        """
+        
+        # cast to array
+        e = np.array(e, ndmin=1, copy=False)
+        
+        # Rayleigh distribution sigma
+        f = np.zeros(np.size(e))
+        mask = np.array((e >= self.erange[0]) & (e <= self.erange[1]), ndmin=1)
+        f = e/self.esigma**2*np.exp(-e**2/(2.*self.esigma**2))/self.enorm
+        
+        return f
+
     def dist_eccen_from_sma(self, e, a):
         """Probability density function for eccentricity constrained by 
         semi-major axis, such that orbital radius always falls within the 
@@ -346,68 +351,53 @@ class KeplerLike1(PlanetPopulation):
         
         return f
 
-    def dist_sma(self, a):
-        """Probability density function for semi-major axis in AU
+    def dist_albedo(self, p):
+        """Probability density function for albedo
         
         Args:
-            a (float ndarray):
-                Semi-major axis value(s) in AU. Not an astropy quantity.
-                
+            p (float ndarray):
+                Albedo value(s)
+        
         Returns:
             f (float ndarray):
-                Semi-major axis probability density
-        
+                Albedo probability density
+                
         """
         
-        # cast to array
-        a = np.array(a, ndmin=1, copy=False)
+        # if called for the first time, define distribution for albedo
+        if self.dist_albedo_built is None:
+            pgen = self.gen_albedo(int(1e6))
+            pr = self.prange
+            hp, pedges = np.histogram(pgen, bins=2000, range=(pr[0], pr[1]), normed=True)
+            pedges = 0.5*(pedges[1:] + pedges[:-1])
+            pedges = np.hstack((pr[0], pedges, pr[1]))
+            hp = np.hstack((0., hp, 0.))
+            self.dist_albedo_built = interpolate.InterpolatedUnivariateSpline(pedges, 
+                    hp, k=1, ext=1)
         
-        # unitless sma range
-        ar = self.arange.to('AU').value
-        
-        # semi-major axis decay point (smaknee)
-        smaknee = self.smaknee.to('AU').value
-        
-        # if smaknee is out of sma range, use a log-uniform distribution
-        if (smaknee < ar[0]) or (smaknee > ar[1]):
-            f = self.logunif(a, ar)
-        
-        # otherwise, use RV-like semi-major axis distribution with exponential decay
-        else:
-            f = np.zeros(np.size(a))
-            mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
-            if np.any(mask == True):
-                norm = integrate.quad(lambda x,s0=smaknee: x**-0.62*np.exp(-(x/s0)**2), \
-                        ar[0], ar[1])[0]
-                f[mask] = a[mask]**-0.62*np.exp(-(a[mask]/smaknee)**2)/norm
+        f = self.dist_albedo_built(p)
         
         return f
 
-    def dist_eccen(self, e):
-        """Probability density function for eccentricity
+    def dist_radius(self, Rp):
+        """Probability density function for planetary radius in Earth radius
         
         Args:
-            e (float ndarray):
-                Eccentricity value(s)
-        
+            Rp (float ndarray):
+                Planetary radius value(s) in Earth radius. Not an astropy quantity.
+                
         Returns:
             f (float ndarray):
-                Eccentricity probability density
+                Planetary radius probability density
         
         """
         
-        # cast to array
-        e = np.array(e, ndmin=1, copy=False)
-        
-        # eccentricity range
-        er = self.erange
-        
-        # Rayleigh distribution sigma
-        sig = self.esigma
-        
-        # distribution
-        norm = np.exp(-er[0]**2/(2.*sig**2)) - np.exp(-er[1]**2/(2.*sig**2))
-        f = e/sig**2*np.exp(-e**2/(2.*sig**2))/norm \
-                *np.array((e >= er[0]) & (e <= er[1]), dtype=float, ndmin=1)
+        # cast Rp to array
+        Rp = np.array(Rp, ndmin=1, copy=False)
+            
+        f = np.zeros(Rp.shape)
+        for i in xrange(len(self.Rvals)):
+            inds = (Rp >= self.Rs[i]) & (Rp <= self.Rs[i+1])
+            f[inds] = self.Rvals[i]/(Rp[inds]*np.log(self.Rs[i+1]/self.Rs[i])*self.eta)
         
         return f

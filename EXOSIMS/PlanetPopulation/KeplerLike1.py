@@ -155,11 +155,16 @@ class KeplerLike1(PlanetPopulation):
         
         """
         n = self.gen_input_check(n)
-        RvalsNormed = self.Rvals/np.sum(self.Rvals)
+        
+        # get number of samples per bin
+        nsamp = np.ceil(n*self.Rvals/np.sum(self.Rvals)).astype(int)
+        
+        # generate random radii in each bin
         logRs = np.log(self.Rs)
         Rp = np.concatenate([np.exp(np.random.uniform(low=logRs[j], high=logRs[j+1], 
-                size=int(np.ceil(n*RvalsNormed[j])))) for j in range(len(self.Rvals))])
+                size=nsamp[j])) for j in range(len(self.Rvals))])
         
+        # select n radom elements from Rp
         if len(Rp) > n:
             Rp = Rp[np.random.choice(len(Rp), size=n, replace=False)]
         
@@ -183,16 +188,19 @@ class KeplerLike1(PlanetPopulation):
         
         """
         n = self.gen_input_check(n)
-        Rp = np.array([])
-        for j in range(len(self.Rvals)):
-            nsamp = np.random.poisson(lam=self.Rvals[j]*n)
-            Rp = np.hstack((Rp, np.exp(np.random.uniform(low=np.log(self.Rs[j]),\
-                    high=np.log(self.Rs[j+1]),size=nsamp))))
-            
-        np.random.shuffle(Rp) #randomize elements
-        Rp = Rp*u.earthRad
         
-        return Rp
+        # get number of samples per bin
+        nsamp = np.random.poisson(n*self.Rvals)
+        
+        # generate random radii in each bin
+        logRs = np.log(self.Rs)
+        Rp = np.concatenate([np.exp(np.random.uniform(low=logRs[j], high=logRs[j+1], 
+                size=nsamp[j])) for j in range(len(self.Rvals))])
+        
+        # randomize elements in Rp
+        np.random.shuffle(Rp)
+        
+        return Rp*u.earthRad
 
     def gen_mass(self, n):
         """Generate planetary mass values in Earth Mass
@@ -394,10 +402,12 @@ class KeplerLike1(PlanetPopulation):
         
         # cast Rp to array
         Rp = np.array(Rp, ndmin=1, copy=False)
-            
+        
+        # radius distribution
+        Rnorm = self.Rvals/np.log(self.Rs[1:]/self.Rs[:-1])/self.eta
         f = np.zeros(Rp.shape)
         for i in xrange(len(self.Rvals)):
-            inds = (Rp >= self.Rs[i]) & (Rp <= self.Rs[i+1])
-            f[inds] = self.Rvals[i]/(Rp[inds]*np.log(self.Rs[i+1]/self.Rs[i])*self.eta)
+            mask = (Rp >= self.Rs[i]) & (Rp <= self.Rs[i+1])
+            f[mask] = Rnorm[i]/Rp[mask]
         
         return f

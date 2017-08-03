@@ -117,6 +117,7 @@ class BrownCompleteness(Completeness):
         Cpdf = np.pad(Cpdf,1,mode='constant')
 
         #save interpolant to object
+        self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral)
         self.xnew = xnew

@@ -429,3 +429,93 @@ class BrownCompleteness(Completeness):
         dMag = deltaMag(p,Rp,r*u.AU,Phi)
 
         return s, dMag
+
+
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates completeness for integration time
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            comp (array):
+                Completeness values
+        
+        """
+        
+        # cast inputs to arrays and check
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        comp = self.EVPOC(smin, smax, 0., dMag)
+        
+        return comp
+        
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates derivative of completeness with respect to integration time
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            dcomp (array):
+                Derivative of completeness with respect to integration time
+        
+        """
+        
+        # cast inputs to arrays and check
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+        
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        dcomp = np.zeros(len(intTimes))
+        for k,(dm,ddm) in enumerate(zip(dMag,ddMag)):
+            dcomp[k] = interpolate.InterpolatedUnivariateSpline(self.xnew,self.EVPOCpdf(self.xnew,dm),ext=1).integral(smin[k],smax[k])
+
+        return dcomp*ddMag

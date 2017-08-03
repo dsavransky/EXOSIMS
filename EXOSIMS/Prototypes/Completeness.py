@@ -102,3 +102,83 @@ class Completeness(object):
         """
         
         self.updates = self.updates[ind,:]
+
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates completeness for integration time
+
+        Note: Prototype does no calculations and always returns the same value
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            comp (array):
+                Completeness values
+        
+        """
+        
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+
+        return np.array([0.2]*len(intTimes))
+        
+
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates derivative of completeness with respect to integration time
+
+        Note: Prototype does no calculations and always returns the same value
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            dcomp (array):
+                Derivative of completeness with respect to integration time
+        
+        """
+
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+
+        return np.array([0.02]*len(intTimes))
+

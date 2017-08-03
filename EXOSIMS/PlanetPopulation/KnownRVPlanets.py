@@ -33,8 +33,9 @@ class KnownRVPlanets(KeplerLike1):
             user specified values
             
     Attributes: 
-        smaknee (float): 
+        smaknee (float):
             Location (in AU) of semi-major axis decay point (knee).
+            Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
         rvplanetfilepath (string):
@@ -179,7 +180,7 @@ class KnownRVPlanets(KeplerLike1):
         """
         n = self.gen_input_check(n)
         # unitless mass range
-        Mplim = self.Mprange.to('earthMass').value
-        Mp = statsFun.simpSample(self.dist_mass, n, Mplim[0], Mplim[1])*u.earthMass
+        Mpr = self.Mprange.to('earthMass').value
+        Mp = statsFun.simpSample(self.dist_mass, n, Mpr[0], Mpr[1])*u.earthMass
         
         return Mp

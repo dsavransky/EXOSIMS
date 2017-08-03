@@ -169,6 +169,7 @@ class TargetList(object):
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
@@ -408,32 +409,35 @@ class TargetList(object):
         i = np.where(self.comp0 > self.minComp)[0]
         self.revise_lists(i)
 
-    def revise_lists(self, ind):
+    def revise_lists(self, sInds):
         """Replaces Target List catalog attributes with filtered values, 
         and updates the number of target stars.
         
         Args:
-            ind (ndarray):
-                1D numpy ndarray of indices to keep
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
         
         """
        
-        if len(ind) == 0:
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        if len(sInds) == 0:
             raise IndexError("Target list filtered to empty.")
         
         for att in self.catalog_atts:
             if att == 'coords':
-                ra = self.coords.ra[ind].to('deg')
-                dec = self.coords.dec[ind].to('deg')
+                ra = self.coords.ra[sInds].to('deg')
+                dec = self.coords.dec[sInds].to('deg')
                 self.coords = SkyCoord(ra, dec, self.dist.to('pc'))
             else:
                 if getattr(self, att).size != 0:
-                    setattr(self, att, getattr(self, att)[ind])
+                    setattr(self, att, getattr(self, att)[sInds])
         try:
-            self.Completeness.revise_updates(ind)
+            self.Completeness.revise_updates(sInds)
         except AttributeError:
             pass
-        self.nStars = len(ind)
+        self.nStars = len(sInds)
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
 
     def stellar_mass(self):
@@ -487,24 +491,24 @@ class TargetList(object):
         
         return mV
 
-    def stellarTeff(self,sInds):
-
-        """
-        Calculate the effective stellar temperature based on B-V color.
-
+    def stellarTeff(self, sInds):
+        """Calculate the effective stellar temperature based on B-V color.
+        
         This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008
-
+        
         Args:
             sInds (integer ndarray):
                 Indices of the stars of interest
-
+        
         Returns:
             Teff (Quantity array):
                 Stellar effective temperatures in degrees K
-
+        
         """
-
+        
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
-
+        
         return Teff
-

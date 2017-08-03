@@ -38,24 +38,24 @@ class EarthTwinHabZone1(PlanetPopulation):
         
         """
         n = self.gen_input_check(n)
-        v = self.arange.to('AU').value
-        a = np.random.uniform(low=v[0], high=v[1], size=n)*u.AU
+        ar = self.arange.to('AU').value
+        a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
         
         return a
 
-    def dist_sma(self, x):
+    def dist_sma(self, a):
         """Probability density function for uniform semi-major axis distribution in AU
         
         
         Args:
-            x (float/ndarray):
+            a (float ndarray):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (ndarray):
+            f (float ndarray):
                 Semi-major axis probability density
         
         """
         
-        return self.uniform(x, self.arange.to('AU').value)
+        return self.uniform(a, self.arange.to('AU').value)
 

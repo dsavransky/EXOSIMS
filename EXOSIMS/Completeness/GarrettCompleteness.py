@@ -14,6 +14,7 @@ try:
 except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
+import time
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
@@ -114,22 +115,28 @@ class GarrettCompleteness(BrownCompleteness):
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
         # get pdf of r
         print 'Generating pdf of orbital radius'
+        tic = time.time()
         r = np.linspace(self.rmin, self.rmax, 1000)
         fr = np.zeros(r.shape)
         for i in xrange(len(r)):
             fr[i] = self.f_r(r[i])
         self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
+        toc = time.time()
 
         print 'Finished pdf of orbital radius'
+        print 'time:  %r s' % (toc-tic)
         # get pdf of p*R**2
         print 'Generating pdf of albedo times planetary radius squared'
+        tic = time.time()
         z = np.linspace(self.zmin, self.zmax, 1000)
         fz = np.zeros(z.shape)
         for i in xrange(len(z)):
             fz[i] = self.f_z(z[i])
         self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
+        toc = time.time()
 
         print 'Finished pdf of albedo times planetary radius squared'
+        print 'time: %r s' % (toc-tic)
                 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -312,9 +319,9 @@ class GarrettCompleteness(BrownCompleteness):
                 f = self.f_dmagsz(self.zmin,dmag,s)
             else:
                 if ztest < self.zmin:
-                    f = integrate.fixed_quad(self.f_dmagsz, self.zmin, self.zmax, args=(dmag, s), n=61)[0]
+                    f = integrate.fixed_quad(self.f_dmagsz, self.zmin, self.zmax, args=(dmag, s), n=200)[0]
                 else:
-                    f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=61)[0]
+                    f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=200)[0]
         return f
     
     def f_dmagsz(self, z, dmag, s):
@@ -676,9 +683,8 @@ class GarrettCompleteness(BrownCompleteness):
                 if R1 > R2:
                     f = 0.0
                 else:
-                    f = integrate.fixed_quad(self.Rgrand,R1,R2,args=(z,),n=61)[0]
-                
-                
+                    f = integrate.fixed_quad(self.Rgrand,R1,R2,args=(z,),n=200)[0]
+                 
         return f
     
     def s_bound(self, dmag, smax):

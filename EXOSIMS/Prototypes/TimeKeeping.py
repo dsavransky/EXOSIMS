@@ -152,15 +152,13 @@ class TimeKeeping(object):
             self.next_observing_block()
 
     def next_observing_block(self, dt=None):
-        """Defines the next observing block, start and end times
+        """Defines the next observing block, start and end times.
         
         This method is called in the allocate_time() method of the TimeKeeping 
         class object, when the allocated time requires moving outside of the current OB.
         
-        If no OB duration was specified, this method is only called in the run_sim() 
-        method of the SurveySimulation class object, where a temporal block dt will
-        be passed, equivalent to the time spent on one target (i.e., one observation 
-        per OB).
+        If no OB duration was specified, a new Observing Block is created for 
+        each observation in the SurveySimulation module. 
         
         """
         

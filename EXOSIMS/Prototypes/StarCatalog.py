@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -61,6 +62,9 @@ class StarCatalog(object):
 
     def __init__(self, ntargs=1, **specs):
         
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc                        # distance
         self.parx = self.dist.to('mas', equivalencies=u.parallax()) # parallax
@@ -96,6 +100,6 @@ class StarCatalog(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Star Catalog class object attributes'

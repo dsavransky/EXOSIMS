@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
 import numpy as np
 import astropy.units as u
 import scipy.stats as st
 import scipy.interpolate
 import numbers
-from EXOSIMS.util.get_module import get_module
 
 class PostProcessing(object):
     """Post Processing class template
@@ -40,6 +41,9 @@ class PostProcessing(object):
     _outspec = {}
 
     def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, maxFAfluxratio=1e-6, **specs):
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         self.FAP = float(FAP)       # false alarm probability
         self.MDP = float(MDP)       # missed detection probability
@@ -105,7 +109,7 @@ class PostProcessing(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'
 

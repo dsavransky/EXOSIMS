@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.eccanom import eccanom
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 import os,inspect
-from EXOSIMS.util.eccanom import eccanom
 
 class Observatory(object):
     """Observatory class template
@@ -74,6 +75,9 @@ class Observatory(object):
             occulterSep=55000, skIsp=220, defburnPortion=0.05, spkpath=None,
             forceStaticEphem=False, checkKeepoutEnd=True, **specs):
         
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         # validate inputs
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
@@ -105,12 +109,12 @@ class Observatory(object):
                 from jplephem.spk import SPK
                 self.havejplephem = True
             except ImportError:
-                print "WARNING: Module jplephem not found, " \
-                        + "using static solar system ephemerides."
+                self.vprint("WARNING: Module jplephem not found, " \
+                        + "using static solar system ephemerides.")
                 self.havejplephem = False
         else:
             self.havejplephem = False
-            print "Using static solar system ephemerides."
+            self.vprint("Using static solar system ephemerides.")
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -233,7 +237,7 @@ class Observatory(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Observatory class object attributes'
 
@@ -816,6 +820,6 @@ class Observatory(object):
             """
             
             for att in self.__dict__.keys():
-                print '%s: %r' % (att, getattr(self, att))
+                print('%s: %r' % (att, getattr(self, att)))
             
             return 'SolarEph class object attributes'

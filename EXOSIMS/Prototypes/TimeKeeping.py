@@ -1,3 +1,4 @@
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -50,6 +51,9 @@ class TimeKeeping(object):
     def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
             missionPortion=1, OBduration=np.inf, **specs):
         
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
         assert extendedLife >= 0, "Need extendedLife >= 0, got %f"%extendedLife
@@ -96,7 +100,7 @@ class TimeKeeping(object):
         method prints the values contained in the object."""
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
@@ -127,7 +131,7 @@ class TimeKeeping(object):
         """
         dt = 1.*u.day
         self.allocate_time(dt)
-        #print '  Waiting %s'%dt.round(2)
+        #self.vprint('  Waiting %s'%dt.round(2))
 
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
@@ -195,5 +199,5 @@ class TimeKeeping(object):
             self.OBnumber -= 1
         else:
             self.obsStart = nextStart
-            print 'OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, 
-                    dt.round(2), (nwait*dt).round(2))
+            self.vprint('OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, 
+                    dt.round(2), (nwait*dt).round(2)))

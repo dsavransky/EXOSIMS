@@ -1,11 +1,12 @@
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-import EXOSIMS.util.statsFun as statsFun 
+from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+import numpy as np
+import astropy.units as u
+import astropy.constants as const
+import EXOSIMS.util.statsFun as statsFun 
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -85,6 +86,9 @@ class SimulatedUniverse(object):
     _outspec = {}
     
     def __init__(self, **specs):
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
@@ -121,7 +125,7 @@ class SimulatedUniverse(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r'%(att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Simulated Universe class object attributes'
 

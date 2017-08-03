@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import numpy as np
+from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+import numpy as np
 
 class Completeness(object):
     """Completeness class template
@@ -18,9 +19,13 @@ class Completeness(object):
     _outspec = {}
     
     def __init__(self, **specs):
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         # import Planet Population and Physical Model class objects
         Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
-        self.PlanetPopulation = Pop # planet population object class
+        self.PlanetPopulation = Pop
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
 
     def __str__(self):
@@ -32,7 +37,7 @@ class Completeness(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Completeness class object attributes'
 

@@ -1,8 +1,9 @@
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
 import astropy.units as u
 import numpy as np
 import copy
 import numbers
-from EXOSIMS.util.get_module import get_module
 
 class PlanetPopulation(object):
     """Planet Population Description class template
@@ -56,6 +57,9 @@ class PlanetPopulation(object):
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
             Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
             Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         # check range of parameters
         self.arange = self.checkranges(arange,'arange')*u.AU
@@ -130,7 +134,7 @@ class PlanetPopulation(object):
         method will print the attribute values contained in the object"""
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Population class object attributes'
 

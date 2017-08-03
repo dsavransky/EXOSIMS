@@ -1,4 +1,5 @@
 import numpy as np
+from EXOSIMS.util.vprint import vprint
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
@@ -20,7 +21,10 @@ class BackgroundSources(object):
     _outspec = {}
 
     def __init__(self, **specs):
-        #currently nothing to do here
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         return
 
     def __str__(self):
@@ -29,7 +33,7 @@ class BackgroundSources(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Background Sources class object attributes'
 

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-from EXOSIMS.util.get_module import get_module
 import time
 import json, os.path, copy, re, inspect, subprocess
 
@@ -86,19 +87,9 @@ class SurveySimulation(object):
 
     def __init__(self, scriptfile=None, WAint=None, dMagint=None, ntFlux=1,
             charMargin=0.15, seed=None, **specs):
-        """Initializes Survey Simulation with default values
         
-        Input: 
-            scriptfile (string):
-                JSON script file. If not set, assumes that dictionary has been 
-                passed through specs.
-                
-        """
-        
-        # mission simulation logger
-        self.logger = specs.get('logger', logging.getLogger(__name__))
-        
-        # if a script file is provided read it in
+        # if a script file is provided read it in. If not set, assumes that 
+        # dictionary has been passed through specs.
         if scriptfile is not None:
             import json, os.path
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
@@ -118,6 +109,12 @@ class SurveySimulation(object):
             # modules array must be present
             if 'modules' not in specs.keys():
                 raise ValueError("No modules field found in script.")
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
+        # mission simulation logger
+        self.logger = specs.get('logger', logging.getLogger(__name__))
         
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
@@ -235,7 +232,7 @@ class SurveySimulation(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Survey Simulation class object attributes'
 
@@ -269,7 +266,7 @@ class SurveySimulation(object):
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
         self.logger.info(log_begin)
-        print log_begin
+        self.vprint(log_begin)
         t0 = time.time()
         sInd = None
         cnt = 0
@@ -302,7 +299,7 @@ class SurveySimulation(object):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
-                print log_obs
+                self.vprint(log_obs)
                 
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
@@ -368,7 +365,7 @@ class SurveySimulation(object):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %s'%TK.obsEnd.round(2)
+                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
         else:
@@ -377,7 +374,7 @@ class SurveySimulation(object):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print log_end
+            print(log_end)
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -681,7 +678,7 @@ class SurveySimulation(object):
             log_det = '   - Detected planet(s) %s (%s/%s)'%(pInds[det], 
                     len(pInds[det]), len(pInds))
             self.logger.info(log_det)
-            print log_det
+            self.vprint(log_det)
         
         # populate the lastDetected array by storing det, fEZ, dMag, and WA
         self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, 
@@ -703,7 +700,7 @@ class SurveySimulation(object):
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
             log_FA = '   - False Alarm (WA=%s, dMag=%s)'%(np.round(WA, 3), round(dMag, 1))
             self.logger.info(log_FA)
-            print log_FA
+            self.vprint(log_FA)
         
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
@@ -835,7 +832,7 @@ class SurveySimulation(object):
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
-            print log_char
+            self.vprint(log_char)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -1062,7 +1059,7 @@ class SurveySimulation(object):
         specs['modules'] = self.modules
         self.__init__(**specs)
         
-        print "Simulation reset."
+        self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):
         """Join all _outspec dicts from all modules into one output dict

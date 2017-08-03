@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import numbers
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.deltaMag import deltaMag
 
 class TargetList(object):
     """Target List class template
@@ -66,9 +67,9 @@ class TargetList(object):
 
     def __init__(self, minComp=0.1, missionStart=60634, staticStars=True,
             keepStarCatalog=False, **specs):
-        """Initializes target list
         
-        """
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs
         assert isinstance(minComp, numbers.Number), "minComp must be a number."
@@ -138,7 +139,7 @@ class TargetList(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
 

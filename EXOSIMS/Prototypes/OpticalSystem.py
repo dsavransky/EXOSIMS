@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
 import os.path
 import numbers
 import numpy as np
@@ -182,6 +183,9 @@ class OpticalSystem(object):
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
             OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, **specs):
+        
+        # load the vprint funtion (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         # load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor (fraction of PM area)
@@ -443,7 +447,7 @@ class OpticalSystem(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r'%(att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Optical System class object attributes'
 

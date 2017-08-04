@@ -89,7 +89,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            seed=None, WAint=None, dMagint=None, **specs):
+            WAint=None, dMagint=None, **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -190,8 +190,8 @@ class SurveySimulation(object):
         self.charMargin = float(charMargin)
         # set up numpy random number (generate it if not in specs)
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
+        self.vprint('Numpy random seed is: %s'%self.seed)
         np.random.seed(self.seed)
-        self.vprint('MissionSim seed is: %s'%self.seed)
         
         # populate outspec with all SurveySimulation scalar attributes
         for att in self.__dict__.keys():

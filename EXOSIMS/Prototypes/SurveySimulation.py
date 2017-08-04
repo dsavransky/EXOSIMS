@@ -5,6 +5,7 @@ import sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 
@@ -71,6 +72,8 @@ class SurveySimulation(object):
             Design Reference Mission, contains the results of a survey simulation
         ntFlux (integer):
             Observation time sampling, to determine the integration time interval
+        nVisitsMax (integer):
+            Maximum number of observations (in detection mode) per star.
         charMargin (float):
             Integration time margin for characterization
         seed (integer):
@@ -85,8 +88,8 @@ class SurveySimulation(object):
     _modtype = 'SurveySimulation'
     _outspec = {}
 
-    def __init__(self, scriptfile=None, WAint=None, dMagint=None, ntFlux=1,
-            charMargin=0.15, seed=None, **specs):
+    def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
+            seed=None, WAint=None, dMagint=None, **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -179,33 +182,28 @@ class SurveySimulation(object):
         self.modules['Observatory'] = self.Observatory
         self.modules['TimeKeeping'] = self.TimeKeeping
         
-        # list of simulation results, each item is a dictionary
-        self.DRM = []
-        
-        # initialize arrays updated in run_sim()
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.propagTimes = np.zeros(TL.nStars)*u.d
-        self.lastObsTimes = np.zeros(TL.nStars)*u.d
-        self.starVisits = np.zeros(TL.nStars, dtype=int)
-        self.starRevisit = np.array([])
-        self.starExtended = np.array([], dtype=int)
-        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
-       
-        # observation time sampling (must be an integer)
+        # observation time sampling
         self.ntFlux = int(ntFlux)
+        # maximum number of observations per star
+        self.nVisitsMax = int(nVisitsMax)
         # integration time margin for characterization
         self.charMargin = float(charMargin)
-        # numpy random number seed
-        assert seed is not None, 'seed was not passed through the specs dictionary'
-        self.seed = int(seed)
+        # set up numpy random number (generate it if not in specs)
+        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
+        np.random.seed(self.seed)
+        self.vprint('MissionSim seed is: %s'%self.seed)
+        
+        # populate outspec with all SurveySimulation scalar attributes
+        for att in self.__dict__.keys():
+            if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
+                self._outspec[att] = self.__dict__[att]
         
         # load the integration values: working angle (WAint), delta magnitude (dMagint)
         # default to detection mode IWA and dMadLim
         # must be of size equal to TargetList.nStars
+        TL = self.TargetList
         OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
         dMagint = OS.dMagLim if dMagint is None else float(dMagint)
         if WAint is None:
             mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
@@ -216,12 +214,20 @@ class SurveySimulation(object):
         self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
         self.dMagint = np.array([dMagint]*TL.nStars)
         
-        # populate outspec
-        self._outspec['ntFlux'] = self.ntFlux
-        self._outspec['charMargin'] = self.charMargin
-        self._outspec['seed'] = self.seed
+        # add scalar values of WAint and dMagint to outspec
         self._outspec['WAint'] = self.WAint[0].to('arcsec').value
         self._outspec['dMagint'] = self.dMagint[0]
+        
+        # initialize arrays updated in run_sim()
+        self.DRM = []
+        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
+        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
+        self.propagTimes = np.zeros(TL.nStars)*u.d
+        self.lastObsTimes = np.zeros(TL.nStars)*u.d
+        self.starVisits = np.zeros(TL.nStars, dtype=int)
+        self.starRevisit = np.array([])
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -295,8 +301,8 @@ class SurveySimulation(object):
                 DRM['OB_nb'] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
-                log_obs = ('  Observation #%s, target #%s/%s with %s planet(s), ' \
-                        + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
+                log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
+                        + 'mission time: %s')%(cnt, sInd, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
@@ -481,13 +487,14 @@ class SurveySimulation(object):
             # 5/ filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if len(sInds) > 0:
-                tovisit[sInds] = (self.starVisits[sInds] == min(self.starVisits[sInds]))
+                tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
+                        & (self.starVisits[sInds] < self.nVisitsMax))
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
                     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
                     ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
                             if x in sInds]
-                    tovisit[ind_rev] = True
+                    tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
                 sInds = np.where(tovisit)[0]
             
             # 6/ choose best target from remaining
@@ -675,7 +682,7 @@ class SurveySimulation(object):
         det = (detected == 1)
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
-            log_det = '   - Detected planet(s) %s (%s/%s)'%(pInds[det], 
+            log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
                     len(pInds[det]), len(pInds))
             self.logger.info(log_det)
             self.vprint(log_det)
@@ -728,7 +735,11 @@ class SurveySimulation(object):
         if self.starRevisit.size == 0:
             self.starRevisit = np.array([revisit])
         else:
-            self.starRevisit = np.vstack((self.starRevisit, revisit))
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]
         
         return detected.astype(int), fZ, systemParams, SNR, FA
 
@@ -832,7 +843,7 @@ class SurveySimulation(object):
             TK.allocate_time(mode['syst']['ohTime'])
             intTime = np.max(intTimes[tochar])
             pIndsChar = pIndsDet[tochar]
-            log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
+            log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
             self.vprint(log_char)

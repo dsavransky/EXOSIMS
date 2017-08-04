@@ -100,13 +100,9 @@ class MissionSim(object):
         specs['verbose'] = self.verbose
         # load the vprint funtion (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
-        # set up numpy random number seed at top
-        self.seed = specs.get('seed', py_random.randint(1, 1e9))
-        np.random.seed(self.seed)
-        # add seed to specs
+        # set up numpy random number and add seed to specs
+        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         specs['seed'] = self.seed
-        self.vprint('MissionSim seed is: %s'%self.seed)
         
         # start logging, with log file and logging level (default: INFO)
         self.logfile = specs.get('logfile', None)
@@ -117,6 +113,8 @@ class MissionSim(object):
         
         # populate outspec
         for att in self.__dict__.keys():
+            if att not in ['vprint']:
+                self._outspec[att] = self.__dict__[att]
         
         # initialize top level, import modules
         if nopar:

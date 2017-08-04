@@ -45,8 +45,9 @@ class ZodiacalLight(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Zodiacal Light object

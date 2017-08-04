@@ -433,8 +433,8 @@ class OpticalSystem(object):
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
-            if att not in ['F0', 'scienceInstruments', 'starlightSuppressionSystems',
-                    'observingModes']:
+            if att not in ['vprint', 'F0', 'scienceInstruments', 
+                    'starlightSuppressionSystems', 'observingModes']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 

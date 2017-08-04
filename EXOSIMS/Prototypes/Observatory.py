@@ -118,8 +118,9 @@ class Observatory(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)

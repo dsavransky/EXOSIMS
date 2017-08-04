@@ -89,7 +89,7 @@ class PostProcessing(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['ppFact', 'maxFAfluxratio']:
+            if att not in ['vprint', 'ppFact', 'maxFAfluxratio']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         # populate with values which may be interpolants

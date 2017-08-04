@@ -93,8 +93,9 @@ class PlanetPopulation(object):
         
         # populate all attributes to outspec
         for att in self.__dict__.keys():
-            dat = copy.copy(self.__dict__[att])
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = copy.copy(self.__dict__[att])
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
                 
         # define prototype distributions of parameters (uniform and log-uniform)
         self.uniform = lambda x,v: np.array((np.array(x) >=v [0]) & 

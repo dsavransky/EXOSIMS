@@ -117,7 +117,6 @@ class MissionSim(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            self._outspec[att] = self.__dict__[att]
         
         # initialize top level, import modules
         if nopar:

@@ -121,14 +121,14 @@ class TargetList(object):
         
         # if staticStars is True, the star coordinates are taken at mission start, 
         # and are not propagated during the mission
-        if staticStars:
+        self.starprop_static = None
+        if self.staticStars is True:
             allInds = np.arange(self.nStars)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
-            self.starprop = lambda sInds, currentTime, eclip=False, \
+            self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \
                     c2=self.starprop(allInds, missionStart, eclip=True): \
-                    c1[np.array(sInds, ndmin=1, copy=False)] if eclip==False else \
-                    c2[np.array(sInds, ndmin=1, copy=False)]
+                    c1[sInds] if eclip==False else c2[sInds]
 
     def __str__(self):
         """String representation of the Target List object
@@ -170,6 +170,10 @@ class TargetList(object):
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            return self.starprop_static(sInds, currentTime, eclip)
         
         # get all array sizes
         nStars = sInds.size

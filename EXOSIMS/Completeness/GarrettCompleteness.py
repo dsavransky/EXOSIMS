@@ -115,28 +115,21 @@ class GarrettCompleteness(BrownCompleteness):
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
         # get pdf of r
         print 'Generating pdf of orbital radius'
-        tic = time.time()
         r = np.linspace(self.rmin, self.rmax, 1000)
         fr = np.zeros(r.shape)
         for i in xrange(len(r)):
             fr[i] = self.f_r(r[i])
         self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
-        toc = time.time()
-
         print 'Finished pdf of orbital radius'
-        print 'time:  %r s' % (toc-tic)
+
         # get pdf of p*R**2
         print 'Generating pdf of albedo times planetary radius squared'
-        tic = time.time()
         z = np.linspace(self.zmin, self.zmax, 1000)
         fz = np.zeros(z.shape)
         for i in xrange(len(z)):
             fz[i] = self.f_z(z[i])
         self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
-        toc = time.time()
-
         print 'Finished pdf of albedo times planetary radius squared'
-        print 'time: %r s' % (toc-tic)
                 
     def target_completeness(self, TL):
         """Generates completeness values for target stars

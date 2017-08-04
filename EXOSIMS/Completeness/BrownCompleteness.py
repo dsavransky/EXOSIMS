@@ -179,35 +179,35 @@ class BrownCompleteness(Completeness):
             self.updates = np.zeros((TL.nStars, 5))
             # number of planets to simulate
             nplan = int(2e4)
-            # normalization time
-            dt = 1e9*u.day
             # sample quantities which do not change in time
-            a = PPop.gen_sma(nplan) # AU
+            a = PPop.gen_sma(nplan).to('AU').value
             if PPop.constrainOrbits:
-                e = PPop.gen_eccen_from_sma(nplan,a)
+                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
             else:
                 e = PPop.gen_eccen(nplan)
-            I = PPop.gen_I(nplan) # deg
-            O = PPop.gen_O(nplan) # deg
-            w = PPop.gen_w(nplan) # deg
+            I = PPop.gen_I(nplan).to('rad').value
+            O = PPop.gen_O(nplan).to('rad').value
+            w = PPop.gen_w(nplan).to('rad').value
             p = PPop.gen_albedo(nplan)
-            Rp = PPop.gen_radius(nplan) # km
-            Mp = PPop.gen_mass(nplan) # kg
-            rmax = a*(1.+e)
+            Rp = PPop.gen_radius(nplan) # R_earth
+            Mp = PPop.gen_mass(nplan) # M_earth
+            rmax = a*(1.+e) # AU
             # sample quantity which will be updated
             M = np.random.uniform(high=2.*np.pi,size=nplan)
             newM = np.zeros((nplan,))
             # population values
-            smin = (np.tan(IWA)*TL.dist).to('AU')
+            smin = (np.tan(IWA)*TL.dist).to('AU').value
             if np.isfinite(OWA):
-                smax = (np.tan(OWA)*TL.dist).to('AU')
+                smax = (np.tan(OWA)*TL.dist).to('AU').value
             else:
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
-                        (1.+np.max(PPop.erange))]*TL.nStars)*u.AU
+                        (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
             for sInd in xrange(TL.nStars):
-                mu = const.G*(Mp + TL.MsTrue[sInd])
-                n = np.sqrt(mu/a**3)
+                mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
+                n = np.sqrt(mu/a**3) # in 1/day
+                # normalization time equation from Brown 2015
+                dt = 58.0*(TL.L[sInd]/0.83)**(3.0/4.0)*(TL.MsTrue[sInd]/(0.91*u.M_sun))**(1.0/2.0) # days
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
@@ -239,12 +239,12 @@ class BrownCompleteness(Completeness):
                     B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
                     
                     # planet position, planet-star distance, apparent separation
-                    r = (A*r1 + B*r2)*u.AU # position vector
-                    d = np.linalg.norm(r,axis=1)*r.unit # planet-star distance
-                    s = np.linalg.norm(r[:,0:2],axis=1)*r.unit # apparent separation
+                    r = (A*r1 + B*r2) # position vector (AU)
+                    d = np.linalg.norm(r,axis=1) # planet-star distance
+                    s = np.linalg.norm(r[:,0:2],axis=1) # apparent separation
                     beta = np.arccos(r[:,2]/d) # phase angle
-                    Phi = self.PlanetPhysicalModel.calc_Phi(beta) # phase function
-                    dMag = deltaMag(p[pInds],Rp[pInds],d,Phi) # difference in magnitude
+                    Phi = self.PlanetPhysicalModel.calc_Phi(beta*u.rad) # phase function
+                    dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
 
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                     toremovedmag = np.where(dMag < OS.dMagLim)[0]

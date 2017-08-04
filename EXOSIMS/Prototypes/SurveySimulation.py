@@ -793,11 +793,12 @@ class SurveySimulation(object):
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
         
-        # 1/ find spacecraft orbital START position and check keepout angle
+        # 1/ find spacecraft orbital START position including overhead time,
+        # and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs
-            startTimeNorm = TK.currentTimeNorm
+            startTime = TK.currentTimeAbs + mode['syst']['ohTime']
+            startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime']
             # planets to characterize
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
         
@@ -825,8 +826,10 @@ class SurveySimulation(object):
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
         
-        # 4/ if yes, perform the characterization for the maximum char time
+        # 4/ if yes, allocate the overhead time, and perform the characterization 
+        # for the maximum char time
         if np.any(tochar):
+            TK.allocate_time(mode['syst']['ohTime'])
             intTime = np.max(intTimes[tochar])
             pIndsChar = pIndsDet[tochar]
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 

@@ -1,14 +1,22 @@
-"""End to End Test Suite for EXOSIMS
+"""
+End to End Test Suite for EXOSIMS
+
 Run as:
     >python e2eTests.py
 
 This code will sequentially execute all script files found in:
 EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts
-and print a summary of the results.  Possible outcomes for each test
+and print a summary of the results.  A script execution includes
+instantiating a MissionSim object using the script, running a 
+simulation via MissionSim.run_sim(), and resetting the simulation
+using MissionSim.reset_sim(). Possible outcomes for each test
 are:
+    
     PASS
     FAIL - Instantiation
     FAIL - Execution
+    FAIL - Reset
+
 
 """
 

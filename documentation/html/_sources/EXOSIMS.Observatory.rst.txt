@@ -1,19 +1,19 @@
-EXOSIMS.Observatory package
-===========================
+EXOSIMS\.Observatory package
+============================
 
 Submodules
 ----------
 
-EXOSIMS.Observatory.WFIRSTObservatory module
---------------------------------------------
+EXOSIMS\.Observatory\.WFIRSTObservatory module
+----------------------------------------------
 
 .. automodule:: EXOSIMS.Observatory.WFIRSTObservatory
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.Observatory.WFIRSTObservatoryL2 module
-----------------------------------------------
+EXOSIMS\.Observatory\.WFIRSTObservatoryL2 module
+------------------------------------------------
 
 .. automodule:: EXOSIMS.Observatory.WFIRSTObservatoryL2
     :members:

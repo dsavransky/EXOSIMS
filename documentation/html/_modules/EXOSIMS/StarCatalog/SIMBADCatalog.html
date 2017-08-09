@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>EXOSIMS.StarCatalog.SIMBADCatalog &#8212; EXOSIMS 1.1 documentation</title>
-    
+    <title>EXOSIMS.StarCatalog.SIMBADCatalog &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +21,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -56,7 +50,9 @@
     <span class="sd">&quot;&quot;&quot;SIMBAD Catalog class</span>
 <span class="sd">    </span>
 <span class="sd">    This class provides the functions to populate the star catalog used in </span>
-<span class="sd">    EXOSIMS from the SIMBAD star catalog data.&quot;&quot;&quot;</span>
+<span class="sd">    EXOSIMS from the SIMBAD star catalog data.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
     
 <div class="viewcode-block" id="SIMBADCatalog.populatepkl"><a class="viewcode-back" href="../../../EXOSIMS.StarCatalog.html#EXOSIMS.StarCatalog.SIMBADCatalog.SIMBADCatalog.populatepkl">[docs]</a>    <span class="k">def</span> <span class="nf">populatepkl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pklpath</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates the star catalog and returns True if successful</span>
@@ -82,21 +78,22 @@
                 
                 <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="c1"># list of astropy attributes</span>
-                    <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span><span class="s1">&#39;parx&#39;</span><span class="p">,</span><span class="s1">&#39;pmra&#39;</span><span class="p">,</span><span class="s1">&#39;pmdec&#39;</span><span class="p">,</span><span class="s1">&#39;rv&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span> <span class="s1">&#39;parx&#39;</span><span class="p">,</span> <span class="s1">&#39;pmra&#39;</span><span class="p">,</span> <span class="s1">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s1">&#39;rv&#39;</span><span class="p">):</span>
                         <span class="n">unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">att</span><span class="p">)</span><span class="o">.</span><span class="n">unit</span>
                         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">att</span><span class="p">])</span><span class="o">*</span><span class="n">unit</span><span class="p">)</span>
                     <span class="c1"># list of non-astropy attributes</span>
                     <span class="k">elif</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">att</span><span class="p">]))</span>
                 <span class="c1"># astropy SkyCoord object</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">],</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">],</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg,deg,pc&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">],</span> 
+                        <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg,deg,pc&#39;</span><span class="p">)</span>
                 
                 <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span> <span class="o">%</span> <span class="n">pklpath</span>
+                <span class="nb">print</span> <span class="s2">&quot;pickled dictionary file </span><span class="si">%s</span><span class="s2"> must contain key &#39;Name&#39;&quot;</span><span class="o">%</span><span class="n">pklpath</span>
                 <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">pklpath</span>
+            <span class="nb">print</span> <span class="s1">&#39;Star catalog pickled dictionary file </span><span class="si">%s</span><span class="s1"> not in StarCatalog directory&#39;</span><span class="o">%</span><span class="n">pklpath</span>
             <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
         
         <span class="k">return</span> <span class="n">success</span></div>
@@ -128,10 +125,11 @@
             <span class="c1"># dictionary mapping MATLAB structure fields to required Python </span>
             <span class="c1"># object attribute names</span>
             <span class="n">mat2pkl</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;NAME&#39;</span><span class="p">:</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;TYPE&#39;</span><span class="p">:</span><span class="s1">&#39;Type&#39;</span><span class="p">,</span> <span class="s1">&#39;SPEC&#39;</span><span class="p">:</span><span class="s1">&#39;Spec&#39;</span><span class="p">,</span> <span class="s1">&#39;PARX&#39;</span><span class="p">:</span><span class="s1">&#39;parx&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;UMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Umag&#39;</span><span class="p">,</span> <span class="s1">&#39;BMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s1">&#39;VMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s1">&#39;RMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Rmag&#39;</span><span class="p">,</span> <span class="s1">&#39;IMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Imag&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;JMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s1">&#39;HMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s1">&#39;KMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Kmag&#39;</span><span class="p">,</span> <span class="s1">&#39;DIST&#39;</span><span class="p">:</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span> <span class="s1">&#39;BVNEW&#39;</span><span class="p">:</span><span class="s1">&#39;BV&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;MV&#39;</span><span class="p">:</span><span class="s1">&#39;MV&#39;</span><span class="p">,</span> <span class="s1">&#39;BC&#39;</span><span class="p">:</span><span class="s1">&#39;BC&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="s1">&#39;RADEG&#39;</span><span class="p">:</span><span class="s1">&#39;radeg&#39;</span><span class="p">,</span> <span class="s1">&#39;DECDEG&#39;</span><span class="p">:</span><span class="s1">&#39;decdeg&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PMRA&#39;</span><span class="p">:</span><span class="s1">&#39;pmra&#39;</span><span class="p">,</span> <span class="s1">&#39;PMDEC&#39;</span><span class="p">:</span><span class="s1">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s1">&#39;RV&#39;</span><span class="p">:</span><span class="s1">&#39;rv&#39;</span><span class="p">,</span> <span class="s1">&#39;BINARY_CUT&#39;</span><span class="p">:</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">}</span>
+                    <span class="s1">&#39;UMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Umag&#39;</span><span class="p">,</span> <span class="s1">&#39;BMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s1">&#39;VMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s1">&#39;RMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Rmag&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;IMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Imag&#39;</span><span class="p">,</span> <span class="s1">&#39;JMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Jmag&#39;</span><span class="p">,</span> <span class="s1">&#39;HMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Hmag&#39;</span><span class="p">,</span> <span class="s1">&#39;KMAG&#39;</span><span class="p">:</span><span class="s1">&#39;Kmag&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;DIST&#39;</span><span class="p">:</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span> <span class="s1">&#39;BVNEW&#39;</span><span class="p">:</span><span class="s1">&#39;BV&#39;</span><span class="p">,</span> <span class="s1">&#39;MV&#39;</span><span class="p">:</span><span class="s1">&#39;MV&#39;</span><span class="p">,</span> <span class="s1">&#39;BC&#39;</span><span class="p">:</span><span class="s1">&#39;BC&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;RADEG&#39;</span><span class="p">:</span><span class="s1">&#39;radeg&#39;</span><span class="p">,</span> <span class="s1">&#39;DECDEG&#39;</span><span class="p">:</span><span class="s1">&#39;decdeg&#39;</span><span class="p">,</span> <span class="s1">&#39;PMRA&#39;</span><span class="p">:</span><span class="s1">&#39;pmra&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;PMDEC&#39;</span><span class="p">:</span><span class="s1">&#39;pmdec&#39;</span><span class="p">,</span> <span class="s1">&#39;RV&#39;</span><span class="p">:</span><span class="s1">&#39;rv&#39;</span><span class="p">,</span> <span class="s1">&#39;BINARY_CUT&#39;</span><span class="p">:</span><span class="s1">&#39;Binary_Cut&#39;</span><span class="p">}</span>
             <span class="n">y</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># empty dictionary to be pickled </span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="n">matpath</span><span class="p">,</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">struct_as_record</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
@@ -148,9 +146,9 @@
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">pklpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
             <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> does not exist in StarCatalog directory&#39;</span> <span class="o">%</span> <span class="n">matpath</span>
+            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> does not exist in StarCatalog directory&#39;</span><span class="o">%</span><span class="n">matpath</span>
             <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
-            
+        
         <span class="k">return</span> <span class="n">success</span></div></div>
 </pre></div>
 
@@ -185,8 +183,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

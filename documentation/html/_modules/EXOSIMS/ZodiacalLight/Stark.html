@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>EXOSIMS.ZodiacalLight.Stark &#8212; EXOSIMS 1.1 documentation</title>
-    
+    <title>EXOSIMS.ZodiacalLight.Stark &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +21,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,82 +51,89 @@
 <span class="sd">    </span>
 <span class="sd">    This class contains all variables and methods necessary to perform</span>
 <span class="sd">    Zodiacal Light Module calculations in exoplanet mission simulation using</span>
-<span class="sd">    the model from Stark et al. 2014.&quot;&quot;&quot;</span>
+<span class="sd">    the model from Stark et al. 2014.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Stark.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Stark.Stark.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">,</span> <span class="n">r_sc</span><span class="p">):</span>
+<div class="viewcode-block" id="Stark.fZ"><a class="viewcode-back" href="../../../EXOSIMS.ZodiacalLight.html#EXOSIMS.ZodiacalLight.Stark.Stark.fZ">[docs]</a>    <span class="k">def</span> <span class="nf">fZ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Obs</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns surface brightness of local zodiacal light</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
+<span class="sd">            Obs (Observatory module):</span>
+<span class="sd">                Observatory class object</span>
 <span class="sd">            TL (TargetList module):</span>
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer ndarray):</span>
 <span class="sd">                Integer indices of the stars of interest</span>
-<span class="sd">            lam (astropy Quantity):</span>
-<span class="sd">                Central wavelength in units of nm</span>
-<span class="sd">            r_sc (astropy Quantity nx3 array):</span>
-<span class="sd">                Observatory (spacecraft) position vector in units of km</span>
+<span class="sd">            currentTime (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">            mode (dict):</span>
+<span class="sd">                Selected observing mode</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            fZ (astropy Quantity array):</span>
 <span class="sd">                Surface brightness of zodiacal light in units of 1/arcsec2</span>
 <span class="sd">        </span>
-<span class="sd">        Note: r_sc must be an array of shape (sInds.size x 3)</span>
-<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="c1"># reshape sInds</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># check shape of r_sc</span>
-        <span class="k">assert</span> <span class="n">r_sc</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="s1">&#39;r_sc must be of shape (sInds.size x 3)&#39;</span>
-        
-        <span class="c1"># observatory coordinates wrt Sun</span>
-        <span class="n">rsc</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span><span class="n">r_sc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span><span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span>
+        <span class="c1"># observatory positions vector in heliocentric ecliptic frame</span>
+        <span class="n">r_obs</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">orbit</span><span class="p">(</span><span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># observatory distances (projected in ecliptic plane)</span>
+        <span class="n">r_obs_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_obs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">r_obs</span><span class="o">.</span><span class="n">unit</span>
+        <span class="c1"># observatory ecliptic longitudes</span>
+        <span class="n">r_obs_lon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">r_obs</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">r_obs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">r_obs_norm</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="c1"># longitude of the sun</span>
-        <span class="n">lon0</span> <span class="o">=</span> <span class="n">rsc</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="mi">180</span>
+        <span class="n">lon0</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_obs_lon</span> <span class="o">+</span> <span class="mi">180</span><span class="p">)</span> <span class="o">%</span> <span class="mi">360</span>
         
-        <span class="c1"># target coordinates wrt observatory</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">z</span> <span class="o">-</span> <span class="n">r_sc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">rt</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span>
-        <span class="c1"># longitudes and latitudes of targets</span>
-        <span class="n">lon</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">lon0</span>
-        <span class="n">lat</span> <span class="o">=</span> <span class="n">rt</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">value</span>
-        <span class="n">lon</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">lon</span><span class="o">+</span><span class="mi">180</span><span class="p">)</span><span class="o">%</span><span class="mi">360</span><span class="o">-</span><span class="mi">180</span><span class="p">)</span>
+        <span class="c1"># target star positions vector in heliocentric true ecliptic frame</span>
+        <span class="n">r_targ</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># target star positions vector wrt observatory in ecliptic frame</span>
+        <span class="n">r_targ_obs</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_targ</span> <span class="o">-</span> <span class="n">r_obs</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># tranform to astropy SkyCoordinates</span>
+        <span class="n">coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">r_targ_obs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">r_targ_obs</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">r_targ_obs</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">represent_as</span><span class="p">(</span><span class="s1">&#39;spherical&#39;</span><span class="p">)</span>
+        <span class="c1"># longitude and latitude absolute values for Leinert tables</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">lon0</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="n">coord</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">lon</span> <span class="o">+</span> <span class="mi">180</span><span class="p">)</span> <span class="o">%</span> <span class="mi">360</span> <span class="o">-</span> <span class="mi">180</span><span class="p">)</span>
         <span class="n">lat</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
         
-        <span class="c1"># Table 17 in Leinert et al. (1998)</span>
-        <span class="c1"># Zodiacal light brightness function of solar longitudes (rows) and beta values (columns)</span>
-        <span class="c1"># Values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm</span>
+        <span class="c1"># table 17 in Leinert et al. (1998)</span>
+        <span class="c1"># Zodiacal Light brightness function of solar LON (rows) and LAT (columns)</span>
+        <span class="c1"># values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">Izod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;Leinert98_table17.txt&#39;</span><span class="p">))</span><span class="o">*</span><span class="mf">1e-8</span> <span class="c1"># W/m2/sr/um</span>
         <span class="c1"># create data point coordinates</span>
-        <span class="n">lon_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">25</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">35</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">45</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">75</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">105</span><span class="p">,</span><span class="mi">120</span><span class="p">,</span><span class="mi">135</span><span class="p">,</span><span class="mi">150</span><span class="p">,</span><span class="mi">165</span><span class="p">,</span><span class="mi">180</span><span class="p">])</span> <span class="c1"># deg</span>
-        <span class="n">lat_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">25</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">45</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">75</span><span class="p">,</span><span class="mi">90</span><span class="p">])</span> <span class="c1"># deg</span>
-        <span class="n">y_pts</span><span class="p">,</span><span class="n">x_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">lat_pts</span><span class="p">,</span><span class="n">lon_pts</span><span class="p">)</span>
-        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">x_pts</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">y_pts</span><span class="p">)))</span>
+        <span class="n">lon_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span>
+                <span class="mi">105</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="mi">135</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">165</span><span class="p">,</span> <span class="mi">180</span><span class="p">])</span> <span class="c1"># deg</span>
+        <span class="n">lat_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">90</span><span class="p">])</span> <span class="c1"># deg</span>
+        <span class="n">y_pts</span><span class="p">,</span> <span class="n">x_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">lat_pts</span><span class="p">,</span> <span class="n">lon_pts</span><span class="p">)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">x_pts</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">y_pts</span><span class="p">)))</span>
         <span class="c1"># create data values, normalized by (90,0) value</span>
         <span class="n">z</span> <span class="o">=</span> <span class="n">Izod</span><span class="o">/</span><span class="n">Izod</span><span class="p">[</span><span class="mi">12</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">values</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="c1"># interpolates 2D</span>
-        <span class="n">fbeta</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span><span class="n">points</span><span class="p">,</span><span class="n">values</span><span class="p">,</span><span class="nb">zip</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">))</span>
+        <span class="n">fbeta</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">))</span>
         
         <span class="c1"># wavelength dependence, from Table 19 in Leinert et al 1998</span>
         <span class="c1"># interpolated w/ a quadratic in log-log space</span>
-        <span class="n">zodi_lam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.2</span><span class="p">,</span><span class="mf">2.2</span><span class="p">,</span><span class="mf">3.5</span><span class="p">,</span><span class="mf">4.8</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">25</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">140</span><span class="p">])</span> <span class="c1"># um</span>
-        <span class="n">zodi_Blam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.5e-8</span><span class="p">,</span><span class="mf">5.3e-7</span><span class="p">,</span><span class="mf">2.2e-6</span><span class="p">,</span><span class="mf">2.6e-6</span><span class="p">,</span><span class="mf">2.0e-6</span><span class="p">,</span><span class="mf">1.3e-6</span><span class="p">,</span><span class="mf">1.2e-6</span><span class="p">,</span><span class="mf">8.1e-7</span><span class="p">,</span>\
-                <span class="mf">1.7e-7</span><span class="p">,</span><span class="mf">5.2e-8</span><span class="p">,</span><span class="mf">1.2e-7</span><span class="p">,</span><span class="mf">7.5e-7</span><span class="p">,</span><span class="mf">3.2e-7</span><span class="p">,</span><span class="mf">1.8e-8</span><span class="p">,</span><span class="mf">3.2e-9</span><span class="p">,</span><span class="mf">6.9e-10</span><span class="p">])</span> <span class="c1"># W/m2/sr/um</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">]</span>
+        <span class="n">zodi_lam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">2.2</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span>
+                <span class="mf">4.8</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">140</span><span class="p">])</span> <span class="c1"># um</span>
+        <span class="n">zodi_Blam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.5e-8</span><span class="p">,</span> <span class="mf">5.3e-7</span><span class="p">,</span> <span class="mf">2.2e-6</span><span class="p">,</span> <span class="mf">2.6e-6</span><span class="p">,</span> <span class="mf">2.0e-6</span><span class="p">,</span> <span class="mf">1.3e-6</span><span class="p">,</span>
+                <span class="mf">1.2e-6</span><span class="p">,</span> <span class="mf">8.1e-7</span><span class="p">,</span> <span class="mf">1.7e-7</span><span class="p">,</span> <span class="mf">5.2e-8</span><span class="p">,</span> <span class="mf">1.2e-7</span><span class="p">,</span> <span class="mf">7.5e-7</span><span class="p">,</span> <span class="mf">3.2e-7</span><span class="p">,</span> <span class="mf">1.8e-8</span><span class="p">,</span>
+                <span class="mf">3.2e-9</span><span class="p">,</span> <span class="mf">6.9e-10</span><span class="p">])</span> <span class="c1"># W/m2/sr/um</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">zodi_lam</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">zodi_Blam</span><span class="p">)</span>
-        <span class="n">f_corr</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">)(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lam</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;um&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span>\
-                <span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">W</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">sr</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">um</span>
+        <span class="n">logf</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="n">logf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">lam</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;um&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">W</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">sr</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">um</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">h</span>                             <span class="c1"># Planck constant</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">c</span>                             <span class="c1"># speed of light in vacuum</span>
         <span class="n">ephoton</span> <span class="o">=</span> <span class="n">h</span><span class="o">*</span><span class="n">c</span><span class="o">/</span><span class="n">lam</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">ph</span>                  <span class="c1"># energy of a photon</span>
         <span class="n">F0</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">F0</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span>           <span class="c1"># zero-magnitude star (in ph/s/m2/nm)</span>
-        <span class="n">f_corr</span> <span class="o">/=</span> <span class="p">(</span><span class="n">ephoton</span> <span class="o">*</span> <span class="n">F0</span><span class="p">)</span>                <span class="c1"># color correction factor</span>
+        <span class="n">f_corr</span> <span class="o">=</span> <span class="n">f</span><span class="o">/</span><span class="n">ephoton</span><span class="o">/</span><span class="n">F0</span>                   <span class="c1"># color correction factor</span>
         
-        <span class="n">fZ</span> <span class="o">=</span> <span class="n">fbeta</span> <span class="o">*</span> <span class="n">f_corr</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">fbeta</span><span class="o">*</span><span class="n">f_corr</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="n">fZ</span></div></div>
 </pre></div>
@@ -168,8 +169,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

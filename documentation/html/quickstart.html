@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Quick Start Guide &#8212; EXOSIMS 1.1 documentation</title>
-    
+    <title>Quick Start Guide &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,20 +21,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installing and Configuring EXOSIMS" href="install.html" />
     <link rel="prev" title="Welcome to EXOSIMS’s documentation!" href="index.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -46,38 +40,252 @@
             
   <div class="section" id="quick-start-guide">
 <h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Permalink to this headline">¶</a></h1>
-<p>This is intended as a very brief overview of the steps necessary to get <code class="docutils literal"><span class="pre">EXOSIMS</span></code> running.  To start writing your own modules, please refer to the ICD and detailed as-built documentation of the prototypes.</p>
-<div class="section" id="environment">
-<h2>Environment<a class="headerlink" href="#environment" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">EXOSIMS</span></code> requires Python 2.7 and multiple packages including numpy and astropy.  All required modules are listed in the ICD and can be obtained from PyPI or other package resources such as Macports.</p>
-<p>The directory containing the <code class="docutils literal"><span class="pre">EXOSIMS</span></code> directory must be in your Python path.  On POSIX systems, this is accomplished simply by appending the path to the <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> environment variables.</p>
-</div>
-<div class="section" id="creating-a-mission-simulation-object">
-<h2>Creating a Mission Simulation Object<a class="headerlink" href="#creating-a-mission-simulation-object" title="Permalink to this headline">¶</a></h2>
-<p>The entry point to all <code class="docutils literal"><span class="pre">EXOSIMS</span></code> runs is via the survey simulation object, which is created via an input script file specifying the modules to be used and setting various input parameters.  The instantiation of this object, in turn, causes the instantiation of all other module objects.  Here is a quick example using a provided sample script:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span><span class="nn">os.path</span>
+<p>This is intended as a very brief overview of the steps necessary to get <code class="docutils literal"><span class="pre">EXOSIMS</span></code> running.  To start writing your own modules, please refer to the ICD and detailed as-built documentation of the prototypes.  Before using this guide, read through the <span class="xref std std-ref">install</span> guide and follow all of the setup steps.</p>
+<div class="section" id="exosims-workflow">
+<h2>EXOSIMS Workflow<a class="headerlink" href="#exosims-workflow" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="creating-a-missionsimulation">
+<h3>Creating a MissionSimulation<a class="headerlink" href="#creating-a-missionsimulation" title="Permalink to this headline">¶</a></h3>
+<p>The entry point to all <code class="docutils literal"><span class="pre">EXOSIMS</span></code> is via the <code class="docutils literal"><span class="pre">MissionSimulation</span></code> object, which is created via an input script file specifying the modules to be used and setting various input parameters.  The instantiation of this object, in turn, causes the instantiation of all other module objects.  Here is a quick example using a provided sample script:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span><span class="nn">EXOSIMS.MissionSim</span><span class="o">,</span><span class="nn">os.path</span>
 <span class="n">scriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">EXOSIMS</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;Scripts&#39;</span><span class="p">,</span><span class="s1">&#39;sampleScript_coron.json&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">EXOSIMS.MissionSim</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">MissionSim</span><span class="o">.</span><span class="n">MissionSim</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., <code class="docutils literal"><span class="pre">sim.Observatory</span></code>) as well as a dictionary of the modules (<code class="docutils literal"><span class="pre">sim.modules</span></code>).  A run simulation can be kicked off via the <code class="docutils literal"><span class="pre">run_sim</span></code> method of the SurveySimulation class:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+<p>Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., <code class="docutils literal"><span class="pre">sim.Observatory</span></code>) as well as a dictionary of the modules (<code class="docutils literal"><span class="pre">sim.modules</span></code>).  At this point you can interrogate the <code class="docutils literal"><span class="pre">sim</span></code> object to see the results of the setup.  In particular, you can check the size of your initial target list (<code class="docutils literal"><span class="pre">sim.TargetList.nStars</span></code>) as well as their initial (single-visit) completeness values (<code class="docutils literal"><span class="pre">sim.TargetList.comp0</span></code>).</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The sampleScript_coron.json script uses the prototype Completeness module, which does not actually do any completeness calculations, but simply returns the same value for all stars.  To calculate completeness you must use one of the implementations: <code class="docutils literal"><span class="pre">BrownCompleteness</span></code> or <code class="docutils literal"><span class="pre">GarrettCompleteness</span></code>.</p>
+</div>
+<p>You can also get a full list of all parameters (this includes the ones that weren’t specified in your input script and were filled in by defaults) via the <code class="docutils literal"><span class="pre">sim.genOutspec()</span></code> method, which returns a dictionary of all simulation parameters.  Setting the <code class="docutils literal"><span class="pre">tofile</span></code> keyword will also write this dictionary out to the specified path.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The python JSON writer supports reading/writing values (such as infinity and nan) that are not in the JSON specification.  This means that output script files may only be parseable by python, or another parser supporting these extensions to the specification.</p>
+</div>
+</div>
+<div class="section" id="running-a-simulation-and-analyzing-results">
+<h3>Running a Simulation and Analyzing Results<a class="headerlink" href="#running-a-simulation-and-analyzing-results" title="Permalink to this headline">¶</a></h3>
+<p>The survey simulation is executed via the <code class="docutils literal"><span class="pre">run_sim</span></code> method. When running with default settings (as in <code class="docutils literal"><span class="pre">sampleScript_coron.json</span></code>) the simulation details (observation numbers and detections/characterizations) will be printed as it is executed (this can be toggled off via the <code class="docutils literal"><span class="pre">verbose</span></code> script keyword). The full mission timeline is saved to the <code class="docutils literal"><span class="pre">DRM</span></code> variable in the SurveySimulation object, and can be accessed as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">sim</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+<span class="n">DRM</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">DRM</span>
 </pre></div>
 </div>
-<p>The terminal will display Observation #&#8217;s as well as any detections or characterizations that are made. The output is saved to the DRM variable. Which can be accessed by:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">myDRM</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SurveySimulation</span><span class="o">.</span><span class="n">DRM</span>
-<span class="n">myDRM</span>
+<p>The <code class="docutils literal"><span class="pre">DRM</span></code> is a list of dictionaries, each representing one observations, so that a mission simulation of 10 observations will produce a <code class="docutils literal"><span class="pre">DRM</span></code> of length 10.  The dictionaries in <code class="docutils literal"><span class="pre">DRM</span></code> contain all of the details on each observation.  You can look at a full list of dictionary keywords by executing <code class="docutils literal"><span class="pre">sim.SurveySimulation.DRM[0].keys()</span></code>. Of particular importance are:</p>
+<ul class="simple">
+<li>star_ind - The index of star observed.  You can get information about the star by using this index with the TargetList object.  For example <code class="docutils literal"><span class="pre">sim.TargetList.Name[sim.SurveySimulation.DRM[0]['star_ind']]</span></code> will return the name of the first star observed, and <code class="docutils literal"><span class="pre">sim.TargetList.coords[sim.SurveySimulation.DRM[0]['star_ind']]</span></code> will return its coordinates.</li>
+<li>plan_inds - The indices of all planets belonging to this star. You can get information about these planets by using this index with the SimulatedUniverse object. For example <code class="docutils literal"><span class="pre">sim.SimulatedUniverse.a[sim.SurveySimulation.DRM[0]['plan_inds']]</span></code> returns the semi-major axes of all planets in the system observed in the fist observation, and <code class="docutils literal"><span class="pre">sim.SimulatedUniverse.Rp[sim.SurveySimulation.DRM[0]['plan_inds']]</span></code> will return their radii.</li>
+<li>det_status - This encodes the outcome of the observation for each planet.  0 represents a missed detection, 1 represents a detection, and -1, -2 represent the planet being inside the IWA and outside the OWA, respectively.  <code class="docutils literal"><span class="pre">sim.SurveySimulation.DRM[0]['plan_inds'][sim.SurveySimulation.DRM[0]['det_status']</span> <span class="pre">==</span> <span class="pre">1]</span></code> will return the indices of all planets found in the first observation.</li>
+</ul>
+<p>To find the number of stars observed during my mission that have at least 1 planet detected, we could run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">([</span><span class="n">DRM</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="s1">&#39;star_ind&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DRM</span><span class="p">))</span> <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">DRM</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="s1">&#39;det_status&#39;</span><span class="p">]])</span>
 </pre></div>
 </div>
-<p>The terminal should display all the mission parameters of all observations made. If the last observation output of res = sim.SurveySimulation.run_sim() was #15, then accessing myDRM[14] would display the output of the 15th observation. To find the number of stars observed during my mission that have at least 1 planet detected, we could run:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">myDRM</span><span class="p">)):</span>
-    <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">myDRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;det_status&#39;</span><span class="p">]:</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">count</span><span class="o">+</span><span class="mi">1</span>
-<span class="k">print</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+<p><code class="docutils literal"><span class="pre">MissionSim</span></code> also provides utilities for examining the <code class="docutils literal"><span class="pre">DRM</span></code>.  The <code class="docutils literal"><span class="pre">DRM2array</span></code> method will return an array of all of the <code class="docutils literal"><span class="pre">DRM</span></code> entries for a specified key for the full <code class="docutils literal"><span class="pre">DRM</span></code>.  So, running <code class="docutils literal"><span class="pre">sim.DRM2array('plan_inds')</span></code> will return and array of arrays of all the planet indices encountered (but not necessarily detected) during the full mission.  <code class="docutils literal"><span class="pre">numpy.hstack(sim.DRM2array('plan_inds'))</span></code> will flatten this array into a 1D list of all planet indices encountered.</p>
+<p>The <code class="docutils literal"><span class="pre">filter_status</span></code> method will filter a provided key with a given status code.  <code class="docutils literal"><span class="pre">sim.filter_status('plan_inds',0)</span></code> will return all planet indices with missed detection throughout the full mission and <code class="docutils literal"><span class="pre">sim.filter_status('plan_inds',1)</span></code> will return the indices of all detected planets.</p>
+</div>
+<div class="section" id="running-additional-simulations">
+<h3>Running Additional Simulations<a class="headerlink" href="#running-additional-simulations" title="Permalink to this headline">¶</a></h3>
+<p>To run a new simulation using the same input scriptfile, simply reset the simulation and run it again. You can choose to generate new planets or to rewind the positions of the current set of planets to their initial states.  Setting both of these keywords to <code class="docutils literal"><span class="pre">False</span></code> will result in running a simulation that starts with all planets in their final states from the previous simulation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">sim</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>You can also run an ensemble of N simulations, which produces a list of DRMs. From there, you can find e.g. the number of observations made during each survey.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">sim</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">()</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">ens</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run_ensemble</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">genNewPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">nb_obs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+    <span class="n">DRM</span> <span class="o">=</span> <span class="n">ens</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">nb_obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DRM</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The default ensemble will run in sequence. For more details on ensembles and parallelization see <a class="reference internal" href="parallel.html#parallel"><span class="std std-ref">Survey Ensemble Parallelization</span></a>.</p>
+</div>
+</div>
+<div class="section" id="building-your-own-mission">
+<h2>Building Your Own Mission<a class="headerlink" href="#building-your-own-mission" title="Permalink to this headline">¶</a></h2>
+<p>The only required components of the input specification are:</p>
+<ul class="simple">
+<li>The modules dictionary</li>
+<li>The science instruments list</li>
+<li>The starlight suppression systems list.</li>
+</ul>
+<p>All other values will be filled in with defaults, although this will typically not produce a reasonable mission description, depending on the modules selected.  We begin with an empty set of modules, which would load all of the prototypes, and a single instrument and starlight suppression system, which will define the default observing mode.</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+ <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;StarCatalog&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;OpticalSystem&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;ZodiacalLight&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;BackgroundSources&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PlanetPhysicalModel&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Observatory&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TimeKeeping&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PostProcessing&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Completeness&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TargetList&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SimulatedUniverse&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveySimulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveyEnsemble&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;scienceInstruments&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;starlightSuppressionSystems&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span> <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>You can create a <code class="docutils literal"><span class="pre">MissionSim</span></code> object with this script, but it won’t be particularly useful, since there are no real stars in the prototype <code class="docutils literal"><span class="pre">StarCatalog</span></code>.  Now we must decide what kind of universe we will be modeling.  Let’s select the EXOCAT-1 input catalog (<a class="reference external" href="http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html">http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html</a>), provided by the <code class="docutils literal"><span class="pre">EXOCAT1</span></code> star catalog and only model Earth-twins in the habitable zone.  We have two suitable <code class="docutils literal"><span class="pre">PlanetPopulation</span></code> implementations - <code class="docutils literal"><span class="pre">EarthTwinHabZone1</span></code> and <code class="docutils literal"><span class="pre">EarthTwinHabZone2</span></code>, but we would like to override the defaults and only consider eccentricities between 0 and 0.35.  Our JSON script now becomes:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+ <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;StarCatalog&quot;</span><span class="p">:</span> <span class="s2">&quot;EXOCAT1&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;OpticalSystem&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;ZodiacalLight&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;BackgroundSources&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PlanetPhysicalModel&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Observatory&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TimeKeeping&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PostProcessing&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Completeness&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TargetList&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SimulatedUniverse&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveySimulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveyEnsemble&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;scienceInstruments&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;starlightSuppressionSystems&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;erange&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We build a <code class="docutils literal"><span class="pre">MissionSim</span></code> object called <code class="docutils literal"><span class="pre">sim</span></code> using this script and then verify that our <code class="docutils literal"><span class="pre">erange</span></code> has overwritten the default by looking at the contents of <code class="docutils literal"><span class="pre">sim.PlanetPopulation.erange</span></code>.  At this point, we should have a large number of stars (because the prototype Completeness isn’t calculating the true completeness, and the default instrument settings will result in very low integration times for most stars).  Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of <span class="math">\(10^{-11}\)</span>. The JSON script now looks like this:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+ <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;StarCatalog&quot;</span><span class="p">:</span> <span class="s2">&quot;EXOCAT1&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;OpticalSystem&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;ZodiacalLight&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;BackgroundSources&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PlanetPhysicalModel&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Observatory&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TimeKeeping&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PostProcessing&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Completeness&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TargetList&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SimulatedUniverse&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveySimulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveyEnsemble&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;scienceInstruments&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;starlightSuppressionSystems&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;IWA&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="nt">&quot;OWA&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="nt">&quot;core_contrast&quot;</span><span class="p">:</span> <span class="mf">1.0e-11</span>
+ <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;erange&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+ <span class="nt">&quot;pupilDiam&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+ <span class="nt">&quot;obscurFac&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We again build a <code class="docutils literal"><span class="pre">MissionSim</span></code> object called <code class="docutils literal"><span class="pre">sim</span></code> using the updated script and check that our changes have been applied.  Running <code class="docutils literal"><span class="pre">sim.OpticalSystem.starlightSuppressionSystems[0]['core_contrast'](sim.OpticalSystem.starlightSuppressionSystems[0]['lam'],sim.OpticalSystem.starlightSuppressionSystems[0]['IWA'])</span></code> evaluates the contrast at the coronagraph central wavelength and inner working angle.  Running <code class="docutils literal"><span class="pre">(sim.OpticalSystem.pupilDiam/2.0)**2.*np.pi</span> <span class="pre">-</span> <span class="pre">sim.OpticalSystem.pupilArea</span></code> should return zero, verifying that the aperture is unobscured.</p>
+<p>We will now replace the remaining prototype modules which don’t perform the specific calculations and only return dummy values with full implementations.  We save this step for last as multiple setup calculations (and especially the completeness) can take a while, and we want everything else to be set before we run these.  We will use Nemati <code class="docutils literal"><span class="pre">OpticalSystem</span></code>, the Brown <code class="docutils literal"><span class="pre">Completeness</span></code> (this is the Monte-Carlo version of the calculation) and the Stark <code class="docutils literal"><span class="pre">ZodiacalLight</span></code> modules:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+ <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;StarCatalog&quot;</span><span class="p">:</span> <span class="s2">&quot;EXOCAT1&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;OpticalSystem&quot;</span><span class="p">:</span> <span class="s2">&quot;Nemati&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;ZodiacalLight&quot;</span><span class="p">:</span> <span class="s2">&quot;Stark&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;BackgroundSources&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PlanetPhysicalModel&quot;</span><span class="p">:</span> <span class="s2">&quot;Forecaster&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Observatory&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TimeKeeping&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PostProcessing&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Completeness&quot;</span><span class="p">:</span> <span class="s2">&quot;BrownCompleteness&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TargetList&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SimulatedUniverse&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveySimulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveyEnsemble&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;scienceInstruments&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;starlightSuppressionSystems&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;IWA&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="nt">&quot;OWA&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="nt">&quot;core_contrast&quot;</span><span class="p">:</span> <span class="mf">1.0e-11</span>
+ <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;erange&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+ <span class="nt">&quot;pupilDiam&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+ <span class="nt">&quot;obscurFac&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Building the <code class="docutils literal"><span class="pre">sim</span></code> object will now take longer as the Monte Carlo completeness calculation executes.  Note that this will only happen once per script, as the completeness is cached on disk.   Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: <code class="docutils literal"><span class="pre">minComp</span></code> and <code class="docutils literal"><span class="pre">dMagLim</span></code>.  The former sets the cutoff below which targets are discarded, and the second sets the limiting <span class="math">\(\Delta\)</span>mag of the dimmest planets of interest. The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the <code class="docutils literal"><span class="pre">sim</span></code> object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values.  On the other hand, setting <code class="docutils literal"><span class="pre">dMagLim</span></code> significantly higher will cause us to hit the noise floor set by our contrast (and all of the other optical system defaults) and thereby calculate infeasible integration times for more stars.  The best solution is to further flesh out the optical system by overriding more of the defaults, but for now we will simply decrease the minimum completeness.</p>
+<p>At the same time, we will make this a five year mission with one year of integration time dedicated to planet finding.   We also wish to only perform detections, and not spend any time on spectral characterizations.  This is controlled by setting the SNR to zero in the characterization observing mode.  Right now, there is only one observing mode that was automatically generated from the single instrument and starlight suppression system, so we will have to define a dummy spectrometer instrument and two modes - one for detection and one for characterization.  Our JSON script now looks like this:</p>
+<div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
+ <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;StarCatalog&quot;</span><span class="p">:</span> <span class="s2">&quot;EXOCAT1&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;OpticalSystem&quot;</span><span class="p">:</span> <span class="s2">&quot;Nemati&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;ZodiacalLight&quot;</span><span class="p">:</span> <span class="s2">&quot;Stark&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;BackgroundSources&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PlanetPhysicalModel&quot;</span><span class="p">:</span> <span class="s2">&quot;Forecaster&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Observatory&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TimeKeeping&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;PostProcessing&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;Completeness&quot;</span><span class="p">:</span> <span class="s2">&quot;BrownCompleteness&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;TargetList&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SimulatedUniverse&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveySimulation&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span><span class="p">,</span>
+ <span class="nt">&quot;SurveyEnsemble&quot;</span><span class="p">:</span> <span class="s2">&quot; &quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;scienceInstruments&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span> <span class="p">},</span>
+ <span class="p">{</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;spectrometer&quot;</span> <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;starlightSuppressionSystems&quot;</span><span class="p">:</span> <span class="p">[</span>
+ <span class="p">{</span>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;IWA&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="nt">&quot;OWA&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="nt">&quot;core_contrast&quot;</span><span class="p">:</span> <span class="mf">1.0e-11</span>
+ <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;erange&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+ <span class="nt">&quot;pupilDiam&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">,</span>
+ <span class="nt">&quot;obscurFac&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+ <span class="nt">&quot;observingModes&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="nt">&quot;instName&quot;</span><span class="p">:</span> <span class="s2">&quot;imager&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;systName&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;detectionMode&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;SNR&quot;</span><span class="p">:</span> <span class="mi">5</span>
+    <span class="p">},</span>
+    <span class="p">{</span> <span class="nt">&quot;instName&quot;</span><span class="p">:</span> <span class="s2">&quot;spectrometer&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;systName&quot;</span><span class="p">:</span> <span class="s2">&quot;coronagraph&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;SNR&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="nt">&quot;minComp&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+ <span class="nt">&quot;dMagLim&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+ <span class="nt">&quot;missionLife&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+ <span class="nt">&quot;missionPortion&quot;</span><span class="p">:</span> <span class="mf">0.2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We are now ready to run our simulation.</p>
 </div>
 </div>
 
@@ -90,8 +298,13 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Quick Start Guide</a><ul>
-<li><a class="reference internal" href="#environment">Environment</a></li>
-<li><a class="reference internal" href="#creating-a-mission-simulation-object">Creating a Mission Simulation Object</a></li>
+<li><a class="reference internal" href="#exosims-workflow">EXOSIMS Workflow</a><ul>
+<li><a class="reference internal" href="#creating-a-missionsimulation">Creating a MissionSimulation</a></li>
+<li><a class="reference internal" href="#running-a-simulation-and-analyzing-results">Running a Simulation and Analyzing Results</a></li>
+<li><a class="reference internal" href="#running-additional-simulations">Running Additional Simulations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-your-own-mission">Building Your Own Mission</a></li>
 </ul>
 </li>
 </ul>
@@ -99,7 +312,7 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS&#8217;s documentation!</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS’s documentation!</a></li>
       <li>Next: <a href="install.html" title="next chapter">Installing and Configuring EXOSIMS</a></li>
   </ul></li>
 </ul>
@@ -129,8 +342,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/quickstart.rst.txt"

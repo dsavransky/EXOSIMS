@@ -1,21 +1,45 @@
-EXOSIMS.SurveySimulation package
-================================
+EXOSIMS\.SurveySimulation package
+=================================
 
 Submodules
 ----------
 
-EXOSIMS.SurveySimulation.linearJScheduler module
-------------------------------------------------
+EXOSIMS\.SurveySimulation\.KnownRVSurvey module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.KnownRVSurvey
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.cbytScheduler module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.cbytScheduler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.linearJScheduler module
+--------------------------------------------------
 
 .. automodule:: EXOSIMS.SurveySimulation.linearJScheduler
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.SurveySimulation.starkAYO2014 module
---------------------------------------------
+EXOSIMS\.SurveySimulation\.randomWalkScheduler module
+-----------------------------------------------------
 
-.. automodule:: EXOSIMS.SurveySimulation.starkAYO2014
+.. automodule:: EXOSIMS.SurveySimulation.randomWalkScheduler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.starkAYO module
+------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.starkAYO
     :members:
     :undoc-members:
     :show-inheritance:

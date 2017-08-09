@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>EXOSIMS.e2eTests &#8212; EXOSIMS 1.1 documentation</title>
-    
+    <title>EXOSIMS.e2eTests &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +21,15 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -45,16 +39,24 @@
   <h1>Source code for EXOSIMS.e2eTests</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">End to End Test Suite for EXOSIMS</span>
+
 <span class="sd">Run as:</span>
 <span class="sd">    &gt;python e2eTests.py</span>
 
 <span class="sd">This code will sequentially execute all script files found in:</span>
 <span class="sd">EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts</span>
-<span class="sd">and print a summary of the results.  Possible outcomes for each test</span>
+<span class="sd">and print a summary of the results.  A script execution includes</span>
+<span class="sd">instantiating a MissionSim object using the script, running a </span>
+<span class="sd">simulation via MissionSim.run_sim(), and resetting the simulation</span>
+<span class="sd">using MissionSim.reset_sim(). Possible outcomes for each test</span>
 <span class="sd">are:</span>
+<span class="sd">    </span>
 <span class="sd">    PASS</span>
 <span class="sd">    FAIL - Instantiation</span>
 <span class="sd">    FAIL - Execution</span>
+<span class="sd">    FAIL - Reset</span>
+
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">EXOSIMS</span>
@@ -67,30 +69,31 @@
 
 <div class="viewcode-block" id="run_e2e_tests"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.e2eTests.run_e2e_tests">[docs]</a><span class="k">def</span> <span class="nf">run_e2e_tests</span><span class="p">():</span>
     <span class="n">basedir</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">testdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">basedir</span><span class="p">,</span><span class="s1">&#39;Scripts&#39;</span><span class="p">,</span><span class="s1">&#39;TestScripts&#39;</span><span class="p">)</span>
+    <span class="n">testdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">basedir</span><span class="p">,</span> <span class="s1">&#39;Scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;TestScripts&#39;</span><span class="p">)</span>
     
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">testdir</span><span class="p">):</span>
-        <span class="nb">print</span> <span class="s2">&quot;Cannot find test script directory in EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts&quot;</span>
+        <span class="nb">print</span> <span class="s2">&quot;Cannot find test script directory in &quot;</span> \
+                <span class="o">+</span> <span class="s2">&quot;EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts&quot;</span>
         <span class="k">return</span>
-
-    <span class="n">scripts</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">testdir</span><span class="p">,</span><span class="s2">&quot;*.json&quot;</span><span class="p">))</span>
-
+    
+    <span class="n">scripts</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">testdir</span><span class="p">,</span> <span class="s2">&quot;*.json&quot;</span><span class="p">))</span>
+    
     <span class="k">if</span> <span class="ow">not</span> <span class="n">scripts</span><span class="p">:</span>
         <span class="nb">print</span> <span class="s2">&quot;No test scripts found in </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">testdir</span>
         <span class="k">return</span>
-
+    
     <span class="nb">print</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> test scripts found&quot;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">scripts</span><span class="p">)</span>
-
+    
     <span class="n">scripts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">scripts</span><span class="p">)</span>
-
+    
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
-
+    
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">script</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scripts</span><span class="p">):</span>
-        <span class="nb">print</span> <span class="s2">&quot;Running script: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">script</span><span class="p">),</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">scripts</span><span class="p">))</span>
+        <span class="nb">print</span> <span class="s2">&quot;Running script: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">script</span><span class="p">),</span> <span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">scripts</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">script</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">script</span><span class="p">))</span> 
-
+        
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sim</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">MissionSim</span><span class="o">.</span><span class="n">MissionSim</span><span class="p">(</span><span class="n">script</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
@@ -99,7 +102,7 @@
             <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n\n\n</span><span class="s2">&quot;</span>
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FAIL - Instantiation&quot;</span><span class="p">)</span>
             <span class="k">continue</span>
-
+        
         <span class="k">try</span><span class="p">:</span>
             <span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span>
@@ -109,15 +112,24 @@
             <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FAIL - Execution&quot;</span><span class="p">)</span>
             <span class="k">continue</span>
 
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Reset failed.&quot;</span>
+            <span class="nb">print</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n\n\n</span><span class="s2">&quot;</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FAIL - Reset&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        
         <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;PASS&quot;</span><span class="p">)</span>
         <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n\n\n</span><span class="s2">&quot;</span>
-
-
+    
     <span class="c1">#results</span>
     <span class="nb">print</span> <span class="s2">&quot;Summary&quot;</span>
     <span class="nb">print</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">80</span>
-    <span class="k">for</span> <span class="n">script</span><span class="p">,</span><span class="n">result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">scripts</span><span class="p">,</span><span class="n">results</span><span class="p">):</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="s1">&#39;{0:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">5</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;} ==&gt; </span><span class="si">{1}</span><span class="s1">&#39;</span>
+    <span class="k">for</span> <span class="n">script</span><span class="p">,</span><span class="n">result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">scripts</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="s1">&#39;{0:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;} ==&gt; </span><span class="si">{1}</span><span class="s1">&#39;</span>
         <span class="nb">print</span> <span class="n">tmp</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">script</span><span class="p">),</span> <span class="n">result</span><span class="p">)</span>
     
     <span class="nb">print</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">80</span></div>
@@ -158,8 +170,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

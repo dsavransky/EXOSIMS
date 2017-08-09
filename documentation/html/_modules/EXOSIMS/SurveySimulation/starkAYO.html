@@ -1,0 +1,1201 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EXOSIMS.SurveySimulation.starkAYO &#8212; EXOSIMS 1.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.SurveySimulation.starkAYO</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SurveySimulation</span> <span class="k">import</span> <span class="n">SurveySimulation</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="c1">#from EXOSIMS.util.get_module import get_module</span>
+<span class="c1">#import matlab_wrapper</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="c1">#import json</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">UnivariateSpline</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">IPython.core.debugger</span> <span class="k">import</span> <span class="n">Tracer</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">scipy.integrate</span> <span class="k">as</span> <span class="nn">integrate</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pdb</span>
+
+<span class="c1"># the EXOSIMS logger</span>
+<span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="starkAYO"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO">[docs]</a><span class="k">class</span> <span class="nc">starkAYO</span><span class="p">(</span><span class="n">SurveySimulation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;starkAYO </span>
+<span class="sd">    </span>
+<span class="sd">    This class implements a Scheduler that selects the current highest Completeness/Integration Time.</span>
+<span class="sd">    </span>
+<span class="sd">       CHANGE Args:</span>
+<span class="sd">        as (iterable 3x1):</span>
+<span class="sd">            Cost function coefficients: slew distance, completeness, target list coverage</span>
+<span class="sd">        </span>
+<span class="sd">        \*\*specs:</span>
+<span class="sd">            user specified values</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coeffs</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="n">SurveySimulation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+        <span class="c1">#verify that coefficients input is iterable 6x1</span>
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,(</span><span class="nb">list</span><span class="p">,</span><span class="nb">tuple</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;coeffs must be a 3 element iterable&quot;</span><span class="p">)</span>
+        
+        <span class="c1">#normalize coefficients</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeffs</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeffs</span>
+        <span class="c1">#Do I need the stuff above???? I dont actually know what coeffs does 5/23/2017</span>
+
+        <span class="c1">#self = sim#this needs to change</span>
+        <span class="c1">#self.SimulatedUniverse = get_module(specs[&#39;modules&#39;][&#39;SimulatedUniverse&#39;],&#39;SimulatedUniverse&#39;)(**specs)</span>
+        <span class="c1">#self.Observatory = get_module(specs[&#39;modules&#39;][&#39;Observatory&#39;],&#39;Observatory&#39;)(**specs)</span>
+        <span class="c1">#self.TimeKeeping = get_module(specs[&#39;modules&#39;][&#39;TimeKeeping&#39;],&#39;TimeKeeping&#39;)(**specs)</span>
+
+        <span class="c1"># bring inherited class objects to top level of Survey Simulation</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">BackgroundSources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PostProcessing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">TargetList</span>
+
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fullSpectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">partialSpectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">propagTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+        <span class="n">detMode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">spectroModes</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="s1">&#39;spec&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;inst&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">detMode</span>
+        
+        <span class="c1">#Create and start Schedule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="c1">#self.schedule is meant to be editable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="c1">#preserves initial list of targets</span>
+        <span class="c1">#for myi in np.arange(int(TK.missionStart.value),int(TK.missionFinishAbs.value),1):#iterate through each 1 day</span>
+        <span class="c1">#       tmpTime = Time(myi, format=&#39;mjd&#39;, scale=&#39;tai&#39;)</span>
+        <span class="c1">#        kogoodStart = Obs.keepout(TL, schedule, tmpTime, OS.telescopeKeepout)#check of keepout is good</span>
+        <span class="c1">#        schedule = schedule[np.where(kogoodStart)[0]]</span>
+        <span class="c1">#        print(&#39;Current Number &#39;,myi,&#39; Max Number &#39;,int(TK.missionFinishAbs.value))</span>
+        <span class="c1">#schedule should now be evacuated of all stars that are in the keepout region</span>
+        <span class="c1">#np.savetxt(&quot;schedule.csv&quot;, schedule, delimiter=&quot;,&quot;)</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="n">DRM</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">Obs</span><span class="o">.</span><span class="n">settlingTime</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;syst&#39;</span><span class="p">][</span><span class="s1">&#39;ohTime&#39;</span><span class="p">])</span>
+        
+        <span class="c1">#while not TK.mission_is_over():</span>
+            <span class="c1"># 0/ initialize arrays</span>
+        <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="c1">#549</span>
+        <span class="n">fZs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span><span class="c1">#549</span>
+        <span class="n">t_dets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+        <span class="n">tovisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span><span class="c1">#np.arange(TL.nStars)#here we just use the schedule passed</span>
+
+        <span class="c1">##Removed 1 Occulter Slew Time</span>
+
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+</span> <span class="n">slewTimes</span><span class="c1">#549 create array of times the length of the number of stars (length of slew time)</span>
+            <span class="c1"># 5/ Choose best target from remaining</span>
+            <span class="c1">#Calculate Completeness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">f_dmagsv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">f_dmags</span><span class="p">)</span>
+        <span class="n">dMagLim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span>
+        <span class="c1">#self.dmag = 22.5 - (np.exp(np.linspace(3.157,0.1,100))-1)#nonlinear so we can get more datapoints at higher dmaglim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">22.5</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span><span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span>
+        <span class="n">amax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">emax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">erange</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">rmax</span> <span class="o">=</span> <span class="n">amax</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">emax</span><span class="p">)</span>
+        <span class="n">SMH</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">Completeness</span><span class="c1">#using this because I had to port over a lot of code. Equivalent to self.Completeness...</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+        <span class="n">Phis</span> <span class="o">=</span> <span class="n">SMH</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">Phi</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">beta</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">Phis</span><span class="p">,</span><span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">bstar</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">SMH</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">bstar</span><span class="p">)</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">SMH</span><span class="o">.</span><span class="n">bstar</span><span class="p">,</span> <span class="mi">25000</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">binv1</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">SMH</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b1</span><span class="p">),</span> <span class="n">b1</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">bstar</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">25000</span><span class="p">)</span>
+        <span class="n">b2val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">SMH</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">binv2</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">b2val</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">b2</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">pmin</span><span class="o">*</span><span class="n">SMH</span><span class="o">.</span><span class="n">Rmin</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">SMH</span><span class="o">.</span><span class="n">pmax</span><span class="o">*</span><span class="n">SMH</span><span class="o">.</span><span class="n">Rmax</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">fz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)):</span>
+            <span class="n">fz</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">SMH</span><span class="o">.</span><span class="n">f_z</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done fz&#39;</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">dist_z</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">fz</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">rgrand2v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">rgrand2</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">SMH</span><span class="o">.</span><span class="n">rmin</span><span class="p">,</span> <span class="n">SMH</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)):</span>
+            <span class="n">fr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">SMH</span><span class="o">.</span><span class="n">f_r</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="c1">#this is really slow. On the order of 30 sec or so</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done fr&#39;</span><span class="p">)</span>
+        <span class="n">SMH</span><span class="o">.</span><span class="n">dist_r</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span><span class="c1">#find current directory of survey Simualtion</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;/starComps.csv&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span><span class="c1">#contains all comps</span>
+        <span class="c1">#self.spl_startSaved = list()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/SurveySimulation/starComps.csv&#39;</span><span class="p">):</span><span class="c1">#the file doesn&#39;t exist Generate Completeness</span>
+            <span class="c1">#Calculate Completeness for Each Star##############################</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculate Completeness 1&#39;</span><span class="p">)</span>
+            <span class="n">IWA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">value</span><span class="c1">#of telescope. to be used for min s</span>
+            <span class="n">OWA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">OWA</span><span class="o">.</span><span class="n">value</span><span class="c1">#of telescope to be used for max s</span>
+            <span class="n">starS</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span><span class="c1">#contains separation amtrix for each star</span>
+            <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)):</span><span class="c1">#iterates through each star</span>
+                <span class="n">star_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInds</span><span class="p">[</span><span class="n">q</span><span class="p">]]</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">Smin</span> <span class="o">=</span> <span class="n">star_dist</span><span class="o">*</span><span class="n">IWA</span>
+                <span class="n">Smax</span> <span class="o">=</span> <span class="n">star_dist</span><span class="o">*</span><span class="n">OWA</span>
+                <span class="n">starS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">Smin</span><span class="p">,</span><span class="n">Smax</span><span class="p">,</span><span class="mi">400</span><span class="p">))</span><span class="c1">#maybe I can use a smaller number than 400 here...</span>
+                <span class="n">myComp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dmag</span><span class="p">))</span><span class="c1">#initialize Completeness Array</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dmag</span><span class="p">)):</span><span class="c1">#for each arbitrary dmaglim between 0 and dMagLim(22.5)</span>
+                        <span class="n">dmaglim</span> <span class="o">=</span> <span class="n">dmag</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="c1">#artificial dmaglim to be set by a smaller integration time</span>
+                        <span class="n">fComp</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">]))</span><span class="c1">#same lengt of smat and contains all fComp</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">])):</span><span class="c1">#iterate through star separations</span>
+                                <span class="n">fComp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">f_s</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="n">dmaglim</span><span class="p">)</span><span class="c1">#calculates fComp</span>
+                        <span class="n">myComp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fComp</span><span class="p">)</span><span class="c1">#sum fComp over </span>
+                        <span class="c1">#print(&#39;status: &#39; + str(j))</span>
+                <span class="n">myComp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">myComp</span><span class="p">)</span><span class="c1">#turn Completeness list into numpy array</span>
+                <span class="n">myComp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">myComp</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">)]</span><span class="o">=</span><span class="mi">0</span><span class="c1">#sets all values greater than 1 completeness to 0 (out of feasible bounds)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myComp</span><span class="p">)</span>
+                <span class="c1">#starComps.append(myComp[np.where(Tint[q,:] &gt; 10**-10)[0]])#adds Completeness for star q to starComps. list of numpy arrays starComps[Star][list Element] filtered by Tint greater than 10**-15</span>
+                <span class="c1">#spl.append(UnivariateSpline(myTint[q], starComps[q], k=4, s=0))#Finds star Comp vs Tint SPLINE</span>
+                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">timeString</span> <span class="o">=</span> <span class="s1">&#39; Day &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; hour &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; min &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; num of &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span> <span class="o">+</span> <span class="n">timeString</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">myComp</span><span class="c1">#delete a temporary variable</span>
+            <span class="c1">#starComps[i][j] accessescompleteness for ith star and jth dmaglim</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done Calculating Completeness&#39;</span><span class="p">)</span>
+            <span class="c1">################################################################</span>
+            <span class="c1">#Save Completeness to File######################################</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+                <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">fo</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_ALL</span><span class="p">)</span>
+                <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">)</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span><span class="c1">#we will load the completeness file</span>
+            <span class="c1">#Load Completeness From File######################################</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Load Completeness File&#39;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">your_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1">#self.starComps_startSaved = list()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">your_list</span><span class="p">)):</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">your_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span><span class="c1">#Unfiltered Completeness Lists</span>
+            <span class="c1">#################################################################</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">)</span> <span class="o">!=</span> <span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="c1">#the number of stars in sInds and fromt the generated starComps are not equivalent</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Calculate Completeness 2&#39;</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">[:]</span><span class="c1">#delete all the old completeness garbage. I need new ones. ASIDE I could salvage and save some computation time if I leave star names in the lists...</span>
+            <span class="c1">#Calculate Completeness for Each Star##############################</span>
+            <span class="n">IWA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">IWA</span><span class="o">.</span><span class="n">value</span><span class="c1">#of telescope. to be used for min s</span>
+            <span class="n">OWA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">OWA</span><span class="o">.</span><span class="n">value</span><span class="c1">#of telescope to be used for max s</span>
+            <span class="c1">#starComps = list()#contains all comps</span>
+            <span class="n">starS</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span><span class="c1">#contains separation matrix for each star</span>
+            <span class="n">spl</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)):</span><span class="c1">#iterates through each star</span>
+                <span class="n">star_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInds</span><span class="p">[</span><span class="n">q</span><span class="p">]]</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">Smin</span> <span class="o">=</span> <span class="n">star_dist</span><span class="o">*</span><span class="n">IWA</span>
+                <span class="n">Smax</span> <span class="o">=</span> <span class="n">star_dist</span><span class="o">*</span><span class="n">OWA</span>
+                <span class="n">starS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">Smin</span><span class="p">,</span><span class="n">Smax</span><span class="p">,</span><span class="mi">400</span><span class="p">))</span><span class="c1">#maybe I can use a smaller number than 400 here...</span>
+                <span class="n">myComp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dmag</span><span class="p">))</span><span class="c1">#initialize Completeness Array</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dmag</span><span class="p">)):</span><span class="c1">#for each arbitrary dmaglim between 0 and dMagLim(22.5)</span>
+                        <span class="n">dmaglim</span> <span class="o">=</span> <span class="n">dmag</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="c1">#artificial dmaglim to be set by a smaller integration time</span>
+                        <span class="n">fComp</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">]))</span><span class="c1">#same lengt of smat and contains all fComp</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">])):</span><span class="c1">#iterate through star separations</span>
+                                <span class="n">fComp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">f_s</span><span class="p">(</span><span class="n">starS</span><span class="p">[</span><span class="n">q</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="n">dmaglim</span><span class="p">)</span><span class="c1">#calculates fComp</span>
+                        <span class="n">myComp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">fComp</span><span class="p">)</span><span class="c1">#sum fComp over </span>
+                        <span class="c1">#print(&#39;status: &#39; + str(j))</span>
+                <span class="n">myComp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">myComp</span><span class="p">)</span><span class="c1">#turn Completeness list into numpy array</span>
+                <span class="n">myComp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">myComp</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">)]</span><span class="o">=</span><span class="mi">0</span><span class="c1">#sets all values greater than 1 completeness to 0 (out of feasible bounds)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myComp</span><span class="p">)</span>
+                <span class="c1">#starComps.append(myComp[np.where(Tint[q,:] &gt; 10**-10)[0]])#adds Completeness for star q to starComps. list of numpy arrays starComps[Star][list Element] filtered by Tint greater than 10**-15</span>
+                <span class="c1">#spl.append(UnivariateSpline(myTint[q], starComps[q], k=4, s=0))#Finds star Comp vs Tint SPLINE</span>
+                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">timeString</span> <span class="o">=</span> <span class="s1">&#39; Day &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; hour &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; min &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; num of &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span> <span class="o">+</span> <span class="n">timeString</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">myComp</span><span class="c1">#delete a temporary variable</span>
+            <span class="c1">#starComps[i][j] accessescompleteness for ith star and jth dmaglim</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done Calculating Completeness&#39;</span><span class="p">)</span>
+            <span class="c1">################################################################</span>
+            <span class="c1">#Save Completeness to File######################################</span>
+            <span class="c1">#DO I NEED TO DELETE THE COMPLETENESS FILE too?</span>
+            <span class="k">try</span><span class="p">:</span><span class="c1">#Here we delete the previous completeness file</span>
+                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">timeString</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">year</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">month</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">timeNow</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;_&#39;</span>
+                <span class="n">fnameNew</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">timeString</span> <span class="o">+</span>  <span class="s1">&#39;moved_starComps.csv&#39;</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fnameNew</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+                <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">fo</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_ALL</span><span class="p">)</span>
+                <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">)</span>
+                <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1">#Calculate myTint for an initial startimg position#########################</span>
+        <span class="c1">#self.sInds_startSaved = sInds#Saves the sInds to begin the mission. This is used when dealing directly with starComps and myTint as it is the original list of star indicies</span>
+        <span class="c1">#WA = OS.WALim</span>
+        <span class="n">slewTimes2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="c1">#initialize slewTimes for each star</span>
+        <span class="n">startTime2</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+</span> <span class="n">slewTimes2</span><span class="c1">#calculate slewTimes</span>
+        <span class="c1">#fZ = ZL.fZ(Obs, TL, sInds, startTime2, self.mode[&#39;lam&#39;])#378</span>
+        <span class="c1">#fEZ = ZL.fEZ0</span>
+        <span class="c1">#Tint = np.zeros((sInds.shape[0],len(dmag)))#array of #stars by dmags(225)</span>
+        <span class="c1">##Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]</span>
+        <span class="c1">#for i in xrange(len(dmag)):#Tint of shape Tint[StarInd, dmag]</span>
+        <span class="c1">#        Tint[:,i] = OS.calc_intTime(TL, sInds, fZ, fEZ, dmag[i], WA, mode).value#it is in units of days</span>
+        <span class="c1"># </span>
+        <span class="c1">#myTint = list()#initialize list to store all integration times</span>
+        <span class="c1">#for j in xrange(sInds.shape[0]):</span>
+        <span class="c1">#        myTint.append(Tint[j,:])</span>
+        
+        <span class="c1">#update self.Tint, self.rawTint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calcTint</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span><span class="c1">#self.schedule)</span>
+
+
+        <span class="c1">##Remove all Tints that are 0 and save to list</span>
+        <span class="c1">#myTint = list()#initialize list to store all integration times</span>
+        <span class="c1">#for j in xrange(sInds.shape[0]):</span>
+        <span class="c1">#        myTint.append(Tint[j,np.where(Tint[j,:] &gt; 10**-10)[0]])</span>
+        <span class="c1">#self.myTint_startSaved = myTint</span>
+        <span class="c1">###########################################################################</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done starkAYO init&quot;</span><span class="p">)</span>
+        <span class="c1">#END INIT##################################################################</span>
+
+
+<div class="viewcode-block" id="starkAYO.run_sim"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.run_sim">[docs]</a>    <span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Starting Run Sim&#39;</span><span class="p">)</span><span class="c1">#This is how I know it is running my module&#39;s code</span>
+
+        <span class="c1">#Create simplifying phrases</span>
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">dmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">WALim</span>
+
+
+        <span class="n">detMode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="c1">#Set same as in other runsim???</span>
+        <span class="n">spectroModes</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="s1">&#39;spec&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;inst&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="c1">#detMode</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">spectroModes</span><span class="p">):</span>
+            <span class="n">charMode</span> <span class="o">=</span> <span class="n">spectroModes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># if no spectro mode, default char mode is first observing mode</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">charMode</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="c1">#create list of valid target stars</span>
+        <span class="n">schedule</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="c1">#create schedlue containing all possible target stars</span>
+
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OB</span><span class="si">%s</span><span class="s1">: survey beginning.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="nb">print</span> <span class="s1">&#39;OB</span><span class="si">%s</span><span class="s1">: survey beginning.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#aside... the starComps.csv file should be saved to the SurveySimulation folder in exosims and is necessary for expediting computations by orders of magnitude</span>
+        <span class="n">dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span><span class="c1">#find current directory of survey Simualtion</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;/starComps.csv&#39;</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span><span class="c1">#this is a count for </span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span><span class="c1">#we start the mission</span>
+            <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+            <span class="n">tovisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+            <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+            <span class="n">startTime</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+</span> <span class="n">slewTimes</span>
+
+
+            <span class="c1">######################################################################################</span>
+            <span class="n">DRM</span><span class="p">,</span> <span class="n">schedule</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">t_det</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextSchedule</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">dir_path</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="n">tovisit</span><span class="p">)</span>
+            <span class="c1">#We should have a DRM, sInd, t_det, and schedule at this moment</span>
+            <span class="k">assert</span> <span class="n">t_det</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Integration Time Cannot be 0.&quot;</span>
+    
+            <span class="k">if</span> <span class="n">sInd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># get the index of the selected target for the extended list</span>
+                <span class="k">if</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">&gt;</span> <span class="n">TK</span><span class="o">.</span><span class="n">missionLife</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;plan_detected&#39;</span><span class="p">]]):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;star_ind&#39;</span><span class="p">]))</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span><span class="p">)</span>
+
+                <span class="c1"># Beginning of observation, start to populate DRM</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;OB&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;star_ind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sInd</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">==</span> <span class="n">sInd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;plan_inds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pInds</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;  Observation #</span><span class="si">%s</span><span class="s1">, target #</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1"> with </span><span class="si">%s</span><span class="s1"> planet(s), mission time: </span><span class="si">%s</span><span class="s1">&#39;</span>\
+                        <span class="o">%</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">),</span> <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+                <span class="nb">print</span> <span class="s1">&#39;  Observation #</span><span class="si">%s</span><span class="s1">, target #</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1"> with </span><span class="si">%s</span><span class="s1"> planet(s), mission time: </span><span class="si">%s</span><span class="s1">&#39;</span>\
+                        <span class="o">%</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">),</span> <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+                <span class="c1">#print(&#39;TACO&#39;)</span>
+                <span class="c1"># PERFORM DETECTION and populate revisit list attribute.</span>
+                <span class="c1"># First store fEZ, dMag, WA</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_fEZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">fEZ</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">dMag</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">WA</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">detected</span><span class="p">,</span> <span class="n">detSNR</span><span class="p">,</span> <span class="n">FA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_detection</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">t_det</span><span class="p">,</span> <span class="n">detMode</span><span class="p">)</span>
+                <span class="c1"># Update the occulter wet mass</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_occulter_mass</span><span class="p">(</span><span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">t_det</span><span class="p">,</span> <span class="s1">&#39;det&#39;</span><span class="p">)</span>
+                <span class="c1"># Populate the DRM with detection results</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_det</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">detected</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_SNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">detSNR</span>
+
+                <span class="c1"># PERFORM CHARACTERIZATION and populate spectra list attribute.</span>
+                <span class="c1"># First store fEZ, dMag, WA, and characterization mode</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_fEZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">fEZ</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">dMag</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">WA</span><span class="p">[</span><span class="n">pInds</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">charMode</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_mode&#39;</span><span class="p">][</span><span class="s1">&#39;inst&#39;</span><span class="p">],</span> <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_mode&#39;</span><span class="p">][</span><span class="s1">&#39;syst&#39;</span><span class="p">]</span>
+                <span class="n">characterized</span><span class="p">,</span> <span class="n">charSNR</span><span class="p">,</span> <span class="n">t_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_characterization</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">charMode</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">t_char</span> <span class="o">!=</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Integration time can&#39;t be 0.&quot;</span>
+                <span class="c1"># Update the occulter wet mass</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">t_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_occulter_mass</span><span class="p">(</span><span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">t_char</span><span class="p">,</span> <span class="s1">&#39;char&#39;</span><span class="p">)</span>
+                <span class="c1"># if any false alarm, store its characterization status, fEZ, dMag, and WA</span>
+                <span class="k">if</span> <span class="n">FA</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;FA_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">characterized</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;FA_SNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">charSNR</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;FA_fEZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;FA_dMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">2</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;FA_WA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">3</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Populate the DRM with characterization results</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_char</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">t_char</span> <span class="k">else</span> <span class="mf">0.</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">characterized</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;char_SNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">charSNR</span>
+
+                <span class="c1"># Append result values to self.DRM</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DRM</span><span class="p">)</span>
+
+                <span class="c1"># Calculate observation end time, and update target time</span>
+                <span class="c1">#print(&#39;tmp3&#39;)</span>
+                <span class="c1">#TK.obsEnd = TK.currentTimeNorm.to(&#39;day&#39;)</span>
+                <span class="c1">#self.propagTimes[sInd] = TK.obsEnd</span>
+                <span class="c1">#print(&#39;tmp4&#39;)</span>
+                <span class="c1">## With prototype TimeKeeping, if no OB duration was specified, advance</span>
+                <span class="c1">## to the next OB with timestep equivalent to time spent on one target</span>
+                <span class="c1">#if np.isinf(TK.OBduration):</span>
+                <span class="c1">#    obsLength = (TK.obsEnd-TK.obsStart).to(&#39;day&#39;)</span>
+                <span class="c1">#    TK.next_observing_block(dt=obsLength)</span>
+                <span class="c1">#print(&#39;tmp5&#39;)</span>
+                <span class="c1"># With occulter, if spacecraft fuel is depleted, exit loop</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="ow">and</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">&lt;</span> <span class="n">Obs</span><span class="o">.</span><span class="n">dryMass</span><span class="p">:</span>
+                    <span class="nb">print</span> <span class="s1">&#39;Total fuel mass exceeded at </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span>
+                    <span class="k">break</span>
+
+        <span class="n">mission_end</span> <span class="o">=</span> <span class="s2">&quot;Simulation finishing OK. Results stored in SurveySimulation.DRM&quot;</span>
+        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">mission_end</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">mission_end</span>
+        <span class="k">return</span> <span class="n">mission_end</span></div>
+
+<div class="viewcode-block" id="starkAYO.nextSchedule"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.nextSchedule">[docs]</a>    <span class="k">def</span> <span class="nf">nextSchedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">dir_path</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="n">tovisit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate Schedule based off of AYO at this instant in time</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sInds (integer array):</span>
+<span class="sd">                Array of all indexes of stars from sInds = np.array(TL.nStars)</span>
+<span class="sd">            dmag ():</span>
+
+
+<span class="sd">            WA ():</span>
+
+<span class="sd">            dir_path (string):</span>
+<span class="sd">                string containing the path to starComps.csv. This should be the EXOSIMS SurveySimulation folder</span>
+<span class="sd">            fname (string):</span>
+<span class="sd">                string containing starComps.csv (aside: This name should be improved to encode the list of stars being used)</span>
+<span class="sd">            startTime (float array):</span>
+<span class="sd">                observation start time of each observation</span>
+<span class="sd">            tovisit (idk):</span>
+<span class="sd">                uhhhhh</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DRM</span>
+<span class="sd">            schedule</span>
+<span class="sd">            sInd ():</span>
+<span class="sd">                detection</span>
+<span class="sd">            t_det (float):</span>
+<span class="sd">                detection time of next observation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">BackgroundSources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">PostProcessing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">TargetList</span>
+
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+
+        <span class="c1">#Create DRM</span>
+        <span class="n">DRM</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Aluserslocate settling time + overhead time</span>
+        <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">Obs</span><span class="o">.</span><span class="n">settlingTime</span> <span class="o">+</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;syst&#39;</span><span class="p">][</span><span class="s1">&#39;ohTime&#39;</span><span class="p">])</span>
+
+        <span class="c1">#Calculate Tint at this time#####################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calcTint</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span><span class="c1">#self.schedule)#updates self.Tint and self.rawTint</span>
+        <span class="n">myTint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+
+        <span class="c1">#Integration time for each star</span>
+        <span class="c1">##################################################################</span>
+    
+
+        <span class="c1">#I dont think this is necessary</span>
+        <span class="c1">#Load Completeness From File######################################</span>
+        <span class="c1">#The issue here is starComps is of length TL.nStars where sInds has already been filtered down based on KOGOODSTART and VISITS</span>
+        <span class="c1">#The question is whether I do the filtering in nextSchedule or prior to nextSchedule. Either way, I need an array of length TL.nStars</span>
+        <span class="c1">#How will I do this........ I could jut remake the array and filter again.... lets not... lets pass a list of stars containing all possible stars...</span>
+        
+        <span class="c1">#with open(dir_path+fname, &#39;rb&#39;) as f:#uses pathname from start of run_sim</span>
+        <span class="c1">#    reader = csv.reader(f)</span>
+        <span class="c1">#    your_list = list(reader)</span>
+        <span class="c1">#    f.close()</span>
+        <span class="c1">#self.starComps_startSaved = list()</span>
+        <span class="c1">#for i in range(len(your_list)):</span>
+        <span class="c1">#    tmp = np.asarray(your_list[i])</span>
+        <span class="c1">#    tmp = tmp.astype(np.float)</span>
+        <span class="c1">#    self.starComps_startSaved.append(tmp[np.where(myTint[i] &gt; 10**-10)[0]])#Should filter out starComps list</span>
+        <span class="c1">#################################################################</span>
+        
+        <span class="c1">#Calculate C vs T spline######################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCvsTau</span><span class="p">()</span>
+        <span class="n">spl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl_startSaved</span>
+        <span class="n">starComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starComps</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+        <span class="c1">#A Note: Technically starComps is the completeness of each star at each dmag specified in the init section of starkAYO</span>
+        <span class="c1">#the myTint is evaluated at each one of these dmags.</span>
+        <span class="c1">##############################################################</span>
+    
+        <span class="c1">#Calculate C/T vs T spline####################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCbyTauvsTau</span><span class="p">()</span>
+        <span class="n">spl2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl2_startSaved</span>
+        <span class="c1">##############################################################</span>
+
+        <span class="c1">#Calculate dC/dTau############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splinedCbydTauvsTau</span><span class="p">()</span>
+        <span class="n">splDeriv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splDeriv_startSaved</span>
+        <span class="c1">##############################################################</span>
+
+        <span class="c1">#Pull Untouched Star List#####################################</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+        <span class="c1">##############################################################</span>
+
+        <span class="c1">#FILTER OUT STARS########################################################</span>
+        <span class="c1">#start with self.schedule_startSaved</span>
+
+        <span class="c1">#Filter KOGOODSTART..... There is a better implementation of this.....</span>
+        <span class="c1">#We will not filter KOGOODEND using the logic that any star close enough to the keepout region of the sun will have poor C/Tau performance... This assumption should be revaluated at a future date.</span>
+        <span class="n">kogoodStart</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTime</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="n">OS</span><span class="o">.</span><span class="n">telescopeKeepout</span><span class="p">)</span><span class="c1">#outputs array where 0 values are good keepout stars</span>
+        <span class="c1">#pdb.set_trace()</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">kogoodStart</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+        
+        <span class="n">sInds1</span> <span class="o">=</span> <span class="n">sInds</span>
+        <span class="c1">#Filter out previously visited stars#######################################</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">tovisit</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dt_max</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">week</span>
+                <span class="n">dt_rev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+                <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">dt_rev</span> <span class="o">&lt;</span> <span class="n">dt_max</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sInds</span><span class="p">]</span>
+                <span class="n">tovisit</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1">#pdb.set_trace()</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tovisit</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;NumStars Before &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds1</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; After Filter &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)))</span>
+        <span class="c1">#pdb.set_trace()</span>
+        <span class="c1">#########################################################################</span>
+
+        <span class="c1">#Define Intial Integration Times#########################################</span>
+        <span class="n">missionLength</span> <span class="o">=</span> <span class="mf">365.0</span><span class="c1">#need to get this from .json file</span>
+
+        <span class="c1">#Initial list of integration times for each star</span>
+        <span class="n">t_dets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">missionLength</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1">#the list of integration times for each star</span>
+        <span class="n">dCbydT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="c1">#sInds.shape[0])#initialize dCbydT matrix</span>
+        <span class="n">CbyT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="c1">#sInds.shape[0])#initialize CbyT matrix</span>
+        <span class="n">Comp00</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="c1">#sInds.shape[0])#initialize Comp00 matrix</span>
+        
+        <span class="c1">#Initialize dC/dT##########################</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">dCbydT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">splDeriv</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">#calculates initial completeness at initial integration times...</span>
+        <span class="c1">###########################################</span>
+
+        <span class="c1">#Initialize C/T############################</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">CbyT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl2</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+        <span class="c1">###########################################</span>
+
+        <span class="c1">#Initialize Comp############################</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">Comp00</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+        <span class="c1">###########################################</span>
+
+        <span class="n">numits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">numits</span> <span class="o">&lt;</span> <span class="mi">10000</span> <span class="ow">and</span> <span class="n">sInds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1">#print(&#39;numits &#39; + str(numits))#we impose numits to limit the total number of iterations of this loop. This may be depreicated later</span>
+            <span class="n">numits</span> <span class="o">=</span> <span class="n">numits</span><span class="o">+</span><span class="mi">1</span><span class="c1">#we increment numits each loop iteration</span>
+
+            <span class="c1">#Update dC/dT#################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">dCbydT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">splDeriv</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###############################</span>
+
+            <span class="c1">#Initialize C/T############################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">CbyT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl2</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###########################################</span>
+
+            <span class="c1">#Initialize Comp############################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">Comp00</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###########################################</span>
+
+            <span class="c1">#Sort Descending by dC/dT###########################################################################</span>
+            <span class="c1">#1 Find Indexes to sort by############</span>
+            <span class="n">sortIndex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dCbydT</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array</span>
+            <span class="c1">#index list from highest dCbydT to lowest dCbydT....</span>
+
+            <span class="c1">#2 Reorder data#######################</span>
+            <span class="c1">#sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="c1">#if numits &gt; 200:</span>
+            <span class="c1">#    pdb.set_trace()</span>
+            <span class="n">t_dets</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">dCbydT</span> <span class="o">=</span> <span class="n">dCbydT</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">splDeriv</span> <span class="o">=</span> <span class="p">[</span><span class="n">splDeriv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">tmp2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="n">tmp2</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Tint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span><span class="c1">#there must be a better single line way to do this...</span>
+            <span class="n">Tint</span> <span class="o">=</span> <span class="n">tmp2</span>
+            <span class="k">del</span> <span class="n">tmp2</span>
+            <span class="n">spl2</span> <span class="o">=</span> <span class="p">[</span><span class="n">spl2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">CbyT</span> <span class="o">=</span> <span class="n">CbyT</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">Comp00</span> <span class="o">=</span> <span class="n">Comp00</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            
+            <span class="c1">#Sacrifice Worst Performing Star####</span>
+            <span class="c1">#We now perform AYO selection. We add the integration time of the last star to the highest ranking dC/dT star that will not exceed the maximum integration time.</span>
+            <span class="n">lastTime</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#retrieves last Int time from sorted sched_Tdet list</span>
+
+            <span class="c1">#Identify Star Observation to Add Sacrificed Time To##############################</span>
+            <span class="n">nthElement</span> <span class="o">=</span> <span class="mi">0</span><span class="c1">#starIndex integration time was added to</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span><span class="c1">#iterate through all stars ranked by dC/dT until integration time can be added to a star</span>
+                <span class="c1">#Add t_det from lastStar to First possible star</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">lastTime</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">n</span><span class="p">]):</span><span class="c1">#we can add integration time without exceeding maximum calculated integration time value.</span>
+                    <span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">lastTime</span><span class="c1">#adds sacrificed time to top of list time</span>
+                    <span class="n">nthElement</span> <span class="o">=</span> <span class="n">n</span><span class="c1">#this is the star Index time was added to.</span>
+                    <span class="k">break</span><span class="c1">#we have added the lastTime to another star integration time so we break the loop</span>
+
+            <span class="c1">#Remove last Observation from schedule################################</span>
+            <span class="n">t_dets</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#remove last element from Tdet</span>
+            <span class="n">dCbydT</span> <span class="o">=</span> <span class="n">dCbydT</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#remove last element from List of Targets</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#sacrifice last element from List of Targets</span>
+            <span class="n">splDeriv</span> <span class="o">=</span> <span class="n">splDeriv</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#remove last element from dCbydT curves</span>
+            <span class="n">Tint</span> <span class="o">=</span> <span class="n">Tint</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#removes laste element from Integration Times</span>
+            <span class="n">spl2</span> <span class="o">=</span> <span class="n">spl2</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">CbyT</span> <span class="o">=</span> <span class="n">CbyT</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">Comp00</span> <span class="o">=</span> <span class="n">Comp00</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            
+            <span class="c1">#Update dC/dT#################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">dCbydT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">splDeriv</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###############################</span>
+            <span class="c1">#THIS SHOULD BE A MORE EFFICIENT UPDATE BUT DDINT SEEM TO WORK RIGHTupdate dCbydT.... We only do this for the element with integration time added to it.</span>
+            <span class="c1">#dCbydT[nthElement] = splDeriv[nthElement](t_dets[nthElement])</span>
+
+            <span class="c1">#Initialize C/T############################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">CbyT</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl2</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###########################################</span>
+
+            <span class="c1">#Initialize Comp############################</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">Comp00</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="n">n</span><span class="p">](</span><span class="n">t_dets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span><span class="c1">#dCbydT is the editable list of dCbydT for each star</span>
+            <span class="c1">###########################################</span>
+
+            <span class="c1">#Sort Descending by dC/dT#######################################</span>
+            <span class="c1">#1 Find Indexes to sort by############</span>
+            <span class="n">sortIndex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dCbydT</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array</span>
+            <span class="c1">#index list from highest dCbydT to lowest dCbydT....</span>
+
+            <span class="c1">#2 Reorder data#######################</span>
+            <span class="c1">#sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="c1">#if numits &gt; 200:</span>
+            <span class="c1">#    pdb.set_trace()</span>
+            <span class="n">t_dets</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">dCbydT</span> <span class="o">=</span> <span class="n">dCbydT</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">splDeriv</span> <span class="o">=</span> <span class="p">[</span><span class="n">splDeriv</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">tmp2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="n">tmp2</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Tint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span><span class="c1">#there must be a better single line way to do this...</span>
+            <span class="n">Tint</span> <span class="o">=</span> <span class="n">tmp2</span>
+            <span class="k">del</span> <span class="n">tmp2</span>
+            <span class="n">spl2</span> <span class="o">=</span> <span class="p">[</span><span class="n">spl2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">CbyT</span> <span class="o">=</span> <span class="n">CbyT</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="n">Comp00</span> <span class="o">=</span> <span class="n">Comp00</span><span class="p">[</span><span class="n">sortIndex</span><span class="p">]</span>
+            <span class="c1">###########################################################################################################</span>
+
+
+            <span class="c1">#AYO Termination Conditions</span>
+            <span class="c1">#1 If the nthElement that time was added to has dCbydT less than the last star (star to be taken from next)</span>
+            <span class="c1">#2 If the nthElement is the same as the last element</span>
+            
+            <span class="c1">#if any(i &lt; 0.05 for i in spl2[sInds](t_dets)):</span>
+            <span class="c1">#    continue#run next iteration</span>
+            <span class="k">if</span> <span class="n">nthElement</span><span class="o">+</span><span class="mi">1</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dCbydT</span><span class="p">):</span><span class="c1">#if condition</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;dCbydT maximally sorted&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">dCbydT</span><span class="p">[</span><span class="n">nthElement</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">dCbydT</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dCbydT</span><span class="p">):</span><span class="c1">#logic here is that we just added time to nth element \ if next element to add time to (nth element + 1) is less than last elements, then do not take from last element anymore</span>
+                <span class="c1">#print(t_dets)</span>
+                <span class="c1">#print(dCbydT)</span>
+                <span class="c1">#print(CbyT)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#####################HOW WE DID&#39;</span><span class="p">)</span>
+                <span class="c1">#print(str(nthElement))</span>
+                <span class="c1">#print(t_dets[0])</span>
+                <span class="c1">#print(dCbydT[0])</span>
+                <span class="c1">#print(CbyT[0])</span>
+                <span class="c1">#print(Comp00[0])</span>
+                <span class="c1">#print(str(dCbydT[nthElement]))</span>
+                <span class="c1">#print(str(dCbydT[-1]))</span>
+                <span class="c1">#print(&#39;numits &#39; + str(numits) + &#39; dC/dT Chosen &#39; + str(dCbydT[0]))#we impose numits to limit the total number of iterations of this loop. This may be depreicated later</span>
+                <span class="c1">#print(&#39;No More Attractive Trades!&#39;)#</span>
+                <span class="c1">#???Does this also determine if ther an insufficient number of elements left??</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">dCbydT</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There was a problem&#39;</span><span class="p">)</span>
+                <span class="k">break</span><span class="c1">#there are an insufficient number of elements to test</span>
+            <span class="c1">#There needs to be a lot more error handling here</span>
+
+
+        <span class="c1">#Define Output of AYO Process</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">t_det</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+
+        <span class="c1">##### Delete Some Terms    for use in next iteration        </span>
+        <span class="k">del</span> <span class="n">splDeriv</span>
+        <span class="k">del</span> <span class="n">spl</span>
+
+        <span class="c1">#Update List of Visited stars########</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">visits</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1">#####################################</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule</span> <span class="o">=</span> <span class="n">sInds</span>
+        <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">t_det</span></div>
+
+<div class="viewcode-block" id="starkAYO.choose_next_target"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.choose_next_target">[docs]</a>    <span class="k">def</span> <span class="nf">choose_next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_sInd</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">slewTimes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Choose next target based on truncated depth first search </span>
+<span class="sd">        of linear cost function.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            old_sInd (integer):</span>
+<span class="sd">                Index of the previous target star</span>
+<span class="sd">            sInds (integer array):</span>
+<span class="sd">                Indices of available targets</span>
+<span class="sd">            slewTimes (astropy quantity array):</span>
+<span class="sd">                slew times to all stars (must be indexed by sInds)</span>
+<span class="sd">            t_dets (astropy Quantity array):</span>
+<span class="sd">                Integration times for detection in units of day</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Index of next target star</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+        <span class="c1">#</span>
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        
+        <span class="n">comps</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="c1">#completeness of each star in TL</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="c1">#what does starVisits contain?</span>
+        <span class="n">comps</span><span class="p">[</span><span class="n">updated</span><span class="p">]</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">[</span><span class="n">updated</span><span class="p">],</span><span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+        <span class="n">tint</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">tint0</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        
+        <span class="n">selMetric</span><span class="o">=</span><span class="n">comps</span><span class="o">/</span><span class="n">tint</span><span class="c1">#selMetric is the selection metric being used. Here it is Completeness/integration time</span>
+
+        <span class="c1">#Here I select the target star to observe</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">selMetric</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">selMetric</span><span class="p">)]</span><span class="c1">#this selects maximum completeness/integration time</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="c1">#casts numpy array to single integer</span>
+        
+        <span class="k">return</span> <span class="n">sInd</span></div>
+
+<div class="viewcode-block" id="starkAYO.f_dmags2"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.f_dmags2">[docs]</a>    <span class="k">def</span> <span class="nf">f_dmags2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dmag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the joint probability density of dMag and projected</span>
+<span class="sd">        separation</span>
+<span class="sd">        </span>
+<span class="sd">        Created to put s first in the function (necessary since first term is integrated over)</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dmag (float):</span>
+<span class="sd">                Value of dMag</span>
+<span class="sd">            s (float):</span>
+<span class="sd">                Value of projected separation (AU)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            f (float):</span>
+<span class="sd">                Value of joint probability density</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">mindmag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxdmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">maxdmag</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dmag</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dmag</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdmag</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ztest</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+            <span class="k">if</span> <span class="n">ztest</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">):</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span><span class="n">dmag</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ztest</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">61</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="n">ztest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">61</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">f</span></div>
+
+        
+        <span class="c1">#def f_dmag2(self,dmag,star_dist):</span>
+        <span class="c1">#&quot;&quot;&quot;Marginalizes the joint probability density function of dMag and projected separation</span>
+        <span class="c1">#over projected separation ****This produces Completeness as a Function of dmag</span>
+        <span class="c1">#</span>
+        <span class="c1">#Args:</span>
+        <span class="c1">#    dmag (float):</span>
+        <span class="c1">#        Value of dMag</span>
+        <span class="c1">#    s (float):</span>
+        <span class="c1">#        Value of projected separation (AU)</span>
+        <span class="c1">#</span>
+        <span class="c1">#Returns:</span>
+        <span class="c1">#    f (float):</span>
+        <span class="c1">#        Value of joint probability density</span>
+        <span class="c1">#</span>
+        <span class="c1">#&quot;&quot;&quot;</span>
+        <span class="c1">#IWA = self.OpticalSystem.IWA.value</span>
+        <span class="c1">#OWA = self.OpticalSystem.OWA.value</span>
+        <span class="c1">#Smin = star_dist*IWA</span>
+        <span class="c1">#Smax = star_dist*OWA</span>
+        <span class="c1">#f = integrate.fixed_quad(self.f_dmags2, Smin, Smax, args=(dmag,), n=61)[0]</span>
+        <span class="c1">#return f</span>
+
+<div class="viewcode-block" id="starkAYO.f_dmag2"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.f_dmag2">[docs]</a>    <span class="k">def</span> <span class="nf">f_dmag2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">star_dist</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates probability density of dmag marginalized</span>
+<span class="sd">        from Smin to Smax #note this is similat to the f_s function...</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            dmag (float):</span>
+<span class="sd">                dMag to evaluate completeness as</span>
+<span class="sd">            star_dist ():</span>
+<span class="sd">                determines min and max separation marginalizing over...</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            f (float):</span>
+<span class="sd">                Probability density</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">):</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">d2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdmag</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">d2</span> <span class="o">&gt;</span> <span class="n">dmaglim</span><span class="p">:</span>
+                <span class="n">d2</span> <span class="o">=</span> <span class="n">dmaglim</span>
+            <span class="k">if</span> <span class="n">d1</span> <span class="o">&gt;</span> <span class="n">d2</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsv</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">s</span><span class="p">,),</span> <span class="n">n</span><span class="o">=</span><span class="mi">31</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="starkAYO.calcTint"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcTint">[docs]</a>    <span class="k">def</span> <span class="nf">calcTint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates integration times for all stars in sInds. If None is passed to sInds,</span>
+<span class="sd">        the integration times for all stars in self.schedule_startSaved will be calculated.</span>
+<span class="sd">        This could be made more efficient bt calculating integration times for only those</span>
+<span class="sd">        stars still in the schedule but that would elimintate the possibility of reading </span>
+<span class="sd">        those stars to the schedule...</span>
+
+<span class="sd">        Intended to be called from starkAYO only***</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sInds (None or np.ndarray or shape #stars)</span>
+<span class="sd">            calculates orbital position of SC at currentTime</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            This function updates self.rawTint</span>
+<span class="sd">            rawTint contains all Tint over all dmag_startSaved. We must do this in order to filter future values.</span>
+<span class="sd">            rawTint has dimensions rawTint[nStars][len(dmag_startSaved)]</span>
+
+<span class="sd">            This function updates self.Tint</span>
+<span class="sd">            Tint contains Tint greater than 10**-10</span>
+<span class="sd">            Dimensions are Tint[nStars][Tint &gt; 10**-10]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sInds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+        <span class="c1">#else:</span>
+        <span class="c1">#    sInds = sInds</span>
+
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">WALim</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currentTimeAbs</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="n">Obs</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;lam&#39;</span><span class="p">])</span><span class="c1">#378</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ0</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span><span class="p">)))</span><span class="c1">#array of #stars by dmags(500)</span>
+        <span class="c1">#Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span><span class="p">)):</span><span class="c1">#Tint of shape Tint[StarInd, dmag]</span>
+                <span class="n">Tint</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmag_startSaved</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">WA</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="c1">#it is in units of days</span>
+        
+        <span class="n">newRawTint</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span><span class="c1">#initialize list to store all integration times</span>
+        <span class="n">newTint</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span><span class="c1">#initialize list to store integration times greater tha 10**-10</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">newRawTint</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">j</span><span class="p">,:])</span>
+                <span class="n">newTint</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">10</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawTint</span> <span class="o">=</span> <span class="n">newRawTint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span> <span class="o">=</span> <span class="n">newTint</span></div>
+
+<div class="viewcode-block" id="starkAYO.splineCvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.splineCvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">splineCvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the spline fit to Completeness vs Tau at simulation start time</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            updates self.spl_startSaved</span>
+<span class="sd">            Dimensions are spl_startSaved[nStars][Tint &gt; 10**-10]</span>
+<span class="sd">            updates self.starComps_startSaved</span>
+<span class="sd">            Dimensions are starComps_startSaved[nStars][Tint &gt; 10**-10]</span>
+<span class="sd">            updates self.Tint for any Completeness exceeding 100</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schedule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+
+        <span class="c1">#we must remove any 0&#39;s that occur above the max value of completeness for the star</span>
+        <span class="c1">#to do this, we filter any myTint that is less than some threshold value...</span>
+        <span class="c1">##Remove all Tints that are 0 and save to list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calcTint</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span><span class="c1">#self.schedule)#,self.mode,self.startTime2)</span>
+        <span class="n">rawTint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawTint</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+
+        <span class="n">starComps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">schedule</span><span class="p">:</span><span class="c1">#xrange(schedule.shape[0]):</span>
+                <span class="n">starComps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rawTint</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">10</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+
+
+        <span class="c1">#HERE IS A TEMPORARY FIX FOR A PROBLEM IN COMPLETENESS CALCULATION########################</span>
+        <span class="c1">#The root problem is that the current completeness calculation in this module (as of 5/22/2017)</span>
+        <span class="c1">#produces completness values at dmags near/in excess of 1. Indicating that the completeness calculation is incorrect</span>
+        
+        <span class="c1">#if completeness has discontinuity, </span>
+        <span class="c1">#then all values above discontinuity must be truncated</span>
+        <span class="c1">#and all corresponding Tint need to be truncated....</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span><span class="c1">#will be used later</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">schedule</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">starComps</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">10</span><span class="p">:</span><span class="c1">#If the last value of starComps is a 0. We assume this means there exists a discontinuity in completeness</span>
+                <span class="c1">#find How many Indicies are 0</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starComps</span><span class="p">[</span><span class="n">j</span><span class="p">]))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span><span class="c1">#Iterate through completeness from last index to first</span>
+                    <span class="c1">#find first index of value greater than 10 **-10</span>
+                    <span class="k">if</span> <span class="n">starComps</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">10</span><span class="p">:</span>
+                        <span class="n">index</span> <span class="o">=</span> <span class="n">k</span>
+                        <span class="k">break</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">starComps</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">starComps</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">Tint</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tint</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span><span class="c1">#if index is None</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">##########################################################################################</span>
+
+        <span class="n">spl</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">schedule</span><span class="p">)):</span>
+            <span class="n">spl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">starComps</span><span class="p">[</span><span class="n">q</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="c1">#Finds star Comp vs Tint SPLINE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spl_startSaved</span> <span class="o">=</span> <span class="n">spl</span><span class="c1">#updates self.spl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starComps</span> <span class="o">=</span> <span class="n">starComps</span><span class="c1">#updates self.starComps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span> <span class="o">=</span> <span class="n">Tint</span><span class="c1">#update self.Tint</span></div>
+
+<div class="viewcode-block" id="starkAYO.splineCbyTauvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.splineCbyTauvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">splineCbyTauvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the spline fit to Completeness/Tau vs Tau</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            updates self.spl2_startSaved (spl2 is the spline fitting C/T vs T)</span>
+<span class="sd">            Dimensions are spl2_startSaved[nStars][Tint &gt; 10**-10]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1">#self.calcTint(self.schedule)#,self.mode,self.startTime2)</span>
+        <span class="n">rawTint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawTint</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+
+        <span class="n">starComps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">starComps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starComps_startSaved</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rawTint</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">**-</span><span class="mi">10</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+
+        <span class="n">spl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl_startSaved</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+        <span class="n">spl2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)):</span>
+            <span class="n">spl2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UnivariateSpline</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="n">spl</span><span class="p">[</span><span class="n">x</span><span class="p">](</span><span class="n">Tint</span><span class="p">[</span><span class="n">x</span><span class="p">])</span><span class="o">/</span><span class="n">Tint</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spl2_startSaved</span> <span class="o">=</span> <span class="n">spl2</span></div>
+
+<div class="viewcode-block" id="starkAYO.splinedCbydTauvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.splinedCbydTauvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">splinedCbydTauvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span><span class="c1">#,spl2,myTint,sInds):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the spline for dC/dT vs T</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self.splDeriv_startSaved</span>
+<span class="sd">            Dimensions are splDeriv_startSaved[nStars][Tint &gt; 10**-10]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_startSaved</span>
+        <span class="n">spl2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl2_startSaved</span>
+
+        <span class="n">splDeriv</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)):</span>
+            <span class="n">splDeriv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spl2</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">derivative</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splDeriv_startSaved</span> <span class="o">=</span> <span class="n">splDeriv</span></div>
+
+<div class="viewcode-block" id="starkAYO.plotCompvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.plotCompvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">plotCompvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots Completeness vs Integration Time for every star</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plot C vs T&#39;</span><span class="p">)</span>
+        <span class="c1">#plot of Comp vs Tint for a few stars##################################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCvsTau</span><span class="p">()</span><span class="c1">#Update self.spl and self.starComps</span>
+        <span class="n">starComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">starComps</span>
+        <span class="n">spl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tint</span><span class="p">)):</span>
+            <span class="n">dtos</span> <span class="o">=</span> <span class="mi">24</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">60</span>
+            <span class="c1">#PLOT COMPLETENESS VS INT TIME</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">*</span><span class="n">dtos</span><span class="p">,</span><span class="n">starComps</span><span class="p">[</span><span class="n">m</span><span class="p">],</span><span class="s1">&#39;o&#39;</span><span class="p">,</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">*</span><span class="n">dtos</span><span class="p">,</span><span class="n">spl</span><span class="p">[</span><span class="n">m</span><span class="p">](</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]),</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">10e-4</span><span class="p">,</span><span class="mf">10e6</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Completeness&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Integration Time (s)&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">Name</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+            <span class="n">folderfig</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="s1">&#39;$HOME/Pictures/CompletenessFigs&#39;</span><span class="p">))</span>
+            <span class="n">filenamefig</span> <span class="o">=</span> <span class="s1">&#39;CompvTint&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span>
+            <span class="n">figscriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folderfig</span><span class="p">,</span><span class="n">filenamefig</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">figscriptfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done C vs T&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="starkAYO.plotCompbyTauvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.plotCompbyTauvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">plotCompbyTauvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots Completeness/Integration Time vs Integration Time for every star</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#Update splines</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start Plot C/T vs T&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCvsTau</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCbyTauvsTau</span><span class="p">()</span>
+        <span class="n">spl2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spl2</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tint</span><span class="p">)):</span>
+            <span class="n">dtos</span> <span class="o">=</span> <span class="mi">24</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">60</span>
+            <span class="c1">#PLOT COMPLETENESS/INT TIME vs INT TIME</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">*</span><span class="n">dtos</span><span class="p">,</span><span class="n">spl2</span><span class="p">[</span><span class="n">m</span><span class="p">](</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">*</span><span class="n">dtos</span><span class="p">),</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">10e-4</span><span class="p">,</span><span class="mf">10e6</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Completeness/Tint&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Integration Time (s)&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">Name</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+            <span class="n">folderfig</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="s1">&#39;$HOME/Pictures/CompletenessFigs&#39;</span><span class="p">))</span>
+            <span class="n">filenamefig</span> <span class="o">=</span> <span class="s1">&#39;CompbyTintvTint&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span>
+            <span class="n">figscriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folderfig</span><span class="p">,</span><span class="n">filenamefig</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">figscriptfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done C/T vs T&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="starkAYO.plotdCompbydTauvsTau"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.plotdCompbydTauvsTau">[docs]</a>    <span class="k">def</span> <span class="nf">plotdCompbydTauvsTau</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plots dCompleteness/dTint vs Tint for every star</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plot dC/dT vs T&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCvsTau</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splineCbyTauvsTau</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">splinedCbydTauvsTau</span><span class="p">()</span>
+        <span class="n">splDeriv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splDeriv</span>
+        <span class="n">Tint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tint</span><span class="c1">#myTint_startSaved</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tint</span><span class="p">)):</span>
+            <span class="n">dtos</span> <span class="o">=</span> <span class="mi">24</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">60</span>
+            <span class="c1">#PLOT COMPLETENESS VS INT TIME</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">*</span><span class="n">dtos</span><span class="p">,</span><span class="n">splDeriv</span><span class="p">[</span><span class="n">m</span><span class="p">](</span><span class="n">Tint</span><span class="p">[</span><span class="n">m</span><span class="p">]),</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+            <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">10e-4</span><span class="p">,</span><span class="mf">10e6</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;dC/dTau&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Integration Time (s)&#39;</span><span class="p">)</span>
+            <span class="c1">#plt.show()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">Name</span><span class="p">[</span><span class="n">m</span><span class="p">])</span>
+            <span class="n">folderfig</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="s1">&#39;$HOME/Pictures/CompletenessFigs&#39;</span><span class="p">))</span>
+            <span class="n">filenamefig</span> <span class="o">=</span> <span class="s1">&#39;dCompbydTintvTint&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span>
+            <span class="n">figscriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folderfig</span><span class="p">,</span><span class="n">filenamefig</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">figscriptfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done dC/dT vs T&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="starkAYO.saveComp"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.saveComp">[docs]</a>    <span class="k">def</span> <span class="nf">saveComp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">starComps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Saves Completeness vs dmag for each star to folder</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            starComps (List)</span>
+<span class="sd">                List of form Completeness = starComps[star][dmag index]</span>
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span><span class="c1">#find current directory of survey Simualtion</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;/starComps.csv&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fo</span><span class="p">:</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">fo</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_ALL</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">starComps</span><span class="p">)</span>
+            <span class="n">fo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="starkAYO.loadComp"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.starkAYO.starkAYO.loadComp">[docs]</a>    <span class="k">def</span> <span class="nf">loadComp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Loads Completeness from starComps.csv on this path</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            starComps (list):</span>
+<span class="sd">                List of Completeness at dmags</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span><span class="c1">#find current directory of survey Simualtion</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;/starComps.csv&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dir_path</span><span class="o">+</span><span class="n">fname</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">your_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">starComps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">your_list</span><span class="p">)):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">your_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+            <span class="n">starComps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">starComps</span></div></div>
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

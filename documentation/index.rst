@@ -25,7 +25,7 @@ Contents
 Credits
 --------
 
-EXOSIMS was created by Dmitry Savransky and written by Daniel Garrett, Dmitry Savransky, and Christian Delacroix, with contributions by Rhonda Morgan, Michael Turmon and Patrick Lowrance. EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC) and NNX15AJ67G (WPS).
+EXOSIMS was created by Dmitry Savransky and written by  Christian Delacroix, Daniel Garrett, Dmitry Savransky, and Dean Keithly with contributions by Rhonda Morgan, Michael Turmon and Patrick Lowrance. EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC) and NNX15AJ67G (WPS).
 
 
 Indices and tables

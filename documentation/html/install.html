@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Installing and Configuring EXOSIMS &#8212; EXOSIMS 1.1 documentation</title>
-    
+    <title>Installing and Configuring EXOSIMS &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,20 +21,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Documentation Guide" href="docs.html" />
     <link rel="prev" title="Quick Start Guide" href="quickstart.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -46,9 +40,14 @@
             
   <div class="section" id="installing-and-configuring-exosims">
 <h1>Installing and Configuring EXOSIMS<a class="headerlink" href="#installing-and-configuring-exosims" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="obtaining-exosims">
+<h2>Obtaining EXOSIMS<a class="headerlink" href="#obtaining-exosims" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">EXOSIMS</span></code> is hosted on github at <a class="reference external" href="https://github.com/dsavransky/EXOSIMS">https://github.com/dsavransky/EXOSIMS</a>.  The master branch is a development branch and may be frequently changed.  We strongly recommend using a tagged release:</p>
+<p><a class="reference external" href="https://github.com/dsavransky/EXOSIMS/tree/v1.2">https://github.com/dsavransky/EXOSIMS/tree/v1.2</a></p>
+</div>
 <div class="section" id="environment-and-package-dependencies">
 <h2>Environment and Package Dependencies<a class="headerlink" href="#environment-and-package-dependencies" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">EXOSIMS</span></code> requires Python 2.7.x and the following packages:</p>
+<p><code class="docutils literal"><span class="pre">EXOSIMS</span></code> requires Python 2.7.8+ and the following packages:</p>
 <ul class="simple">
 <li>astropy</li>
 <li>numpy</li>
@@ -57,16 +56,56 @@
 </ul>
 <div class="section" id="optional-packages">
 <h3>Optional Packages<a class="headerlink" href="#optional-packages" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">cPickle</span></code> is used preferentially, but <code class="docutils literal"><span class="pre">pickle</span></code> will be loaded if <code class="docutils literal"><span class="pre">cPickle</span></code> is not installed</li>
-<li><code class="docutils literal"><span class="pre">jplephem</span></code> is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  It can be installed through pip or from source.  An SPK ephemeris file is needed - the default one can be downloaded from <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp</a> and should be placed in the Observatory subdirectory of EXOSIMS. Other kernels can be downloaded from <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/</a></li>
-<li><code class="docutils literal"><span class="pre">fitting_parameters.h5</span></code> is used by the Forecaster module (an implementation of <code class="docutils literal"><span class="pre">PlanetPhysicalModel</span></code>). It can be downloaded from <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a> and must be added to the PlanetPhysicalModel directory.  If using Forecaster, you must also have <code class="docutils literal"><span class="pre">h5py</span></code> installed.</li>
+<ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">cPickle</span></code> is used preferentially, but <code class="docutils literal"><span class="pre">pickle</span></code> will be loaded if <code class="docutils literal"><span class="pre">cPickle</span></code> is not installed</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">jplephem</span></code> is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  Install <code class="docutils literal"><span class="pre">jplephem</span></code> from source or via pip</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">jplephem</span>
+</pre></div>
+</div>
+<p>An SPK ephemeris file is required - the default one can be downloaded from <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp</a> and should be placed in the Observatory subdirectory of EXOSIMS. Other kernels can be downloaded from <a class="reference external" href="http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/">http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/</a></p>
+</li>
+<li><p class="first">The <code class="docutils literal"><span class="pre">Forecaster</span></code> <code class="docutils literal"><span class="pre">PlanetPhysicalModel</span></code> implementation requires module <code class="docutils literal"><span class="pre">h5py</span></code>.  Install from source or via pip</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">h5py</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The <code class="docutils literal"><span class="pre">Forecaster</span></code> <code class="docutils literal"><span class="pre">PlanetPhysicalModel</span></code> implementation requires a data file called <code class="docutils literal"><span class="pre">fitting_parameters.h5</span></code>.  Download from <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a> and place in the PlanetPhysicalModel.</p>
+</li>
+<li><p class="first">Several methods have been implemented in both python and Cython (<a class="reference external" href="http://cython.org/">http://cython.org/</a>).  To get the speed benefits of the Cython versions, you will need to install Cython (from source or pip) and compile the Cythonized EXOSIMS modules on your system (see: <a class="reference internal" href="#cythonized"><span class="std std-ref">Compiling Cython Modules</span></a>).</p>
+</li>
 </ul>
 </div>
 </div>
-<div class="section" id="path-setup">
-<h2>Path Setup<a class="headerlink" href="#path-setup" title="Permalink to this headline">¶</a></h2>
-<p>EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to their particular module subfolders, and so the entire EXOSIMS folder tree must be user writeable.  The directory containing the <code class="docutils literal"><span class="pre">EXOSIMS</span></code> directory (i.e., <code class="docutils literal"><span class="pre">../EXOSIMS</span></code>) must be in your Python path.</p>
+<div class="section" id="installation-and-path-setup">
+<h2>Installation and Path Setup<a class="headerlink" href="#installation-and-path-setup" title="Permalink to this headline">¶</a></h2>
+<p>EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to their particular module subfolders, and so the entire EXOSIMS folder tree must be user writeable.</p>
+<p>The directory containing the <code class="docutils literal"><span class="pre">EXOSIMS</span></code> code directory, which we will call <code class="docutils literal"><span class="pre">EXOSIMSROOT</span></code> must be in your Python path.  If you clone EXOSIMS directly from github then you will automatically get a directory hierarchy that looks like <code class="docutils literal"><span class="pre">installpath/EXOSIMS/EXOSIMS</span></code>.  In this case <code class="docutils literal"><span class="pre">installpath/EXOSIMS</span></code> is the <code class="docutils literal"><span class="pre">EXOSIMSROOT</span></code>. On POSIX systems, this is accomplished simply by appending the path to the <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> environment variables.</p>
+<div class="section" id="setting-pythonpath-on-macos-linux-for-bash-environments">
+<h3>Setting PYTHONPATH on MacOS/Linux for bash Environments<a class="headerlink" href="#setting-pythonpath-on-macos-linux-for-bash-environments" title="Permalink to this headline">¶</a></h3>
+<p>To append the <code class="docutils literal"><span class="pre">EXOSIMS</span></code> directory to your <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> locate your .bashrc file (should be in your home directory) and append the following line to the end:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">PYHTONPATH</span><span class="o">=</span><span class="s2">&quot;$PYTHONPATH:EXOSIMSROOT&quot;</span>
+</pre></div>
+</div>
+<p>You will need to start a new shell session, or source the bashrc in your current session (<code class="docutils literal"><span class="pre">&gt;</span> <span class="pre">source</span> <span class="pre">~/.bashrc</span></code>). For other shell environments, check the relevant documentation for your environment. To check which shell you are using, execute <code class="docutils literal"><span class="pre">&gt;</span> <span class="pre">echo</span> <span class="pre">$SHELL</span></code>.  To check the current <code class="docutils literal"><span class="pre">PYTHONPATH</span></code>, execute <code class="docutils literal"><span class="pre">&gt;</span> <span class="pre">echo</span> <span class="pre">$PYTHONPATH</span></code>.</p>
+</div>
+<div class="section" id="setting-pythonpath-in-windows">
+<h3>Setting PYTHONPATH in WINDOWS<a class="headerlink" href="#setting-pythonpath-in-windows" title="Permalink to this headline">¶</a></h3>
+<p>Right click on My Computer and select Properties &gt; Advanced Systems Settings &gt; Environment Variables &gt; then under system variables add a new variable called <code class="docutils literal"><span class="pre">PYTHONPATH</span></code> or append to it if it exists. In this variable you need to have <code class="docutils literal"><span class="pre">C:\\EXOSIMSROOT</span></code>.</p>
+<p>For more information see: <a class="reference external" href="https://docs.python.org/2/using/windows.html#excursus-setting-environment-variables">https://docs.python.org/2/using/windows.html#excursus-setting-environment-variables</a></p>
+</div>
+</div>
+<div class="section" id="compiling-cython-modules">
+<span id="cythonized"></span><h2>Compiling Cython Modules<a class="headerlink" href="#compiling-cython-modules" title="Permalink to this headline">¶</a></h2>
+<p>To speed up execution, some EXOSIMS components are implemented as both regular interpreted python and as statically compiled executables via Cython. The code is set to automatically use the compiled versions if they are available, and these (currently) must be manually compiled on each system where the code is installed.  In all cases, compilation is done by executing a python setup script.  The individual components with Cython implementations are listed below.</p>
+<div class="section" id="keplerstm">
+<h3>KeplerSTM<a class="headerlink" href="#keplerstm" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal"><span class="pre">KeplerSTM</span></code> utility is responsible for orbital propagation in <code class="docutils literal"><span class="pre">EXOSIMS</span></code>.  It has a Cython implementation: <code class="docutils literal"><span class="pre">CyKeplerSTM</span></code>, which wraps a pure C implementation of the propagation algorithms, called <code class="docutils literal"><span class="pre">KeplerSTM_C</span></code>. To compile the Cython implementation, navigate to <code class="docutils literal"><span class="pre">EXOSIMSROOT/EXOSIMS/util/KeplerSTM_C</span></code>.  Execute:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">python</span> <span class="n">CyKeplerSTM_setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span> <span class="o">--</span><span class="n">inplace</span>
+</pre></div>
+</div>
+<p>This will generate a <code class="docutils literal"><span class="pre">.c</span></code> file and compile to a <code class="docutils literal"><span class="pre">.so</span></code> file on MacOS/Linux or a <code class="docutils literal"><span class="pre">.pyd</span></code> file on Windows.  The python <code class="docutils literal"><span class="pre">KeplerSTM</span></code> automatically loads the compiled module if it is present, and uses it by default if successfully loaded.</p>
+</div>
 </div>
 </div>
 
@@ -79,11 +118,20 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Installing and Configuring EXOSIMS</a><ul>
+<li><a class="reference internal" href="#obtaining-exosims">Obtaining EXOSIMS</a></li>
 <li><a class="reference internal" href="#environment-and-package-dependencies">Environment and Package Dependencies</a><ul>
 <li><a class="reference internal" href="#optional-packages">Optional Packages</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#path-setup">Path Setup</a></li>
+<li><a class="reference internal" href="#installation-and-path-setup">Installation and Path Setup</a><ul>
+<li><a class="reference internal" href="#setting-pythonpath-on-macos-linux-for-bash-environments">Setting PYTHONPATH on MacOS/Linux for bash Environments</a></li>
+<li><a class="reference internal" href="#setting-pythonpath-in-windows">Setting PYTHONPATH in WINDOWS</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compiling-cython-modules">Compiling Cython Modules</a><ul>
+<li><a class="reference internal" href="#keplerstm">KeplerSTM</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -121,8 +169,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/install.rst.txt"

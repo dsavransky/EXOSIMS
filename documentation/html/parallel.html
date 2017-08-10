@@ -40,29 +40,87 @@
             
   <div class="section" id="survey-ensemble-parallelization">
 <span id="parallel"></span><h1>Survey Ensemble Parallelization<a class="headerlink" href="#survey-ensemble-parallelization" title="Permalink to this headline">¶</a></h1>
-<p>This describes the various ways to parallelize survey ensemble generation.</p>
+<p>This describes the various ways available in <code class="docutils literal"><span class="pre">EXOSIMS</span></code> to parallelize survey ensemble generation.</p>
+<div class="section" id="prototype">
+<h2>Prototype<a class="headerlink" href="#prototype" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> prototype does not provide any parallelization capability, but executes simulations in series.  It is intended only to provide the basic interface specification for generating survey ensembles, and can be useful for debugging purposes where you wish the output from each simulation to be displayed as it is executed.</p>
+<p id="run-ensemble">The method for generating an ensemble is <code class="docutils literal"><span class="pre">run_ensemble</span></code>, with inputs:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">sim</span></code> - A MissionSim object</li>
+<li><code class="docutils literal"><span class="pre">nb_runs</span></code> - The number of simulations to execute</li>
+<li><code class="docutils literal"><span class="pre">run_one</span></code> - A method to execute for each simulation</li>
+</ul>
+<p>There are two keywords: <code class="docutils literal"><span class="pre">genNewPlanets</span></code> and <code class="docutils literal"><span class="pre">rewindPlanets</span></code>, which are both True by default and are passed to the <code class="docutils literal"><span class="pre">run_one</span></code> method.  All other keywords are passed directly to <code class="docutils literal"><span class="pre">run_one</span></code>.</p>
+<p>In the prototype implementation, <code class="docutils literal"><span class="pre">run_one</span></code> cannot be overwritten and is always defined as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SS</span><span class="p">,</span> <span class="n">genNewPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">SS</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">DRM</span><span class="p">[:]</span>
+    <span class="n">SS</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="n">genNewPlanets</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="n">rewindPlanets</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="ipyparallel">
 <h2>IPyParallel<a class="headerlink" href="#ipyparallel" title="Permalink to this headline">¶</a></h2>
-<p>The basic method for parallelization relies heavily on the <a class="reference external" href="http://ipyparallel.readthedocs.org/en/latest/">ipyparallel package</a>.  This requires you to run a cluster, typically activated at the command line by <code class="docutils literal"><span class="pre">ipcluster</span> <span class="pre">start</span></code>.  Then, from an ipython command prompt, create the <code class="docutils literal"><span class="pre">MissionSim</span></code> object as usual with a script including the <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code> SurveyEnsemble module:</p>
+<p>This implementation uses the <a class="reference external" href="http://ipyparallel.readthedocs.org/en/latest/">ipyparallel package</a> for paralellization.  This requires you to run a cluster, typically activated at the command line by <code class="docutils literal"><span class="pre">ipcluster</span> <span class="pre">start</span></code>.  Then, from an ipython command prompt, create the <code class="docutils literal"><span class="pre">MissionSim</span></code> object as usual with a script including the <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code> SurveyEnsemble module:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span> <span class="nn">EXOSIMS.MissionSim</span><span class="o">,</span> <span class="nn">os.path</span>
 <span class="n">scriptfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">EXOSIMS</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;Scripts&#39;</span><span class="p">,</span><span class="s1">&#39;sampleScript_parallel_ensemble.json&#39;</span><span class="p">)</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">MissionSim</span><span class="o">.</span><span class="n">MissionSim</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">sim</span></code> object will have a <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> attribute with a <code class="docutils literal"><span class="pre">run_ensemble</span></code> method.  This method takes an argument of the <code class="docutils literal"><span class="pre">run_one</span></code> function, which must be defined in the ipython session:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one</span><span class="p">():</span>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">It is highly recommended that your first run a version of your script with the prototype <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> to ensure that there are no errors and that all cached products are built on disk before execution on the cluster.  The MissionSim constructor takes a <code class="docutils literal"><span class="pre">nopar</span></code> keyword input.  Building the <code class="docutils literal"><span class="pre">sim</span></code> object with <code class="docutils literal"><span class="pre">nopar=True</span></code> will ignore any non-prototype <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> in your script file and build with the prototype.</p>
+</div>
+<p>The <code class="docutils literal"><span class="pre">sim</span></code> object will have a <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> attribute with a <a class="reference internal" href="#run-ensemble"><span class="std std-ref">run_ensemble</span></a> method, as described above.  This method takes an argument of the <code class="docutils literal"><span class="pre">run_one</span></code> function, which must be defined in the <a class="reference external" href="https://docs.python.org/2/library/__main__.html">main intepreter scope</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Because of the requirement for <code class="docutils literal"><span class="pre">run_one</span></code> to be in the main scope, you cannot import a <code class="docutils literal"><span class="pre">run_one</span></code> method from a file, or use an object method from an instantiated object.  Your easiest options are either to copy and paste your <code class="docutils literal"><span class="pre">run_one</span></code> method directly into the interpreter (preferably using the ipython %paste magic command), or to place the <code class="docutils literal"><span class="pre">run_one</span></code> method by itself in a file on disk, and then use the <code class="docutils literal"><span class="pre">run</span></code> command from the intepreter to load it into the main scope.  In either case, <code class="docutils literal"><span class="pre">run_one</span></code> should be defined in the interpreter session as <code class="docutils literal"><span class="pre">&lt;function</span> <span class="pre">__main__.run_one&gt;</span></code>.</p>
+</div>
+<p>The <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code> imports the following modules to all workers in the cluster:</p>
+<ul class="simple">
+<li>EXOSIMS, EXOSIMS.util.get_module</li>
+<li>os, os.path</li>
+<li>time</li>
+<li>random</li>
+<li>cPickle</li>
+<li>traceback</li>
+</ul>
+<p>and executes <code class="docutils literal"><span class="pre">SS</span> <span class="pre">=</span> <span class="pre">EXOSIMS.util.get_module.get_module(specs['modules']['SurveySimulation'],</span> <span class="pre">'SurveySimulation')(**specs)</span></code> on each worker, generating a <code class="docutils literal"><span class="pre">SurveySimulation</span></code> object called <code class="docutils literal"><span class="pre">SS</span></code> on each worker using the parameters of your original input script.  If your particular <code class="docutils literal"><span class="pre">run_one</span></code> requires additional inputs or common pre-simulation commands to be executed, then you must modify the constructor (preferably by implementing a new <code class="docutils literal"><span class="pre">SurveyEnsemble</span></code> implementation that inherits <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code>.</p>
+<p>A simple <code class="docutils literal"><span class="pre">run_one</span></code> implementation is provided below:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
     <span class="n">sim</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
-    <span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">DRM</span><span class="p">[:]</span>
-    <span class="n">sim</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">sim</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">sim</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
-    <span class="n">sim</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">gen_physical_properties</span><span class="p">(</span><span class="o">**</span><span class="n">sim</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
-    <span class="n">sim</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">init_systems</span><span class="p">()</span>
+    <span class="n">SS</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">DRM</span><span class="p">[:]</span>
+    <span class="n">SS</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="n">genNewPlanets</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="n">rewindPlanets</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">res</span>
 </pre></div>
 </div>
-<p>Once defined, the run_one can be parallelized N times by running <code class="docutils literal"><span class="pre">res</span> <span class="pre">=</span> <span class="pre">sim.run_ensemble(N,</span> <span class="pre">run_one=run_one)</span></code>.  On return, <code class="docutils literal"><span class="pre">res</span></code> will be a list of lists of the DRM dictionaries.</p>
+<p>This version of <code class="docutils literal"><span class="pre">run_one</span></code> returns the full <code class="docutils literal"><span class="pre">DRM</span></code> list, meaning that all outputs will need to be collected in the main scope after the ensemble execution, potentially adding considerable overheads.  A better approach for large ensembles is to write each individual set of results to disk and return only a scalar value (or some other small output) to the main scope.</p>
+<p>Once defined, the <code class="docutils literal"><span class="pre">run_one</span></code> method is executed in parallel by running <code class="docutils literal"><span class="pre">res</span> <span class="pre">=</span> <span class="pre">sim.run_ensemble(N,</span> <span class="pre">run_one=run_one,</span> <span class="pre">**kwargs)</span></code>.</p>
+<div class="section" id="run-ipcluster-ensemble">
+<h3>run_ipcluster_ensemble<a class="headerlink" href="#run-ipcluster-ensemble" title="Permalink to this headline">¶</a></h3>
+<p>To simplify parallel ensemble execution via <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code>, <code class="docutils literal"><span class="pre">EXOSIMS</span></code> provides a run script called <code class="docutils literal"><span class="pre">run_ipcluster_ensemble.py</span></code> (located in the <code class="docutils literal"><span class="pre">EXOSIMSROOT/EXOSIMS/run/</span></code> directory).  This script is intended to be called from the command line, and is executed as:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>&gt;python python run_ipcluster_ensemble scriptname nruns
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">scriptname</span></code> is the full path to the JSON script to use, and <code class="docutils literal"><span class="pre">nruns</span></code> is the number of simulations to execute.  For full usage information, execute:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>&gt;python python run_ipcluster_ensemble --help
+</pre></div>
+</div>
+<p>This script saves the results of each individual simulation to disk as a pickle file, containing a dictionary with two keys:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">DRM</span></code>: The full <code class="docutils literal"><span class="pre">DRM</span></code> list of dictionaries encoding the mission simulation</li>
+<li><code class="docutils literal"><span class="pre">systems</span></code>: A dictionary of planet parameters generated by the <code class="docutils literal"><span class="pre">dump_systems</span></code> method of the <code class="docutils literal"><span class="pre">SimulatedUniverse</span></code> object.</li>
+</ul>
+<p>In addition, the script saves the output specification (generated by <code class="docutils literal"><span class="pre">sim.genOutSpec()</span></code>) to the same directory as the rest of the results, and saves the traceback of any error generated on any worker during ensemble execution to a <code class="docutils literal"><span class="pre">log.err</span></code> file in the output directory.</p>
+</div>
+<div class="section" id="read-ipcluster-ensemble">
+<h3>read_ipcluster_ensemble<a class="headerlink" href="#read-ipcluster-ensemble" title="Permalink to this headline">¶</a></h3>
+<p>To read in and parse the pickle files generated by <code class="docutils literal"><span class="pre">run_ipcluster_ensemble</span></code> we use <code class="docutils literal"><span class="pre">read_ipcluster_ensemble</span></code> (in <code class="docutils literal"><span class="pre">EXOSIMSROOT/EXOSIMS/util</span></code>) which provides a <code class="docutils literal"><span class="pre">gen_summary</span></code> method.  This generates lists of detection and characterization parameters for all missions in an ensemble.</p>
+</div>
 </div>
 </div>
 
@@ -75,7 +133,12 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Survey Ensemble Parallelization</a><ul>
-<li><a class="reference internal" href="#ipyparallel">IPyParallel</a></li>
+<li><a class="reference internal" href="#prototype">Prototype</a></li>
+<li><a class="reference internal" href="#ipyparallel">IPyParallel</a><ul>
+<li><a class="reference internal" href="#run-ipcluster-ensemble">run_ipcluster_ensemble</a></li>
+<li><a class="reference internal" href="#read-ipcluster-ensemble">read_ipcluster_ensemble</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

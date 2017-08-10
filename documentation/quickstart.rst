@@ -2,7 +2,7 @@
 Quick Start Guide
 ######################
 
-This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the ICD and detailed as-built documentation of the prototypes.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
+This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the `ICD <https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf>`_ and detailed as-built documentation of the prototypes.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
 
 
 EXOSIMS Workflow

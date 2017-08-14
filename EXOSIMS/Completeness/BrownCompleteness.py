@@ -126,17 +126,20 @@ class BrownCompleteness(Completeness):
         else:
             smax = np.tan(OWA)*TL.dist
         
-        # calculate dMags based on limiting dMag
-        dMagmax = OS.dMagLim 
+        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
+        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        
+        # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagmax -= 2.5*np.log10(L)
+            dMagMax -= 2.5*np.log10(L)
             comp0 = np.zeros(smin.shape)
-            comp0[dMagmax>ymin] = self.EVPOC(smin[dMagmax>ymin].to('AU').value, smax[dMagmax>ymin].to('AU').value, 0.0, dMagmax[dMagmax>ymin])
+            comp0[dMagMax>ymin] = self.EVPOC(smin[dMagMax>ymin].to('AU').value, \
+                    smax[dMagMax>ymin].to('AU').value, 0.0, dMagMax[dMagMax>ymin])
         else:
-            comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagmax)
+            comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagMax)
         comp0[comp0<1e-6] = 0.0
         
         return comp0
@@ -154,12 +157,15 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
         
+        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
+        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
-        extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + ' dMagLim: ' + str(OS.dMagLim) + ' '
+        extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + ' dMagMax: ' + str(dMagMax) + ' '
         extstr += 'nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
@@ -245,9 +251,9 @@ class BrownCompleteness(Completeness):
                     beta = np.arccos(r[:,2]/d) # phase angle
                     Phi = self.PlanetPhysicalModel.calc_Phi(beta*u.rad) # phase function
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
-
+                    
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < OS.dMagLim)[0]
+                    toremovedmag = np.where(dMag < dMagMax)[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)

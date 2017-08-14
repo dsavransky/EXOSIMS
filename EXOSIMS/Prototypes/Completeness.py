@@ -17,8 +17,8 @@ class Completeness(object):
 
     _modtype = 'Completeness'
     _outspec = {}
-    
-    def __init__(self, **specs):
+
+    def __init__(self, dMagComp=None, **specs):
         
         # load the vprint funtion (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -27,6 +27,12 @@ class Completeness(object):
         Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
         self.PlanetPopulation = Pop
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
+        
+        # loading the fluxratio limit for completeness
+        self.dMagComp = float(dMagComp) if dMagComp is not None else dMagComp
+        
+        # populate outspec
+        self._outspec['dMagComp'] = self.dMagComp
 
     def __str__(self):
         """String representation of Completeness object

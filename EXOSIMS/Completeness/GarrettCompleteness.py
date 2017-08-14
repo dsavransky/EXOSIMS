@@ -146,24 +146,27 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
+        OS = TL.OpticalSystem
+        
+        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
+        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        
         # important PlanetPopulation attributes
         atts = self.PlanetPopulation.__dict__.keys()
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        # include dMagLim
-        extstr += '%s: ' % 'dMagLim' + str(getattr(TL.OpticalSystem, 'dMagLim')) + ' '
+        # include dMagMax
+        extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.classpath, self.filename+'.acomp')
         
         dist_s = self.genComp(Cpath, TL)
-
         dist_sv = np.vectorize(dist_s.integral)
         
         # calculate separations based on IWA
-        OS = TL.OpticalSystem
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
@@ -172,15 +175,14 @@ class GarrettCompleteness(BrownCompleteness):
             smax = self.rmax
         else:
             smax = (np.tan(OWA)*TL.dist).to('AU').value
-
-        # calculate dMags based on limiting dMag
-        dMagmax = TL.OpticalSystem.dMagLim
+        
+        # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagmax -= 2.5*np.log10(L)
-            comp0 = self.comp_s(smin, smax, dMagmax)
+            dMagMax -= 2.5*np.log10(L)
+            comp0 = self.comp_s(smin, smax, dMagMax)
         else:
             comp0 = dist_sv(smin, smax)
 
@@ -197,10 +199,15 @@ class GarrettCompleteness(BrownCompleteness):
                 
         Returns:
             dist_s (callable(s)):
-                Marginalized to dMagLim probability density function for 
+                Marginalized to dMagMax probability density function for 
                 projected separation
         
         """
+        
+        OS = TL.OpticalSystem
+        
+        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
+        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
         
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
@@ -212,12 +219,12 @@ class GarrettCompleteness(BrownCompleteness):
             # generate dist_s interpolant and pickle it
             print 'Cached completeness file not found at "%s".' % Cpath
             print 'Generating completeness.'
-            print 'Marginalizing joint pdf of separation and dMag up to dMagLim'
-            # get pdf of s up to dmaglim
+            print 'Marginalizing joint pdf of separation and dMag up to dMagMax'
+            # get pdf of s up to dMagMax
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
             for i in xrange(len(s)):
-                fs[i] = self.f_s(s[i],TL.OpticalSystem.dMagLim)
+                fs[i] = self.f_s(s[i], dMagMax)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             print 'Finished marginalization'
             H = {'dist_s': dist_s}
@@ -236,7 +243,7 @@ class GarrettCompleteness(BrownCompleteness):
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
             dMag (ndarray):
-                dMaglim from instrument
+                Planet flux ratio
         
         Returns:
             comp (ndarray):
@@ -255,15 +262,15 @@ class GarrettCompleteness(BrownCompleteness):
         return comp
             
     @memoize    
-    def f_s(self, s, dmaglim):
+    def f_s(self, s, dMagMax):
         """Calculates probability density of projected separation marginalized
-        up to dmaglim
+        up to dMagMax
         
         Args:
             s (float):
                 Value of projected separation
-            dmaglim (float):
-                Value of limiting dMag
+            dMagMax (float):
+                Maximum planet flux ratio
                 
         Returns:
             f (float):
@@ -276,8 +283,8 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             d1 = self.mindmag(s)
             d2 = self.maxdmag(s)
-            if d2 > dmaglim:
-                d2 = dmaglim
+            if d2 > dMagMax:
+                d2 = dMagMax
             if d1 > d2:
                 f = 0.0
             else:
@@ -292,7 +299,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                Value of dMag
+                Planet flux ratio
             s (float):
                 Value of projected separation (AU)
         
@@ -325,7 +332,7 @@ class GarrettCompleteness(BrownCompleteness):
             z (ndarray):
                 Values of albedo times planetary radius squared
             dmag (float):
-                Value of dMag
+                Planet flux ratio
             s (float):
                 Value of projected separation
         
@@ -369,8 +376,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Returns:
             mindmag (float):
-                Minimum value of dMag
-                
+                Minimum planet flux ratio
         """
         if s == 0.0:
             mindmag = self.cdmin1
@@ -394,7 +400,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Returns:
             maxdmag (float):
-                Maximum value of dMag
+                Maximum planet flux ratio
         
         """
         
@@ -685,7 +691,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                dMag value
+                Planet flux ratio
             smax (float):
                 maximum projected separation (AU)
         
@@ -717,7 +723,7 @@ class GarrettCompleteness(BrownCompleteness):
             s (float):
                 Value of projected separation (AU)
             dmag (float):
-                Value of dMag
+                Planet flux ratio
         
         Returns:
             f (float):
@@ -733,7 +739,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                Value of dMag
+                Planet flux ratio
             smin (float):
                 Value of minimum projected separation (AU) from instrument
             smax (float):
@@ -757,7 +763,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         return f
     
-    def comp_dmag(self, smin, smax, dmaglim):
+    def comp_dmag(self, smin, smax, dMagMax):
         """Calculates completeness by first integrating over projected 
         separation and then dMag.
         
@@ -766,8 +772,8 @@ class GarrettCompleteness(BrownCompleteness):
                 Values of minimum projected separation (AU) from instrument
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
-            dmaglim (ndarray):
-                dMaglim from instrument
+            dMagMax (float ndarray):
+                Maximum planet flux ratio
         
         Returns:
             comp (ndarray):
@@ -777,18 +783,18 @@ class GarrettCompleteness(BrownCompleteness):
         # cast to arrays
         smin = np.array(smin, ndmin=1, copy=False)
         smax = np.array(smax, ndmin=1, copy=False)
-        dmaglim = np.array(dmaglim, ndmin=1, copy=False)
+        dMagMax = np.array(dMagMax, ndmin=1, copy=False)
         dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        dmaglim[dmaglim>dmax] = dmax
+        dMagMax[dMagMax>dmax] = dmax
         
         comp = np.zeros(smin.shape)
         for i in xrange(len(smin)):
             d1 = self.mindmag(smin[i])
-            if d1 > dmaglim[i]:
+            if d1 > dMagMax[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dmaglim[i], args=(smin[i],smax[i]), n=50)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dMagMax[i], args=(smin[i],smax[i]), n=50)[0]
         
         return comp
     

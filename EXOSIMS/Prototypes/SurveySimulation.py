@@ -428,6 +428,7 @@ class SurveySimulation(object):
                     Obs.defburnPortion**2/4.)).decompose().to('d2')
         
         # now, start to look for available targets
+        cnt = 0
         while not TK.mission_is_over():
             # 1/ initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -507,7 +508,8 @@ class SurveySimulation(object):
             
             # if no observable target, call the TimeKeeping.wait() method
             else:
-                TK.wait()
+                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
+                cnt += 1
             
         else:
             return DRM, None, None

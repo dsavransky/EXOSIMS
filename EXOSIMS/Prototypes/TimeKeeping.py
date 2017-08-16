@@ -49,7 +49,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
-            missionPortion=1, OBduration=np.inf, **specs):
+            missionPortion=1, OBduration=np.inf, waitTime=1, waitMultiple=2, **specs):
         
         # load the vprint funtion (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -87,6 +87,10 @@ class TimeKeeping(object):
         # initialize single observation START and END times
         self.obsStart = 0.*u.day
         self.obsEnd = 0.*u.day
+        
+        # initialize wait parameters
+        self.waitTime = float(waitTime)*u.day
+        self.waitMultiple = float(waitMultiple)
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -130,9 +134,7 @@ class TimeKeeping(object):
         of 1 day.
         
         """
-        dt = 1.*u.day
-        self.allocate_time(dt)
-        #self.vprint('  Waiting %s'%dt.round(2))
+        self.allocate_time(self.waitTime)
 
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.

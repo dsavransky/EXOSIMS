@@ -19,7 +19,7 @@
   "modules": {
     "PlanetPopulation": "KnownRVPlanets",
     "StarCatalog": " ",
-    "OpticalSystem": "Nemati",
+    "OpticalSystem": "KasdinBraems",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
     "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",

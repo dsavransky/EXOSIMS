@@ -21,9 +21,9 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KeplerLike2",
+    "PlanetPopulation": "SAG13",
     "StarCatalog": "EXOCAT1",
-    "OpticalSystem": "KasdinBraems",
+    "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
     "PlanetPhysicalModel": "Forecaster",
@@ -32,7 +32,7 @@
     "PostProcessing": " ",
     "Completeness": "BrownCompleteness",
     "TargetList": " ",
-    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SimulatedUniverse": "SAG13Universe",
     "SurveySimulation": " ",
     "SurveyEnsemble": " "
   }

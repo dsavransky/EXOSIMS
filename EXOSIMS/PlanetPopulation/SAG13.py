@@ -73,13 +73,13 @@ class SAG13(KeplerLike2):
         self._outspec['eta'] = self.eta
         
         # initialize array used to temporarily store radius and sma values
-        self.radius_sma_buffer = np.array([np.zeros(3, dtype=object)])
+        self.radius_buffer = np.array([])*u.earthRad
+        self.sma_buffer = np.array([])*u.AU
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.
         
-        This method is called by gen_sma and gen_radius. It stores the generated
-        values of both parameters, for each new value of the sample size (n). 
+        This method is called by gen_radius and gen_sma.
         
         Args:
             n (integer):
@@ -92,47 +92,29 @@ class SAG13(KeplerLike2):
                 Semi-major axis values in units of AU
         
         """
-        n = self.gen_input_check(n)
+        # get number of samples per bin
+        nsamp = np.ceil(n*self.eta/np.sum(self.eta)).astype(int)
         
-        # find index of previously generated radii or sma values
-        ind = np.where(self.radius_sma_buffer[:,0] == n)[0]
+        # generate random radii and period in each bin
+        radius = []
+        period = []
+        for i in range(len(self.lnRp)-1):
+            for j in range(len(self.lnT)-1):
+                radius = np.hstack((radius,np.exp(np.random.uniform(low=self.lnRp[i],
+                        high=self.lnRp[i+1], size=nsamp[i,j])).tolist()))
+                period = np.hstack((period,np.exp(np.random.uniform(low=self.lnT[j],
+                        high=self.lnT[j+1], size=nsamp[i,j])).tolist()))
         
-        # if in the buffer, remove it from the buffer and return the values
-        if ind.size > 0:
-            Rp = self.radius_sma_buffer[ind[0],1]
-            a = self.radius_sma_buffer[ind[0],2]
-            self.radius_sma_buffer = np.delete(self.radius_sma_buffer, ind[0], 0)
-            return Rp*u.earthRad, a*u.AU
+        # select exactly n radom planets
+        ind = np.random.choice(len(radius), size=n, replace=len(radius)<n)
+        Rp = radius[ind]*u.earthRad
+        T = period[ind]*u.year
         
-        # if not in the buffer, generate n samples, and store values in the buffer
-        else:
-            # get number of samples per bin
-            nsamp = np.ceil(n*self.eta/np.sum(self.eta)).astype(int)
-            
-            # generate random radii and period in each bin
-            radius = []
-            period = []
-            for i in range(len(self.lnRp)-1):
-                for j in range(len(self.lnT)-1):
-                    radius = np.hstack((radius,np.exp(np.random.uniform(low=self.lnRp[i],
-                            high=self.lnRp[i+1], size=nsamp[i,j])).tolist()))
-                    period = np.hstack((period,np.exp(np.random.uniform(low=self.lnT[j],
-                            high=self.lnT[j+1], size=nsamp[i,j])).tolist()))
-            
-            # select exactly n radom planets
-            ind = np.random.choice(len(radius), size=n, replace=len(radius)<n)
-            Rp = radius[ind]*u.earthRad
-            T = period[ind]*u.year
-            
-            # convert periods to sma values
-            mu = const.G*self.SAG13starMass
-            a = ((mu*(T/(2*np.pi))**2)**(1/3.)).to('AU')
-            
-            # store values in the buffer
-            self.radius_sma_buffer = np.vstack((self.radius_sma_buffer, 
-                    np.array([n, Rp.to('earthRad').value, a.to('AU').value], dtype=object)))
-            
-            return Rp, a
+        # convert periods to sma values
+        mu = const.G*self.SAG13starMass
+        a = ((mu*(T/(2*np.pi))**2)**(1/3.)).to('AU')
+        
+        return Rp, a
 
     def gen_radius(self, n):
         """Generate planetary radius values in Earth radius
@@ -149,11 +131,19 @@ class SAG13(KeplerLike2):
                 Planet radius values in units of Earth radius
         
         """
-        Rp, _ = self.gen_radius_sma(n)
+        n = self.gen_input_check(n)
+        
+        # if radius values are in the buffer, copy them and clear the buffer
+        if self.radius_buffer.size == n:
+            Rp = self.radius_buffer
+            self.radius_buffer = np.array([])*u.earthRad
+        
+        # otherwise, generate them and store sma values in the buffer
+        else:
+            Rp, a = self.gen_radius_sma(n)
+            self.sma_buffer = a
         
         return Rp
-
-
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -170,10 +160,40 @@ class SAG13(KeplerLike2):
                 Semi-major axis values in units of AU
         
         """
-        _, a = self.gen_radius_sma(n)
+        n = self.gen_input_check(n)
+        
+        # if sma values are in the buffer, copy them and clear the buffer
+        if self.sma_buffer.size == n:
+            a = self.sma_buffer
+            self.sma_buffer = np.array([])*u.AU
+        
+        # otherwise, generate them and store radius values in the buffer
+        else:
+            Rp, a = self.gen_radius_sma(n)
+            self.radius_buffer = Rp
         
         return a
 
+    def gen_albedo(self, n):
+        """Generate geometric albedo values
+        
+        The albedo is determined by sampling the semi-major axis distribution
+        directly from the sma distribution, without calling the gen_sma method.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+                
+        Returns:
+            p (float ndarray):
+                Planet albedo values
+        
+        """
+        n = self.gen_input_check(n)
+        a = self.sma_sampler(n)*u.AU
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
+        
+        return p
 
     def dist_lnradius_lnperiod(self, lnRp, lnT):
         """Probability density function for logarithm of planetary radius 
@@ -223,4 +243,3 @@ class SAG13(KeplerLike2):
                 f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k]
         
         return f
-

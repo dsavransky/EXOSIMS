@@ -39,17 +39,16 @@ class KeplerLike1(PlanetPopulation):
     
     """
 
-    def __init__(self, smaknee=30, esigma=0.25, **specs):
+    def __init__(self, smaknee=30, esigma=0.25, prange=[0.083, 0.882],
+            Rprange=[1, 22.6], **specs):
         
-        specs['prange'] = [0.083, 0.882]
-        specs['Rprange'] = [1, 22.6]
+        specs['prange'] = prange
+        specs['Rprange'] = Rprange
         PlanetPopulation.__init__(self, **specs)
         
         # calculate norm for sma distribution with decay point (knee)
         self.smaknee = float(smaknee)
         ar = self.arange.to('AU').value
-        assert (self.smaknee >= ar[0]) and (self.smaknee <= ar[1]), \
-               "sma knee value must be in sma range."
         self.smanorm = integrate.quad(lambda x,s0=self.smaknee: \
                 x**-0.62*np.exp(-(x/s0)**2), ar[0], ar[1])[0]
         
@@ -165,8 +164,8 @@ class KeplerLike1(PlanetPopulation):
                 size=nsamp[j])) for j in range(len(self.Rvals))])
         
         # select n radom elements from Rp
-        if len(Rp) > n:
-            Rp = Rp[np.random.choice(len(Rp), size=n, replace=False)]
+        ind = np.random.choice(len(Rp), size=n, replace=len(Rp)<n)
+        Rp = Rp[ind]
         
         return Rp*u.earthRad
 
@@ -249,7 +248,9 @@ class KeplerLike1(PlanetPopulation):
         
         # unitless sma range
         ar = self.arange.to('AU').value
-        assert np.all((a >= ar[0]) & (a <= ar[1])), "sma input values must be within sma range."
+        
+        # clip sma values to sma range
+        a = np.clip(a, ar[0], ar[1])
         
         # upper limit for eccentricity given sma
         elim = np.zeros(len(a))

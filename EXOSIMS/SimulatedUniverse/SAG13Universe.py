@@ -5,31 +5,12 @@ import astropy.constants as const
 from astropy.time import Time
 
 class SAG13Universe(SimulatedUniverse):
-    """
-    Simulated Universe module based on SAG13 occurrence rates.
+    """Simulated Universe module based on SAG13 Planet Population module.
     
-    This is the current working model based on averaging multiple studies. 
-    These do not yet represent official scientific values.
     """
 
-    def __init__(self, SAG13coeffs=[[.38, -.19, .26, 0],[.73, -1.18, .59, 3.4]],
-            Rprange=[2/3., 17.0859375], arange=[0.06346941, 3.14678393], **specs):
+    def __init__(self, **specs):
         
-        # load SAG13 coefficients
-        self.SAG13coeffs = np.array(SAG13coeffs, dtype=float)
-        assert self.SAG13coeffs.ndim <= 2, "SAG13coeffs array dimension must be <= 2."
-        
-        if self.SAG13coeffs.ndim == 1:
-            self.SAG13coeffs = np.array(np.append(self.SAG13coeffs[:3], 0.), ndmin=2)
-        if len(self.SAG13coeffs) != 4:
-            self.SAG13coeffs = self.SAG13coeffs.T
-        assert len(self.SAG13coeffs) == 4, "SAG13coeffs array length must be 4."
-        
-        # default sma range = [0.06346941, 3.14678393] AU
-        # corresponds to period range = [10, 640] day
-        # and EXOCAT stelar mass range = [0.34101181, 10.14651506] solMass
-        specs['Rprange'] = Rprange
-        specs['arange'] = arange
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
@@ -40,56 +21,20 @@ class SAG13Universe(SimulatedUniverse):
         PPMod = self.PlanetPhysicalModel
         TL = self.TargetList
         
-        # SAG13 coeffs
-        Gamma = self.SAG13coeffs[0,:]
-        alpha = self.SAG13coeffs[1,:]
-        beta = self.SAG13coeffs[2,:]
-        Rplim = np.append(self.SAG13coeffs[3,:], np.inf)
-        
-        # generate period range
-        Msrange = [min(TL.MsTrue).value, max(TL.MsTrue).value]*TL.MsTrue.unit
-        PPop.Trange = 2*np.pi*np.sqrt(PPop.arange**3/(const.G*Msrange)).to('year')
-        
-        # check if generated period range is compatible with arange and Msrange
-        assert PPop.Trange[1] > PPop.Trange[0], \
-                "SAG13 period range not compatible with sma range and/or Ms range."
-        
-        # SAG13 planet radius ad period sampling
-        nx = 6
-        x = np.log2(PPop.Trange.to('year').value)
-        T = 2**np.linspace(x[0], x[1], nx+1)
-        ny = 8
-        y = np.log(PPop.Rprange.to('earthRad').value)/np.log(1.5)
-        Rp = 1.5**np.linspace(y[0], y[1], ny+1)
-        
-        # loop over all (T, Rp) regions
+        # loop over eta grid, for all log values of radii and periods
         plan2star = []
-        period = []
         radius = []
-        self.eta = np.zeros((nx, ny))
-        for i in range(nx):
-            for j in range(ny):
-                # discretize each region for integration
-                npts = 1e3
-                dx = np.linspace(np.log(T[i]), np.log(T[i+1]), npts)
-                dy = np.linspace(np.log(Rp[j]), np.log(Rp[j+1]), npts)
-                dT, dRp = np.meshgrid(np.exp(dx), np.exp(dy))
-                dN = np.zeros(dRp.shape)
-                for k in range(len(Rplim)-1):
-                    mask = (dRp >= Rplim[k]) & (dRp < Rplim[k+1])
-                    dN[mask] = Gamma[k] * dRp[mask]**alpha[k] * dT[mask]**beta[k]
-                dxstep = dx[1] - dx[0]
-                dystep = dy[1] - dy[0]
-                self.eta[i,j] = np.trapz(np.trapz(dN*dxstep*dystep))
-                
-                # treat eta as the rate paramter of a Poisson distribution
-                targetSystems = np.random.poisson(lam=self.eta[i,j],size=TL.nStars)
+        period = []
+        for i in range(len(PPop.lnRp)-1):
+            for j in range(len(PPop.lnT)-1):
+                # treat eta as the rate parameter of a Poisson distribution
+                targetSystems = np.random.poisson(lam=PPop.eta[i,j], size=TL.nStars)
                 for m,n in enumerate(targetSystems):
                     plan2star = np.hstack((plan2star,[m]*n))
-                    period = np.hstack((period,np.exp(np.random.uniform(low=np.log(T[i]),
-                            high=np.log(T[i+1]),size=n)).tolist()))
-                    radius = np.hstack((radius,np.exp(np.random.uniform(low=np.log(Rp[j]),
-                            high=np.log(Rp[j+1]),size=n)).tolist()))
+                    radius = np.hstack((radius,np.exp(np.random.uniform(low=PPop.lnRp[i],
+                            high=PPop.lnRp[i+1], size=n)).tolist()))
+                    period = np.hstack((period,np.exp(np.random.uniform(low=PPop.lnT[j],
+                            high=PPop.lnT[j+1], size=n)).tolist()))
         
         # must generate at least one planet
         if plan2star.size == 0:
@@ -101,9 +46,9 @@ class SAG13Universe(SimulatedUniverse):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.T = period*u.year                              # period
         self.Rp = radius*u.earthRad                         # radius
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass from radius
+        self.T = period*u.year                              # period
         mu = const.G*TL.MsTrue[self.plan2star]
         self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')# semi-major axis
         self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \

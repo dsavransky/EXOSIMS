@@ -12,6 +12,12 @@ class Completeness(object):
     Args:
         \*\*specs: 
             user specified values
+            
+    Attributes:
+        dMagComp (float):
+            Maximum planet flux ratio for completeness. 
+            Set to None by default, in which case the Target List filtering 
+            shall use the dMaglim from the Optical System.
     
     """
 

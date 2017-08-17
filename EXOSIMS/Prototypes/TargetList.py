@@ -42,9 +42,15 @@ class TargetList(object):
             PostProcessing class object
         Completeness (Completeness module):
             Completeness class object
+        dMag0 (float):
+            Planet flux ratio value used to calculate the minimum integration times 
+            for inclusion in target list
+        WA0 (astropy Quantity):
+            Planet flux ratio value used to calculate the minimum integration times 
+            for inclusion in target list (default to IWA-OWA midpoint)
         tint0 (astropy Quantity array):
-            Minimum integration time values at the limiting planet flux ratio 
-            for each target star in units of day
+            Minimum integration time values at dMag0 and WA0 for each target star 
+            in units of day
         comp0 (ndarray):
             Completeness value for each target star
         minComp (float): 
@@ -65,18 +71,20 @@ class TargetList(object):
     _modtype = 'TargetList'
     _outspec = {}
 
-    def __init__(self, minComp=0.1, missionStart=60634, staticStars=True,
-            keepStarCatalog=False, **specs):
+    def __init__(self, dMag0=15, WA0=None, minComp=0.1, missionStart=60634, 
+            staticStars=True, keepStarCatalog=False, **specs):
         
         # load the vprint funtion (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs
+        assert isinstance(dMag0, numbers.Number), "dMag0 must be a number."
         assert isinstance(minComp, numbers.Number), "minComp must be a number."
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
         
         # default TargetList values
+        self.dMag0 = float(dMag0)
         self.minComp = float(minComp)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
@@ -108,6 +116,15 @@ class TargetList(object):
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+        
+        # load WA0 or calculate it from IWA-OWA midpoint value
+        try:
+            self.WA0 = float(WA0)*u.arcsec
+        except TypeError:
+            OS = self.OpticalSystem
+            mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+            self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
+        self._outspec['WA0'] = self.WA0
         
         # now populate and filter the list
         self.populate_target_list(**specs)

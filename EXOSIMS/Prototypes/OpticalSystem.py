@@ -702,8 +702,8 @@ class OpticalSystem(object):
         sInds = np.arange(TL.nStars)
         fZ = 0./u.arcsec**2
         fEZ = 0./u.arcsec**2
-        dMag = self.dMagLim
-        WA = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
+        dMag = TL.dMag0
+        WA = TL.WA0
         
         # calculate minimum integration time
         minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)

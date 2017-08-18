@@ -47,7 +47,7 @@ class TargetList(object):
             for inclusion in target list
         WA0 (astropy Quantity):
             Planet flux ratio value used to calculate the minimum integration times 
-            for inclusion in target list (default to IWA-OWA midpoint)
+            for inclusion in target list (default to detection IWA-OWA midpoint)
         tint0 (astropy Quantity array):
             Minimum integration time values at dMag0 and WA0 for each target star 
             in units of day
@@ -281,12 +281,18 @@ class TargetList(object):
         
         # filter out binary stars
         self.binary_filter()
+        
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
+        
         # filter out systems where maximum delta mag is not in allowable orbital range
-        self.max_dmag_filter()
+        # self.max_dmag_filter()
+        # REMOVED: already calling the int_cutoff_filter with dMag0,
+        # and the completeness_filter with dMagLim/dMagComp
+        
         # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
+        
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
 

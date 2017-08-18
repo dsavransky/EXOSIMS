@@ -709,7 +709,7 @@ class OpticalSystem(object):
         minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
         
         return minintTime
-    
+
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Finds achievable dMag for one integration time per star in the 
         input list at one or more working angles.

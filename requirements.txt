@@ -1,6 +1,5 @@
 numpy
 scipy
 astropy
-cPickle
 jplephem
 h5py

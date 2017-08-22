@@ -1,0 +1,87 @@
+{
+  "missionLife": 0.1,
+  "missionPortion": 1.0,
+  "duration": 1000,
+  "keepStarCatalog": false,
+  "minComp": 0.05,
+  "pupilDiam": 4,
+  "obscurFac": 0,
+  "dMagLim": 26.0,
+  "telescopeKeepout": 70,
+  "attenuation": 0.6333,
+  "intCutoff": 100.0,
+  "FAP": 3e-5,
+  "MDP": 1e-3, 
+  "SNimag": 5.0,
+  "SNchar": 10.0,
+  "ppFact": 0.1,
+  "prange":[0.2, 0.2],
+  "erange":[0, 0.01],
+  "eta": 0.1,
+  "scaleOrbits": true,
+  "scienceInstruments": [
+    {
+      "name": "imaging-EMCCD",
+      "type": "imaging-EMCCD",
+      "lam": 550,
+      "BW": 0.20,
+      "QE": 0.91,
+      "idark": 1e-4,
+      "CIC": 3e-3,
+      "sread": 0.1,
+      "ENF": 1,
+      "Gem": 1,
+      "texp": 1000
+    },
+    {
+      "name": "spectro-EMCCD",
+      "type": "spectro-EMCCD",
+      "lam": 1000,
+      "BW": 0.1,
+      "QE": 0.91,
+      "idark": 1e-4,
+      "CIC": 3e-3,
+      "sread": 0.1,
+      "ENF": 1,
+      "Gem": 1,
+      "texp": 1000,
+      "Rs": 70
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC",
+      "type": "internal-imaging-HLC",
+      "IWA": 0.0567,
+      "OWA": 0.567,
+      "throughput": 0.3,
+      "contrast": 1e-10
+    },
+        {
+      "name": "internal-spectro-HLC",
+      "type": "internal-spectro-HLC",
+      "IWA": 0.103,
+      "OWA": 1.03,
+      "throughput": 0.3,
+      "contrast": 1e-10
+    }
+  ],
+    "modules_comment": "turmon 10/2016: changed from BrownCompleteness to Prototype to save load time",
+  "modules": {
+    "PlanetPopulation": "EarthTwinHabZone2",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "KasdinBraems",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": " ",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}
+

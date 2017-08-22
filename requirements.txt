@@ -1,5 +1,3 @@
 numpy
 scipy
 astropy
-jplephem
-h5py

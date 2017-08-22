@@ -5,6 +5,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 [![Build Status](https://travis-ci.org/dsavransky/EXOSIMS.svg?branch=tests)](https://travis-ci.org/dsavransky/EXOSIMS)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=tests)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=tests)
 
+
 Created by Dmitry Savransky
 
 Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, and Patrick Lowrance.

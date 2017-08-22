@@ -14,19 +14,17 @@ class Completeness(object):
             user specified values
             
     Attributes:
-        dMagComp (float):
-            Maximum planet flux ratio for completeness. 
-            Set to None by default, in which case the Target List filtering 
-            shall use the dMaglim from the Optical System.
+        dMagLim (float):
+            Limiting planet-to-star flux ratio for completeness. 
     
     """
 
     _modtype = 'Completeness'
     _outspec = {}
 
-    def __init__(self, dMagComp=None, **specs):
+    def __init__(self, dMagLim=25, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # import Planet Population and Physical Model class objects
@@ -34,11 +32,11 @@ class Completeness(object):
         self.PlanetPopulation = Pop
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
         
-        # loading the fluxratio limit for completeness
-        self.dMagComp = float(dMagComp) if dMagComp is not None else dMagComp
+        # loading the flux ratio limit for completeness
+        self.dMagLim = float(dMagLim)
         
         # populate outspec
-        self._outspec['dMagComp'] = self.dMagComp
+        self._outspec['dMagLim'] = self.dMagLim
 
     def __str__(self):
         """String representation of Completeness object

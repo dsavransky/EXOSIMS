@@ -126,8 +126,8 @@ class BrownCompleteness(Completeness):
         else:
             smax = np.tan(OWA)*TL.dist
         
-        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
-        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        # limiting planet flux ratio for completeness
+        dMagMax = self.dMagLim
         
         # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
@@ -157,16 +157,16 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
         
-        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
-        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        # limiting planet flux ratio for completeness
+        dMagMax = self.dMagLim
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
-        extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + ' dMagMax: ' + str(dMagMax) + ' '
-        extstr += 'nStars: ' + str(TL.nStars)
+        extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
+                ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
@@ -433,9 +433,8 @@ class BrownCompleteness(Completeness):
         
         # calculate dMag
         dMag = deltaMag(p,Rp,r*u.AU,Phi)
-
+        
         return s, dMag
-
 
     def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Calculates completeness for integration time
@@ -469,8 +468,8 @@ class BrownCompleteness(Completeness):
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(fZ) in [1, len(intTimes)], "fZ must be constant or have same length as intTimes"
+        assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
@@ -479,7 +478,7 @@ class BrownCompleteness(Completeness):
         comp = self.EVPOC(smin, smax, 0., dMag)
         
         return comp
-        
+
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Calculates derivative of completeness with respect to integration time
         
@@ -512,8 +511,8 @@ class BrownCompleteness(Completeness):
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(fZ) in [1, len(intTimes)], "fZ must be constant or have same length as intTimes"
+        assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
@@ -523,5 +522,5 @@ class BrownCompleteness(Completeness):
         dcomp = np.zeros(len(intTimes))
         for k,(dm,ddm) in enumerate(zip(dMag,ddMag)):
             dcomp[k] = interpolate.InterpolatedUnivariateSpline(self.xnew,self.EVPOCpdf(self.xnew,dm),ext=1).integral(smin[k],smax[k])
-
+        
         return dcomp*ddMag

@@ -42,8 +42,6 @@ class OpticalSystem(object):
             Fundamental Inner Working Angle in units of arcsec
         OWA (astropy Quantity):
             Fundamental Outer Working Angle in units of arcsec
-        dMagLim (float):
-            Limiting planet-to-star delta magnitude value
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -182,9 +180,9 @@ class OpticalSystem(object):
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=np.ones((3,3)),
             samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
-            OWA=None, dMagLim=25, ref_dMag=3, ref_Time=0, **specs):
+            OWA=None, ref_dMag=3, ref_Time=0, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # load all values with defaults
@@ -193,7 +191,6 @@ class OpticalSystem(object):
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.Ndark = float(Ndark)               # number of dark frames used
-        self.dMagLim = float(dMagLim)           # limiting astro contrast for intTime calc
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         
@@ -607,7 +604,8 @@ class OpticalSystem(object):
         # radiation dosage
         radDos = mode['radDos']
         # photon-converted 1 frame (minimum 1 photon)
-        phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix*inst['texp']).decompose().value, 1, None)
+        phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix \
+                *inst['texp']).decompose().value, 1, None)
         # net charge transfer efficiency
         NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate
@@ -677,13 +675,13 @@ class OpticalSystem(object):
         return intTime
 
     def calc_minintTime(self, TL):
-        """Finds minimum integration times for the whole target list, at the 
-        limiting delta magnitude (planet flux ratio).
+        """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
-        minimum integration times for all the stars from the target list, at the 
-        limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal 
-        noise and at a separation equal to twice the global inner working angle (IWA).
+        minimum (optimistic) integration times for all the stars from the target list, 
+        in the ideal case of no zodiacal noise. It uses a very favorable planet flux
+        ratio defined by the TargetList (dMag0, 15 by default) and a working angle 
+        value (WA0) by default equal to the detection IWA-OWA midpoint.
         
         Args:
             TL (TargetList module):
@@ -711,10 +709,10 @@ class OpticalSystem(object):
         return minintTime
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Finds achievable dMag for one integration time per star in the 
-        input list at one or more working angles.
+        """Finds achievable planet flux ratio (delta mag) for one integration 
+        time per star in the input list at one or more working angles.
         
-        The prototype returns the dMagLim as an m x n array where m corresponds 
+        The prototype returns ones as an m x n array where m corresponds 
         to each star in sInds and n corresponds to each working angle in WA.
         
         Args:
@@ -734,7 +732,7 @@ class OpticalSystem(object):
                 Selected observing mode
                 
         Returns:
-            dMag (ndarray):
+            dMag (float ndarray):
                 Achievable dMag for given integration time and working angle
                 
         """
@@ -745,7 +743,7 @@ class OpticalSystem(object):
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
         
-        dMag = self.dMagLim*np.ones((len(sInds), len(WA)))
+        dMag = np.ones((len(sInds), len(WA)))
         
         return dMag
 

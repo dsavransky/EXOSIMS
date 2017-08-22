@@ -43,11 +43,11 @@ class TargetList(object):
         Completeness (Completeness module):
             Completeness class object
         dMag0 (float):
-            Planet flux ratio value used to calculate the minimum integration times 
+            Favorable planet flux ratio value used to calculate the minimum integration times 
             for inclusion in target list
         WA0 (astropy Quantity):
-            Planet flux ratio value used to calculate the minimum integration times 
-            for inclusion in target list (default to detection IWA-OWA midpoint)
+            Favorable working angle value used to calculate the minimum integration times 
+            for inclusion in target list (defaults to detection IWA-OWA midpoint)
         tint0 (astropy Quantity array):
             Minimum integration time values at dMag0 and WA0 for each target star 
             in units of day
@@ -74,7 +74,7 @@ class TargetList(object):
     def __init__(self, dMag0=15, WA0=None, minComp=0.1, missionStart=60634, 
             staticStars=True, keepStarCatalog=False, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs
@@ -400,10 +400,10 @@ class TargetList(object):
         
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
-        OS = self.OpticalSystem
+        Comp = self.Completeness
         
         # s and beta arrays
-        s = np.tan(OS.IWA)*self.dist
+        s = np.tan(TL.WA0)*self.dist
         if PPop.scaleOrbits:
             s /= np.sqrt(self.L)
         beta = np.array([1.10472881476178]*len(s))*u.rad
@@ -419,7 +419,7 @@ class TargetList(object):
         Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
-        i = np.where(deltaMag(p, Rp, d, Phi) < OS.dMagLim)[0]
+        i = np.where(deltaMag(p, Rp, d, Phi) < Comp.dMagLim)[0]
         self.revise_lists(i)
 
     def int_cutoff_filter(self):

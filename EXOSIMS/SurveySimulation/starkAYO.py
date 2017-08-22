@@ -120,7 +120,7 @@ class starkAYO(SurveySimulation):
             # 5/ Choose best target from remaining
             #Calculate Completeness
         self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)
-        dMagLim = self.TargetList.OpticalSystem.dMagLim
+        dMagLim = self.TargetList.Completeness.dMagLim
         #self.dmag = 22.5 - (np.exp(np.linspace(3.157,0.1,100))-1)#nonlinear so we can get more datapoints at higher dmaglim
         self.dmag_startSaved = np.linspace(1, 22.5, num=500,endpoint=True)
         dmag = self.dmag_startSaved

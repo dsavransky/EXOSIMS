@@ -198,25 +198,26 @@ class SurveySimulation(object):
             if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
                 self._outspec[att] = self.__dict__[att]
         
-        # load the integration values: working angle (WAint), delta magnitude (dMagint)
-        # default to detection mode IWA and dMadLim
-        # must be of size equal to TargetList.nStars
-        TL = self.TargetList
+        # load the dMag and WA values for integration:
+        # dMagint defaults to the completeness limiting flux ratio
+        # WAint defaults to the detection mode IWA-OWA midpoint
+        Comp = self.Completeness
         OS = self.OpticalSystem
+        TL = self.TargetList
         SU = self.SimulatedUniverse
-        dMagint = OS.dMagLim if dMagint is None else float(dMagint)
+        dMagint = Comp.dMagLim if dMagint is None else float(dMagint)
         if WAint is None:
             mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
             WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
         else:
             WAint = float(WAint)*u.arcsec
-        # transform into arrays 
-        self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
+        # transform into arrays of length TargetList.nStars
         self.dMagint = np.array([dMagint]*TL.nStars)
+        self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
         
         # add scalar values of WAint and dMagint to outspec
-        self._outspec['WAint'] = self.WAint[0].to('arcsec').value
         self._outspec['dMagint'] = self.dMagint[0]
+        self._outspec['WAint'] = self.WAint[0].to('arcsec').value
         
         # initialize arrays updated in run_sim()
         self.DRM = []
@@ -604,6 +605,7 @@ class SurveySimulation(object):
         """
         
         PPop = self.PlanetPopulation
+        Comp = self.Completeness
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPro = self.PostProcessing
@@ -698,7 +700,7 @@ class SurveySimulation(object):
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA)), OS.dMagLim)
+            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA)), Comp.dMagLim)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], 
                     ZL.fEZ0.to('1/arcsec2').value)

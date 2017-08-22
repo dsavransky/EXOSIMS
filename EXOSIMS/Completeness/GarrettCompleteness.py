@@ -148,8 +148,8 @@ class GarrettCompleteness(BrownCompleteness):
         
         OS = TL.OpticalSystem
         
-        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
-        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        # limiting planet flux ratio for completeness
+        dMagMax = self.dMagLim
         
         # important PlanetPopulation attributes
         atts = self.PlanetPopulation.__dict__.keys()
@@ -206,8 +206,8 @@ class GarrettCompleteness(BrownCompleteness):
         
         OS = TL.OpticalSystem
         
-        # maximum planet flux ratio for completeness (default to OpticalSystem.dMagLim)
-        dMagMax = self.dMagComp if self.dMagComp is not None else OS.dMagLim 
+        # limiting planet flux ratio for completeness
+        dMagMax = self.dMagLim
         
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters

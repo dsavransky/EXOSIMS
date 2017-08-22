@@ -27,7 +27,7 @@ class TestObservatoryMethods(unittest.TestCase):
 
     def setUp(self):
         # print '[setup] ',
-        self.fixture = Observatory()
+        self.fixture = Observatory(forceStaticEphem=True)
 
     def tearDown(self):
         del self.fixture
@@ -165,11 +165,7 @@ class TestObservatoryMethods(unittest.TestCase):
         """
 
         print 'keplerplanet()'
-        # to test this method, we need to have static ephemeris turned on
-        if True:
-            obs = Observatory(forceStaticEphem=True)
-        else:
-            obs = self.fixture # do not do it this way any longer
+        obs = self.fixture 
         # JPL ephemeris spice kernel data
         #   this is from: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
         # kernel = SPK.open(resource_path() + '/de430.bsp') # large file, covers huge time range

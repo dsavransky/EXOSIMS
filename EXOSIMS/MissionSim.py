@@ -98,7 +98,7 @@ class MissionSim(object):
         # set up the verbose level
         self.verbose = bool(verbose)
         specs['verbose'] = self.verbose
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         # set up numpy random number and add seed to specs
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))

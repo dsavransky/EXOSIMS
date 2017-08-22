@@ -51,7 +51,7 @@ class TimeKeeping(object):
     def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
             missionPortion=1, OBduration=np.inf, waitTime=1, waitMultiple=2, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # illegal value checks

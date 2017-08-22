@@ -17,7 +17,7 @@ class SurveyEnsemble(object):
 
     def __init__(self, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
 
     def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,

@@ -75,7 +75,7 @@ class Observatory(object):
             occulterSep=55000, skIsp=220, defburnPortion=0.05, spkpath=None,
             forceStaticEphem=False, checkKeepoutEnd=True, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs

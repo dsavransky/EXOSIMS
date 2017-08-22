@@ -62,7 +62,7 @@ class StarCatalog(object):
 
     def __init__(self, ntargs=1, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # list of astropy attributes

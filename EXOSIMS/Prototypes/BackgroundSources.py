@@ -22,7 +22,7 @@ class BackgroundSources(object):
 
     def __init__(self, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         return

@@ -42,7 +42,7 @@ class PostProcessing(object):
 
     def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, maxFAfluxratio=1e-6, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         self.FAP = float(FAP)       # false alarm probability

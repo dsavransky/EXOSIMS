@@ -32,7 +32,7 @@ class ZodiacalLight(object):
 
     def __init__(self, magZ=23, magEZ=22, varEZ=0, **specs):
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)

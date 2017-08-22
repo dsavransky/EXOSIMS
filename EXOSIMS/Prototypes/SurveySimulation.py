@@ -113,7 +113,7 @@ class SurveySimulation(object):
             if 'modules' not in specs.keys():
                 raise ValueError("No modules field found in script.")
         
-        # load the vprint funtion (same line in all prototype module constructors)
+        # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # mission simulation logger

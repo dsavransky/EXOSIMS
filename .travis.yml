@@ -6,4 +6,7 @@ before_install:
     - cp de432s.bsp ./EXOSIMS/Observatory/
     - mv de432s.bsp ./tests/TestSupport/
 script:
-    python -m unittest discover -v
+    coverage run -m unittest discover -v
+after_success:
+    coveralls
+

@@ -186,16 +186,13 @@ class BrownCompleteness(Completeness):
             # number of planets to simulate
             nplan = int(2e4)
             # sample quantities which do not change in time
-            a = PPop.gen_sma(nplan).to('AU').value
-            if PPop.constrainOrbits:
-                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
-            else:
-                e = PPop.gen_eccen(nplan)
-            I = PPop.gen_I(nplan).to('rad').value
-            O = PPop.gen_O(nplan).to('rad').value
-            w = PPop.gen_w(nplan).to('rad').value
-            p = PPop.gen_albedo(nplan)
-            Rp = PPop.gen_radius(nplan) # R_earth
+            a, e, p, Rp = PPop.gen_plan_params(nplan)
+            a = a.to('AU').value
+            # sample angles
+            I, O, w = PPop.gen_angles(nplan)
+            I = I.to('rad').value
+            O = O.to('rad').value
+            w = w.to('rad').value
             Mp = PPop.gen_mass(nplan) # M_earth
             rmax = a*(1.+e) # AU
             # sample quantity which will be updated
@@ -405,34 +402,24 @@ class BrownCompleteness(Completeness):
         
         # sample uniform distribution of mean anomaly
         M = np.random.uniform(high=2.0*np.pi,size=nplan)
-        # sample semi-major axis
-        a = PPop.gen_sma(nplan).to('AU').value
-        # sample other necessary orbital parameters
+        # sample quantities
+        a, e, p, Rp = PPop.gen_plan_params(nplan)
+        # check if circular orbits
         if np.sum(PPop.erange) == 0:
-            # all circular orbits
             r = a
             e = 0.0
             E = M
         else:
-            # sample eccentricity
-            if PPop.constrainOrbits:
-                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
-            else:
-                e = PPop.gen_eccen(nplan)   
-            # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
             r = a*(1.0-e*np.cos(E))
 
         beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
-        s = r*np.sin(beta)*u.AU
-        # sample albedo, planetary radius, phase function
-        p = PPop.gen_albedo(nplan)
-        Rp = PPop.gen_radius(nplan)
+        s = r*np.sin(beta)
+        # phase function
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
-        
         # calculate dMag
-        dMag = deltaMag(p,Rp,r*u.AU,Phi)
+        dMag = deltaMag(p,Rp,r,Phi)
         
         return s, dMag
 

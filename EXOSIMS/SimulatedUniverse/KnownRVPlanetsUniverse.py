@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 from astropy.time import Time
 
 class KnownRVPlanetsUniverse(SimulatedUniverse):
@@ -57,15 +56,16 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
                 *PPop.eccenerr[planinds]                    # eccentricity
         self.e[self.e < 0.] = 0.
         self.e[self.e > 0.9] = 0.9
+        Itmp, Otmp, self.w = PPop.gen_angles(self.nPlans)
         self.I = PPop.allplanetdata['pl_orbincl'][planinds] + np.random.normal\
                 (size=self.nPlans)*PPop.allplanetdata['pl_orbinclerr1'][planinds] 
-        self.I[self.I.mask] = PPop.gen_I(len(np.where(self.I.mask)[0])).to('deg').value
+        self.I[self.I.mask] = Itmp[self.I.mask].to('deg').value
         self.I = self.I.data*u.deg                          # inclination
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis first!
+        
         lper = PPop.allplanetdata['pl_orblper'][planinds] + \
                 np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
         self.O = lper.data*u.deg - self.w                   # longitude of ascending node
-        self.O[np.isnan(self.O)] =  PPop.gen_O(len(np.where(np.isnan(self.O))[0]))
+        self.O[np.isnan(self.O)] =  Otmp[np.isnan(self.O)]
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
         self.Mp = PPop.mass[planinds]                       # mass first!
         self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius from mass

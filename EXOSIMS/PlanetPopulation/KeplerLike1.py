@@ -97,26 +97,6 @@ class KeplerLike1(PlanetPopulation):
         
         return a
 
-    def gen_eccen(self, n):
-        """Generate eccentricity values
-        
-        Rayleigh distribution, as in Kipping et. al (2013)
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            e (float ndarray):
-                Planet eccentricity values
-        
-        """
-        n = self.gen_input_check(n)
-        er = self.erange
-        e = statsFun.simpSample(self.dist_eccen, n, er[0], er[1])
-        
-        return e
-
     def gen_albedo(self, n):
         """Generate geometric albedo values
         
@@ -221,50 +201,58 @@ class KeplerLike1(PlanetPopulation):
         Mp = self.PlanetPhysicalModel.calc_mass_from_radius(Rp).to('earthMass')
         
         return Mp
-
-    def gen_eccen_from_sma(self, n, a):
-        """Generate eccentricity values constrained by semi-major axis, such that orbital
-        radius always falls within the provided sma range.
+    
+    def gen_plan_params(self, n):
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
+        planetary radius (earthRad)
         
-        This provides a Rayleigh distribution between the minimum and 
-        maximum allowable values.
+        Semi-major axis is distributed RV like with exponential decay. 
+        Eccentricity is a Rayleigh distribution. Albedo is dependent on the 
+        PlanetPhysicalModel but is calculated such that it is independent of 
+        other parameters. Planetary radius comes from the Kepler observations.
         
         Args:
             n (integer):
                 Number of samples to generate
-            a (astropy Quantity array):
-                Semi-major axis values in units of AU
-            
+        
         Returns:
+            a (astropy Quantity array):
+                Semi-major axis in units of AU
             e (float ndarray):
-                Eccentricity values
+                Eccentricity
+            p (float ndarray):
+                Geometric albedo
+            Rp (astropy Quantity array):
+                Planetary radius in units of earthRad
         
         """
         n = self.gen_input_check(n)
+        # generate semi-major axis samples
         
-        # cast a to array
-        a = np.array(a.to('AU').value, ndmin=1, copy=False)
-        assert len(a) in [1, n], "sma input must be of length 1 or n."
-        
-        # unitless sma range
-        ar = self.arange.to('AU').value
-        
-        # clip sma values to sma range
-        a = np.clip(a, ar[0], ar[1])
-        
-        # upper limit for eccentricity given sma
-        elim = np.zeros(len(a))
-        amean = np.mean(ar)
-        elim[a <= amean] = 1. - ar[0]/a[a <= amean]
-        elim[a > amean] = ar[1]/a[a>amean] - 1.
-        
-        # constants
+        a = self.gen_sma(n)
+        # check for constrainOrbits == True for eccentricity samples
+        # constant
         C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
-        C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
-        
+        ar = self.arange.to('AU').value
+        if self.constrainOrbits:
+            # clip sma values to sma range
+            sma = np.clip(a.to('AU').value, ar[0], ar[1])
+            # upper limit for eccentricity given sma
+            elim = np.zeros(len(sma))
+            amean = np.mean(ar)
+            elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
+            elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
+            # constants
+            C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
+        else:
+            C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
+        # generate albedo (independent)
+        p = self.gen_albedo(n)
+        # generate planetary radius
+        Rp = self.gen_radius(n)
         
-        return e
+        return a, e, p, Rp
 
     def dist_sma(self, a):
         """Probability density function for semi-major axis in AU
@@ -311,7 +299,7 @@ class KeplerLike1(PlanetPopulation):
         # Rayleigh distribution sigma
         f = np.zeros(np.size(e))
         mask = np.array((e >= self.erange[0]) & (e <= self.erange[1]), ndmin=1)
-        f = e/self.esigma**2*np.exp(-e**2/(2.*self.esigma**2))/self.enorm
+        f[mask] = e[mask]/self.esigma**2*np.exp(-e[mask]**2/(2.*self.esigma**2))/self.enorm
         
         return f
 

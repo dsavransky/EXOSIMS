@@ -204,8 +204,6 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        OS = TL.OpticalSystem
-        
         # limiting planet flux ratio for completeness
         dMagMax = self.dMagLim
         

@@ -11,10 +11,9 @@ from EXOSIMS.util import statsFun
 
 class KnownRVPlanets(KeplerLike1):
     """Population consisting only of known RV planets.  Eccentricity and sma 
-    distributions are taken from the same as in KeplerLike1 (Rayleigh and 
-    power law with exponential decay, respectively).  Mass is sampled from 
-    power law and radius is assumed to be calculated from mass via the 
-    physical model.
+    distributions are taken from KeplerLike1 (Rayleigh and power law with 
+    exponential decay, respectively).  Mass is sampled from power law and 
+    radius is assumed to be calculated from mass via the physical model.
     
     The data file read in by this class also provides all of the information
     about the target stars, and so no StarCatalog object is needed (only the
@@ -107,7 +106,8 @@ class KnownRVPlanets(KeplerLike1):
         #save eccentricities
         self.eccen = data['pl_orbeccen'].data
         mask = data['pl_orbeccen'].mask
-        self.eccen[mask] = self.gen_eccen(len(np.where(mask)[0]))
+        _, etmp, _, _ = self.gen_plan_params(len(np.where(mask)[0]))
+        self.eccen[mask] = etmp
         assert np.all(~np.isnan(self.eccen)), 'eccen has nan value(s)'
         #eccen errors
         self.eccenerr = data['pl_orbeccenerr1'].data

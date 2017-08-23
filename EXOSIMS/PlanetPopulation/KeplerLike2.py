@@ -27,7 +27,7 @@ class KeplerLike2(KeplerLike1):
     Notes:
     1. The gen_mass function samples the Radius and calculates the mass from
     there.  Any user-set mass limits are ignored.
-    2. The gen_abledo function samples the sma, and then calculates the albedos
+    2. The gen_albedo function samples the sma, and then calculates the albedos
     from there. Any user-set albedo limits are ignored.
     3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
     settings (the JSON input will be ignored) 
@@ -49,7 +49,6 @@ class KeplerLike2(KeplerLike1):
         # unitless sma range
         ar = self.arange.to('AU').value
         self.sma_sampler = InverseTransformSampler(self.dist_sma, ar[0], ar[1])
-        self.e_sampler = InverseTransformSampler(self.dist_eccen, self.erange[0], self.erange[1])
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -70,22 +69,3 @@ class KeplerLike2(KeplerLike1):
         a = self.sma_sampler(n)*u.AU
         
         return a
-
-    def gen_eccen(self, n):
-        """Generate eccentricity values
-        
-        Rayleigh distribution, as in Kipping et. al (2013)
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            e (ndarray):
-                Planet eccentricity
-        
-        """
-        n = self.gen_input_check(n)
-        e = self.e_sampler(n)
-        
-        return e

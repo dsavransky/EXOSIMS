@@ -1,6 +1,7 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 from EXOSIMS.PlanetPopulation.EarthTwinHabZone1 import EarthTwinHabZone1
 import numpy as np
+import astropy.units as u
 
 class EarthTwinHabZone2(EarthTwinHabZone1):
     """
@@ -26,3 +27,49 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
         specs['scaleOrbits'] = True
         
         PlanetPopulation.__init__(self, **specs)
+        
+    def gen_plan_params(self, n):
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
+        planetary radius (earthRad)
+        
+        Semi-major axis and eccentricity are uniformly distributed with all
+        other parameters constant.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+        
+        Returns:
+            a (astropy Quantity array):
+                Semi-major axis in units of AU
+            e (float ndarray):
+                Eccentricity
+            p (float ndarray):
+                Geometric albedo
+            Rp (astropy Quantity array):
+                Planetary radius in units of earthRad
+        
+        """
+        n = self.gen_input_check(n)
+        # generate samples of semi-major axis
+        ar = self.arange.to('AU').value
+        a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
+        # check if constrainOrbits == True for eccentricity
+        if self.constrainOrbits:
+            tmpa = a.to('AU').value
+            # upper limit for eccentricity given sma
+            elim = np.zeros(len(a))
+            amean = np.mean(ar)
+            elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
+            elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
+        
+            # uniform distribution
+            e = np.random.uniform(low=self.erange[0], high=elim, size=n)
+        else:
+            e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
+        # generate geometric albedo
+        p = 0.367*np.ones((n,))
+        # generate planetary radius
+        Rp = np.ones((n,))*u.earthRad
+        
+        return a, e, p, Rp

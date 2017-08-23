@@ -115,85 +115,57 @@ class SAG13(KeplerLike2):
         a = ((mu*(T/(2*np.pi))**2)**(1/3.)).to('AU')
         
         return Rp, a
-
-    def gen_radius(self, n):
-        """Generate planetary radius values in Earth radius
+    
+    def gen_plan_params(self, n):
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
+        planetary radius (earthRad)
         
-        Samples a radius distribution matching an sma distribution, using the SAG13 
-        2D eta grid.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            Rp (astropy Quantity array):
-                Planet radius values in units of Earth radius
-        
-        """
-        n = self.gen_input_check(n)
-        
-        # if radius values are in the buffer, copy them and clear the buffer
-        if self.radius_buffer.size == n:
-            Rp = self.radius_buffer
-            self.radius_buffer = np.array([])*u.earthRad
-        
-        # otherwise, generate them and store sma values in the buffer
-        else:
-            Rp, a = self.gen_radius_sma(n)
-            self.sma_buffer = a
-        
-        return Rp
-
-    def gen_sma(self, n):
-        """Generate semi-major axis values in AU
-        
-        Samples an sma distribution matching a radius distribution, using the SAG13 
-        2D eta grid.
+        Semi-major axis and planetary radius are jointly distributed. 
+        Eccentricity is a Rayleigh distribution. Albedo is dependent on the 
+        PlanetPhysicalModel but is calculated such that it is independent of 
+        other parameters.
         
         Args:
             n (integer):
                 Number of samples to generate
-                
+        
         Returns:
             a (astropy Quantity array):
-                Semi-major axis values in units of AU
-        
-        """
-        n = self.gen_input_check(n)
-        
-        # if sma values are in the buffer, copy them and clear the buffer
-        if self.sma_buffer.size == n:
-            a = self.sma_buffer
-            self.sma_buffer = np.array([])*u.AU
-        
-        # otherwise, generate them and store radius values in the buffer
-        else:
-            Rp, a = self.gen_radius_sma(n)
-            self.radius_buffer = Rp
-        
-        return a
-
-    def gen_albedo(self, n):
-        """Generate geometric albedo values
-        
-        The albedo is determined by sampling the semi-major axis distribution
-        directly from the sma distribution, without calling the gen_sma method.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
+                Semi-major axis in units of AU
+            e (float ndarray):
+                Eccentricity
             p (float ndarray):
-                Planet albedo values
+                Geometric albedo
+            Rp (astropy Quantity array):
+                Planetary radius in units of earthRad
         
         """
         n = self.gen_input_check(n)
-        a = self.sma_sampler(n)*u.AU
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
+        # generate semi-major axis and planetary radius samples
+        Rp, a = self.gen_radius_sma(n)
         
-        return p
+        # check for constrainOrbits == True for eccentricity samples
+        # constants
+        C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
+        ar = self.arange.to('AU').value
+        if self.constrainOrbits:
+            # clip sma values to sma range
+            sma = np.clip(a.to('AU').value, ar[0], ar[1])
+            # upper limit for eccentricity given sma
+            elim = np.zeros(len(sma))
+            amean = np.mean(ar)
+            elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
+            elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
+            # additional constant
+            C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
+        else:
+            C2 = self.enorm
+        e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
+        # generate albedo (independent)
+        _, sma = self.gen_radius_sma(n)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(sma)
+        
+        return a, e, p, Rp
 
     def dist_lnradius_lnperiod(self, lnRp, lnT):
         """Probability density function for logarithm of planetary radius 

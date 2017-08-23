@@ -149,192 +149,6 @@ class PlanetPopulation(object):
         
         return int(n)
 
-    def gen_sma(self, n):
-        """Generate semi-major axis values in AU
-        
-        The prototype provides a log-uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            a (astropy Quantity array):
-                Semi-major axis values in units of AU
-        
-        """
-        n = self.gen_input_check(n)
-        ar = self.arange.to('AU').value
-        a = np.exp(np.random.uniform(low=np.log(ar[0]), high=np.log(ar[1]), size=n))*u.AU
-        
-        return a
-
-    def gen_eccen(self, n):
-        """Generate eccentricity values
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-            
-        Returns:
-            e (float ndarray)
-                Eccentricity values
-        
-        """
-        n = self.gen_input_check(n)
-        er = self.erange
-        e = np.random.uniform(low=er[0], high=er[1], size=n)
-        
-        return e
-
-    def gen_eccen_from_sma(self, n, a):
-        """Generate eccentricity values constrained by semi-major axis, such that orbital
-        radius always falls within the provided sma range.
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum allowable values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-            a (astropy Quantity array):
-                Semi-major axis values in units of AU
-            
-        Returns:
-            e (float ndarray):
-                Eccentricity values
-        
-        """
-        n = self.gen_input_check(n)
-        
-        # cast a to array
-        a = np.array(a.to('AU').value, ndmin=1, copy=False)
-        assert len(a) in [1, n], "sma input must be of length 1 or n."
-        
-        # unitless sma range
-        ar = self.arange.to('AU').value
-        assert np.all((a >= ar[0]) & (a <= ar[1])), "sma input values must be within sma range."
-        
-        # upper limit for eccentricity given sma
-        elim = np.zeros(len(a))
-        amean = np.mean(ar)
-        elim[a <= amean] = 1. - ar[0]/a[a <= amean]
-        elim[a > amean] = ar[1]/a[a>amean] - 1.
-        
-        # uniform distribution
-        e = np.random.uniform(low=self.erange[0], high=elim, size=n)
-        
-        return e
-
-    def gen_I(self, n):
-        """Generate inclination in degrees
-        
-        The prototype provides a sinusoidal distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            I (astropy Quantity array):
-                Inclination values in units of deg
-        
-        """
-        n = self.gen_input_check(n)
-        I = np.arccos(1. - 2.*np.random.uniform(size=n))*u.rad
-        
-        return I.to('deg')
-
-    def gen_O(self, n):
-        """Generate longitude of the ascending node in degrees
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            O (astropy Quantity array):
-                Right ascension of the ascending node values in units of deg
-        
-        """
-        n = self.gen_input_check(n)
-        Or = self.Orange.to('deg').value
-        O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg
-        
-        return O
-
-    def gen_w(self, n):
-        """Generate argument of periapse in degrees
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            w (astropy Quantity array):
-                Argument of periapse values in units of deg
-        
-        """
-        n = self.gen_input_check(n)
-        wr = self.wrange.to('deg').value
-        w = np.random.uniform(low=wr[0], high=wr[1], size=n)*u.deg
-        
-        return w
-
-    def gen_albedo(self, n):
-        """Generate geometric albedo values
-        
-        The prototype provides a uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            p (float ndarray):
-                Albedo values
-        
-        """
-        n = self.gen_input_check(n)
-        pr = self.prange
-        p = np.random.uniform(low=pr[0], high=pr[1], size=n)
-        
-        return p
-
-    def gen_radius(self, n):
-        """Generate planetary radius values in units of Earth radius.
-        
-        The prototype provides a log-uniform distribution between the minimum and 
-        maximum values.
-        
-        Args:
-            n (integer):
-                Number of samples to generate
-                
-        Returns:
-            Rp (astropy Quantity array):
-                Planet radius values in units of Earth radius
-        
-        """
-        n = self.gen_input_check(n)
-        Rpr = self.Rprange.to('earthRad').value
-        Rp = np.exp(np.random.uniform(low=np.log(Rpr[0]), high=np.log(Rpr[1]), 
-                size=n))*u.earthRad
-        
-        return Rp
-
     def gen_mass(self, n):
         """Generate planetary mass values in units of Earth mass.
         
@@ -356,6 +170,90 @@ class PlanetPopulation(object):
                 size=n))*u.earthMass
         
         return Mp
+    
+    def gen_angles(self, n):
+        """Generate inclination, longitude of the ascending node, and argument
+        of periapse in degrees
+        
+        The prototype generates inclination as sinusoidally distributed and 
+        longitude of the ascending node and argument of periapse as uniformly
+        distributed.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+                
+        Returns:
+            I (astropy Quantity array):
+                Inclination in units of degrees
+            O (astropy Quantity array):
+                Longitude of the ascending node in units of degrees
+            w (astropy Quantity array):
+                Argument of periapse in units of degrees
+        
+        """
+        n = self.gen_input_check(n)
+        # inclination
+        I = (np.arccos(1. - 2.*np.random.uniform(size=n))*u.rad).to('deg')
+        # longitude of the ascending node
+        Or = self.Orange.to('deg').value
+        O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg
+        # argument of periapse
+        wr = self.wrange.to('deg').value
+        w = np.random.uniform(low=wr[0], high=wr[1], size=n)*u.deg
+        
+        return I, O, w
+    
+    def gen_plan_params(self, n):
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
+        planetary radius (earthRad)
+        
+        The prototype generates semi-major axis and planetary radius with 
+        log-uniform distributions and eccentricity and geometric albedo with
+        uniform distributions.
+        
+        Args:
+            n (integer):
+                Number of samples to generate
+        
+        Returns:
+            a (astropy Quantity array):
+                Semi-major axis in units of AU
+            e (float ndarray):
+                Eccentricity
+            p (float ndarray):
+                Geometric albedo
+            Rp (astropy Quantity array):
+                Planetary radius in units of earthRad
+        
+        """
+        n = self.gen_input_check(n)
+        # generate samples of semi-major axis
+        ar = self.arange.to('AU').value
+        a = np.exp(np.random.uniform(low=np.log(ar[0]), high=np.log(ar[1]), size=n))*u.AU
+        # check if constrainOrbits == True for eccentricity
+        if self.constrainOrbits:
+            tmpa = a.to('AU').value
+            # upper limit for eccentricity given sma
+            elim = np.zeros(len(a))
+            amean = np.mean(ar)
+            elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
+            elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
+        
+            # uniform distribution
+            e = np.random.uniform(low=self.erange[0], high=elim, size=n)
+        else:
+            e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
+
+        # generate geometric albedo
+        pr = self.prange
+        p = np.random.uniform(low=pr[0], high=pr[1], size=n)
+        # generate planetary radius
+        Rpr = self.Rprange.to('earthRad').value
+        Rp = np.exp(np.random.uniform(low=np.log(Rpr[0]), high=np.log(Rpr[1]), 
+                size=n))*u.earthRad
+        
+        return a, e, p, Rp        
 
     def dist_eccen_from_sma(self, e, a):
         """Probability density function for eccentricity constrained by 

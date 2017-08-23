@@ -2,7 +2,6 @@ from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-from astropy.time import Time
 
 class SAG13Universe(SimulatedUniverse):
     """Simulated Universe module based on SAG13 Planet Population module.
@@ -51,10 +50,6 @@ class SAG13Universe(SimulatedUniverse):
         self.T = period*u.year                              # period
         mu = const.G*TL.MsTrue[self.plan2star]
         self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')# semi-major axis
-        self.e = PPop.gen_eccen_from_sma(self.nPlans,self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccen(self.nPlans)            # eccentricity
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        _, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans) # eccentricity and albedo
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans) # orientation angles
         self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly
-        self.p = PPop.gen_albedo(self.nPlans)               # albedo

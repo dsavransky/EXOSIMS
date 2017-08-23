@@ -6,7 +6,6 @@ from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-import EXOSIMS.util.statsFun as statsFun 
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -150,16 +149,10 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccen_from_sma(self.nPlans, self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccen(self.nPlans)            # eccentricity
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Rp = PPop.gen_radius(self.nPlans)              # radius
         self.Mp = PPop.gen_mass(self.nPlans)                # mass
-        self.p = PPop.gen_albedo(self.nPlans)               # albedo
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 

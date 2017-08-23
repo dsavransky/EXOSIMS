@@ -403,7 +403,7 @@ class TargetList(object):
         Comp = self.Completeness
         
         # s and beta arrays
-        s = np.tan(TL.WA0)*self.dist
+        s = np.tan(self.WA0)*self.dist
         if PPop.scaleOrbits:
             s /= np.sqrt(self.L)
         beta = np.array([1.10472881476178]*len(s))*u.rad

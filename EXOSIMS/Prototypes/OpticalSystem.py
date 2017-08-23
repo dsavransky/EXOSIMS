@@ -32,8 +32,6 @@ class OpticalSystem(object):
             Entrance pupil area in units of m2
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
-        Ndark (float):
-            Number of dark frames used
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
         F0 (callable(lam)):
@@ -57,6 +55,8 @@ class OpticalSystem(object):
             Detector quantum efficiency: either a scalar for constant QE, or a 
             two-column array for wavelength-dependent QE, where the first column 
             contains the wavelengths in units of nm. May be data or FITS filename.
+        optics (float): 
+            Attenuation due to optics specific to the science instrument (defaults to 0.5)
         FoV (astropy Quantity):
             Field of view in units of arcsec
         pixelNumber (integer):
@@ -77,22 +77,26 @@ class OpticalSystem(object):
             Clock-induced-charge per frame per pixel
         texp (astropy Quantity):
             Exposure time per frame in units of s
-        ENF (float):
-            Excess noise factor
-        PCeff (float):
-            Photon counting efficiency
         radDos (float):
             Radiation dosage
+        PCeff (float):
+            Photon counting efficiency
+        ENF (float):
+            (Specific to EM-CCDs) Excess noise factor
         Rs (float):
-            Spectral resolving power
+            (Specific to spectrometers) Spectral resolving power
         lenslSamp (float):
-            Lenslet sampling, number of pixel per lenslet rows or cols
+            (Specific to spectrometers) Lenslet sampling, number of pixel per 
+            lenslet rows or cols
         
     Common starlight suppression system attributes:
         name (string):
             System name (e.g. HLC-565, SPC-660), should also contain the
             central wavelength the system is optimized for. Every system must have 
             a unique name. 
+        optics (float):
+            Attenuation due to optics specific to the coronagraph (defaults to 1),
+            e.g. polarizer, Lyot stop, extra flat mirror
         lam (astropy Quantity):
             Central wavelength in units of nm
         deltaLam (astropy Quantity):
@@ -119,12 +123,6 @@ class OpticalSystem(object):
         core_platescale (float):
             Platescale used for a specific set of coronagraph parameters, in units 
             of lambda/D per pixel
-        PSF (float, callable):
-            Point spread function - 2D ndarray of values, normalized to 1 at
-            the core. Note: normalization means that all throughput effects 
-            must be contained in the throughput attribute.
-        samp (astropy Quantity):
-            Sampling of PSF in units of arcsec (per pixel)
         ohTime (astropy Quantity):
             Overhead time in units of days
         occulter (boolean):
@@ -173,14 +171,14 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
     _outspec = {}
 
-    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, optics=0.5,
-            intCutoff=50, Ndark=10, scienceInstruments=None, QE=0.9, FoV=10,
+    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
+            scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
-            texp=100, ENF=1, PCeff=0.8, radDos=0, Rs=50, lenslSamp=2, 
+            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=np.ones((3,3)),
-            samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None,
-            OWA=None, ref_dMag=3, ref_Time=0, **specs):
+            core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
+            ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -190,7 +188,6 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
-        self.Ndark = float(Ndark)               # number of dark frames used
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         
@@ -286,10 +283,9 @@ class OpticalSystem(object):
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
             syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
-            syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
-            # attenuation due to optics specific to the coronagraph (default to 1)
+            # attenuation due to optics specific to the coronagraph (defaults to 1)
             # e.g. polarizer, Lyot stop, extra flat mirror
             syst['optics'] = float(syst.get('optics', 1.))
             
@@ -319,31 +315,15 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
             
-            # get PSF
-            if isinstance(syst['PSF'], basestring):
-                pth = os.path.normpath(os.path.expandvars(syst['PSF']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                hdr = fits.open(pth)[0].header
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2, "Wrong PSF data shape."
-                assert np.any(dat), "PSF must be != 0"
-                syst['PSF'] = lambda l, s, P=dat: P
-                if hdr.get('SAMPLING') is not None:
-                    syst['samp'] = hdr.get('SAMPLING')
-            else:
-                assert np.any(syst['PSF']), "PSF must be != 0"
-                syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
-            
             # loading system specifications
             syst['IWA'] = syst.get('IWA', 0. if IWA is None else IWA)*u.arcsec    # inner WA
             syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
-            syst['samp'] = float(syst.get('samp', samp))*u.arcsec   # PSF sampling
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
             # populate system specifications to outspec
             for att in syst.keys():
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
-                        'core_mean_intensity', 'core_area', 'PSF']:
+                        'core_mean_intensity', 'core_area']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
@@ -717,7 +697,7 @@ class OpticalSystem(object):
         
         Args:
             intTimes (astropy Quantity array):
-                Integration times
+                Integration times in units of day
             TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
@@ -748,11 +728,11 @@ class OpticalSystem(object):
         return dMag
 
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Finds derivative of achievable dMag with respect to integration time
+        """Finds derivative of achievable dMag with respect to integration time.
         
         Args:
             intTimes (astropy Quantity array):
-                Integration times
+                Integration times in units of day
             TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):

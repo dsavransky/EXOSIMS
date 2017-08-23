@@ -55,11 +55,9 @@ class KasdinBraems(OpticalSystem):
         inst = mode['inst']                         # scienceInstrument
         syst = mode['syst']                         # starlightSuppressionSystem
         lam = mode['lam']
-        PSF = syst['PSF'](lam, WA)  # this is the only place where PSF is used!
-        Pbar = PSF/np.max(PSF)
-        P1 = np.sum(Pbar)
-        Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
-        Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3
+        P1 = 11.7044848279412 #HLC data
+        Psi = 0.0448393 #HLC data
+        Xi = 0.0028994 #HLC data
         PPro = TL.PostProcessing                    # post-processing module
         K = st.norm.ppf(1 - PPro.FAP)               # false alarm threshold
         gamma = st.norm.ppf(1 - PPro.MDP)           # missed detection threshold

@@ -15,14 +15,16 @@ class Completeness(object):
             
     Attributes:
         dMagLim (float):
-            Limiting planet-to-star flux ratio for completeness. 
+            Limiting planet-to-star flux ratio for completeness
+        minComp (float):
+            Minimum completeness value for inclusion in target list
     
     """
 
     _modtype = 'Completeness'
     _outspec = {}
 
-    def __init__(self, dMagLim=25, **specs):
+    def __init__(self, dMagLim=25, minComp=0.1, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -32,11 +34,13 @@ class Completeness(object):
         self.PlanetPopulation = Pop
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
         
-        # loading the flux ratio limit for completeness
+        # loading attributes
         self.dMagLim = float(dMagLim)
+        self.minComp = float(minComp)
         
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
+        self._outspec['minComp'] = self.minComp
 
     def __str__(self):
         """String representation of Completeness object
@@ -119,8 +123,8 @@ class Completeness(object):
         self.updates = self.updates[ind,:]
 
     def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Calculates completeness for integration time
-
+        """Calculates completeness values per integration time
+        
         Note: Prototype does no calculations and always returns the same value
         
         Args:
@@ -140,7 +144,7 @@ class Completeness(object):
                 Selected observing mode
                 
         Returns:
-            comp (array):
+            comp (float ndarray):
                 Completeness values
         
         """
@@ -154,13 +158,12 @@ class Completeness(object):
         assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
         assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
-
-        return np.array([0.2]*len(intTimes))
         
+        return np.array([0.2]*len(intTimes))
 
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
         """Calculates derivative of completeness with respect to integration time
-
+        
         Note: Prototype does no calculations and always returns the same value
         
         Args:
@@ -180,11 +183,11 @@ class Completeness(object):
                 Selected observing mode
                 
         Returns:
-            dcomp (array):
+            dcomp (float ndarray):
                 Derivative of completeness with respect to integration time
         
         """
-
+        
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1)*fZ.unit
@@ -194,6 +197,5 @@ class Completeness(object):
         assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
         assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
-
+        
         return np.array([0.02]*len(intTimes))
-

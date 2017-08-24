@@ -21,6 +21,7 @@ class KasdinBraems(OpticalSystem):
     def __init__(self, **specs):
         
         OpticalSystem.__init__(self, **specs)
+        
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration times of target systems for a specific observing 
@@ -55,9 +56,22 @@ class KasdinBraems(OpticalSystem):
         inst = mode['inst']                         # scienceInstrument
         syst = mode['syst']                         # starlightSuppressionSystem
         lam = mode['lam']
-        P1 = 11.7044848279412 #HLC data
-        Psi = 0.0448393 #HLC data
-        Xi = 0.0028994 #HLC data
+        
+        # load PSF and use it to calculate the sharpness parameters
+        PSF = syst['PSF'](lam, WA)
+        if np.std(PSF) > 0:
+            Pbar = PSF/np.max(PSF)
+            P1 = np.sum(Pbar)
+            Psi = np.sum(Pbar**2)/(np.sum(Pbar))**2
+            Xi = np.sum(Pbar**3)/(np.sum(Pbar))**3
+        # if PSF is a flat image, e.g. default ones(3,3)
+        # then use values corresponding to HLC data
+        # TODO: find a better default PSF value (Airy pattern)
+        else:
+            P1 = 11.7044848279412
+            Psi = 0.0448393
+            Xi = 0.0028994
+        
         PPro = TL.PostProcessing                    # post-processing module
         K = st.norm.ppf(1 - PPro.FAP)               # false alarm threshold
         gamma = st.norm.ppf(1 - PPro.MDP)           # missed detection threshold

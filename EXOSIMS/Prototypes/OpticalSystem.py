@@ -30,8 +30,6 @@ class OpticalSystem(object):
             Entrance pupil diameter in units of m
         pupilArea (astropy Quantity):
             Entrance pupil area in units of m2
-        intCutoff (astropy Quantity):
-            Maximum allowed integration time in units of day
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
         F0 (callable(lam)):
@@ -40,6 +38,14 @@ class OpticalSystem(object):
             Fundamental Inner Working Angle in units of arcsec
         OWA (astropy Quantity):
             Fundamental Outer Working Angle in units of arcsec
+        intCutoff (astropy Quantity):
+            Maximum allowed integration time in units of day
+        dMag0 (float):
+            Favorable planet flux ratio value used to calculate the minimum integration times 
+            for inclusion in target list
+        WA0 (astropy Quantity):
+            Favorable working angle value used to calculate the minimum integration times 
+            for inclusion in target list (defaults to detection IWA-OWA midpoint)
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -123,6 +129,10 @@ class OpticalSystem(object):
         core_platescale (float):
             Platescale used for a specific set of coronagraph parameters, in units 
             of lambda/D per pixel
+        PSF (float, callable):
+            Point spread function - 2D ndarray of values, normalized to 1 at
+            the core. Note: normalization means that all throughput effects 
+            must be contained in the throughput attribute.
         ohTime (astropy Quantity):
             Overhead time in units of days
         occulter (boolean):
@@ -172,12 +182,12 @@ class OpticalSystem(object):
     _outspec = {}
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
-            scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
+            dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
-            ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
@@ -188,6 +198,7 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
+        self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         
@@ -283,6 +294,7 @@ class OpticalSystem(object):
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
             syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
+            syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
             
             # attenuation due to optics specific to the coronagraph (defaults to 1)
@@ -315,6 +327,19 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
             
+            # get PSF
+            if isinstance(syst['PSF'], basestring):
+                pth = os.path.normpath(os.path.expandvars(syst['PSF']))
+                assert os.path.isfile(pth), "%s is not a valid file."%pth
+                hdr = fits.open(pth)[0].header
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2, "Wrong PSF data shape."
+                assert np.any(dat), "PSF must be != 0"
+                syst['PSF'] = lambda l, s, P=dat: P
+            else:
+                assert np.any(syst['PSF']), "PSF must be != 0"
+                syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
+            
             # loading system specifications
             syst['IWA'] = syst.get('IWA', 0. if IWA is None else IWA)*u.arcsec    # inner WA
             syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
@@ -323,7 +348,7 @@ class OpticalSystem(object):
             # populate system specifications to outspec
             for att in syst.keys():
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
-                        'core_mean_intensity', 'core_area']:
+                        'core_mean_intensity', 'core_area', 'PSF']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
@@ -388,6 +413,14 @@ class OpticalSystem(object):
             # if no imager mode, default detection mode is first observing mode
             else:
                 allModes[0]['detectionMode'] = True
+        
+        # load favorable working angle (WA0) for calc_minintTime,
+        # or calculate it from detection IWA-OWA midpoint value
+        try:
+            self.WA0 = float(WA0)*u.arcsec
+        except TypeError:
+            mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+            self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
         
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.observingModes if x.get('IWA') is not None]
@@ -660,8 +693,8 @@ class OpticalSystem(object):
         This method is called in the TargetList class object. It calculates the 
         minimum (optimistic) integration times for all the stars from the target list, 
         in the ideal case of no zodiacal noise. It uses a very favorable planet flux
-        ratio defined by the TargetList (dMag0, 15 by default) and a working angle 
-        value (WA0) by default equal to the detection IWA-OWA midpoint.
+        ratio (dMag0, 15 by default) and working angle (WA0, by default equal to 
+        the detection IWA-OWA midpoint).
         
         Args:
             TL (TargetList module):
@@ -680,8 +713,8 @@ class OpticalSystem(object):
         sInds = np.arange(TL.nStars)
         fZ = 0./u.arcsec**2
         fEZ = 0./u.arcsec**2
-        dMag = TL.dMag0
-        WA = TL.WA0
+        dMag = self.dMag0
+        WA = self.WA0
         
         # calculate minimum integration time
         minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)

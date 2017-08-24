@@ -41,11 +41,12 @@ class OpticalSystem(object):
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
         dMag0 (float):
-            Favorable planet flux ratio value used to calculate the minimum integration times 
-            for inclusion in target list
+            Favorable planet delta magnitude value used to calculate the minimum 
+            integration times for inclusion in target list
         WA0 (astropy Quantity):
-            Favorable working angle value used to calculate the minimum integration times 
-            for inclusion in target list (defaults to detection IWA-OWA midpoint)
+            Favorable instrument working angle value used to calculate the minimum 
+            integration times for inclusion in target list (defaults to detection 
+            IWA-OWA midpoint)
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
         starlightSuppressionSystems (list of dicts):
@@ -722,7 +723,7 @@ class OpticalSystem(object):
         return minintTime
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Finds achievable planet flux ratio (delta mag) for one integration 
+        """Finds achievable planet delta magnitude for one integration 
         time per star in the input list at one or more working angles.
         
         The prototype returns ones as an m x n array where m corresponds 

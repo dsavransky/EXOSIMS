@@ -199,8 +199,8 @@ class SurveySimulation(object):
                 self._outspec[att] = self.__dict__[att]
         
         # load the dMag and WA values for integration:
-        # dMagint defaults to the completeness limiting flux ratio
-        # WAint defaults to the detection mode IWA-OWA midpoint
+        # - dMagint defaults to the completeness limiting delta magnitude
+        # - WAint defaults to the detection mode IWA-OWA midpoint
         Comp = self.Completeness
         OS = self.OpticalSystem
         TL = self.TargetList

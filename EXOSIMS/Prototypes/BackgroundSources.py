@@ -45,9 +45,9 @@ class BackgroundSources(object):
                 SkyCoord object containing right ascension, declination, and 
                 distance to star of the planets of interest in units of deg, deg and pc
             intDepths (float ndarray):
-                Integration depths equal to the limiting planet magnitude 
-                (Vmag+dMagLim), i.e. the V magnitude of the dark hole to be 
-                produced for each target. Must be of same length as coords.
+                Integration depths equal to the planet magnitude (Vmag+dMag), 
+                i.e. the V magnitude of the dark hole to be produced for each target. 
+                Must be of same length as coords.
                 
         Returns:
             dN (astropy Quantity array):

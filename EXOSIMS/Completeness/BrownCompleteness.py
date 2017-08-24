@@ -126,7 +126,7 @@ class BrownCompleteness(Completeness):
         else:
             smax = np.tan(OWA)*TL.dist
         
-        # limiting planet flux ratio for completeness
+        # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
         # calculate dMags based on maximum dMag
@@ -157,7 +157,7 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
         
-        # limiting planet flux ratio for completeness
+        # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
         # get name for stored dynamic completeness updates array

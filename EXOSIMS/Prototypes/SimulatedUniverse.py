@@ -18,6 +18,8 @@ class SimulatedUniverse(object):
             user specified values
     
     Attributes:
+        StarCatalog (StarCatalog module):
+            StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):

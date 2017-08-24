@@ -30,9 +30,9 @@ class PostProcessing(object):
             gain, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
         FAdMag0 (float, callable):
-            Maximum flux ratio that can be obtained by a false alarm: either a scalar 
-            for constant flux ratio, or a two-column array for separation-dependent 
-            flux ratio (dMag), where the first column contains the angular separation in 
+            Minimum delta magnitude that can be obtained by a false alarm: either a scalar 
+            for constant dMag, or a two-column array for separation-dependent 
+            dMag, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
     
     """
@@ -67,16 +67,16 @@ class PostProcessing(object):
                     "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
             
-        # check for maximum FA flux ratio, function of the working angle
+        # check for minimum FA delta magnitude, function of the working angle
         if isinstance(FAdMag0, basestring):
             pth = os.path.normpath(os.path.expandvars(FAdMag0))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             dat = fits.open(pth)[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    "Wrong max FA flux ratio data shape."
+                    "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
             assert np.all(G > 0) and np.all(G <= 1), \
-                    "Max FA flux ratio must be positive and smaller than 1."
+                    "FAdMag0 must be positive and smaller than 1."
             # gain outside of WA values defaults to 1
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
                     fill_value=1., bounds_error=False)

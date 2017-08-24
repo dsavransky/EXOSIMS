@@ -154,9 +154,9 @@ class SimulatedUniverse(object):
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
-            self.a *= np.sqrt(TL.L)
+            self.a *= np.sqrt(TL.L[self.plan2star])
         self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Mp = PPop.gen_mass(self.nPlans)                # mass
+        self.Mp = PPop.gen_mass(self.nPlans)                     # mass
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 

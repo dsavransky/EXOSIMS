@@ -11,6 +11,25 @@ class SAG13(KeplerLike2):
     This is the current working model based on averaging multiple studies. 
     These do not yet represent official scientific values.
     
+    Attributes: 
+        SAG13coeffs (float 4x2 ndarray):
+            Coefficients used by the SAG13 broken power law. The 4 lines
+            correspond to Gamma, alpha, beta, and the minimum radius.
+        SAG13starMass (astropy Quantity):
+            Assumed stellar mass corresponding to the given set of coefficients.
+        eta2D (float ndarray):
+            2D array of planet occurrence rate per star, binned by planetary
+            radius and period.
+        lnRp (float ndarray):
+            Logarithm of the eta2D grid radius values in units of Earth radius. 
+        lnT (float ndarray):
+            Logarithm of the eta2D grid period values in units of year. 
+        Trange (astropy Quantity 1x2 array):
+            Period range in units of year.
+        Tknee (float):
+            Location (in year) of period decay point (knee).
+            Not an astropy quantity.
+    
     """
 
     def __init__(self, SAG13coeffs=[[.38, -.19, .26, 0.],[.73, -1.18, .59, 3.4]],
@@ -29,6 +48,9 @@ class SAG13(KeplerLike2):
         # default sma range [0.09-1.45 AU] corresponds to period range [10-640 day] @ 1solMass
         mu = const.G*self.SAG13starMass
         self.Trange = 2.*np.pi*np.sqrt(self.arange**3/mu).to('year')
+        
+        # period value corresponding to KeplerLike smaknee (in year, not a quantity)
+        self.Tknee = 2.*np.pi*np.sqrt((self.smaknee*u.AU)**3/mu).to('year').value
         
         # load SAG13 coefficients (Gamma, alpha, beta, Rplim)
         self.SAG13coeffs = np.array(SAG13coeffs, dtype=float)
@@ -59,22 +81,24 @@ class SAG13(KeplerLike2):
         self.lnT = np.log(T)
         
         # loop over all log values of radii and periods, and generate the eta 2D array
-        self.eta = np.zeros((nx, ny))
+        self.eta2D = np.zeros((nx, ny))
         for i in range(nx):
             for j in range(ny):
                 ranges = [self.lnRp[i:i+2], self.lnT[j:j+2]]
-                self.eta[i,j] = integrate.nquad(self.dist_lnradius_lnperiod, ranges)[0]
+                self.eta2D[i,j] = integrate.nquad(self.dist_lnradius_lnperiod, ranges)[0]
         
-        # populate _outspec
-        self._outspec['SAG13starMass'] = self.SAG13starMass
-        self._outspec['SAG13coeffs'] = self.SAG13coeffs
-        self._outspec['lnRp'] = self.lnRp
-        self._outspec['lnT'] = self.lnT
+        # eta is the sum of the eta 2D array
+        self.eta = np.sum(self.eta2D)
         self._outspec['eta'] = self.eta
         
-        # initialize array used to temporarily store radius and sma values
-        self.radius_buffer = np.array([])*u.earthRad
-        self.sma_buffer = np.array([])*u.AU
+        # populate _outspec with SAG13 specific attributes
+        self._outspec['SAG13starMass'] = self.SAG13starMass.to('solMass').value
+        self._outspec['SAG13coeffs'] = self.SAG13coeffs
+        self._outspec['eta2D'] = self.eta2D
+        self._outspec['lnRp'] = self.lnRp
+        self._outspec['lnT'] = self.lnT
+        self._outspec['Trange'] = self.Trange.to('year').value
+        self._outspec['Tknee'] = self.Tknee
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.
@@ -93,7 +117,7 @@ class SAG13(KeplerLike2):
         
         """
         # get number of samples per bin
-        nsamp = np.ceil(n*self.eta/np.sum(self.eta)).astype(int)
+        nsamp = np.ceil(n*self.eta2D/self.eta).astype(int)
         
         # generate random radii and period in each bin
         radius = []
@@ -169,10 +193,14 @@ class SAG13(KeplerLike2):
 
     def dist_lnradius_lnperiod(self, lnRp, lnT):
         """Probability density function for logarithm of planetary radius 
-        in Earth radius and orbital period in year.
+        in Earth radius, and orbital period in year.
         
-        This method SAG13 broken power law, returning the joint distribution of the logarithm
-        of planetary radius and orbital period values (d2N / (dlnRp * dlnT)
+        This method implements the SAG13 broken power law. It returns the joint 
+        distribution of the logarithm of planetary radius and orbital period 
+        values (d2N / (dlnRp * dlnT).
+        
+        It also integrates the decay point (smaknee/Tknee) defined 
+        in the KeplerLike module.
         
         Args:
             lnRp (float ndarray):
@@ -198,11 +226,16 @@ class SAG13(KeplerLike2):
         Rp = np.exp(lnRp)
         T = np.exp(lnT)
         
+        # decay exponential
+        decay = np.exp(-(T/self.Tknee)**2)
+        
         # scalar case
-        if np.size(Rp*T) == 1:
+        if np.size(Rp)*np.size(T) == 1:
             for k in range(len(Rplim) - 1):
                 if (Rp >= Rplim[k]) & (Rp < Rplim[k+1]):
-                    f = Gamma[k] * Rp**alpha[k] * T**beta[k]
+                    f = Gamma[k] * Rp**alpha[k] * T**beta[k] 
+            # apply exponential decay
+            f *= decay
         
         # array case
         else:
@@ -212,6 +245,8 @@ class SAG13(KeplerLike2):
             f = np.zeros(Rps.shape)
             for k in range(len(Rplim) - 1):
                 mask = (Rps[0,:] >= Rplim[k]) & (Rps[0,:] < Rplim[k+1])
-                f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k]
+                f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k] 
+            # apply exponential decay
+            f = (f.T*decay).T
         
         return f

@@ -240,12 +240,12 @@ class PlanetPopulation(object):
             amean = np.mean(ar)
             elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
             elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
-        
+            
             # uniform distribution
             e = np.random.uniform(low=self.erange[0], high=elim, size=n)
         else:
             e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
-
+        
         # generate geometric albedo
         pr = self.prange
         p = np.random.uniform(low=pr[0], high=pr[1], size=n)
@@ -254,7 +254,7 @@ class PlanetPopulation(object):
         Rp = np.exp(np.random.uniform(low=np.log(Rpr[0]), high=np.log(Rpr[1]), 
                 size=n))*u.earthRad
         
-        return a, e, p, Rp        
+        return a, e, p, Rp
 
     def dist_eccen_from_sma(self, e, a):
         """Probability density function for eccentricity constrained by 

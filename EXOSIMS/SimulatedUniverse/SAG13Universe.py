@@ -14,6 +14,10 @@ class SAG13Universe(SimulatedUniverse):
 
     def gen_physical_properties(self, **specs):
         """Generating universe based on planet radius and period sampling.
+        
+        This method requires the SAG13 PlanetPopulation module, and
+        is calling the following SAG13 attributes: lnRp, lnT, eta2D.
+        
         """
         
         PPop = self.PlanetPopulation
@@ -27,7 +31,7 @@ class SAG13Universe(SimulatedUniverse):
         for i in range(len(PPop.lnRp)-1):
             for j in range(len(PPop.lnT)-1):
                 # treat eta as the rate parameter of a Poisson distribution
-                targetSystems = np.random.poisson(lam=PPop.eta[i,j], size=TL.nStars)
+                targetSystems = np.random.poisson(lam=PPop.eta2D[i,j], size=TL.nStars)
                 for m,n in enumerate(targetSystems):
                     plan2star = np.hstack((plan2star,[m]*n))
                     radius = np.hstack((radius,np.exp(np.random.uniform(low=PPop.lnRp[i],
@@ -49,7 +53,8 @@ class SAG13Universe(SimulatedUniverse):
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass from radius
         self.T = period*u.year                              # period
         mu = const.G*TL.MsTrue[self.plan2star]
-        self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')# semi-major axis
-        _, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans) # eccentricity and albedo
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans) # orientation angles
+        self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')  # semi-major axis
+        _, self.e, _, _ = PPop.gen_plan_params(self.nPlans)     # eccentricity
+        self.p = PPMod.calc_albedo_from_sma(self.a)             # albedo
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)   # orientation angles
         self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly

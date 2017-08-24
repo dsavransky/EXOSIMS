@@ -194,7 +194,8 @@ class PlanetPopulation(object):
         """
         n = self.gen_input_check(n)
         # inclination
-        I = (np.arccos(1. - 2.*np.random.uniform(size=n))*u.rad).to('deg')
+        C = 0.5*(np.cos(self.Irange[0])-np.cos(self.Irange[1]))
+        I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
         # longitude of the ascending node
         Or = self.Orange.to('deg').value
         O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg

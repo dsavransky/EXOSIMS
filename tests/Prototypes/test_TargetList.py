@@ -152,7 +152,7 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.targetlist.completeness_filter()
         self.assertEqual( self.targetlist.nStars , n0)
         #Test limiting case of minComp = 1.0
-        self.targetlist.minComp = 1.0
+        self.targetlist.Completeness.minComp = 1.0
         with self.assertRaises(IndexError):
             self.targetlist.completeness_filter()
         #self.assertEqual(self.targetlist.nStars , 0)

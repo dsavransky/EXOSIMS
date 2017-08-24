@@ -89,15 +89,16 @@ class SAG13(KeplerLike2):
         
         # eta is the sum of the eta 2D array
         self.eta = np.sum(self.eta2D)
-        
-        # populate _outspec
-        self._outspec['SAG13starMass'] = self.SAG13starMass
-        self._outspec['SAG13coeffs'] = self.SAG13coeffs
-        self._outspec['Trange'] = self.Trange
         self._outspec['eta'] = self.eta
+        
+        # populate _outspec with SAG13 specific attributes
+        self._outspec['SAG13starMass'] = self.SAG13starMass.to('solMass').value
+        self._outspec['SAG13coeffs'] = self.SAG13coeffs
         self._outspec['eta2D'] = self.eta2D
         self._outspec['lnRp'] = self.lnRp
         self._outspec['lnT'] = self.lnT
+        self._outspec['Trange'] = self.Trange.to('year').value
+        self._outspec['Tknee'] = self.Tknee
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.

@@ -137,71 +137,6 @@ class TargetList(object):
         
         return 'Target List class object attributes'
 
-    def starprop(self, sInds, currentTime, eclip=False):
-        """Finds target star positions vector in heliocentric equatorial (default)
-        or ecliptic frame for current time (MJD).
-        
-        This method uses ICRS coordinates which is approximately the same as 
-        equatorial coordinates. 
-        
-        Args:
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-            eclip (boolean):
-                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
-                False, corresponding to heliocentric equatorial frame.
-        
-        Returns:
-            r_targ (astropy Quantity nx3 array): 
-                Target star positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of pc
-        
-        Note: Use eclip=True to get ecliptic coordinates.
-        
-        """
-        
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            return self.starprop_static(sInds, currentTime, eclip)
-        
-        # get all array sizes
-        nStars = sInds.size
-        nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
-        # target star ICRS coordinates
-        coord_old = self.coords[sInds]
-        # right ascension and declination
-        ra = coord_old.ra
-        dec = coord_old.dec
-        # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
-        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
-        r0 = coord_old.cartesian.xyz/coord_old.distance
-        # proper motion vector
-        mu0 = p0*self.pmra[sInds] + q0*self.pmdec[sInds]
-        # space velocity vector
-        v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
-        # set J2000 epoch
-        j2000 = Time(2000., format='jyear')
-        # target star positions vector in heliocentric equatorial frame
-        dr = v*(currentTime.mjd - j2000.mjd)*u.day
-        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
-        
-        if eclip:
-            # transform to heliocentric true ecliptic frame
-            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
-                    representation='cartesian')
-            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
-        
-        return r_targ
-
     def populate_target_list(self, **specs):
         """ This function is actually responsible for populating values from the star 
         catalog (or any other source) into the target list attributes.
@@ -243,13 +178,12 @@ class TargetList(object):
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
         
-        The prototype implementation does the following:
-            * binary stars are removed
-            * systems with planets inside the IWA removed
-            * systems where maximum delta mag is not in allowable orbital range 
-              removed
-            * systems where integration time is longer than maximum time removed
-            * systems not meeting the completeness threshold removed
+        The prototype implementation removes the following stars:
+            * Stars with NAN values in their parameters
+            * Binary stars
+            * Systems with planets inside the OpticalSystem fundamental IWA
+            * Systems where minimum integration time is longer than OpticalSystem cutoff
+            * Systems not meeting the Completeness threshold
         
         Additional filters can be provided in specific TargetList implementations.
         
@@ -260,11 +194,6 @@ class TargetList(object):
         
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
-        
-        # filter out systems where maximum delta mag is not in allowable orbital range
-        # self.max_dmag_filter()
-        # REMOVED: already calling the int_cutoff_filter with OS.dMag0
-        # and the completeness_filter with Comp.dMagLim
         
         # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
@@ -372,6 +301,9 @@ class TargetList(object):
     def max_dmag_filter(self):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
+        Removed from prototype filters. Prototype is already calling the 
+        int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim
+        
         """
         
         PPop = self.PlanetPopulation
@@ -379,7 +311,7 @@ class TargetList(object):
         Comp = self.Completeness
         
         # s and beta arrays
-        s = np.tan(self.WA0)*self.dist
+        s = np.tan(self.OpticalSystem.WA0)*self.dist
         if PPop.scaleOrbits:
             s /= np.sqrt(self.L)
         beta = np.array([1.10472881476178]*len(s))*u.rad
@@ -462,6 +394,71 @@ class TargetList(object):
         # if additional filters are desired, need self.catalog_atts fully populated
         self.catalog_atts.append('MsEst')
         self.catalog_atts.append('MsTrue')
+
+    def starprop(self, sInds, currentTime, eclip=False):
+        """Finds target star positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
+        
+        This method uses ICRS coordinates which is approximately the same as 
+        equatorial coordinates. 
+        
+        Args:
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
+        
+        Returns:
+            r_targ (astropy Quantity nx3 array): 
+                Target star positions vector in heliocentric equatorial (default)
+                or ecliptic frame in units of pc
+        
+        Note: Use eclip=True to get ecliptic coordinates.
+        
+        """
+        
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            return self.starprop_static(sInds, currentTime, eclip)
+        
+        # get all array sizes
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match"
+        
+        # target star ICRS coordinates
+        coord_old = self.coords[sInds]
+        # right ascension and declination
+        ra = coord_old.ra
+        dec = coord_old.dec
+        # directions
+        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
+        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
+        r0 = coord_old.cartesian.xyz/coord_old.distance
+        # proper motion vector
+        mu0 = p0*self.pmra[sInds] + q0*self.pmdec[sInds]
+        # space velocity vector
+        v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
+        # set J2000 epoch
+        j2000 = Time(2000., format='jyear')
+        # target star positions vector in heliocentric equatorial frame
+        dr = v*(currentTime.mjd - j2000.mjd)*u.day
+        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+        
+        if eclip:
+            # transform to heliocentric true ecliptic frame
+            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                    representation='cartesian')
+            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+        
+        return r_targ
 
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit 

@@ -15,7 +15,7 @@ class Completeness(object):
             
     Attributes:
         dMagLim (float):
-            Limiting planet-to-star flux ratio for completeness
+            Limiting planet-to-star delta magnitude for completeness
         minComp (float):
             Minimum completeness value for inclusion in target list
     

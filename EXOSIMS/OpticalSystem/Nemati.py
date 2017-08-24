@@ -120,7 +120,7 @@ class Nemati(OpticalSystem):
         # get core_thruput
         core_thruput = syst['core_thruput'](lam, WA)
         
-        # calculate planet flux ratio
+        # calculate planet delta magnitude
         dMag = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)

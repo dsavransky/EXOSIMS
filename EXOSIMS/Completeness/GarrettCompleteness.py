@@ -148,7 +148,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         OS = TL.OpticalSystem
         
-        # limiting planet flux ratio for completeness
+        # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
         # important PlanetPopulation attributes
@@ -204,7 +204,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         """
         
-        # limiting planet flux ratio for completeness
+        # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
         if os.path.exists(Cpath):
@@ -241,7 +241,7 @@ class GarrettCompleteness(BrownCompleteness):
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
             dMag (ndarray):
-                Planet flux ratio
+                Planet delta magnitude
         
         Returns:
             comp (ndarray):
@@ -268,7 +268,7 @@ class GarrettCompleteness(BrownCompleteness):
             s (float):
                 Value of projected separation
             dMagMax (float):
-                Maximum planet flux ratio
+                Maximum planet delta magnitude
                 
         Returns:
             f (float):
@@ -297,7 +297,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                Planet flux ratio
+                Planet delta magnitude
             s (float):
                 Value of projected separation (AU)
         
@@ -330,7 +330,7 @@ class GarrettCompleteness(BrownCompleteness):
             z (ndarray):
                 Values of albedo times planetary radius squared
             dmag (float):
-                Planet flux ratio
+                Planet delta magnitude
             s (float):
                 Value of projected separation
         
@@ -374,7 +374,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Returns:
             mindmag (float):
-                Minimum planet flux ratio
+                Minimum planet delta magnitude
         """
         if s == 0.0:
             mindmag = self.cdmin1
@@ -398,7 +398,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Returns:
             maxdmag (float):
-                Maximum planet flux ratio
+                Maximum planet delta magnitude
         
         """
         
@@ -689,7 +689,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                Planet flux ratio
+                Planet delta magnitude
             smax (float):
                 maximum projected separation (AU)
         
@@ -721,7 +721,7 @@ class GarrettCompleteness(BrownCompleteness):
             s (float):
                 Value of projected separation (AU)
             dmag (float):
-                Planet flux ratio
+                Planet delta magnitude
         
         Returns:
             f (float):
@@ -737,7 +737,7 @@ class GarrettCompleteness(BrownCompleteness):
         
         Args:
             dmag (float):
-                Planet flux ratio
+                Planet delta magnitude
             smin (float):
                 Value of minimum projected separation (AU) from instrument
             smax (float):
@@ -771,7 +771,7 @@ class GarrettCompleteness(BrownCompleteness):
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
             dMagMax (float ndarray):
-                Maximum planet flux ratio
+                Maximum planet delta magnitude
         
         Returns:
             comp (ndarray):

@@ -18,32 +18,50 @@ class MissionSim(object):
             user specified values
             
     Attributes:
-        PlanetPopulation (PlanetPopulation):
+        StarCatalog (StarCatalog module):
+            StarCatalog class object (only retained if keepStarCatalog is True)
+        PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel):
+        PlanetPhysicalModel (PlanetPhysicalModel module):
             PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem):
+        OpticalSystem (OpticalSystem module):
             OpticalSystem class object
-        ZodiacalLight (ZodiacalLight):
+        ZodiacalLight (ZodiacalLight module):
             ZodiacalLight class object
-        BackgroundSources (BackgroundSources):
+        BackgroundSources (BackgroundSources module):
             Background Source class object
-        PostProcessing (PostProcessing):
+        PostProcessing (PostProcessing module):
             PostProcessing class object
-        Completeness (Completeness):
+        Completeness (Completeness module):
             Completeness class object
-        TargetList (TargetList):
+        TargetList (TargetList module):
             TargetList class object
-        SimulatedUniverse (SimulatedUniverse):
+        SimulatedUniverse (SimulatedUniverse module):
             SimulatedUniverse class object
-        Observatory (Observatory):
+        Observatory (Observatory module):
             Observatory class object
-        TimeKeeping (TimeKeeping):
+        TimeKeeping (TimeKeeping module):
             TimeKeeping class object
-        SurveySimulation (SurveySimulation):
+        SurveySimulation (SurveySimulation module):
             SurveySimulation class object
-        SurveyEnsemble (SurveyEnsemble):
+        SurveyEnsemble (SurveyEnsemble module):
             SurveyEnsemble class object
+        modules (dict):
+            Dictionary of all modules, except StarCatalog
+        verbose (boolean):
+            Boolean used to create the vprint function, equivalent to the 
+            python print function with an extra verbose toggle parameter 
+            (True by default). The vprint function can be accessed by all 
+            modules from EXOSIMS.util.vprint.
+        seed (integer):
+            Number used to seed the NumPy generator. Generated randomly 
+            by default.
+        logfile (string):
+            Path to the log file. If None, logging is turned off. 
+            If supplied but empty string (''), a temporary file is generated.
+        loglevel (string): 
+            The level of log, defaults to 'INFO'. Valid levels are: CRITICAL, 
+            ERROR, WARNING, INFO, DEBUG (case sensitive).
     
     """
 
@@ -60,15 +78,13 @@ class MissionSim(object):
             specs (dictionary):
                 Dictionary containing additional user specification values and 
                 desired module names.
-            nopar (bool):
+            nopar (boolean):
                 If True, ignore any provided ensemble module in the script or specs
                 and force the prototype ensemble.
-            verbose (bool):
+            verbose (boolean):
                 Boolean used to create the vprint function, equivalent to the 
-                python print function with an extra verbose toggle parameter 
-                (True by default). The vprint function can be accessed by all 
-                modules from EXOSIMS.util.vprint.
-                
+                python print function with an extra verbose toggle parameter.
+            
         """
         
         # extend given specs with (JSON) script file

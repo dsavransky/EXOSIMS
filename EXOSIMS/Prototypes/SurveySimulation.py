@@ -442,7 +442,7 @@ class SurveySimulation(object):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                # find angle between old and new stars, default to pi/2 for first target
+                # find angle between old and new stars, defaults to pi/2 for first target
                 if old_sInd is None:
                     sd = np.array([np.radians(90)]*TL.nStars)*u.rad
                 else:
@@ -695,12 +695,12 @@ class SurveySimulation(object):
         self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, 
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
         
-        # in case of a FA, generate a random delta mag (between maxFAfluxratio and
-        # dMagLim) and working angle (between IWA and min(OWA, a_max))
+        # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
+        # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA)), Comp.dMagLim)
+            dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], 
                     ZL.fEZ0.to('1/arcsec2').value)

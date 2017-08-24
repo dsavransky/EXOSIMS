@@ -160,7 +160,7 @@ class SimulatedUniverse(object):
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
-        # at 5 AU for characterization. 
+        # at 5 AU to allow for characterization testing.
         # Also generates at least one Jupiter if no planet was generated.
         if TL.Name[0] == 'Prototype' or self.nPlans == 0:
             self.plan2star = np.array([0], dtype=int)

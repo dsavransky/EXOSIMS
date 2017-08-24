@@ -53,7 +53,8 @@ class SAG13Universe(SimulatedUniverse):
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass from radius
         self.T = period*u.year                              # period
         mu = const.G*TL.MsTrue[self.plan2star]
-        self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')# semi-major axis
-        _, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans) # eccentricity and albedo
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans) # orientation angles
+        self.a = ((mu*(self.T/(2*np.pi))**2)**(1/3.)).to('AU')  # semi-major axis
+        _, self.e, _, _ = PPop.gen_plan_params(self.nPlans)     # eccentricity
+        self.p = PPMod.calc_albedo_from_sma(self.a)             # albedo
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)   # orientation angles
         self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly

@@ -153,6 +153,8 @@ class SimulatedUniverse(object):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
+        if PPop.scaleOrbits:
+            self.a *= np.sqrt(TL.L)
         self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
         self.Mp = PPop.gen_mass(self.nPlans)                # mass
         

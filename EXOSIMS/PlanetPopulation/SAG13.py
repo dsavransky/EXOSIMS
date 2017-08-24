@@ -11,6 +11,22 @@ class SAG13(KeplerLike2):
     This is the current working model based on averaging multiple studies. 
     These do not yet represent official scientific values.
     
+    Attributes: 
+        SAG13coeffs (float 4x2 ndarray):
+            Coefficients used by the SAG13 broken power law. The 4 lines
+            correspond to Gamma, alpha, beta, and the minimum radius.
+        SAG13starMass (astropy Quantity):
+            Assumed stellar mass corresponding to the given set of coefficients.
+        Trange (astropy Quantity 1x2 array):
+            Period range in units of year.
+        eta2D (float ndarray):
+            2D array of planet occurrence rate per star, binned by planetary
+            radius and period.
+        lnRp (float ndarray):
+            Logarithm of the eta2D grid radius values in units of Earth radius. 
+        lnT (float ndarray):
+            Logarithm of the eta2D grid period values in units of year. 
+    
     """
 
     def __init__(self, SAG13coeffs=[[.38, -.19, .26, 0.],[.73, -1.18, .59, 3.4]],
@@ -59,18 +75,22 @@ class SAG13(KeplerLike2):
         self.lnT = np.log(T)
         
         # loop over all log values of radii and periods, and generate the eta 2D array
-        self.eta = np.zeros((nx, ny))
+        self.eta2D = np.zeros((nx, ny))
         for i in range(nx):
             for j in range(ny):
                 ranges = [self.lnRp[i:i+2], self.lnT[j:j+2]]
-                self.eta[i,j] = integrate.nquad(self.dist_lnradius_lnperiod, ranges)[0]
+                self.eta2D[i,j] = integrate.nquad(self.dist_lnradius_lnperiod, ranges)[0]
+        
+        # eta is the sum of the eta 2D array
+        self.eta = np.sum(self.eta2D)
         
         # populate _outspec
         self._outspec['SAG13starMass'] = self.SAG13starMass
         self._outspec['SAG13coeffs'] = self.SAG13coeffs
+        self._outspec['eta'] = self.eta
+        self._outspec['eta2D'] = self.eta2D
         self._outspec['lnRp'] = self.lnRp
         self._outspec['lnT'] = self.lnT
-        self._outspec['eta'] = self.eta
         
         # initialize array used to temporarily store radius and sma values
         self.radius_buffer = np.array([])*u.earthRad
@@ -93,7 +113,7 @@ class SAG13(KeplerLike2):
         
         """
         # get number of samples per bin
-        nsamp = np.ceil(n*self.eta/np.sum(self.eta)).astype(int)
+        nsamp = np.ceil(n*self.eta2D/self.eta).astype(int)
         
         # generate random radii and period in each bin
         radius = []

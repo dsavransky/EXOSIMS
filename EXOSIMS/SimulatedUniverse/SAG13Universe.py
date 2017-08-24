@@ -14,6 +14,10 @@ class SAG13Universe(SimulatedUniverse):
 
     def gen_physical_properties(self, **specs):
         """Generating universe based on planet radius and period sampling.
+        
+        This method requires the SAG13 PlanetPopulation module, and
+        is calling the following SAG13 attributes: lnRp, lnT, eta2D.
+        
         """
         
         PPop = self.PlanetPopulation
@@ -27,7 +31,7 @@ class SAG13Universe(SimulatedUniverse):
         for i in range(len(PPop.lnRp)-1):
             for j in range(len(PPop.lnT)-1):
                 # treat eta as the rate parameter of a Poisson distribution
-                targetSystems = np.random.poisson(lam=PPop.eta[i,j], size=TL.nStars)
+                targetSystems = np.random.poisson(lam=PPop.eta2D[i,j], size=TL.nStars)
                 for m,n in enumerate(targetSystems):
                     plan2star = np.hstack((plan2star,[m]*n))
                     radius = np.hstack((radius,np.exp(np.random.uniform(low=PPop.lnRp[i],

@@ -17,8 +17,6 @@ class SAG13(KeplerLike2):
             correspond to Gamma, alpha, beta, and the minimum radius.
         SAG13starMass (astropy Quantity):
             Assumed stellar mass corresponding to the given set of coefficients.
-        Trange (astropy Quantity 1x2 array):
-            Period range in units of year.
         eta2D (float ndarray):
             2D array of planet occurrence rate per star, binned by planetary
             radius and period.
@@ -26,6 +24,11 @@ class SAG13(KeplerLike2):
             Logarithm of the eta2D grid radius values in units of Earth radius. 
         lnT (float ndarray):
             Logarithm of the eta2D grid period values in units of year. 
+        Trange (astropy Quantity 1x2 array):
+            Period range in units of year.
+        Tknee (float):
+            Location (in year) of period decay point (knee).
+            Not an astropy quantity.
     
     """
 
@@ -45,6 +48,9 @@ class SAG13(KeplerLike2):
         # default sma range [0.09-1.45 AU] corresponds to period range [10-640 day] @ 1solMass
         mu = const.G*self.SAG13starMass
         self.Trange = 2.*np.pi*np.sqrt(self.arange**3/mu).to('year')
+        
+        # period value corresponding to KeplerLike smaknee (in year, not a quantity)
+        self.Tknee = 2.*np.pi*np.sqrt((self.smaknee*u.AU)**3/mu).to('year').value
         
         # load SAG13 coefficients (Gamma, alpha, beta, Rplim)
         self.SAG13coeffs = np.array(SAG13coeffs, dtype=float)
@@ -87,14 +93,11 @@ class SAG13(KeplerLike2):
         # populate _outspec
         self._outspec['SAG13starMass'] = self.SAG13starMass
         self._outspec['SAG13coeffs'] = self.SAG13coeffs
+        self._outspec['Trange'] = self.Trange
         self._outspec['eta'] = self.eta
         self._outspec['eta2D'] = self.eta2D
         self._outspec['lnRp'] = self.lnRp
         self._outspec['lnT'] = self.lnT
-        
-        # initialize array used to temporarily store radius and sma values
-        self.radius_buffer = np.array([])*u.earthRad
-        self.sma_buffer = np.array([])*u.AU
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.
@@ -189,10 +192,14 @@ class SAG13(KeplerLike2):
 
     def dist_lnradius_lnperiod(self, lnRp, lnT):
         """Probability density function for logarithm of planetary radius 
-        in Earth radius and orbital period in year.
+        in Earth radius, and orbital period in year.
         
-        This method SAG13 broken power law, returning the joint distribution of the logarithm
-        of planetary radius and orbital period values (d2N / (dlnRp * dlnT)
+        This method implements the SAG13 broken power law. It returns the joint 
+        distribution of the logarithm of planetary radius and orbital period 
+        values (d2N / (dlnRp * dlnT).
+        
+        It also integrates the decay point (smaknee/Tknee) defined 
+        in the KeplerLike module.
         
         Args:
             lnRp (float ndarray):
@@ -218,11 +225,16 @@ class SAG13(KeplerLike2):
         Rp = np.exp(lnRp)
         T = np.exp(lnT)
         
+        # decay exponential
+        decay = np.exp(-(T/self.Tknee)**2)
+        
         # scalar case
-        if np.size(Rp*T) == 1:
+        if np.size(Rp)*np.size(T) == 1:
             for k in range(len(Rplim) - 1):
                 if (Rp >= Rplim[k]) & (Rp < Rplim[k+1]):
-                    f = Gamma[k] * Rp**alpha[k] * T**beta[k]
+                    f = Gamma[k] * Rp**alpha[k] * T**beta[k] 
+            # apply exponential decay
+            f *= decay
         
         # array case
         else:
@@ -232,6 +244,8 @@ class SAG13(KeplerLike2):
             f = np.zeros(Rps.shape)
             for k in range(len(Rplim) - 1):
                 mask = (Rps[0,:] >= Rplim[k]) & (Rps[0,:] < Rplim[k+1])
-                f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k]
+                f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k] 
+            # apply exponential decay
+            f = (f.T*decay).T
         
         return f

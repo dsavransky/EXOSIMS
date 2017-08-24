@@ -11,6 +11,7 @@ from astropy import units as u
 from astropy import constants as const
 import os
 import math
+import scipy.stats
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
@@ -32,127 +33,66 @@ class TestPlanetPopulation(unittest.TestCase):
     
     def tearDown(self):
         pass
+        
+
+    def test_gen_angles(self):
+        pp = PlanetPopulation(**self.spec)
+
+        x = 10000
+        I, O, w = pp.gen_angles(x)
+        assert(I.min() >= pp.Irange[0])
+        assert(I.max() <= pp.Irange[1])
+        assert(O.min() >= pp.Orange[0])
+        assert(O.max() <= pp.Orange[1])
+        assert(w.min() >= pp.wrange[0])
+        assert(w.max() <= pp.wrange[1])
+
+        #O & w are expected to be uniform
+        hO = np.histogram(O,100)
+        Ochi2 = scipy.stats.chisquare(hO[0],[float(x)/float(len(hO[0]))]*len(hO[0]))
+        assert(Ochi2[1] > 0.05)
+
+        #O & w are expected to be uniform
+        hw = np.histogram(w,100)
+        wchi2 = scipy.stats.chisquare(hw[0],[float(x)/float(len(hw[0]))]*len(hw[0]))
+        assert(wchi2[1] > 0.05)
+
+        #I is expected to be sinusoidal
+        hI = np.histogram(I.to(u.rad).value,100)
+        Ix = np.diff(hI[1])/2.+hI[1][:-1]
+        Ip = np.sin(Ix)/2*(np.diff(hI[1])*x)
+
+        Ichi2 = scipy.stats.chisquare(hI[0],Ip)
+        assert(Ichi2[1] > 0.05)
+
     
-    def test_gen_sma(self):
-        #pp = self.sim.modules['PlanetPopulation']
+    def test_gen_plan_params(self):
         pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_sma(x)
-        res = np.log(res.value)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.arange.value  #inputs
-        v = np.log(v)
-        vmin = np.min(v)
-        vmax = np.max(v)
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin, vmin, rtol=0.1, atol=0)
-        np.testing.assert_allclose(resmax, vmax, rtol=0.1, atol=0)
-        # the following assertion is reliant on the exponential distribution
-        # currently used by PlanetPopulation
-        np.testing.assert_allclose(resmean, vmean, rtol=0.1, atol=0)
-        
-        #count, bins, ignored = plt.hist(res, 50, normed=True)
-        #plt.plot(bins, np.ones_like(bins), linewidth=2, color='r')
-        #plt.show()
-    
-    def test_gen_eccen(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_eccen(x)
-        
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.erange
-        vmean = (v[1]-v[0])/2.-v[0]
-        
-        np.testing.assert_allclose(resmin, v[0], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmax, v[1], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmean, vmean, rtol=1e-01, atol=0.5)
-        
-        #count, bins, ignored = plt.hist(res, 50, normed=True)
-        #plt.plot(bins, np.ones_like(bins), linewidth=2, color='r')
-        #plt.show()
-    
-    def test_gen_eccen_from_sma(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        n = 5000
-        #a = np.zeros(n) + 5.
-        a = pp.gen_sma(n)
-        res=pp.gen_eccen_from_sma(n,a)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        vmin = pp.erange[0]
-        elim = np.min(np.vstack((1 - (pp.arange[0]/a).decompose().value,\
-                (pp.arange[1]/a).decompose().value - 1)),axis=0)
-        vmax = np.amax(elim)
-        vmean = (vmax - vmin)/2.
-        
-        np.testing.assert_allclose(resmin, vmin, rtol=1e-02, atol=0.5)
-        np.testing.assert_allclose(resmax, vmax, rtol=1e-02, atol=0.5)
-        np.testing.assert_allclose(resmean, vmean, rtol=1e-02, atol=1.)
-        
-    def test_gen_w(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_w(x)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.wrange.value
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin.value, v[0], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmax.value, v[1], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmean.value, vmean, rtol=1e-01, atol=1.)
-    
-    def test_gen_O(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_O(x)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.Orange.value
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin.value, v[0], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmax.value, v[1], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmean.value, vmean, rtol=1e-01, atol=1.)
-    
-    def test_gen_radius(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_radius(x)
-        res = np.log(res.value)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.Rprange.value
-        v = np.log(v)
-        vmin = np.amin(v)
-        vmax = np.amax(v)
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin, vmin, rtol=1e-01, atol=0.1)
-        np.testing.assert_allclose(resmax, vmax, rtol=1e-01, atol=0.)
-        np.testing.assert_allclose(resmean, vmean, rtol=1e-01, atol=0.)
+
+        x = 10000
+
+        a, e, p, Rp = pp.gen_plan_params(x)
+
+        #expect e and p to be uniform
+        for param,param_range in zip([e,p],[pp.erange,pp.prange]):
+            assert(param.min() >= param_range[0])
+            assert(param.max() <= param_range[1])
+
+            h = np.histogram(param,100)
+            chi2 = scipy.stats.chisquare(h[0],[float(x)/float(len(h[0]))]*len(h[0]))
+            assert(chi2[1] > 0.01)
+
+        #expect a and Rp to be log-uniform
+        for param,param_range in zip([a.value,Rp.value],[pp.arange.value,pp.Rprange.value]):
+            assert(param.min() >= param_range[0])
+            assert(param.max() <= param_range[1])
+
+            h = np.histogram(param,100,density=True)
+            hx = np.diff(h[1])/2.+h[1][:-1]
+            hp = 1.0/(hx*np.log(param_range[1]/param_range[0]))
+            chi2 = scipy.stats.chisquare(h[0],hp)
+            assert(chi2[1] > 0.05)
+
     
     def test_gen_mass(self):
         pp = PlanetPopulation(**self.spec)
@@ -173,50 +113,7 @@ class TestPlanetPopulation(unittest.TestCase):
         np.testing.assert_allclose(resmin, vmin, rtol=1e-01, atol=0.1)
         np.testing.assert_allclose(resmax, vmax, rtol=1e-01, atol=0.)
         np.testing.assert_allclose(resmean, vmean, rtol=1e-01, atol=0.)
-    
-    def test_gen_albedo(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_albedo(x)
-        
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.prange
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin, v[0], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmax, v[1], rtol=1e-01, atol=0.5)
-        np.testing.assert_allclose(resmean, vmean, rtol=1e-01, atol=0.5)
 
-    def test_gen_I(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_I(x)
-
-        res = np.cos(res)
-        res = res.value
-        
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = np.cos(pp.Irange)
-        vmin = np.amin(v)
-        vmax = np.amax(v)
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin, vmin, rtol=0.2, atol=0.5)
-        np.testing.assert_allclose(resmax, vmax, rtol=0.2, atol=0.5)
-        np.testing.assert_allclose(resmean, vmean, rtol=0.2, atol=0.5)
-
-        #count, bins, ignored = plt.hist(res, 50, normed=True)
-        #plt.plot(bins, np.ones_like(bins), linewidth=2, color='r')
-        #plt.show()
-    
 
 if __name__ == "__main__":
     unittest.main()

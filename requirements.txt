@@ -3,3 +3,4 @@ scipy
 astropy
 jplephem
 coveralls
+cython

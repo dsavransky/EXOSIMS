@@ -32,9 +32,13 @@ class tieredScheduler(SurveySimulation):
         
         SurveySimulation.__init__(self, **specs)
         
-        #verify that coefficients input is iterable 6x1
+        #verify that coefficients input is iterable 2x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 2):
             raise TypeError("coeffs must be a 3 element iterable")
+
+        #Add to outspec
+        self._outspec['coeffs'] = coeffs
+        self._outspec['occHIPs'] = occHIPs
         
         #normalize coefficients
         coeffs = np.array(coeffs)
@@ -62,6 +66,7 @@ class tieredScheduler(SurveySimulation):
         self.ao = None
 
         self.ready_to_update = False
+
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -597,6 +602,7 @@ class tieredScheduler(SurveySimulation):
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             fZ (astropy Quantity):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -616,7 +622,9 @@ class tieredScheduler(SurveySimulation):
 
         dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
                   Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        dMagmax = OS.dMagLim
+        dMagmax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
+                  Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2))
+        # dMagmax = OS.dMagLim
         num_points = 250
 
         dMags = np.linspace(dMagmin, dMagmax, num_points)
@@ -641,12 +649,14 @@ class tieredScheduler(SurveySimulation):
             # update star completeness
             idx = (np.abs(t_dets-int_time)).argmin()
             comp = comps[idx]
+            TL.comp[sInd] = comp
         else:
-            idx = np.abs(comps - max(comps)*.9).argmin()
+            idt = np.abs(t_dets - max(t_dets)).argmin()
+            idx = np.abs(comps - comps[idt]*.9).argmin()
+
+            # idx = np.abs(comps - max(comps)*.9).argmin()
             int_time = t_dets[idx]
             comp = comps[idx]
-
-        TL.comp[sInd] = comp
 
         return int_time
 
@@ -894,7 +904,7 @@ class tieredScheduler(SurveySimulation):
             startTimeNorm = TK.currentTimeNorm
             # planets to characterize
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
-        
+
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time

@@ -75,9 +75,10 @@ class TestPlanetPopulation(unittest.TestCase):
             assert(param.min() >= param_range[0])
             assert(param.max() <= param_range[1])
 
-            h = np.histogram(param,100)
-            chi2 = scipy.stats.chisquare(h[0],[float(x)/float(len(h[0]))]*len(h[0]))
-            assert(chi2[1] > 0.01)
+            h = np.histogram(param,100,density=True)
+            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range)[0]]*len(h[0]))
+
+            assert(chi2[1] > 0.95)
 
         #expect a and Rp to be log-uniform
         for param,param_range in zip([a.value,Rp.value],[pp.arange.value,pp.Rprange.value]):
@@ -88,7 +89,7 @@ class TestPlanetPopulation(unittest.TestCase):
             hx = np.diff(h[1])/2.+h[1][:-1]
             hp = 1.0/(hx*np.log(param_range[1]/param_range[0]))
             chi2 = scipy.stats.chisquare(h[0],hp)
-            assert(chi2[1] > 0.05)
+            assert(chi2[1] > 0.95)
 
     
     def test_gen_mass(self):

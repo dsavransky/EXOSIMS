@@ -38,7 +38,7 @@ class TestPlanetPopulation(unittest.TestCase):
     def test_gen_angles(self):
         pp = PlanetPopulation(**self.spec)
 
-        x = 10000
+        x = 100000
         I, O, w = pp.gen_angles(x)
         assert(I.min() >= pp.Irange[0])
         assert(I.max() <= pp.Irange[1])
@@ -48,22 +48,19 @@ class TestPlanetPopulation(unittest.TestCase):
         assert(w.max() <= pp.wrange[1])
 
         #O & w are expected to be uniform
-        hO = np.histogram(O,100)
-        Ochi2 = scipy.stats.chisquare(hO[0],[float(x)/float(len(hO[0]))]*len(hO[0]))
-        assert(Ochi2[1] > 0.05)
+        for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):
+            h = np.histogram(param,100,density=True)
+            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range.value)[0]]*len(h[0]))
+            self.assertGreater(chi2[1], 0.95)
 
-        #O & w are expected to be uniform
-        hw = np.histogram(w,100)
-        wchi2 = scipy.stats.chisquare(hw[0],[float(x)/float(len(hw[0]))]*len(hw[0]))
-        assert(wchi2[1] > 0.05)
 
         #I is expected to be sinusoidal
-        hI = np.histogram(I.to(u.rad).value,100)
+        hI = np.histogram(I.to(u.rad).value,100,density=True)
         Ix = np.diff(hI[1])/2.+hI[1][:-1]
-        Ip = np.sin(Ix)/2*(np.diff(hI[1])*x)
+        Ip = np.sin(Ix)/2
 
         Ichi2 = scipy.stats.chisquare(hI[0],Ip)
-        assert(Ichi2[1] > 0.05)
+        assert(Ichi2[1] > 0.95)
 
     
     def test_gen_plan_params(self):

@@ -22,8 +22,6 @@ from tests.TestSupport.Info import resource_path
 import numpy as np
 import astropy.units as u
 
-
-import pdb
 #
 # A few specs dictionaries that can be used to instantiate OpticalSystem objects
 #

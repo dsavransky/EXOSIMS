@@ -18,12 +18,12 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2], **specs):
+    def __init__(self, coeffs=[1,1,2,1], **specs):
         
         SurveySimulation.__init__(self, **specs)
         
-        # verify that coefficients input is iterable 6x1
-        if not(isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 3):
+        #verify that coefficients input is iterable 6x1
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 3 element iterable")
         
         # normalize coefficients
@@ -51,7 +51,7 @@ class linearJScheduler(SurveySimulation):
                 Index of next target star
         
         """
-        
+
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
@@ -96,6 +96,11 @@ class linearJScheduler(SurveySimulation):
         unvisited = self.starVisits[sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
         A = A - self.coeffs[2]*f_uv
+
+        # add factor due to revisited ramp
+        f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
+                (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+        A = A + self.coeffs[3]*f2_uv
         
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)

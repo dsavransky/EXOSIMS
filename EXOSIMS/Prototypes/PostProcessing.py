@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
 import numpy as np
 import astropy.units as u
 import scipy.stats as st
 import scipy.interpolate
 import numbers
-from EXOSIMS.util.get_module import get_module
 
 class PostProcessing(object):
     """Post Processing class template
@@ -28,10 +29,10 @@ class PostProcessing(object):
             for constant gain, or a two-column array for separation-dependent 
             gain, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
-        maxFAfluxratio (float, callable):
-            Maximum flux ratio that can be obtained by a false alarm: either a scalar 
-            for constant flux ratio, or a two-column array for separation-dependent 
-            flux ratio, where the first column contains the angular separation in 
+        FAdMag0 (float, callable):
+            Minimum delta magnitude that can be obtained by a false alarm: either a scalar 
+            for constant dMag, or a two-column array for separation-dependent 
+            dMag, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
     
     """
@@ -39,7 +40,10 @@ class PostProcessing(object):
     _modtype = 'PostProcessing'
     _outspec = {}
 
-    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, maxFAfluxratio=1e-6, **specs):
+    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         self.FAP = float(FAP)       # false alarm probability
         self.MDP = float(MDP)       # missed detection probability
@@ -63,34 +67,32 @@ class PostProcessing(object):
                     "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
             
-        # check for max FA flux ratio, function of the working angle
-        if isinstance(maxFAfluxratio, basestring):
-            pth = os.path.normpath(os.path.expandvars(maxFAfluxratio))
+        # check for minimum FA delta magnitude, function of the working angle
+        if isinstance(FAdMag0, basestring):
+            pth = os.path.normpath(os.path.expandvars(FAdMag0))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             dat = fits.open(pth)[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    "Wrong max FA flux ratio data shape."
+                    "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
             assert np.all(G > 0) and np.all(G <= 1), \
-                    "Max FA flux ratio must be positive and smaller than 1."
+                    "FAdMag0 must be positive and smaller than 1."
             # gain outside of WA values defaults to 1
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
                     fill_value=1., bounds_error=False)
-            self.maxFAfluxratio = lambda s: np.array(Ginterp(s.to('arcsec').value),
+            self.FAdMag0 = lambda s: np.array(Ginterp(s.to('arcsec').value),
                     ndmin=1)
-        elif isinstance(maxFAfluxratio, numbers.Number):
-            assert maxFAfluxratio > 0 and maxFAfluxratio <= 1, \
-                    "Max FA flux ratio must be positive and smaller than 1."
-            self.maxFAfluxratio = lambda s, G=float(maxFAfluxratio): G
+        elif isinstance(FAdMag0, numbers.Number):
+            self.FAdMag0 = lambda s, G=float(FAdMag0): G
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['ppFact', 'maxFAfluxratio']:
+            if att not in ['vprint', 'ppFact', 'FAdMag0']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         # populate with values which may be interpolants
         self._outspec['ppFact'] = ppFact
-        self._outspec['maxFAfluxratio'] = maxFAfluxratio
+        self._outspec['FAdMag0'] = FAdMag0
         
         # instantiate background sources object
         self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],
@@ -105,11 +107,11 @@ class PostProcessing(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'
 
-    def det_occur(self, SNR, SNRmin, bs_density, OWA):
+    def det_occur(self, SNR, SNRmin):
         """Determines if a detection has occurred and returns booleans 
         
         This method returns two booleans where True gives the case.
@@ -119,10 +121,6 @@ class PostProcessing(object):
                 signal-to-noise ratio of the planets around the selected target
             SNRmin (float):
                 signal-to-noise ratio threshold for detection
-            bs_density (float):
-                background source density for the sInd in question in 1/arcsec**2
-            OWA (float):
-                Outer Working Angle of the observation mode in arcsec
         
         Returns:
             FA (boolean):
@@ -135,21 +133,14 @@ class PostProcessing(object):
             TODO: Add backgroundsources hook
         
         """
-
-        BS = self.BackgroundSources
-
-        OWA_solidangle = OWA**2
-
-        FABP = bs_density * OWA_solidangle # false positive rate due to background sources
         
         # initialize
         FA = False
         MD = np.array([False]*len(SNR))
         
         # 1/ For the whole system: is there a False Alarm (false positive)?
-        p1 = np.random.rand()
-        p2 = np.random.rand()
-        if p1 <= self.FAP  or p2 <= FABP:
+        p = np.random.rand()
+        if p <= self.FAP:
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?

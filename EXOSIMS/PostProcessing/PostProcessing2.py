@@ -7,7 +7,7 @@ import scipy.interpolate
 import numbers
 from EXOSIMS.util.get_module import get_module
 
-class PostProcessing2(object):
+class PostProcessing2(PostProcessing):
     """PostProcessing2 class
 
     Updated PostProcessing det_occur function that utilized BackgroundSource

@@ -251,22 +251,10 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         BS = self.BackgroundSources
         
-<<<<<<< HEAD
-        # initialize lists updated later
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.starVisits = np.zeros(TL.nStars,dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
-        self.starRevisit = np.array([])
-        self.starExtended = np.array([])
-        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
         self.coords = TL.coords
         self.intDepths = TL.Vmag + OS.dMagLim
 
         self.bs_density = BS.dNbackground(self.coords, self.intDepths).to(1/u.arcsec**2)
-        
-=======
->>>>>>> origin/master
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
         if OS.haveOcculter == True:
@@ -599,13 +587,6 @@ class SurveySimulation(object):
                 Selected observing mode for detection
         
         Returns:
-<<<<<<< HEAD
-            detected (integer list):
-                Detection status for each planet orbiting the observed target star,
-                where 2 is a false positive, 1 is detection, 0 missed detection, 
-                -1 below IWA, and -2 beyond OWA
-            SNR (float list):
-=======
             detected (integer ndarray):
                 Detection status for each planet orbiting the observed target star:
                 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
@@ -615,7 +596,6 @@ class SurveySimulation(object):
                 Dictionary of time-dependant planet properties averaged over the 
                 duration of the integration
             SNR (float ndarray):
->>>>>>> origin/master
                 Detection signal-to-noise ratio of the observable planets
             FA (boolean):
                 False alarm (false positive) boolean
@@ -675,33 +655,8 @@ class SurveySimulation(object):
             N = Ns.sum(0)
             SNR[N > 0] = S[N > 0]/N[N > 0]
             # allocate extra time for timeMultiplier
-<<<<<<< HEAD
-            t_extra = t_det*(mode['timeMultiplier'] - 1)
-            TK.allocate_time(t_extra)
-        # if no planet, just observe for t_tot (including time multiplier)
-        else:
-            SNRobs = np.array([])
-            t_tot = t_det*(mode['timeMultiplier'])
-            TK.allocate_time(t_tot)
-        
-        # Find out if a false positive (false alarm) or any false negative 
-        # (missed detections) have occurred, and populate detection status array
-        FA, MD = PPro.det_occur(SNRobs, mode['SNR'], self.bs_density[sInd], mode['OWA'])
-        detected = observable
-        SNR = np.zeros(len(pInds))
-        if np.any(obs):
-            detected[obs] = (~MD).astype(int)
-            if FA == True:
-                if np.any(detected):
-                    detected[0] = 2
-                else:
-                    detected + np.array([2])
-            SNR[obs] = SNRobs
-=======
             extraTime = intTime*(mode['timeMultiplier'] - 1)
-            TK.allocate_time(extraTime)
->>>>>>> origin/master
-        
+            TK.allocate_time(extraTime)        
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime*(mode['timeMultiplier'])
@@ -711,7 +666,7 @@ class SurveySimulation(object):
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
-        FA, MD = PPro.det_occur(SNR, mode['SNR'])
+        FA, MD = PPro.det_occur(SNR, mode['SNR'], self.bs_density[sInd], mode['OWA'])
         
         # populate detection status array 
         # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA
@@ -740,16 +695,9 @@ class SurveySimulation(object):
         # in case of a FA, generate a random delta mag (between maxFAfluxratio and
         # dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
-<<<<<<< HEAD
-            WA = np.random.uniform(mode['IWA'].to('mas').value, np.minimum(mode['OWA'], \
-                    np.arctan(max(PPop.arange)/TL.dist[sInd])).to('mas').value)
-            dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA*u.mas)), OS.dMagLim)
-            fEZ = ZL.fEZ0.to('1/arcsec2').value
-=======
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
             dMag = np.random.uniform(-2.5*np.log10(PPro.maxFAfluxratio(WA)), OS.dMagLim)
->>>>>>> origin/master
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], 
                     ZL.fEZ0.to('1/arcsec2').value)

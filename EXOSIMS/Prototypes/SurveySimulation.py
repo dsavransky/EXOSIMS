@@ -1194,3 +1194,4 @@ def array_encoder(obj):
     # nothing worked, bail out
     
     return json.JSONEncoder.default(obj)
+

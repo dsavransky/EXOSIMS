@@ -1,32 +1,29 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
-
 
 class KeplerLike2(KeplerLike1):
     """
     Population based on Kepler radius distribution with RV-like semi-major axis
     distribution with exponential decay.
-
+    
     NOTE: This is an exact clone of KeplerLike1, but uses (approximate)
     inverse transform sampling instead of simple rejection sampling for 
     performance improvements.
     
     Args: 
-        \*\*specs: 
+        \*\*specs:
             user specified values
             
-    Attributes: 
+    Attributes:
         smaknee (float):
             Location (in AU) of semi-major axis decay point (knee).
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
-        
-
-    Notes:  
+    
+    Notes:
     1. The gen_mass function samples the Radius and calculates the mass from
     there.  Any user-set mass limits are ignored.
     2. The gen_abledo function samples the sma, and then calculates the albedos
@@ -41,17 +38,17 @@ class KeplerLike2(KeplerLike1):
     bin.
     5.  Eccentricity is assumed to be Rayleigh distributed with a user-settable 
     sigma parameter (defaults to 0.25).
-
+    
     """
 
     def __init__(self, smaknee=30, esigma=0.25, **specs):
         
         KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
-
-        self.sma_sampler = InverseTransformSampler(self.smadist, \
-                self.arange[0].to('AU').value,self.arange[1].to('AU').value)
-        self.e_sampler = InverseTransformSampler(self.edist, self.erange[0],\
-                self.erange[1])
+        
+        # unitless sma range
+        alim = self.arange.to('AU').value
+        self.sma_sampler = InverseTransformSampler(self.dist_sma, alim[0], alim[1])
+        self.e_sampler = InverseTransformSampler(self.dist_eccen, self.erange[0], self.erange[1])
 
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
@@ -87,10 +84,7 @@ class KeplerLike2(KeplerLike1):
                 Planet eccentricity
         
         """
-        
         n = self.gen_input_check(n)
         e = self.e_sampler(n)
         
         return e
-
-

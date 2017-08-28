@@ -1,6 +1,5 @@
 {
-  "missionLife": 0.5,
-  "missionPortion": 0.1,
+  "missionLife": 0.01,
   "minComp": 0.025,
   "ppFact": 0.1,
   "scienceInstruments": [
@@ -22,18 +21,18 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "EarthTwinHabZone2",
+    "PlanetPopulation": "KeplerLike2",
     "StarCatalog": "EXOCAT1",
-    "OpticalSystem": "Nemati",
+    "OpticalSystem": "KasdinBraems",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
-    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "PlanetPhysicalModel": "Forecaster",
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": "GarrettCompleteness",
+    "Completeness": "BrownCompleteness",
     "TargetList": " ",
-    "SimulatedUniverse": "",
+    "SimulatedUniverse": "KeplerLikeUniverse",
     "SurveySimulation": " ",
     "SurveyEnsemble": " "
   }

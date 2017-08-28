@@ -1,8 +1,6 @@
 {
-  "staticStars": true,
-  "checkKeepoutEnd": false,
-  "missionLife": 0.1,
-  "missionPortion": 0.5,
+  "missionLife": 0.5,
+  "missionPortion": 1,
   "OBduration": 50,
   "minComp": 0,
   "dMagLim": 22.5,
@@ -69,8 +67,8 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KeplerLike1",
-    "StarCatalog": "EXOCAT1",
+    "PlanetPopulation": "KnownRVPlanets",
+    "StarCatalog": " ",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
@@ -78,10 +76,10 @@
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": " ",
-    "TargetList": " ",
-    "SimulatedUniverse": "KeplerLikeUniverse",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": "KnownRVPlanetsTargetList",
+    "SimulatedUniverse": "KnownRVPlanetsUniverse",
     "SurveySimulation": " ",
-    "SurveyEnsemble": " "
+    "SurveyEnsemble": "IPClusterEnsemble"
   }
 }

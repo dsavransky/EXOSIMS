@@ -16,26 +16,27 @@ class SurveyEnsemble(object):
     _outspec = {}
 
     def __init__(self, **specs):
-        #currently nothing to do here
-        return
-
-    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True, rewindPlanets=True):
         
+        pass
+
+    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,
+            rewindPlanets=True, kwargs={}):
+        
+        SS = sim.SurveySimulation
         t1 = time.time()
         res = []
         for j in range(nb_run_sim):
-            print '\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim))
-            ar = self.run_one(sim, genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
+            print '\nSurvey simulation number %s/%s'%(j + 1, int(nb_run_sim))
+            ar = self.run_one(SS, genNewPlanets=genNewPlanets, 
+                    rewindPlanets=rewindPlanets)
             res.append(ar)
         t2 = time.time()
-        print "%s survey simulations, completed in %d sec" %(int(nb_run_sim), t2-t1)
+        print "%s survey simulations, completed in %d sec"%(int(nb_run_sim), t2 - t1)
         
         return res
 
-    def run_one(self, sim, genNewPlanets=True, rewindPlanets=True):
-        
-        sim.run_sim()
-        res = sim.SurveySimulation.DRM[:]
-        sim.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
-        
+    def run_one(self, SS, genNewPlanets=True, rewindPlanets=True):
+        SS.run_sim()
+        res = SS.DRM[:]
+        SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         return res

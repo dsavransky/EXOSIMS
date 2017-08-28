@@ -9,10 +9,8 @@ from astropy.io.votable import parse
 from astropy.time import Time
 from EXOSIMS.util import statsFun 
 
-
 class KnownRVPlanets(KeplerLike1):
-    """
-    Population consisting only of known RV planets.  Eccentricity and sma 
+    """Population consisting only of known RV planets.  Eccentricity and sma 
     distributions are taken from the same as in KeplerLike1 (Rayleigh and 
     power law with exponential decay, respectively).  Mass is sampled from 
     power law and radius is assumed to be calculated from mass via the 
@@ -54,9 +52,7 @@ class KnownRVPlanets(KeplerLike1):
 
     def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None, **specs):
         
-        specs['smaknee'] = float(smaknee)
-        specs['esigma'] = float(esigma)
-        KeplerLike1.__init__(self, **specs)
+        KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
         #default file is ipac_2016-05-15
         if rvplanetfilepath is None:
@@ -85,23 +81,26 @@ class KnownRVPlanets(KeplerLike1):
         data = data[keep]
         
         #save masses and determine which masses are *sin(I)
-        self.mass = data['pl_bmasse'].data*const.M_earth
-        self.masserr = data['pl_bmasseerr1'].data*const.M_earth
+        self.mass = data['pl_bmasse'].data*u.earthMass
+        self.masserr = data['pl_bmasseerr1'].data*u.earthMass
         self.msini = data['pl_bmassprov'].data == 'Msini'
         
+        #store G x Ms product
+        GMs = const.G*data['st_mass'].data*u.solMass # units of solar mass
+        p2sma = lambda mu,T: ((mu*T**2/(4*np.pi**2))**(1/3.)).to('AU')
+
         #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
         mask = data['pl_orbsmax'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
-        T = data['pl_orbper'].data[mask]*u.d
-        self.sma[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
+        T = data['pl_orbper'].data[mask]*u.day
+        self.sma[mask] = p2sma(GMs[mask],T) 
         assert np.all(~np.isnan(self.sma)), 'sma has nan value(s)'
         #sma errors
         self.smaerr = data['pl_orbsmaxerr1'].data*u.AU
         mask = data['pl_orbsmaxerr1'].mask
-        Ms = data['st_mass'].data[mask]*const.M_sun # units of kg
-        T = data['pl_orbpererr1'].data[mask]*u.d
-        self.smaerr[mask] = ((const.G*Ms*T**2 / (4*np.pi**2))**(1/3.)).to('AU')
+        T = data['pl_orbper'].data[mask]*u.day
+        Terr = data['pl_orbpererr1'].data[mask]*u.day
+        self.smaerr[mask] = np.abs(p2sma(GMs[mask],T+Terr) - p2sma(GMs[mask],T))
         self.smaerr[np.isnan(self.smaerr)] = np.nanmean(self.smaerr)
         
         #save eccentricities
@@ -115,26 +114,26 @@ class KnownRVPlanets(KeplerLike1):
         self.eccenerr[mask | np.isnan(self.eccenerr)] = np.nanmean(self.eccenerr)
         
         #store available radii for using in KnownRVPlanetsTargetList
-        self.radius = data['pl_radj'].data*const.R_jup
+        self.radius = data['pl_radj'].data*u.jupiterRad
         self.radiusmask = data['pl_radj'].mask
-        self.radiuserr1 = data['pl_radjerr1'].data*const.R_jup
-        self.radiuserr2 = data['pl_radjerr2'].data*const.R_jup
-
+        self.radiuserr1 = data['pl_radjerr1'].data*u.jupiterRad
+        self.radiuserr2 = data['pl_radjerr2'].data*u.jupiterRad
+        
         #save the periastron time and period 
-        tmp = data['pl_orbper'].data*u.d
-        tmp[data['pl_orbper'].mask] = np.sqrt((4*np.pi**2*self.sma[data['pl_orbper'].mask]**3)\
-                /(const.G*data['st_mass'].data[data['pl_orbper'].mask]*const.M_sun)).decompose().to(u.d)
-        self.period = tmp
-        self.perioderr = data['pl_orbpererr1'].data*u.d
+        self.period = data['pl_orbper'].data*u.day
+        mask = data['pl_orbper'].mask
+        self.period[mask] = np.sqrt(4*np.pi**2*self.sma[mask]**3/GMs[mask]).to('day')
+        self.perioderr = data['pl_orbpererr1'].data*u.day
         mask = data['pl_orbpererr1'].mask
         self.perioderr[mask] = np.nanmean(self.perioderr)
-
+        
         #if perisastron time missing, fill in random value
-        tmp = data['pl_orbtper'].data
-        tmp[data['pl_orbtper'].mask] = np.random.uniform(low=np.nanmin(tmp),high=np.nanmax(tmp),\
-                size=np.where(data['pl_orbtper'].mask)[0].size)
-        self.tper =  Time(tmp,format='jd')
-        self.tpererr = data['pl_orbtpererr1'].data*u.d
+        dat = data['pl_orbtper'].data
+        mask = data['pl_orbtper'].mask
+        dat[mask] = np.random.uniform(low=np.nanmin(dat), high=np.nanmax(dat),
+                size=np.where(mask)[0].size)
+        self.tper =  Time(dat, format='jd')
+        self.tpererr = data['pl_orbtpererr1'].data*u.day
         self.tpererr[data['pl_orbtpererr1'].mask] = np.nanmean(self.tpererr)
         
         #save host names
@@ -142,12 +141,9 @@ class KnownRVPlanets(KeplerLike1):
         
         #save the original data structure
         self.allplanetdata = data
-        
-        #define the mass distribution function (in Jupiter masses)
-        self.massdist = lambda x: x**(-1.3)
 
     def gen_radius(self,n):
-        """Generate planetary radius values in km
+        """Generate planetary radius values in Earth radius
         
         Samples the mass distribution and then converts to radius using the physical model.
         
@@ -157,17 +153,17 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius values in units of Earth radius
         
         """
         n = self.gen_input_check(n)
-        Mtmp = self.gen_mass(n)
-        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mtmp)
+        Mp = self.gen_mass(n)
+        Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mp).to('earthRad')
         
         return Rp
 
     def gen_mass(self,n):
-        """Generate planetary mass values in kg
+        """Generate planetary mass values in Earth mass
         
         The mass is determined by sampling the RV mass distribution from
         Cumming et al. 2010
@@ -178,12 +174,12 @@ class KnownRVPlanets(KeplerLike1):
                 
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass values in units of Earth mass
         
         """
         n = self.gen_input_check(n)
-        Mmin = (self.Mprange[0]/const.M_jup).decompose().value
-        Mmax = (self.Mprange[1]/const.M_jup).decompose().value
-        Mp = statsFun.simpSample(self.massdist, n, Mmin, Mmax)*const.M_jup
+        # unitless mass range
+        Mplim = self.Mprange.to('earthMass').value
+        Mp = statsFun.simpSample(self.dist_mass, n, Mplim[0], Mplim[1])*u.earthMass
         
         return Mp

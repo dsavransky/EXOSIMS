@@ -11,7 +11,9 @@ class SIMBADCatalog(StarCatalog):
     """SIMBAD Catalog class
     
     This class provides the functions to populate the star catalog used in 
-    EXOSIMS from the SIMBAD star catalog data."""
+    EXOSIMS from the SIMBAD star catalog data.
+    
+    """
     
     def populatepkl(self, pklpath, **specs):
         """Populates the star catalog and returns True if successful
@@ -37,21 +39,22 @@ class SIMBADCatalog(StarCatalog):
                 
                 for att in x.keys():
                     # list of astropy attributes
-                    if att in ('dist','parx','pmra','pmdec','rv'):
+                    if att in ('dist', 'parx', 'pmra', 'pmdec', 'rv'):
                         unit = getattr(self,att).unit
                         setattr(self, att, np.array(x[att])*unit)
                     # list of non-astropy attributes
                     elif att in self.__dict__.keys():
                         setattr(self, att, np.array(x[att]))
                 # astropy SkyCoord object
-                self.coords = SkyCoord(x['radeg'],x['decdeg'],x['dist'],unit='deg,deg,pc')
+                self.coords = SkyCoord(x['radeg'], x['decdeg'], x['dist'], 
+                        unit='deg,deg,pc')
                 
                 success = True
             else:
-                print "pickled dictionary file %s must contain key 'Name'" % pklpath
+                print "pickled dictionary file %s must contain key 'Name'"%pklpath
                 success = False
         else:
-            print 'Star catalog pickled dictionary file %s not in StarCatalog directory' % pklpath
+            print 'Star catalog pickled dictionary file %s not in StarCatalog directory'%pklpath
             success = False
         
         return success
@@ -83,10 +86,11 @@ class SIMBADCatalog(StarCatalog):
             # dictionary mapping MATLAB structure fields to required Python 
             # object attribute names
             mat2pkl = {'NAME':'Name', 'TYPE':'Type', 'SPEC':'Spec', 'PARX':'parx',
-            'UMAG':'Umag', 'BMAG':'Bmag', 'VMAG':'Vmag', 'RMAG':'Rmag', 'IMAG':'Imag',
-            'JMAG':'Jmag', 'HMAG':'Hmag', 'KMAG':'Kmag', 'DIST':'dist', 'BVNEW':'BV',
-            'MV':'MV', 'BC':'BC', 'L':'L', 'RADEG':'radeg', 'DECDEG':'decdeg',
-            'PMRA':'pmra', 'PMDEC':'pmdec', 'RV':'rv', 'BINARY_CUT':'Binary_Cut'}
+                    'UMAG':'Umag', 'BMAG':'Bmag', 'VMAG':'Vmag', 'RMAG':'Rmag',
+                    'IMAG':'Imag', 'JMAG':'Jmag', 'HMAG':'Hmag', 'KMAG':'Kmag',
+                    'DIST':'dist', 'BVNEW':'BV', 'MV':'MV', 'BC':'BC', 'L':'L',
+                    'RADEG':'radeg', 'DECDEG':'decdeg', 'PMRA':'pmra',
+                    'PMDEC':'pmdec', 'RV':'rv', 'BINARY_CUT':'Binary_Cut'}
             y = {} # empty dictionary to be pickled 
             x = loadmat(matpath, squeeze_me=True, struct_as_record=False)
             x = x['S']
@@ -103,7 +107,7 @@ class SIMBADCatalog(StarCatalog):
             pickle.dump(y, open(pklpath, 'wb'))
             success = True
         else:
-            print '%s does not exist in StarCatalog directory' % matpath
+            print '%s does not exist in StarCatalog directory'%matpath
             success = False
-            
+        
         return success

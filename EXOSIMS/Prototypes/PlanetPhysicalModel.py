@@ -52,46 +52,44 @@ class PlanetPhysicalModel(object):
         return p
 
     def calc_radius_from_mass(self, Mp):
-        """
-        Helper function for calculating radius given the mass.
+        """Helper function for calculating radius given the mass.
         
         Prototype provides only a dummy function that assumes a density of water.
         
         Args:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         Returns:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         """
         
         rho = 1000*u.kg/u.m**3.
-        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).decompose()
+        Rp = ((3.*Mp/rho/np.pi/4.)**(1./3.)).to('earthRad')
         
-        return Rp.to('km')
+        return Rp
 
     def calc_mass_from_radius(self, Rp):
-        """
-        Helper function for calculating mass given the radius.
+        """Helper function for calculating mass given the radius.
         
         Args:
             Rp (astropy Quantity array):
-                Planet radius in units of km
+                Planet radius in units of Earth radius
         
         Returns:
             Mp (astropy Quantity array):
-                Planet mass in units of kg
+                Planet mass in units of Earth mass
         
         """
         
-        rho = 1000*u.kg/u.m**3.
-        Mp = (rho*4*np.pi*Rp**3./3.).decompose()
+        rho = 1*u.tonne/u.m**3.
+        Mp = (rho*4*np.pi*Rp**3./3.).to('earthMass')
         
-        return Mp.to('kg')
+        return Mp
 
-    def calc_Phi(self,beta):
+    def calc_Phi(self, beta):
         """Calculate the phase function. Prototype method uses the Lambert phase 
         function from Sobolev 1975.
         
@@ -101,10 +99,43 @@ class PlanetPhysicalModel(object):
                 in units of rad
                 
         Returns:
-            Phi (astropy Quantity array):
+            Phi (ndarray):
                 Planet phase function
+        
         """
-        Phi = (np.sin(beta) + (np.pi - beta.value)*np.cos(beta))/np.pi
+        
+        beta = beta.to('rad').value
+        Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         return Phi
 
+    def calc_Teff(self, starL, d, p):
+        """Calcluates the effective planet temperature given the stellar luminosity,
+        planet albedo and star-planet distance.
+        
+        This calculation represents a basic balckbody power balance, and does not
+        take into account the actual emmisivity of the planet, or any non-equilibrium
+        effects or temperature variations over the surface.
+        
+        Note:  The input albedo is taken to be the bond albedo, as required by the equilibrium
+        calculation. For an isotropic scatterer (Lambert phase function) the Bond albedo is 
+        1.5 times the geometric albedo. However, the Bond albedo must be strictly defined between
+        0 and 1, and an albedo of 1 produces a zero effective temperature.
+        
+        Args:
+            starL (float ndarray):
+                Stellar luminosities in units of solar luminosity. Not an astropy quantity.
+            d (astropy Quantity array):
+                Star-planet distances
+            p (float ndarray):
+                Planet albedos
+        
+        Returns:
+            Teff (astropy quantity):
+                Planet effective temperature in degrees K
+        
+        """
+        
+        Teff = ((const.L_sun*starL*(1 - p)/16./np.pi/const.sigma_sb/d**2)**(1/4.)).to('K')
+        
+        return Teff

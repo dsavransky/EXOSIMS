@@ -14,13 +14,15 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
 
     def __init__(self, eta=0.1, erange=[0.,0.9], constrainOrbits=True, **specs):
         
+        specs['erange'] = erange
+        specs['constrainOrbits'] = constrainOrbits
+        
+        # specs being modified in EarthTwinHabZone1
         specs['eta'] = eta
         specs['arange'] = [0.7, 1.5]
-        specs['erange'] = erange
         specs['Rprange'] = [1,1]
         specs['Mprange'] = [1,1]
         specs['prange'] = [0.367,0.367]
         specs['scaleOrbits'] = True
-        specs['constrainOrbits'] = constrainOrbits
+        
         PlanetPopulation.__init__(self, **specs)
-

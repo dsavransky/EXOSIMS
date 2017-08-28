@@ -44,8 +44,10 @@ class EXOCAT1(StarCatalog):
             # warnings for IPAC votables are out of control 
             #   they are not moderated by pedantic=False
             #   they all have to do with units, which we handle independently anyway
-            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableSpecWarning)
-            warnings.simplefilter('ignore', astropy.io.votable.exceptions.VOTableChangeWarning)
+            warnings.simplefilter('ignore', 
+                    astropy.io.votable.exceptions.VOTableSpecWarning)
+            warnings.simplefilter('ignore', 
+                    astropy.io.votable.exceptions.VOTableChangeWarning)
             votable = parse(catalogpath)
         table = votable.get_first_table()
         data = table.array
@@ -54,10 +56,12 @@ class EXOCAT1(StarCatalog):
         
         # list of astropy attributes
         self.dist = data['st_dist'].data*u.pc
-        self.parx = self.dist.to('mas',equivalencies=u.parallax())
-        self.coords = SkyCoord(ra=data['ra']*u.deg, dec=data['dec']*u.deg, distance=self.dist)
+        self.parx = self.dist.to('mas', equivalencies=u.parallax())
+        self.coords = SkyCoord(ra=data['ra']*u.deg, dec=data['dec']*u.deg,
+                distance=self.dist)
         self.pmra = data['st_pmra'].data*u.mas/u.yr
         self.pmdec = data['st_pmdec'].data*u.mas/u.yr
+        self.L = data['st_lbol'].data
         
         # list of non-astropy attributes
         self.Name = data['hip_name']
@@ -66,9 +70,8 @@ class EXOCAT1(StarCatalog):
         self.Jmag = data['st_j2m']
         self.Hmag = data['st_h2m']
         self.BV = data['st_bmv']
-        self.L = data['st_lbol']
         self.Bmag = self.Vmag + data['st_bmv']
         self.Kmag = self.Vmag - data['st_vmk']
         self.BC = -self.Vmag + data['st_mbol']
-        self.MV = self.Vmag - 5*(np.log10(self.dist.value) - 1)
+        self.MV = self.Vmag - 5*(np.log10(self.dist.to('pc').value) - 1)
         self.Binary_Cut = ~data['wds_sep'].mask

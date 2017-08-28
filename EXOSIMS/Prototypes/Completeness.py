@@ -18,7 +18,7 @@ class Completeness(object):
     _outspec = {}
     
     def __init__(self, **specs):
-        # import PlanetPopulation class
+        # import Planet Population and Physical Model class objects
         Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
         self.PlanetPopulation = Pop # planet population object class
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
@@ -65,13 +65,10 @@ class Completeness(object):
                 TargetList class object
         
         """
-        
-        # initialize number of visits per star
-        self.visits = np.array([0]*TL.nStars)
         # Prototype does not use precomputed updates, so set these to zeros
         self.updates = np.zeros((TL.nStars, 5))
 
-    def completeness_update(self, TL, sInds, dt):
+    def completeness_update(self, TL, sInds, visits, dt):
         """Updates completeness value for stars previously observed
         
         Args:
@@ -79,8 +76,10 @@ class Completeness(object):
                 TargetList class object
             sInds (integer array):
                 Indices of stars to update
-            dt (astropy Quantity):
-                Time since initial completeness
+            visits (integer array):
+                Number of visits for each star
+            dt (astropy Quantity array):
+                Time since previous observation
         
         Returns:
             comp0 (float ndarray):
@@ -91,7 +90,7 @@ class Completeness(object):
         comp0 = TL.comp0[sInds]
         
         return comp0
-    
+
     def revise_updates(self, ind):
         """Keeps completeness update values only for targets remaining in 
         target list during filtering (called from TargetList.filter_target_list)

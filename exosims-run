@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+#
+# EXOSIMS driver
+
+r"""EXOSIMS driver script: run the simulation with the given parameters.
+
+    Usage:
+      exosims-run [-h] [-v] [-j JSON_LITERAL] scriptfile
+
+    where:
+      scriptfile
+          a text file containing a JSON literal to instantiate
+          the EXOSIMS parameters
+      -j JSON_LITERAL
+          contains a literal JSON string augmenting or over-riding
+          the scriptfile parameters, e.g.: {"seed":123454321} to
+          set the random number generator initial seed.
+      -h
+          print usage help and exit
+      -v
+          verbosity
+
+    To enter the debugger, use:
+       python -m pdb exosims-run scriptfile
+    You will stop within pdb at the first line of code.  Type c to continue 
+    from that point.  If an exception is raised, you will return to the
+    debugger.
+"""
+
+import sys
+import json
+import getopt
+import os.path
+import EXOSIMS
+import EXOSIMS.MissionSim
+
+def main(name, argv):
+    r"""Instantiate and run an EXOSIMS MissionSim object.
+
+    Args:
+        name (string):
+            program name (argv[0]) as invoked
+        argv (list of string)
+            remaining options and arguments
+
+    Returns:
+        (nothing)
+    """
+    def usage():
+        sys.stderr.write("Usage: %s [-h] [-v] [-j JSON_LITERAL] scriptfile\n" % name)
+    try:                                
+        opts, args = getopt.getopt(argv, "hvj:", ["help", "verbose", "json="])
+    except getopt.GetoptError:          
+        usage()                         
+        sys.exit(2)                     
+    json_string = None
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit(0)                  
+        elif opt in ('-v', '--verbose'):
+            # this mechanism is TBD
+            global _verbose
+            _verbose = 1                  
+        elif opt in ("-j", "--json"):
+            # explicit 
+            json_string = arg               
+    # the script file is the remaining arg
+    if len(args) is 0:
+        # scriptfile = None
+        sys.stderr.write('Error: scriptfile is required.\n')
+        usage()
+        sys.exit(1)
+    elif len(args) is 1:
+        scriptfile = args[0]
+    else:
+        usage()
+        sys.exit(1)
+    # process the literal json string, if any
+    if json_string:
+        specs = json.loads(json_string)
+    else:
+        specs = {}
+
+    sim = EXOSIMS.MissionSim.MissionSim(scriptfile, **specs)
+    result = sim.SurveySimulation.run_sim()  
+    # TODO: exit with proper status code
+    sys.exit(0)
+
+# boilerplate to allow running from the command-line
+if __name__ == '__main__':
+    # arg 1 is name as run, arg 2 is remaining args, if any
+    main(os.path.basename(sys.argv[0]), sys.argv[1:])
+

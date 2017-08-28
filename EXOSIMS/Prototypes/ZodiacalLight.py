@@ -42,62 +42,65 @@ class ZodiacalLight(object):
         # populate outspec
         for att in self.__dict__.keys():
             dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat,u.Quantity) else dat
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Zodiacal Light object
         
         When the command 'print' is used on the Zodiacal Light object, this 
-        method will return the values contained in the object"""
+        method will return the values contained in the object
+        
+        """
         
         for att in self.__dict__.keys():
             print '%s: %r' % (att, getattr(self, att))
         
         return 'Zodiacal Light class object attributes'
 
-    def fZ(self, TL, sInds, lam, r_sc):
+    def fZ(self, Obs, TL, sInds, currentTime, mode):
         """Returns surface brightness of local zodiacal light
         
         Args:
+            Obs (Observatory module):
+                Observatory class object
             TL (TargetList module):
                 TargetList class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
-            lam (astropy Quantity):
-                Central wavelength in units of nm
-            r_sc (astropy Quantity nx3 array):
-                Observatory (spacecraft) position vector in units of km
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            mode (dict):
+                Selected observing mode
         
         Returns:
             fZ (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
-        Note: r_sc must be an array of shape (sInds.size x 3)
-        
         """
         
-        # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
-        # check shape of r_sc
-        assert r_sc.shape == (sInds.size,3), 'r_sc must be of shape (sInds.size x 3)'
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match."
         
-        nZ = np.ones(len(sInds))
+        nZ = np.ones(np.maximum(nStars, nTimes))
         fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2
         
         return fZ
 
-    def fEZ(self, TL, sInds, I, r_orbit):
+    def fEZ(self, MV, I, d):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
+            MV (integer ndarray):
+                Apparent magnitude of the star (in the V band)
             I (astropy Quantity array):
                 Inclination of the planets of interest in units of deg
-            r_orbit (astropy Quantity nx3 array):
-                Orbital radii of the planets of interest in units of AU
+            d (astropy Quantity nx3 array):
+                Distance to star of the planets of interest in units of AU
         
         Returns:
             fEZ (astropy Quantity array):
@@ -105,15 +108,17 @@ class ZodiacalLight(object):
         
         """
         
-        # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        # apparent magnitude of the star (in the V band)
+        MV = np.array(MV, ndmin=1, copy=False)
+        # apparent magnitude of the Sun (in the V band)
+        MVsun = 4.83
         
         # assume log-normal distribution of variance
-        nEZ = np.ones(len(sInds))
+        nEZ = np.ones(len(MV))
         if self.varEZ != 0:
             mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
             v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
-            nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(sInds))
+            nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(MV))
         
         # supplementary angle for inclination > 90 degrees
         beta = I.to('deg').value
@@ -121,12 +126,7 @@ class ZodiacalLight(object):
         beta[mask] = 180 - beta[mask]
         fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
         
-        # apparent magnitude of the star (in the V band)
-        MV = TL.MV[sInds]
-        # apparent magnitude of the Sun (in the V band)
-        MVsun = 4.83
-        
-        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV-MVsun))\
-                *2*fbeta/r_orbit.to('AU').value**2/u.arcsec**2
+        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
+                MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
         
         return fEZ

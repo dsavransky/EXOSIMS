@@ -29,8 +29,8 @@ def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
     
     nSamp = max(2*numTest, 1000*1000)
     while n < numTest and numIter < maxIter:
-        xd = np.random.random(nSamp) * (xMax - xMin) + xMin
-        yd = np.random.random(nSamp) * M
+        xd = np.random.uniform(low=xMin, high=xMax, size=nSamp)
+        yd = np.random.uniform(low=0, high=M, size=nSamp)
         pd = f(xd)
         
         xd = xd[yd < pd]

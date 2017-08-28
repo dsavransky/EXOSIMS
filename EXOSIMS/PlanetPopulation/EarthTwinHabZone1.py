@@ -3,11 +3,10 @@ import numpy as np
 import astropy.units as u
 
 class EarthTwinHabZone1(PlanetPopulation):
-    """
-    Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
+    """Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
     On circular Habitable zone orbits (0.7 to 1.5 AU)
     
-    Note that these values may not be overwritten by user inputs.  
+    Note that these values may not be overwritten by user inputs.
     This implementation is intended to enforce this population regardless
     of JSON inputs.
     """
@@ -23,29 +22,6 @@ class EarthTwinHabZone1(PlanetPopulation):
         specs['scaleOrbits'] = True
         PlanetPopulation.__init__(self, **specs)
         
-    def dist_sma(self, x):
-        """Probability density function of semi-major axis in AU
-        
-        The Earth-twin population assumes a uniform distribution between the minimum and
-        maximum values.
-        
-        Args: 
-            x (float/ndarray):
-                Semi-major axis value(s) in AU
-                
-        Returns:
-            f (ndarray):
-                Semi-major axis probability density
-        
-        """
-        
-        x = np.array(x, ndmin=1, copy=False)
-        
-        f = ((x >= self.arange[0].value) & (x <= self.arange[1].value)).astype(int)\
-            /(self.arange[1].value - self.arange[0].value)
-            
-        return f
-
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
         
@@ -58,12 +34,28 @@ class EarthTwinHabZone1(PlanetPopulation):
                 
         Returns:
             a (astropy Quantity array):
-                Semi-major axis in units of AU
+                Semi-major axis values in units of AU
         
         """
         n = self.gen_input_check(n)
         v = self.arange.to('AU').value
-        vals = np.random.uniform(low=v[0],high=v[1],size=n)
+        a = np.random.uniform(low=v[0], high=v[1], size=n)*u.AU
         
-        return vals*u.AU
+        return a
+
+    def dist_sma(self, x):
+        """Probability density function for uniform semi-major axis distribution in AU
+        
+        
+        Args:
+            x (float/ndarray):
+                Semi-major axis value(s) in AU. Not an astropy quantity.
+                
+        Returns:
+            f (ndarray):
+                Semi-major axis probability density
+        
+        """
+        
+        return self.uniform(x, self.arange.to('AU').value)
 

@@ -10,7 +10,7 @@ Michael Turmon, JPL, Apr. 2016
 """
 
 import unittest
-from EXOSIMS.util import keplerSTM
+from EXOSIMS.util import keplerSTM,keplerSTM_indprop
 import numpy as np
 from collections import namedtuple
 
@@ -44,35 +44,104 @@ class Consts(object):
 # holds the bag of constants
 consts = Consts()
 
+names = ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+masses = np.array([0.330,	4.87,	5.97,	0.642,	1898,	568,	86.8,	102,	0.0146]) * 1e24; # [kg]
+dists =  np.array([57.9,	108.2,	149.6,	227.9,	778.6,	1433.5,	2872.5,	4495.1,	5906.4]) * 1e9; # [m]
+peris =  np.array([46.0,	107.5,	147.1,	206.6,	740.5,	1352.6,	2741.3,	4444.5,	4436.8]) * 1e9; # [m]
+incs  =  np.array([7.0,	3.4,	99.0,	1.9,	1.3,	2.5,	0.8,	1.8,	17.2]);         # [deg]
+speeds = np.array([47.4,	35.0,	29.8,	24.1,	13.1,	9.7,	6.8,	5.4,	4.7]) * 1e3;    # [m/s]
+periods= np.array([88.0,	224.7,	365.2,	687.0,	4331,	10747,	30589,	59800,	90560]) * (24.0*3600); # [s]
+
+# cosine/sine in degrees
+cosd = lambda theta: np.cos(np.radians(theta))
+sind = lambda theta: np.sin(np.radians(theta))
+
 
 class TestKeplerSTM(unittest.TestCase):
+    """
+    Test method: Verify the Python code-under-test with pre-computed values from a Matlab 
+    re-implementation of the same algorithm.  We check both position and velocity for state
+    propagation of solar-system-analog planets (9 planets), over about one orbital period.
 
-    def test_KeplerSTM(self):
+    Specific tests vary which implementation (C or Python) and which of the two implemented
+    algorithms are used
+    """
+
+    def setUp(self):
+        pass
+
+
+    def tearDown(self):
+        pass
+
+
+    def test_keplerSTM_init(self):
+        """
+        Test method: initialize all possible constructors and sanity check generated objects
+        """
+
+        ps = keplerSTM.planSys(np.random.randn(6),np.random.rand(1))
+        self.assertTrue(ps.havec)
+        self.assertEqual(ps.algOrder[0],ps.calcSTM)
+        self.assertEqual(ps.nplanets,1)
+
+        ps2 = keplerSTM.planSys(np.random.randn(6),np.random.rand(1),noc=True,prefVallado=True)
+        self.assertFalse(ps2.havec)
+        self.assertEqual(ps2.algOrder[1],ps2.calcSTM)
+        self.assertEqual(ps2.nplanets,1)
+
+        ps3 = keplerSTM_indprop.planSys(np.random.randn(6),np.random.rand(1))
+        self.assertTrue(ps3.havec)
+        self.assertEqual(ps3.nplanets,1)
+
+
+        ps4 = keplerSTM_indprop.planSys(np.random.randn(6),np.random.rand(1),noc=True)
+        self.assertFalse(ps4.havec)
+        self.assertEqual(ps4.nplanets,1)
+
+        with self.assertRaises(Exception):
+            ps0 = keplerSTM.planSys(np.random.randn(6),np.random.rand(2))
+
+        with self.assertRaises(Exception):
+            ps0 = keplerSTM.planSys(np.random.randn(9),np.random.rand(1))
+
+        with self.assertRaises(Exception):
+            ps0 = keplerSTM_indprop.planSys(np.random.randn(6),np.random.rand(2))
+
+        with self.assertRaises(Exception):
+            ps0 = keplerSTM_indprop.planSys(np.random.randn(9),np.random.rand(1))
+
+
+    def test_keplerSTM_propC(self):
+        self.propagate_and_check(keplerSTM.planSys)
+
+    def test_keplerSTM_proppy(self):
+        self.propagate_and_check(keplerSTM.planSys,noc=True)
+
+    def test_keplerSTM_prop_vallado(self):
+        self.propagate_and_check(keplerSTM.planSys,noc=True,prefVallado=True)
+
+    def test_keplerSTM_indpropC(self):
+        self.propagate_and_check(keplerSTM_indprop.planSys)
+
+    def test_keplerSTM_indproppy(self):
+        self.propagate_and_check(keplerSTM_indprop.planSys,noc=True)
+
+
+
+    def propagate_and_check(self,keplerObj,**kwargs):
         r"""Test Kepler State Propagation.
 
-        Test method: Verify the Python code-under-test with pre-computed values from a Matlab 
-        re-implementation of the same algorithm.  We check both position and velocity for state
-        propagation of solar-system-analog planets (9 planets), over about one orbital period.
+        Args:
+            keplerObj: Which 
         """
-        
         ## 1: Define a planetary system
 
         # From http://nssdc.gsfc.nasa.gov/planetary/factsheet/
         #   Mercury/Venus/Earth/Mars/Jupiter/Saturn/Uranus/Neptune/Pluto
         #   Earth orbital inclination has been altered to make the test more comprehensive
         # Note: having physically correct values is *not important*.
-        # Note: these constants *must* agree with the Matlab file.
-        names = ['Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
-        masses = np.array([0.330,	4.87,	5.97,	0.642,	1898,	568,	86.8,	102,	0.0146]) * 1e24; # [kg]
-        dists =  np.array([57.9,	108.2,	149.6,	227.9,	778.6,	1433.5,	2872.5,	4495.1,	5906.4]) * 1e9; # [m]
-        peris =  np.array([46.0,	107.5,	147.1,	206.6,	740.5,	1352.6,	2741.3,	4444.5,	4436.8]) * 1e9; # [m]
-        incs  =  np.array([7.0,	3.4,	99.0,	1.9,	1.3,	2.5,	0.8,	1.8,	17.2]);         # [deg]
-        speeds = np.array([47.4,	35.0,	29.8,	24.1,	13.1,	9.7,	6.8,	5.4,	4.7]) * 1e3;    # [m/s]
-        periods= np.array([88.0,	224.7,	365.2,	687.0,	4331,	10747,	30589,	59800,	90560]) * (24.0*3600); # [s]
-        
-        # cosine/sine in degrees
-        cosd = lambda theta: np.cos(np.radians(theta))
-        sind = lambda theta: np.sin(np.radians(theta))
+        # Note: these constants *must* agree with the Matlab file. 
 
         for i in range(len(names)):
             # initial position: x=0, y large, at peak inclination in the z direction
@@ -92,9 +161,7 @@ class TestKeplerSTM(unittest.TestCase):
             x0 = np.array([x0p[0], x0p[1], x0p[2], x0v[0], x0v[1], x0v[2]])
 
             # instantiate object
-            ps = keplerSTM.planSys(x0, mu)
-            # set position + velocity
-            ps.updateState(x0)
+            ps = keplerObj(x0, mu, **kwargs)
 
             # go for about one orbital period
             dt = periods[i]

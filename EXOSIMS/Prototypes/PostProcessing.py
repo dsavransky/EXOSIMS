@@ -111,7 +111,7 @@ class PostProcessing(object):
         
         return 'Post Processing class object attributes'
 
-    def det_occur(self, SNR, SNRmin):
+    def det_occur(self, SNR, mode, TL, sInd, intTime):
         """Determines if a detection has occurred and returns booleans 
         
         This method returns two booleans where True gives the case.
@@ -119,8 +119,14 @@ class PostProcessing(object):
         Args:
             SNR (float ndarray):
                 signal-to-noise ratio of the planets around the selected target
-            SNRmin (float):
-                signal-to-noise ratio threshold for detection
+            mode (dict):
+                Selected observing mode
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
+                Index of the star begin observed
+            intTime (astropy Quantity):
+                Selected star integration time for detection
         
         Returns:
             FA (boolean):
@@ -130,14 +136,18 @@ class PostProcessing(object):
                 number of planets around the target.
        
         Notes:
-            TODO: Add backgroundsources hook
-        
+            The prototype implemenation does not consider background sources
+            in calculating false positives, however, the unused TargetList, 
+            integration time and star index inputs are part of the interface
+            to allow an implementation to do this.
         """
         
         # initialize
         FA = False
         MD = np.array([False]*len(SNR))
         
+        SNRmin = mode['SNR']
+
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p = np.random.rand()
         if p <= self.FAP:

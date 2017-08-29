@@ -670,7 +670,7 @@ class SurveySimulation(object):
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
-        FA, MD = PPro.det_occur(SNR, mode['SNR'])
+        FA, MD = PPro.det_occur(SNR, mode, TL, sInd, intTime)
         
         # populate detection status array 
         # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA

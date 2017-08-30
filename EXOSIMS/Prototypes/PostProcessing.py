@@ -124,7 +124,7 @@ class PostProcessing(object):
             TL (TargetList module):
                 TargetList class object
             sInd (integer):
-                Index of the star begin observed
+                Index of the star being observed
             intTime (astropy Quantity):
                 Selected star integration time for detection
         
@@ -146,14 +146,13 @@ class PostProcessing(object):
         FA = False
         MD = np.array([False]*len(SNR))
         
-        SNRmin = mode['SNR']
-
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p = np.random.rand()
         if p <= self.FAP:
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?
+        SNRmin = mode['SNR']
         MD[SNR < SNRmin] = True
         
         return FA, MD

@@ -1,0 +1,28 @@
+{
+  "scienceInstruments": [
+    {
+     "name": "imaging"
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "coronagraph"
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": " ",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

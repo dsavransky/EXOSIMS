@@ -1,0 +1,95 @@
+{
+  "missionLife": 6,
+  "missionPortion": 0.1666667,
+  "OBduration": 50,
+  "minComp": 0,
+  "dMagLim": 22.5,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.1024,
+  "attenuation": 0.441,
+  "ppFact": 0.1,
+  "scienceInstruments": [
+    { "name": "imager",
+      "QE": 0.72,
+      "FoV": 9.5,
+      "pixelNumber": 1024,
+      "pixelSize": 1.3e-5,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41
+    },
+    { "name": "spectro",
+      "QE": 0.72,
+      "FoV": 1,
+      "pixelNumber": 76,
+      "pixelSize": 1.74e-4,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41,
+      "Rs": 50
+    }
+  ],
+  "starlightSuppressionSystems": [
+    { "name": "HLC-565",
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.15,
+      "occ_trans": "$HOME/INSTRUMENTS/WFIRST/hlc-20160125/hlc-20160125_0.4mas_jitter_1.0mas_star_results_occ_trans.fits",
+      "core_thruput": "$HOME/INSTRUMENTS/WFIRST/hlc-20160125/hlc-20160125_0.4mas_jitter_1.0mas_star_results_thruput.fits",
+      "core_mean_intensity": "$HOME/INSTRUMENTS/WFIRST/hlc-20160125/hlc-20160125_0.4mas_jitter_1.0mas_star_results_mean_intensity.fits",
+      "core_area": "$HOME/INSTRUMENTS/WFIRST/hlc-20160125/hlc-20160125_0.4mas_jitter_1.0mas_star_results_area.fits",
+      "core_platescale": 0.30
+    },
+    { "name": "SPC-800",
+      "lam": 800,
+      "BW": 0.18,
+      "IWA": 0.19,
+      "occ_trans": "$HOME/INSTRUMENTS/WFIRST/sp-20140902/spc-20140902_0.4mas_jitter_1.0mas_star_results_occ_trans.fits",
+      "core_thruput": "$HOME/INSTRUMENTS/WFIRST/sp-20140902/spc-20140902_0.4mas_jitter_1.0mas_star_results_thruput.fits",
+      "core_mean_intensity": "$HOME/INSTRUMENTS/WFIRST/sp-20140902/spc-20140902_0.4mas_jitter_1.0mas_star_results_mean_intensity.fits",
+      "core_area": "$HOME/INSTRUMENTS/WFIRST/sp-20140902/spc-20140902_0.4mas_jitter_1.0mas_star_results_area.fits",
+      "core_platescale": 0.30
+    }
+  ],
+  "observingModes": [
+    { "instName": "imager",
+      "systName": "HLC-565",
+      "detectionMode": true
+    },
+    { "instName": "imager",
+      "systName": "HLC-565",
+      "lam": 660,
+      "BW": 0.18
+    },
+    { "instName": "spectro",
+      "systName": "SPC-800",
+      "lam": 660,
+      "SNR": 10
+    },
+    { "instName": "spectro",
+      "systName": "SPC-800",
+      "lam": 770,
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "KeplerLike1",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "Forecaster",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

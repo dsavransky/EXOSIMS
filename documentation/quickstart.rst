@@ -1,4 +1,5 @@
 .. _quickstart:
+
 Quick Start Guide
 ######################
 
@@ -83,13 +84,16 @@ The default ensemble will run in sequence. For more details on ensembles and par
 Building Your Own Mission
 ==============================
 
+Step 1
+--------
+
 The only required components of the input specification are:
 
 * The modules dictionary
 * The science instruments list
 * The starlight suppression systems list.
   
-All other values will be filled in with defaults, although this will typically not produce a reasonable mission description, depending on the modules selected.  We begin with an empty set of modules, which would load all of the prototypes, and a single instrument and starlight suppression system, which will define the default observing mode.
+All other values will be filled in with defaults, although this will typically not produce a reasonable mission description, depending on the modules selected.  We begin with an empty set of modules, which would load all of the prototypes, and a single instrument and starlight suppression system, which will define the default observing mode. In a directory of your choosing (preferably outside of ``EXOSIMSROOT`` - see :ref:`here <EXOSIMSROOT>`), create a file called ``test.json`` with the following contents:
 
 .. code-block:: json
     
@@ -118,7 +122,37 @@ All other values will be filled in with defaults, although this will typically n
      ]
     }
 
-You can create a ``MissionSim`` object with this script, but it won't be particularly useful, since there are no real stars in the prototype ``StarCatalog``.  Now we must decide what kind of universe we will be modeling.  Let's select the EXOCAT-1 input catalog (http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html), provided by the ``EXOCAT1`` star catalog and only model Earth-twins in the habitable zone.  We have two suitable ``PlanetPopulation`` implementations - ``EarthTwinHabZone1`` and ``EarthTwinHabZone2``, but we would like to override the defaults and only consider eccentricities between 0 and 0.35.  Our JSON script now becomes:
+You can create a ``MissionSim`` object with this script, but it won't be particularly useful, since there are no real stars in the prototype ``StarCatalog``.  We'll do it anyway to sanity check that the code is working.  In a python interpreter running in the same directory as your test script run:
+
+.. code-block:: python
+
+    import EXOSIMS.MissionSim
+    sim = EXOSIMS.MissionSim.MissionSim('test.json')
+
+You should see outputs showing the modules being loaded as the simulation object is instantiated, along the lines of ::
+
+    Imported SurveyEnsemble (prototype module) from EXOSIMS.Prototypes.SurveyEnsemble
+    Imported SurveySimulation (prototype module) from EXOSIMS.Prototypes.SurveySimulation
+    Imported SimulatedUniverse (prototype module) from EXOSIMS.Prototypes.SimulatedUniverse
+    Imported TargetList (prototype module) from EXOSIMS.Prototypes.TargetList
+    Imported StarCatalog (prototype module) from EXOSIMS.Prototypes.StarCatalog
+    Imported OpticalSystem (prototype module) from EXOSIMS.Prototypes.OpticalSystem
+    Imported ZodiacalLight (prototype module) from EXOSIMS.Prototypes.ZodiacalLight
+    Imported PostProcessing (prototype module) from EXOSIMS.Prototypes.PostProcessing
+    Imported BackgroundSources (prototype module) from EXOSIMS.Prototypes.BackgroundSources
+    Imported Completeness (prototype module) from EXOSIMS.Prototypes.Completeness
+    Imported PlanetPopulation (prototype module) from EXOSIMS.Prototypes.PlanetPopulation
+    Imported PlanetPhysicalModel (prototype module) from EXOSIMS.Prototypes.PlanetPhysicalModel
+    Imported Observatory (prototype module) from EXOSIMS.Prototypes.Observatory
+    Imported TimeKeeping (prototype module) from EXOSIMS.Prototypes.TimeKeeping
+    Numpy random seed is: 491873991
+
+Printing the contents of ``sim.TargetList.nStars`` and ``sim.SimulatedUniverse.plan2star`` will show that this simulation has one (fake) star with one simulated planet (``plan2star`` is an array of indices mapping planet attributes to stars - in this case it is a single element array mapping to star 0). This planet is generated with properties that ensure that it is detectable with all of the default settings in the other modules.
+
+Step 2
+-------
+
+Now we must decide what kind of universe we will be modeling.  Let's select the EXOCAT-1 input catalog (http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html), provided by the ``EXOCAT1`` ``StarCatalog`` implementation and only model Earth-twins in the habitable zone.  We have two suitable ``PlanetPopulation`` implementations - ``EarthTwinHabZone1`` and ``EarthTwinHabZone2``, but we would like to override the defaults and only consider eccentricities between 0 and 0.35 so we will use ``EarthTwinHabZone2`` (``EarthTwinHabZone1`` does not allow for overriding orbital parameters).  Our JSON script now becomes:
 
 .. code-block:: json
 
@@ -148,7 +182,19 @@ You can create a ``MissionSim`` object with this script, but it won't be particu
      "erange": [0, 0.3]
     }
 
-We build a ``MissionSim`` object called ``sim`` using this script and then verify that our ``erange`` has overwritten the default by looking at the contents of ``sim.PlanetPopulation.erange``.  At this point, we should have a large number of stars (because the prototype Completeness isn't calculating the true completeness, and the default instrument settings will result in very low integration times for most stars).  Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of :math:`10^{-11}`. The JSON script now looks like this:
+We again build a ``MissionSim`` object called ``sim`` using this script and then verify that our ``erange`` has overwritten the default by looking at the contents of ``sim.PlanetPopulation.erange``.
+
+.. note::
+ 
+    If we print ``sim.SimulatedUniverse.e.max()`` we may see that the maximum eccentricity value generated for our simulated planets is actually outside of the specified eccentricity range.  This is because the ``EarthTwinHabZone`` implementations defulat the ``scaleOrbits`` flag to ``True``.  This flag forces all orbital radii to be within the semi-major axis range (so that :math:`a(1+e) \le a_\mathrm{max}` and  :math:`a(1-e) \ge a_\mathrm{min}`).  This setting partially overrides the eccentricity limits. 
+
+
+At this point, we should have a large number of stars in our target list (verify by printing ``sim.TargetList.nStars``) because the prototype Completeness isn't calculating the true completeness, and the default instrument settings will result in very low integration times for most stars.  
+
+Step 3
+-------
+
+Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of :math:`10^{-11}`. The JSON script now looks like this:
 
 .. code-block:: json
 
@@ -181,13 +227,37 @@ We build a ``MissionSim`` object called ``sim`` using this script and then verif
      ],
      "erange": [0, 0.3],
      "pupilDiam": 4.0,
-     "obscurFac": 0.0,
+     "obscurFac": 0.0
     }
 
 
-We again build a ``MissionSim`` object called ``sim`` using the updated script and check that our changes have been applied.  Running ``sim.OpticalSystem.starlightSuppressionSystems[0]['core_contrast'](sim.OpticalSystem.starlightSuppressionSystems[0]['lam'],sim.OpticalSystem.starlightSuppressionSystems[0]['IWA'])`` evaluates the contrast at the coronagraph central wavelength and inner working angle.  Running ``(sim.OpticalSystem.pupilDiam/2.0)**2.*np.pi - sim.OpticalSystem.pupilArea`` should return zero, verifying that the aperture is unobscured.
+We again build a ``MissionSim`` object called ``sim`` using the updated script and check that our changes have been applied.  Running:
 
-We will now replace the remaining prototype modules which don't perform the specific calculations and only return dummy values with full implementations.  We save this step for last as multiple setup calculations (and especially the completeness) can take a while, and we want everything else to be set before we run these.  We will use Nemati ``OpticalSystem``, the Brown ``Completeness`` (this is the Monte-Carlo version of the calculation) and the Stark ``ZodiacalLight`` modules:
+.. code-block:: python
+    
+    sim.OpticalSystem.starlightSuppressionSystems[0]['core_contrast'](sim.OpticalSystem.starlightSuppressionSystems[0]['lam'],sim.OpticalSystem.starlightSuppressionSystems[0]['IWA'])
+    
+evaluates the contrast at the coronagraph central wavelength and inner working angle and should return our input constant contrast.  Running:
+
+.. code-block:: python
+
+    sim.OpticalSystem.pupilDiam**2.*sim.OpticalSystem.shapeFac - sim.OpticalSystem.pupilArea
+
+should return zero, verifying that the aperture is unobscured. ``shapeFac`` is another user-settable parameter, and is defined such that its product with the square of the aperture diameter gives the pupil area (it defaults to the value for circular apertures).  
+
+Looking at ``sim.TargetList.nStars``, we see that our target list is now significantly smaller than it was before.  This is directly a consequence of setting an inner and outer working angle for our coronagraph (the default values are zero to infinity).  Due to the limited nature of the selected planet population, and finite IWA/OWA instantly filters out the majority of stars, for which the entire planet population would fall outside of this coronagraph's operating angular separation range.
+
+Step 4
+--------
+
+We will now replace the remaining prototype modules which don't perform the specific calculations and only return dummy values with full implementations.  We will use:
+
+* The Nemati ``OpticalSystem`` (integration time calculations are based on the equations found in [Nemati2014]_) 
+* The Brown ``Completeness`` (this is the Monte-Carlo version of the calculation, based on [Brown2005]_; alternatively, we have ``GarrettCompletness`` which is a fully analytical implementation based on [Garrett2016]_)
+* The Stark ``ZodiacalLight`` module (the local zodi is based on modeling from [Stark2014]_)
+* The Forecaster ``PlanetPhysicalModel`` implementation (this uses Forecaster [Chen2016]_ to probabilistically calculate planet densities)
+
+Our JSON script now looks as follows:
 
 .. code-block:: json
 
@@ -220,11 +290,16 @@ We will now replace the remaining prototype modules which don't perform the spec
      ],
      "erange": [0, 0.3],
      "pupilDiam": 4.0,
-     "obscurFac": 0.0,
+     "obscurFac": 0.0
     }
 
-Building the ``sim`` object will now take longer as the Monte Carlo completeness calculation executes.  Note that this will only happen once per script, as the completeness is cached on disk.   Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: ``minComp`` and ``dMagLim``.  The former sets the cutoff below which targets are discarded, and the second sets the limiting :math:`\Delta`\mag of the dimmest planets of interest. The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the ``sim`` object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values.  On the other hand, setting ``dMagLim`` significantly higher will cause us to hit the noise floor set by our contrast (and all of the other optical system defaults) and thereby calculate infeasible integration times for more stars.  The best solution is to further flesh out the optical system by overriding more of the defaults, but for now we will simply decrease the minimum completeness. 
 
+Building the ``sim`` object will now take considerably longer as the Monte Carlo completeness calculation executes (and the output will include status messages regarding this calculation).  Note that this will only happen once per script, as the completeness is cached on disk.   Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: ``minComp`` and ``dMagLim``.  The former sets the cutoff below which targets are discarded, and the second sets the limiting :math:`\Delta`\mag of the dimmest planets of interest (the effective instrumental contrast floor used in the completeness calculation). The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the ``sim.Completeness`` object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values. If we wish to expand our initial target list, we can change on or the other (or both).  It is important to note that the ``dMagLim`` parameter value serves as the default for the ``dMagint`` parameter in the ``SurveySimulation`` module, which (in the prototype implementation) determines the target planet magnitude to use in determining integration times for each target.  Increasing ``dMagLim`` without changing ``dMagInt`` will therefore cause integration times to grow, and may potentially waste a lot of mission time. We therefore allow for independent setting of these two parameters.  
+
+
+
+Step 5
+----------
 At the same time, we will make this a five year mission with one year of integration time dedicated to planet finding.   We also wish to only perform detections, and not spend any time on spectral characterizations.  This is controlled by setting the SNR to zero in the characterization observing mode.  Right now, there is only one observing mode that was automatically generated from the single instrument and starlight suppression system, so we will have to define a dummy spectrometer instrument and two modes - one for detection and one for characterization.  Our JSON script now looks like this:
 
 .. code-block:: json
@@ -278,3 +353,15 @@ At the same time, we will make this a five year mission with one year of integra
     }
 
 We are now ready to run our simulation.
+
+
+
+References
+###########
+
+.. [Nemati2014] Nemati, Bijan (2014) Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph, Proc. SPIE, 91430
+.. [Brown2005] Brown, R. A. (2005) Single-visit photometric and obscurational completeness, ApJ 624
+.. [Garrett2016] Garett, D. and Savransky, D. (2016) Analytical Formulation of the Single-visit Completeness Joint Probability Density Function, ApJ 828(1)
+.. [Stark2014] Stark, C., Roberge, A., Mandell, A., and Robinson, T. D. (2014) Maximizing the ExoEarth Candidate Yield from a Future Direct Imaging Mission, ApJ 795(2)
+.. [Chen2016] Chen, J. and Kipping, D. M. (2016) Probabilistic Forecasting of the Masses and Radii of Other Worlds, ApJ 834(1)
+

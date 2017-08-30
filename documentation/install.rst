@@ -40,6 +40,8 @@ Installation and Path Setup
 =============================
 EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to their particular module subfolders, and so the entire EXOSIMS folder tree must be user writeable.  
 
+.. _EXOSIMSROOT:
+
 The directory containing the ``EXOSIMS`` code directory, which we will call ``EXOSIMSROOT`` must be in your Python path.  If you clone EXOSIMS directly from github then you will automatically get a directory hierarchy that looks like ``installpath/EXOSIMS/EXOSIMS``.  In this case ``installpath/EXOSIMS`` is the ``EXOSIMSROOT``. On POSIX systems, this is accomplished simply by appending the path to the ``PYTHONPATH`` environment variables.
 
 Setting PYTHONPATH on MacOS/Linux for bash Environments

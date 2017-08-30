@@ -1121,9 +1121,6 @@ class SurveySimulation(object):
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
         path = os.path.split(os.path.split(path)[0])[0]
-        #handle case where EXOSIMS was imported from the working directory
-        if path is '':
-            path = os.getcwd()
         #comm = "git -C " + path + " log -1"
         comm = "git --git-dir=%s --work-tree=%s log -1"%(os.path.join(path,".git"),path)
         rev = subprocess.Popen(comm, stdout=subprocess.PIPE,

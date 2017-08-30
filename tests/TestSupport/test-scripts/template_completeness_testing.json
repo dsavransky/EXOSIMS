@@ -33,9 +33,8 @@
       "type": "internal-spectro-SPC"
     }
   ],
-  "comment_modules_PlanetPopulation": "turmon: PlanetPopulation points to tests.Completeness because it is used only for the BrownCompleteness test.",
   "modules": {
-    "PlanetPopulation": "tests.Completeness.EarthTwinHabZone3",
+    "PlanetPopulation": "EarthTwinHabZone2",
     "StarCatalog": "EXOCAT1",
     "OpticalSystem": "OpticalSystem",
     "ZodiacalLight": "ZodiacalLight",
@@ -49,6 +48,8 @@
     "SimulatedUniverse": "SimulatedUniverse",
     "SurveySimulation": "SurveySimulation",
     "SurveyEnsemble": "SurveyEnsemble"
-  }
+  },
+  "erange": [0,0.35],
+  "prange": [0.33,0.33]
 }
 

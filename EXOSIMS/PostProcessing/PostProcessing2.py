@@ -33,7 +33,7 @@ class PostProcessing2(PostProcessing):
             TL (TargetList module):
                 TargetList class object
             sInd (integer):
-                Index of the star begin observed
+                Index of the star being observed
             intTime (astropy Quantity):
                 Selected star integration time for detection
         
@@ -52,11 +52,10 @@ class PostProcessing2(PostProcessing):
         #get background source false alarm rate
         BS = self.BackgroundSources
         intDepth = np.array([TL.Completeness.dMagLim + TL.Vmag[sInd]])
-        bs_density = BS.dNbackground(TL.coords[[sInd]], intDepth).to(1/u.arcsec**2)
+        bs_density = BS.dNbackground(TL.coords[[sInd]], intDepth)
         OWA_solidangle = mode['OWA']**2
         FABP = (bs_density * OWA_solidangle).decompose().value # false positive rate due to background sources
         
-
         # initialize
         FA = False
         MD = np.array([False]*len(SNR))

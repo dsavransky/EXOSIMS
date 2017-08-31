@@ -30,6 +30,7 @@ You can also get a full list of all parameters (this includes the ones that were
 .. note::
     The python JSON writer supports reading/writing values (such as infinity and nan) that are not in the JSON specification.  This means that output script files may only be parseable by python, or another parser supporting these extensions to the specification.
 
+.. _runsimandanalyze:
 
 Running a Simulation and Analyzing Results
 ---------------------------------------------
@@ -214,7 +215,7 @@ At this point, we should have a large number of stars in our target list (verify
 Step 3
 -------
 
-Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of :math:`10^{-11}`. The JSON script now looks like this:
+Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of :math:`10^{-11}`. We will assume a modest post-processing factor of 0.1 (meaning that we can reduce residual speckle noise by one order of magnitude via post-processing). The JSON script now looks like this:
 
 .. code-block:: json
 
@@ -247,7 +248,8 @@ Now we can describe the actual instrument.  We wish to model a 4 meter diameter,
      ],
      "erange": [0, 0.3],
      "pupilDiam": 4.0,
-     "obscurFac": 0.0
+     "obscurFac": 0.0,
+     "ppFact": 0.1
     }
 
 
@@ -310,7 +312,8 @@ Our JSON script now looks as follows:
      ],
      "erange": [0, 0.3],
      "pupilDiam": 4.0,
-     "obscurFac": 0.0
+     "obscurFac": 0.0,
+     "ppFact": 0.1
     }
 
 
@@ -358,6 +361,7 @@ Finally, we will fill in a few more mission details.  We will make this a five y
      "erange": [0, 0.3],
      "pupilDiam": 4.0,
      "obscurFac": 0.0,
+     "ppFact": 0.1,
      "observingModes": [
         { "instName": "imager",
           "systName": "coronagraph",
@@ -375,7 +379,14 @@ Finally, we will fill in a few more mission details.  We will make this a five y
      "missionPortion": 0.2
     }
 
-After creating a new ``sim`` object with this script, we are now ready to run our simulation.
+After creating a new ``sim`` object with this script, we are now ready to run our simulation. We execute ``sim.run_sim()`` and the simulation progress is printed as it runs, terminating somewhere near 1826.25 days (the actual mission end time will depend on the specific observations scheduled).
+
+.. note::
+    
+    It is possible for the mission end time to be greater than the mission lifetime as observations are not interrupted if they extend past the end of the nominal mission life.  However, no new observations will be scheduled after this point.
+
+We can now use the same tools as described in :ref:`runsimandanalyze` to analyze the results.
+
 
 
 

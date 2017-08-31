@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.MissionSim &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,32 +60,50 @@
 <span class="sd">            user specified values</span>
 <span class="sd">            </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        PlanetPopulation (PlanetPopulation):</span>
+<span class="sd">        StarCatalog (StarCatalog module):</span>
+<span class="sd">            StarCatalog class object (only retained if keepStarCatalog is True)</span>
+<span class="sd">        PlanetPopulation (PlanetPopulation module):</span>
 <span class="sd">            PlanetPopulation class object</span>
-<span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel):</span>
+<span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel module):</span>
 <span class="sd">            PlanetPhysicalModel class object</span>
-<span class="sd">        OpticalSystem (OpticalSystem):</span>
+<span class="sd">        OpticalSystem (OpticalSystem module):</span>
 <span class="sd">            OpticalSystem class object</span>
-<span class="sd">        ZodiacalLight (ZodiacalLight):</span>
+<span class="sd">        ZodiacalLight (ZodiacalLight module):</span>
 <span class="sd">            ZodiacalLight class object</span>
-<span class="sd">        BackgroundSources (BackgroundSources):</span>
+<span class="sd">        BackgroundSources (BackgroundSources module):</span>
 <span class="sd">            Background Source class object</span>
-<span class="sd">        PostProcessing (PostProcessing):</span>
+<span class="sd">        PostProcessing (PostProcessing module):</span>
 <span class="sd">            PostProcessing class object</span>
-<span class="sd">        Completeness (Completeness):</span>
+<span class="sd">        Completeness (Completeness module):</span>
 <span class="sd">            Completeness class object</span>
-<span class="sd">        TargetList (TargetList):</span>
+<span class="sd">        TargetList (TargetList module):</span>
 <span class="sd">            TargetList class object</span>
-<span class="sd">        SimulatedUniverse (SimulatedUniverse):</span>
+<span class="sd">        SimulatedUniverse (SimulatedUniverse module):</span>
 <span class="sd">            SimulatedUniverse class object</span>
-<span class="sd">        Observatory (Observatory):</span>
+<span class="sd">        Observatory (Observatory module):</span>
 <span class="sd">            Observatory class object</span>
-<span class="sd">        TimeKeeping (TimeKeeping):</span>
+<span class="sd">        TimeKeeping (TimeKeeping module):</span>
 <span class="sd">            TimeKeeping class object</span>
-<span class="sd">        SurveySimulation (SurveySimulation):</span>
+<span class="sd">        SurveySimulation (SurveySimulation module):</span>
 <span class="sd">            SurveySimulation class object</span>
-<span class="sd">        SurveyEnsemble (SurveyEnsemble):</span>
+<span class="sd">        SurveyEnsemble (SurveyEnsemble module):</span>
 <span class="sd">            SurveyEnsemble class object</span>
+<span class="sd">        modules (dict):</span>
+<span class="sd">            Dictionary of all modules, except StarCatalog</span>
+<span class="sd">        verbose (boolean):</span>
+<span class="sd">            Boolean used to create the vprint function, equivalent to the </span>
+<span class="sd">            python print function with an extra verbose toggle parameter </span>
+<span class="sd">            (True by default). The vprint function can be accessed by all </span>
+<span class="sd">            modules from EXOSIMS.util.vprint.</span>
+<span class="sd">        seed (integer):</span>
+<span class="sd">            Number used to seed the NumPy generator. Generated randomly </span>
+<span class="sd">            by default.</span>
+<span class="sd">        logfile (string):</span>
+<span class="sd">            Path to the log file. If None, logging is turned off. </span>
+<span class="sd">            If supplied but empty string (&#39;&#39;), a temporary file is generated.</span>
+<span class="sd">        loglevel (string): </span>
+<span class="sd">            The level of log, defaults to &#39;INFO&#39;. Valid levels are: CRITICAL, </span>
+<span class="sd">            ERROR, WARNING, INFO, DEBUG (case sensitive).</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -99,15 +120,13 @@
 <span class="sd">            specs (dictionary):</span>
 <span class="sd">                Dictionary containing additional user specification values and </span>
 <span class="sd">                desired module names.</span>
-<span class="sd">            nopar (bool):</span>
+<span class="sd">            nopar (boolean):</span>
 <span class="sd">                If True, ignore any provided ensemble module in the script or specs</span>
 <span class="sd">                and force the prototype ensemble.</span>
-<span class="sd">            verbose (bool):</span>
+<span class="sd">            verbose (boolean):</span>
 <span class="sd">                Boolean used to create the vprint function, equivalent to the </span>
-<span class="sd">                python print function with an extra verbose toggle parameter </span>
-<span class="sd">                (True by default). The vprint function can be accessed by all </span>
-<span class="sd">                modules from EXOSIMS.util.vprint.</span>
-<span class="sd">                </span>
+<span class="sd">                python print function with an extra verbose toggle parameter.</span>
+<span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="c1"># extend given specs with (JSON) script file</span>
@@ -137,7 +156,7 @@
         <span class="c1"># set up the verbose level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>
-        <span class="c1"># load the vprint funtion (same line in all prototype module constructors)</span>
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         <span class="c1"># set up numpy random number and add seed to specs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">py_random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1e9</span><span class="p">)))</span>
@@ -431,7 +450,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

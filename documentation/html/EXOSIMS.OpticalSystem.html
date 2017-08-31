@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.OpticalSystem package &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.PlanetPhysicalModel package" href="EXOSIMS.PlanetPhysicalModel.html" />
@@ -31,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,7 +60,7 @@ the model from Kasdin &amp; Braems 2006.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
 </tr>
 </tbody>
 </table>
@@ -71,13 +74,13 @@ mode (imaging or characterization), based on Kasdin and Braems 2006.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>dMag</strong> (<em>float ndarray</em>) – Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -108,7 +111,7 @@ the model from Nemati 2014.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
 </tr>
 </tbody>
 </table>
@@ -124,13 +127,13 @@ each star in sInds and n corresponds to each working angle in WA.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -154,13 +157,13 @@ mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>dMag</strong> (<em>float ndarray</em>) – Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -183,13 +186,13 @@ mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -263,7 +266,7 @@ mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Completeness.GarrettCompleteness &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -185,24 +188,27 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
+        <span class="n">OS</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        
+        <span class="c1"># limiting planet delta magnitude for completeness</span>
+        <span class="n">dMagMax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span>
+        
         <span class="c1"># important PlanetPopulation attributes</span>
         <span class="n">atts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
         <span class="n">extstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">atts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="ow">and</span> <span class="n">att</span> <span class="o">!=</span> <span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">:</span>
                 <span class="n">extstr</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: &#39;</span> <span class="o">%</span> <span class="n">att</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
-        <span class="c1"># include dMagLim</span>
-        <span class="n">extstr</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: &#39;</span> <span class="o">%</span> <span class="s1">&#39;dMagLim&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="p">,</span> <span class="s1">&#39;dMagLim&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
+        <span class="c1"># include dMagMax</span>
+        <span class="n">extstr</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: &#39;</span> <span class="o">%</span> <span class="s1">&#39;dMagMax&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dMagMax</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">extstr</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+=</span> <span class="n">ext</span>
         <span class="n">Cpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">classpath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="o">+</span><span class="s1">&#39;.acomp&#39;</span><span class="p">)</span>
         
         <span class="n">dist_s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genComp</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="n">TL</span><span class="p">)</span>
-
         <span class="n">dist_sv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">dist_s</span><span class="o">.</span><span class="n">integral</span><span class="p">)</span>
         
         <span class="c1"># calculate separations based on IWA</span>
-        <span class="n">OS</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">IWA</span> <span class="o">=</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span>
         <span class="n">OWA</span> <span class="o">=</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span>
@@ -211,15 +217,14 @@
             <span class="n">smax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">smax</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">OWA</span><span class="p">)</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-
-        <span class="c1"># calculate dMags based on limiting dMag</span>
-        <span class="n">dMagmax</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span>
+        
+        <span class="c1"># calculate dMags based on maximum dMag</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="c1">#take care of zero/negative values</span>
             <span class="n">smin</span> <span class="o">=</span> <span class="n">smin</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
             <span class="n">smax</span> <span class="o">=</span> <span class="n">smax</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
-            <span class="n">dMagmax</span> <span class="o">-=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
-            <span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp_s</span><span class="p">(</span><span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMagmax</span><span class="p">)</span>
+            <span class="n">dMagMax</span> <span class="o">-=</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+            <span class="n">comp0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp_s</span><span class="p">(</span><span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">comp0</span> <span class="o">=</span> <span class="n">dist_sv</span><span class="p">(</span><span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">)</span>
 
@@ -236,10 +241,13 @@
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            dist_s (callable(s)):</span>
-<span class="sd">                Marginalized to dMagLim probability density function for </span>
+<span class="sd">                Marginalized to dMagMax probability density function for </span>
 <span class="sd">                projected separation</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># limiting planet delta magnitude for completeness</span>
+        <span class="n">dMagMax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span>
         
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">Cpath</span><span class="p">):</span>
             <span class="c1"># dist_s interpolant already exists for parameters</span>
@@ -251,12 +259,12 @@
             <span class="c1"># generate dist_s interpolant and pickle it</span>
             <span class="nb">print</span> <span class="s1">&#39;Cached completeness file not found at &quot;</span><span class="si">%s</span><span class="s1">&quot;.&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
             <span class="nb">print</span> <span class="s1">&#39;Generating completeness.&#39;</span>
-            <span class="nb">print</span> <span class="s1">&#39;Marginalizing joint pdf of separation and dMag up to dMagLim&#39;</span>
-            <span class="c1"># get pdf of s up to dmaglim</span>
+            <span class="nb">print</span> <span class="s1">&#39;Marginalizing joint pdf of separation and dMag up to dMagMax&#39;</span>
+            <span class="c1"># get pdf of s up to dMagMax</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
             <span class="n">fs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
-                <span class="n">fs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_s</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">TL</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
+                <span class="n">fs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_s</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">dMagMax</span><span class="p">)</span>
             <span class="n">dist_s</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="nb">print</span> <span class="s1">&#39;Finished marginalization&#39;</span>
             <span class="n">H</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;dist_s&#39;</span><span class="p">:</span> <span class="n">dist_s</span><span class="p">}</span>
@@ -275,7 +283,7 @@
 <span class="sd">            smax (ndarray):</span>
 <span class="sd">                Value of maximum projected separation (AU) from instrument</span>
 <span class="sd">            dMag (ndarray):</span>
-<span class="sd">                dMaglim from instrument</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            comp (ndarray):</span>
@@ -294,15 +302,15 @@
         <span class="k">return</span> <span class="n">comp</span></div>
             
     <span class="nd">@memoize</span>    
-    <span class="k">def</span> <span class="nf">f_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dmaglim</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">f_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates probability density of projected separation marginalized</span>
-<span class="sd">        up to dmaglim</span>
+<span class="sd">        up to dMagMax</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            s (float):</span>
 <span class="sd">                Value of projected separation</span>
-<span class="sd">            dmaglim (float):</span>
-<span class="sd">                Value of limiting dMag</span>
+<span class="sd">            dMagMax (float):</span>
+<span class="sd">                Maximum planet delta magnitude</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            f (float):</span>
@@ -315,8 +323,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">d1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
             <span class="n">d2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdmag</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">d2</span> <span class="o">&gt;</span> <span class="n">dmaglim</span><span class="p">:</span>
-                <span class="n">d2</span> <span class="o">=</span> <span class="n">dmaglim</span>
+            <span class="k">if</span> <span class="n">d2</span> <span class="o">&gt;</span> <span class="n">dMagMax</span><span class="p">:</span>
+                <span class="n">d2</span> <span class="o">=</span> <span class="n">dMagMax</span>
             <span class="k">if</span> <span class="n">d1</span> <span class="o">&gt;</span> <span class="n">d2</span><span class="p">:</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="k">else</span><span class="p">:</span>
@@ -331,7 +339,7 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            dmag (float):</span>
-<span class="sd">                Value of dMag</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">            s (float):</span>
 <span class="sd">                Value of projected separation (AU)</span>
 <span class="sd">        </span>
@@ -364,7 +372,7 @@
 <span class="sd">            z (ndarray):</span>
 <span class="sd">                Values of albedo times planetary radius squared</span>
 <span class="sd">            dmag (float):</span>
-<span class="sd">                Value of dMag</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">            s (float):</span>
 <span class="sd">                Value of projected separation</span>
 <span class="sd">        </span>
@@ -408,8 +416,7 @@
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            mindmag (float):</span>
-<span class="sd">                Minimum value of dMag</span>
-<span class="sd">                </span>
+<span class="sd">                Minimum planet delta magnitude</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
             <span class="n">mindmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdmin1</span>
@@ -433,7 +440,7 @@
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            maxdmag (float):</span>
-<span class="sd">                Maximum value of dMag</span>
+<span class="sd">                Maximum planet delta magnitude</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -724,7 +731,7 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            dmag (float):</span>
-<span class="sd">                dMag value</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">            smax (float):</span>
 <span class="sd">                maximum projected separation (AU)</span>
 <span class="sd">        </span>
@@ -756,7 +763,7 @@
 <span class="sd">            s (float):</span>
 <span class="sd">                Value of projected separation (AU)</span>
 <span class="sd">            dmag (float):</span>
-<span class="sd">                Value of dMag</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            f (float):</span>
@@ -772,7 +779,7 @@
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            dmag (float):</span>
-<span class="sd">                Value of dMag</span>
+<span class="sd">                Planet delta magnitude</span>
 <span class="sd">            smin (float):</span>
 <span class="sd">                Value of minimum projected separation (AU) from instrument</span>
 <span class="sd">            smax (float):</span>
@@ -796,7 +803,7 @@
         
         <span class="k">return</span> <span class="n">f</span>
     
-<div class="viewcode-block" id="GarrettCompleteness.comp_dmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_dmag">[docs]</a>    <span class="k">def</span> <span class="nf">comp_dmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dmaglim</span><span class="p">):</span>
+<div class="viewcode-block" id="GarrettCompleteness.comp_dmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_dmag">[docs]</a>    <span class="k">def</span> <span class="nf">comp_dmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates completeness by first integrating over projected </span>
 <span class="sd">        separation and then dMag.</span>
 <span class="sd">        </span>
@@ -805,8 +812,8 @@
 <span class="sd">                Values of minimum projected separation (AU) from instrument</span>
 <span class="sd">            smax (ndarray):</span>
 <span class="sd">                Value of maximum projected separation (AU) from instrument</span>
-<span class="sd">            dmaglim (ndarray):</span>
-<span class="sd">                dMaglim from instrument</span>
+<span class="sd">            dMagMax (float ndarray):</span>
+<span class="sd">                Maximum planet delta magnitude</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            comp (ndarray):</span>
@@ -816,18 +823,18 @@
         <span class="c1"># cast to arrays</span>
         <span class="n">smin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">smin</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">smax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">smax</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">dmaglim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dmaglim</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">dMagMax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dMagMax</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">dmax</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>\
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rprange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mf">1e-11</span><span class="p">)</span>
-        <span class="n">dmaglim</span><span class="p">[</span><span class="n">dmaglim</span><span class="o">&gt;</span><span class="n">dmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">dmax</span>
+        <span class="n">dMagMax</span><span class="p">[</span><span class="n">dMagMax</span><span class="o">&gt;</span><span class="n">dmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">dmax</span>
         
         <span class="n">comp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">smin</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">smin</span><span class="p">)):</span>
             <span class="n">d1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">smin</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">d1</span> <span class="o">&gt;</span> <span class="n">dmaglim</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">d1</span> <span class="o">&gt;</span> <span class="n">dMagMax</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
                 <span class="n">comp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">comp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagv</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">dmaglim</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">smin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">smax</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">comp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagv</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">smin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">smax</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         
         <span class="k">return</span> <span class="n">comp</span></div>
     
@@ -953,7 +960,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

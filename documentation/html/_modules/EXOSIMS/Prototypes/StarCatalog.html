@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Prototypes.StarCatalog &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -50,19 +53,8 @@
 <span class="sd">    Star Catalog Module calculations in exoplanet mission simulation.</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        dist (astropy Quantity array):</span>
-<span class="sd">            Distance to star in units of pc</span>
-<span class="sd">        parx (astropy Quantity array):</span>
-<span class="sd">            Parallax in units of mas</span>
-<span class="sd">        coords (astropy SkyCoord array):</span>
-<span class="sd">            SkyCoord object (ICRS frame) containing right ascension, declination, and </span>
-<span class="sd">            distance to star in units of deg, deg, and pc</span>
-<span class="sd">        pmra (astropy Quantity array):</span>
-<span class="sd">            Proper motion in right ascension in units of mas/year</span>
-<span class="sd">        pmdec (astropy Quantity array):</span>
-<span class="sd">            Proper motion in declination in units of mas/year</span>
-<span class="sd">        rv (astropy Quantity array):</span>
-<span class="sd">            Radial velocity in units of km/s</span>
+<span class="sd">        ntargs (integer):</span>
+<span class="sd">            Number of stars</span>
 <span class="sd">        Name (string ndarray):</span>
 <span class="sd">            Star names</span>
 <span class="sd">        Spec (string ndarray):</span>
@@ -93,6 +85,19 @@
 <span class="sd">            Stellar luminosity in ln(Solar luminosities)</span>
 <span class="sd">        Binary_Cut (boolean ndarray):</span>
 <span class="sd">            Boolean where True is a binary star with companion closer than 10 arcsec</span>
+<span class="sd">        dist (astropy Quantity array):</span>
+<span class="sd">            Distance to star in units of pc</span>
+<span class="sd">        parx (astropy Quantity array):</span>
+<span class="sd">            Parallax in units of mas</span>
+<span class="sd">        coords (astropy SkyCoord array):</span>
+<span class="sd">            SkyCoord object (ICRS frame) containing right ascension, declination, and </span>
+<span class="sd">            distance to star in units of deg, deg, and pc</span>
+<span class="sd">        pmra (astropy Quantity array):</span>
+<span class="sd">            Proper motion in right ascension in units of mas/year</span>
+<span class="sd">        pmdec (astropy Quantity array):</span>
+<span class="sd">            Proper motion in declination in units of mas/year</span>
+<span class="sd">        rv (astropy Quantity array):</span>
+<span class="sd">            Radial velocity in units of km/s</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -101,8 +106,11 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c1"># load the vprint funtion (same line in all prototype module constructors)</span>
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        
+        <span class="c1"># ntargs must be an integer &gt;= 1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ntargs</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ntargs</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
         
         <span class="c1"># list of astropy attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>                        <span class="c1"># distance</span>
@@ -129,6 +137,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                              <span class="c1"># bolometric correction</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                               <span class="c1"># stellar luminosity in ln(SolLum)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>          <span class="c1"># binary closer than 10 arcsec</span>
+        
+        <span class="c1"># populate outspecs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;ntargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ntargs</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the StarCatalog object</span>
@@ -175,7 +186,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

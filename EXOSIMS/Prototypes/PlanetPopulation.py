@@ -240,6 +240,7 @@ class PlanetPopulation(object):
             amean = np.mean(ar)
             elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
             elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
+            elim[elim > self.erange[1]] = self.erange[1]
             
             # uniform distribution
             e = np.random.uniform(low=self.erange[0], high=elim, size=n)
@@ -288,6 +289,7 @@ class PlanetPopulation(object):
         amean = np.mean(ar)
         elim[a <= amean] = 1. - ar[0]/a[a <= amean]
         elim[a > amean] = ar[1]/a[a > amean] - 1.
+        elim[elim > self.erange[1]] = self.erange[1]
         
         # if e and a are two arrays of different size, create a 2D grid
         if a.size not in [1, e.size]:

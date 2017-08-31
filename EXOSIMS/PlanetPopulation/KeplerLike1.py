@@ -242,6 +242,7 @@ class KeplerLike1(PlanetPopulation):
             amean = np.mean(ar)
             elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
             elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
+            elim[elim > self.erange[1]] = self.erange[1]
             # constants
             C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
         else:
@@ -336,6 +337,7 @@ class KeplerLike1(PlanetPopulation):
         amean = np.mean(ar)
         elim[a <= amean] = 1. - ar[0]/a[a <= amean]
         elim[a > amean] = ar[1]/a[a > amean] - 1.
+        elim[elim > self.erange[1]] = self.erange[1]
         
         # if e and a are two arrays of different size, create a 2D grid
         if a.size not in [1, e.size]:

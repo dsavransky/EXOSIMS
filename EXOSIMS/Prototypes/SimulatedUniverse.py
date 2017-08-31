@@ -227,8 +227,7 @@ class SimulatedUniverse(object):
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
         planet-star distance, apparent separation, phase function, surface brightness 
-        of exo-zodiacal light, delta magnitude, working angle, and the planet 
-        current time array.
+        of exo-zodiacal light, delta magnitude, and working angle.
         
         This method uses the Kepler state transition matrix to propagate a 
         planet's state (position and velocity vectors) forward in time using 
@@ -306,7 +305,8 @@ class SimulatedUniverse(object):
             None
         
         Returns:
-            systems (dict)
+            systems (dict):
+                Dictionary of planetary properties
         
         """
         
@@ -359,8 +359,8 @@ class SimulatedUniverse(object):
         and updates the number of planets.
         
         Args:
-            pInds (ndarray):
-                1D numpy ndarray of indices to keep
+            pInds (integer ndarray):
+                Planet indices to keep
         
         """
        
@@ -378,8 +378,8 @@ class SimulatedUniverse(object):
         planets list accordingly. 
         
         Args:
-            sInds (ndarray):
-                1D numpy ndarray of indices to keep
+            sInds (integer ndarray):
+                Star indices to keep
         
         """
         

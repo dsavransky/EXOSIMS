@@ -26,6 +26,10 @@ class Observatory(object):
     Attributes:
         koAngleMin (astropy Quantity):
             Telescope minimum keepout angle in units of deg
+        koAngleMinMoon (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Moon only
+        koAngleMinEarth (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Earth only
         koAngleMax (astropy Quantity):
             Telescope maximum keepout angle (for occulter) in units of deg
         koAngleSmall (astropy Quantity):
@@ -70,10 +74,11 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self, koAngleMin=45, koAngleMax=90, koAngleSmall=1, settlingTime=1,
-            thrust=450, slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800,
-            occulterSep=55000, skIsp=220, defburnPortion=0.05, spkpath=None,
-            forceStaticEphem=False, checkKeepoutEnd=True, **specs):
+    def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
+            koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
+            scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+            defburnPortion=0.05, spkpath=None, forceStaticEphem=False, 
+            checkKeepoutEnd=True, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -84,6 +89,10 @@ class Observatory(object):
         
         # default Observatory values
         self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
+        koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
+        self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
+        koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
+        self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
         self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
         self.settlingTime = settlingTime*u.d        # instru. settling time after repoint

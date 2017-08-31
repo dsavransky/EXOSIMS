@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Prototypes.SurveySimulation &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -152,7 +155,7 @@
             <span class="k">if</span> <span class="s1">&#39;modules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No modules field found in script.&quot;</span><span class="p">)</span>
         
-        <span class="c1"># load the vprint funtion (same line in all prototype module constructors)</span>
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         
         <span class="c1"># mission simulation logger</span>
@@ -237,25 +240,26 @@
             <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vprint&#39;</span><span class="p">,</span> <span class="s1">&#39;logger&#39;</span><span class="p">,</span> <span class="s1">&#39;StarCatalog&#39;</span><span class="p">,</span> <span class="s1">&#39;modules&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
         
-        <span class="c1"># load the integration values: working angle (WAint), delta magnitude (dMagint)</span>
-        <span class="c1"># default to detection mode IWA and dMadLim</span>
-        <span class="c1"># must be of size equal to TargetList.nStars</span>
-        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="c1"># load the dMag and WA values for integration:</span>
+        <span class="c1"># - dMagint defaults to the completeness limiting delta magnitude</span>
+        <span class="c1"># - WAint defaults to the detection mode IWA-OWA midpoint</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
-        <span class="n">dMagint</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span> <span class="k">if</span> <span class="n">dMagint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagint</span><span class="p">)</span>
+        <span class="n">dMagint</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span> <span class="k">if</span> <span class="n">dMagint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagint</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">WAint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">WAint</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">WAint</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">WAint</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
-        <span class="c1"># transform into arrays </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">WAint</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">WAint</span><span class="o">.</span><span class="n">unit</span>
+        <span class="c1"># transform into arrays of length TargetList.nStars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dMagint</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">WAint</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">WAint</span><span class="o">.</span><span class="n">unit</span>
         
         <span class="c1"># add scalar values of WAint and dMagint to outspec</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;WAint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;dMagint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;WAint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
         <span class="c1"># initialize arrays updated in run_sim()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>
@@ -467,6 +471,7 @@
                     <span class="n">Obs</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;d2&#39;</span><span class="p">)</span>
         
         <span class="c1"># now, start to look for available targets</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
             <span class="c1"># 1/ initialize arrays</span>
             <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
@@ -479,7 +484,7 @@
             <span class="c1"># differ for each star) and filter out unavailable targets</span>
             <span class="n">sd</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="c1"># find angle between old and new stars, default to pi/2 for first target</span>
+                <span class="c1"># find angle between old and new stars, defaults to pi/2 for first target</span>
                 <span class="k">if</span> <span class="n">old_sInd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">90</span><span class="p">)]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -546,7 +551,8 @@
             
             <span class="c1"># if no observable target, call the TimeKeeping.wait() method</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">TK</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+                <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">waitTime</span><span class="o">*</span><span class="n">TK</span><span class="o">.</span><span class="n">waitMultiple</span><span class="o">**</span><span class="n">cnt</span><span class="p">)</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
             
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
@@ -641,6 +647,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
         <span class="n">PPro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span>
@@ -705,7 +712,7 @@
         
         <span class="c1"># find out if a false positive (false alarm) or any false negative </span>
         <span class="c1"># (missed detections) have occurred</span>
-        <span class="n">FA</span><span class="p">,</span> <span class="n">MD</span> <span class="o">=</span> <span class="n">PPro</span><span class="o">.</span><span class="n">det_occur</span><span class="p">(</span><span class="n">SNR</span><span class="p">,</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;SNR&#39;</span><span class="p">])</span>
+        <span class="n">FA</span><span class="p">,</span> <span class="n">MD</span> <span class="o">=</span> <span class="n">PPro</span><span class="o">.</span><span class="n">det_occur</span><span class="p">(</span><span class="n">SNR</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">intTime</span><span class="p">)</span>
         
         <span class="c1"># populate detection status array </span>
         <span class="c1"># 1:detected, 0:missed, -1:below IWA, -2:beyond OWA</span>
@@ -730,12 +737,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">det</span><span class="p">,</span> <span class="n">systemParams</span><span class="p">[</span><span class="s1">&#39;fEZ&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
                     <span class="n">systemParams</span><span class="p">[</span><span class="s1">&#39;dMag&#39;</span><span class="p">],</span> <span class="n">systemParams</span><span class="p">[</span><span class="s1">&#39;WA&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
         
-        <span class="c1"># in case of a FA, generate a random delta mag (between maxFAfluxratio and</span>
-        <span class="c1"># dMagLim) and working angle (between IWA and min(OWA, a_max))</span>
+        <span class="c1"># in case of a FA, generate a random delta mag (between PPro.FAdMag0 and</span>
+        <span class="c1"># Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))</span>
         <span class="k">if</span> <span class="n">FA</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">],</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">arange</span><span class="p">)</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">]))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
-            <span class="n">dMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">PPro</span><span class="o">.</span><span class="n">maxFAfluxratio</span><span class="p">(</span><span class="n">WA</span><span class="p">)),</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
+            <span class="n">dMag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">PPro</span><span class="o">.</span><span class="n">FAdMag0</span><span class="p">(</span><span class="n">WA</span><span class="p">),</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span><span class="p">[</span><span class="n">sInd</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> 
                     <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -1082,16 +1089,17 @@
 <span class="sd">        </span>
 <span class="sd">        2) If genNewPlanets is True (default) then it will also generate all new </span>
 <span class="sd">        planets based on the original input specification. If genNewPlanets is False, </span>
-<span class="sd">        then the original planets will remain, but they will not be rewound to their </span>
+<span class="sd">        then the original planets will remain. Setting to True forces rewindPlanets to</span>
+<span class="sd">        be True as well.</span>
+
+<span class="sd">        3) If rewindPlanets is True (default), then the current set of planets will be </span>
+<span class="sd">        reset to their original orbital phases. If both genNewPlanets and rewindPlanet</span>
+<span class="sd">        are False, the original planets will be retained and will not be rewound to their </span>
 <span class="sd">        initial starting locations (i.e., all systems will remain at the times they </span>
 <span class="sd">        were at the end of the last run, thereby effectively randomizing planet phases.</span>
-<span class="sd">        </span>
-<span class="sd">        3) If rewindPlanets is True (default), then the current set of planets will be </span>
-<span class="sd">        reset to their original orbital phases. This has no effect if genNewPlanets is </span>
-<span class="sd">        True, but if genNewPlanets is False, will have the effect of resetting the full </span>
-<span class="sd">        simulation to its exact original state.</span>
-<span class="sd">        </span>
-<span class="sd">        4) Re-initializing the SurveySimulation object, including resetting the DRM to []</span>
+
+<span class="sd">        4) Re-initializing the SurveySimulation object, including resetting the DRM to [].</span>
+<span class="sd">        The random seed will be reset as well.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -1110,6 +1118,8 @@
         <span class="c1"># re-initialize SurveySimulation arrays</span>
         <span class="n">specs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span>
+        <span class="k">if</span> <span class="s1">&#39;seed&#39;</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Simulation reset.&quot;</span><span class="p">)</span></div>
@@ -1156,6 +1166,9 @@
         <span class="c1"># add in the SVN/Git revision</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#handle case where EXOSIMS was imported from the working directory</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
         <span class="c1">#comm = &quot;git -C &quot; + path + &quot; log -1&quot;</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="s2">&quot;git --git-dir=</span><span class="si">%s</span><span class="s2"> --work-tree=</span><span class="si">%s</span><span class="s2"> log -1&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="s2">&quot;.git&quot;</span><span class="p">),</span><span class="n">path</span><span class="p">)</span>
         <span class="n">rev</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
@@ -1226,6 +1239,7 @@
     <span class="c1"># nothing worked, bail out</span>
     
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
+
 </pre></div>
 
           </div>
@@ -1259,7 +1273,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

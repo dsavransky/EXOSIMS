@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Prototypes.SimulatedUniverse &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -45,7 +48,6 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
-<span class="kn">import</span> <span class="nn">EXOSIMS.util.statsFun</span> <span class="k">as</span> <span class="nn">statsFun</span> 
 
 <div class="viewcode-block" id="SimulatedUniverse"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">[docs]</a><span class="k">class</span> <span class="nc">SimulatedUniverse</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Simulated Universe class template</span>
@@ -58,6 +60,8 @@
 <span class="sd">            user specified values</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
+<span class="sd">        StarCatalog (StarCatalog module):</span>
+<span class="sd">            StarCatalog class object (only retained if keepStarCatalog is True)</span>
 <span class="sd">        PlanetPopulation (PlanetPopulation module):</span>
 <span class="sd">            PlanetPopulation class object</span>
 <span class="sd">        PlanetPhysicalModel (PlanetPhysicalModel module):</span>
@@ -126,7 +130,7 @@
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c1"># load the vprint funtion (same line in all prototype module constructors)</span>
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
        
         <span class="c1"># import TargetList class</span>
@@ -189,20 +193,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">)</span>
         
         <span class="c1"># sample all of the orbital and physical parameters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                  <span class="c1"># semi-major axis</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">e</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span> <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">constrainOrbits</span> \
-                <span class="k">else</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>            <span class="c1"># eccentricity</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_I</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># inclination</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">O</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_O</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># longitude of ascending node</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                    <span class="c1"># argument of periapsis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">O</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_plan_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">M0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">360</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span> <span class="c1"># initial mean anomaly</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>              <span class="c1"># radius</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                <span class="c1"># mass</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>               <span class="c1"># albedo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Mp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_mass</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span><span class="p">)</span>                     <span class="c1"># mass</span>
         
         <span class="c1"># The prototype StarCatalog module is made of one single G star at 1pc. </span>
         <span class="c1"># In that case, the SimulatedUniverse prototype generates one Jupiter </span>
-        <span class="c1"># at 5 AU for characterization. </span>
+        <span class="c1"># at 5 AU to allow for characterization testing.</span>
         <span class="c1"># Also generates at least one Jupiter if no planet was generated.</span>
         <span class="k">if</span> <span class="n">TL</span><span class="o">.</span><span class="n">Name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Prototype&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">nPlans</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -463,7 +463,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

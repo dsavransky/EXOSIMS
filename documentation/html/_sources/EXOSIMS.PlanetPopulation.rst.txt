@@ -44,6 +44,14 @@ EXOSIMS\.PlanetPopulation\.KnownRVPlanets module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.PlanetPopulation\.SAG13 module
+---------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.SAG13
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

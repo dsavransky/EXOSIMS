@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.SurveySimulation package &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.TargetList package" href="EXOSIMS.TargetList.html" />
@@ -31,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -50,8 +53,9 @@
 <em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.KnownRVSurvey.</code><code class="descname">KnownRVSurvey</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/KnownRVSurvey.html#KnownRVSurvey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.KnownRVSurvey.KnownRVSurvey" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>Survey Simulation module based on Know RV planets</p>
-<p>This class uses estimates of flux ratios (dMag) and working angle
-(separations) for the known RV planets</p>
+<p>This class uses estimates of delta magnitude (dMagint) and instrument
+working angle (WAint) for integration time calculation, specific to
+the known RV planets.</p>
 </dd></dl>
 
 </div>
@@ -74,10 +78,10 @@ of linear cost function.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
-<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
-<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times for detection in units of day</li>
 </ul>
 </td>
 </tr>
@@ -98,7 +102,7 @@ of linear cost function.</p>
 <span id="exosims-surveysimulation-linearjscheduler-module"></span><h2>EXOSIMS.SurveySimulation.linearJScheduler module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.linearJScheduler" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler">
-<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.linearJScheduler.</code><code class="descname">linearJScheduler</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/linearJScheduler.html#linearJScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.linearJScheduler.</code><code class="descname">linearJScheduler</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2, 1], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/linearJScheduler.html#linearJScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>This class implements the linear cost function scheduler described
 in Savransky et al. (2010).</p>
@@ -122,10 +126,10 @@ of linear cost function.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
-<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
-<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times for detection in units of day</li>
 </ul>
 </td>
 </tr>
@@ -161,10 +165,10 @@ for a fixed population of planets in order to validate other schedulers.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
-<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
-<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times for detection in units of day</li>
 </ul>
 </td>
 </tr>
@@ -185,37 +189,42 @@ for a fixed population of planets in order to validate other schedulers.</p>
 <span id="exosims-surveysimulation-starkayo-module"></span><h2>EXOSIMS.SurveySimulation.starkAYO module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.starkAYO" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO">
-<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO.</code><code class="descname">starkAYO</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO.</code><code class="descname">starkAYO</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>This class implements a Scheduler that selects the current highest Completeness/Integration Time.</p>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcMaxTint">
+<code class="descname">calcMaxTint</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.calcMaxTint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcMaxTint" title="Permalink to this definition">¶</a></dt>
+<dd><p>calcMaxTint estimates the maximum integration time allowed and the associated maximum dmag allowed for a given star
+NOTE that this only returns an approximate... The resolution is determined by the fidelity of the dmag_startSaved array</p>
+<p>Inputs:
+sInds. requires a list of stars to calculate MaxTint for</p>
+<p>Returns:
+maxTint</p>
 <blockquote>
-<div><dl class="docutils">
-<dt>CHANGE Args:</dt>
-<dd><dl class="first last docutils">
-<dt>as (iterable 3x1):</dt>
-<dd>Cost function coefficients: slew distance, completeness, target list coverage</dd>
-<dt>**specs:</dt>
-<dd>user specified values</dd>
+<div>The maximum integration times for stars in sInds?... might not be in sInds but Tint...</div></blockquote>
+<dl class="docutils">
+<dt>maxdmag</dt>
+<dd>The maximum dmag achievable (dmag where maxTint occurs)</dd>
 </dl>
-</dd>
-</dl>
-</div></blockquote>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcTint">
 <code class="descname">calcTint</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.calcTint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcTint" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates integration times for all stars in sInds. If None is passed to sInds,
+<dd><p>Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,
 the integration times for all stars in self.schedule_startSaved will be calculated.
 This could be made more efficient bt calculating integration times for only those
 stars still in the schedule but that would elimintate the possibility of reading
-those stars to the schedule…</p>
+those stars to the schedule...</p>
 <p>Intended to be called from starkAYO only***</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sInds</strong> (<em>None</em><em> or </em><em>np.ndarray</em><em> or </em><em>shape #stars</em>) – </li>
-<li><strong>orbital position of SC at currentTime</strong> (<em>calculates</em>) – </li>
+<li><strong>sInds</strong> (<em>None</em><em> or </em><em>np.ndarray</em><em> or </em><em>shape #stars</em>) &#8211; </li>
+<li><strong>orbital position of SC at currentTime</strong> (<em>calculates</em>) &#8211; </li>
 </ul>
 </td>
 </tr>
@@ -233,8 +242,82 @@ Dimensions are Tint[nStars][Tint &gt; 10**-10]</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcTint_core">
+<code class="descname">calcTint_core</code><span class="sig-paren">(</span><em>sInds</em>, <em>dmag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.calcTint_core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.calcTint_core" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,
+the integration times for all stars in self.schedule_startSaved will be calculated.
+This could be made more efficient bt calculating integration times for only those
+stars still in the schedule but that would elimintate the possibility of reading
+those stars to the schedule...</p>
+<p>Intended to be called from starkAYO only***</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>None</em><em> or </em><em>np.ndarray</em><em> or </em><em>shape #stars</em>) &#8211; </li>
+<li><strong>orbital position of SC at currentTime</strong> (<em>calculates</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>This function updates self.rawTint
+rawTint contains all Tint over all dmag_startSaved. We must do this in order to filter future values.
+rawTint has dimensions rawTint[nStars][len(dmag_startSaved)]</p>
+<p>This function updates self.Tint
+Tint contains Tint greater than 10**-10
+Dimensions are Tint[nStars][Tint &gt; 10**-10]</p>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.calc_maxdMag">
+<code class="descname">calc_maxdMag</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>dMag</em>, <em>WA</em>, <em>mode</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.calc_maxdMag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.calc_maxdMag" title="Permalink to this definition">¶</a></dt>
+<dd><p>DEPRICATED... ORIGINALLY THIS WAS GOING TO SOLVE FOR THE MAXIMUM DMAG FOR OBSERVATION OF ANY GIVEN STAR BUT THE SOLVE FUNCTION IS TOO SLOW AS IT CURRENTLY STANDS
+Calculates electron count rates for planet signal, background noise,
+and speckle residuals.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of mas</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+<li><strong>returnExtra</strong> (<em>boolean</em>) &#8211; Optional flag, default False, set True to return additional rates for validation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Planet signal electron count rate in units of 1/s
+C_b (astropy Quantity array):</p>
+<blockquote>
+<div><p>Background noise electron count rate in units of 1/s</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>C_sp (astropy Quantity array):</dt>
+<dd><p class="first last">Residual speckle spatial structure (systematic error) in units of 1/s</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">C_p (astropy Quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.choose_next_target">
-<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.choose_next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Choose next target based on truncated depth first search
 of linear cost function.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -242,10 +325,9 @@ of linear cost function.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
-<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
-<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
-<li><strong>t_dets</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>float array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
 </ul>
 </td>
 </tr>
@@ -260,17 +342,25 @@ of linear cost function.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.distributedt">
+<code class="descname">distributedt</code><span class="sig-paren">(</span><em>lastTime</em>, <em>dCbydT</em>, <em>sInds</em>, <em>t_dets</em>, <em>fsplDeriv</em>, <em>Tint</em>, <em>fspl2</em>, <em>CbyT</em>, <em>Comp00</em>, <em>fspl</em>, <em>maxIntTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.distributedt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.distributedt" title="Permalink to this definition">¶</a></dt>
+<dd><p>#here we want to add integration time to the highest performing stars in our selection box
+#returns nTint for additional integration time added to each star.
+:param maxIntTime is the list of approximate maximum integration times:</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.f_dmag2">
 <code class="descname">f_dmag2</code><span class="sig-paren">(</span><em>dmag</em>, <em>star_dist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.f_dmag2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.f_dmag2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates probability density of dmag marginalized
-from Smin to Smax #note this is similat to the f_s function…</p>
+from Smin to Smax #note this is similat to the f_s function...</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dmag</strong> (<em>float</em>) – dMag to evaluate completeness as</li>
-<li><strong>(</strong><strong>)</strong> (<em>star_dist</em>) – determines min and max separation marginalizing over…</li>
+<li><strong>dmag</strong> (<em>float</em>) &#8211; dMag to evaluate completeness as</li>
+<li><strong>(</strong><strong>)</strong> (<em>star_dist</em>) &#8211; determines min and max separation marginalizing over...</li>
 </ul>
 </td>
 </tr>
@@ -295,8 +385,8 @@ separation</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dmag</strong> (<em>float</em>) – Value of dMag</li>
-<li><strong>s</strong> (<em>float</em>) – Value of projected separation (AU)</li>
+<li><strong>dmag</strong> (<em>float</em>) &#8211; Value of dMag</li>
+<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation (AU)</li>
 </ul>
 </td>
 </tr>
@@ -328,41 +418,9 @@ separation</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.nextSchedule">
-<code class="descname">nextSchedule</code><span class="sig-paren">(</span><em>sInds</em>, <em>dmag</em>, <em>WA</em>, <em>dir_path</em>, <em>fname</em>, <em>startTime</em>, <em>tovisit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.nextSchedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.nextSchedule" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate Schedule based off of AYO at this instant in time</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>sInds</strong> (<em>integer array</em>) – Array of all indexes of stars from sInds = np.array(TL.nStars)</li>
-<li><strong>(</strong><strong>)</strong> (<a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.WA" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.WA"><em>WA</em></a>) – </li>
-<li><strong>(</strong><strong>)</strong> – </li>
-<li><strong>dir_path</strong> (<em>string</em>) – string containing the path to starComps.csv. This should be the EXOSIMS SurveySimulation folder</li>
-<li><strong>fname</strong> (<em>string</em>) – string containing starComps.csv (aside: This name should be improved to encode the list of stars being used)</li>
-<li><strong>startTime</strong> (<em>float array</em>) – observation start time of each observation</li>
-<li><strong>tovisit</strong> (<em>idk</em>) – uhhhhh</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>DRM
-schedule
-sInd ():</p>
-<blockquote>
-<div><p>detection</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>t_det (float):</dt>
-<dd><p class="first last">detection time of next observation</p>
-</dd>
-</dl>
-</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.next_target">
+<code class="descname">next_target</code><span class="sig-paren">(</span><em>sInds</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.next_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.plotCompbyTauvsTau">
@@ -383,8 +441,8 @@ sInd ():</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.run_sim">
-<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.run_sim" title="Permalink to this definition">¶</a></dt>
+<dt id="EXOSIMS.SurveySimulation.starkAYO.starkAYO.reOrder">
+<code class="descname">reOrder</code><span class="sig-paren">(</span><em>dCbydT</em>, <em>sInds</em>, <em>t_dets</em>, <em>fsplDeriv</em>, <em>Tint</em>, <em>fspl2</em>, <em>CbyT</em>, <em>Comp00</em>, <em>fspl</em>, <em>maxIntTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO.html#starkAYO.reOrder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO.starkAYO.reOrder" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -395,7 +453,7 @@ sInd ():</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>starComps</strong> (<em>List</em>) – List of form Completeness = starComps[star][dmag index]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>starComps</strong> (<em>List</em>) &#8211; List of form Completeness = starComps[star][dmag index]</td>
 </tr>
 </tbody>
 </table>
@@ -514,7 +572,7 @@ Dimensions are splDeriv_startSaved[nStars][Tint &gt; 10**-10]</td>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

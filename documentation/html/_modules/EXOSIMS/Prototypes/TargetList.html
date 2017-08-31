@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Prototypes.TargetList &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,7 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -82,12 +85,9 @@
 <span class="sd">        Completeness (Completeness module):</span>
 <span class="sd">            Completeness class object</span>
 <span class="sd">        tint0 (astropy Quantity array):</span>
-<span class="sd">            Minimum integration time values at the limiting planet flux ratio </span>
-<span class="sd">            for each target star in units of day</span>
+<span class="sd">            Minimum integration time values for each target star in units of day</span>
 <span class="sd">        comp0 (ndarray):</span>
 <span class="sd">            Completeness value for each target star</span>
-<span class="sd">        minComp (float): </span>
-<span class="sd">            Minimum completeness value for inclusion in target list</span>
 <span class="sd">        MsEst (float ndarray):</span>
 <span class="sd">            &#39;approximate&#39; stellar mass in units of solar mass</span>
 <span class="sd">        MsTrue (float ndarray):</span>
@@ -104,19 +104,15 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TargetList&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mi">60634</span><span class="p">,</span> <span class="n">staticStars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mi">60634</span><span class="p">,</span> <span class="n">staticStars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
             <span class="n">keepStarCatalog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="c1"># load the vprint funtion (same line in all prototype module constructors)</span>
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         
-        <span class="c1"># validate inputs</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minComp</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">),</span> <span class="s2">&quot;minComp must be a number.&quot;</span>
+        <span class="c1"># validate TargetList inputs</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">staticStars</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;staticStars must be a boolean.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;keepStarCatalog must be a boolean.&quot;</span>
-        
-        <span class="c1"># default TargetList values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minComp</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticStars</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">staticStars</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keepStarCatalog</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">)</span>
         
@@ -183,71 +179,6 @@
         
         <span class="k">return</span> <span class="s1">&#39;Target List class object attributes&#39;</span>
 
-<div class="viewcode-block" id="TargetList.starprop"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.starprop">[docs]</a>    <span class="k">def</span> <span class="nf">starprop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds target star positions vector in heliocentric equatorial (default)</span>
-<span class="sd">        or ecliptic frame for current time (MJD).</span>
-<span class="sd">        </span>
-<span class="sd">        This method uses ICRS coordinates which is approximately the same as </span>
-<span class="sd">        equatorial coordinates. </span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            sInds (integer ndarray):</span>
-<span class="sd">                Integer indices of the stars of interest</span>
-<span class="sd">            currentTime (astropy Time):</span>
-<span class="sd">                Current absolute mission time in MJD</span>
-<span class="sd">            eclip (boolean):</span>
-<span class="sd">                Boolean used to switch to heliocentric ecliptic frame. Defaults to </span>
-<span class="sd">                False, corresponding to heliocentric equatorial frame.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            r_targ (astropy Quantity nx3 array): </span>
-<span class="sd">                Target star positions vector in heliocentric equatorial (default)</span>
-<span class="sd">                or ecliptic frame in units of pc</span>
-<span class="sd">        </span>
-<span class="sd">        Note: Use eclip=True to get ecliptic coordinates.</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># cast sInds to array</span>
-        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        
-        <span class="c1"># if the starprop_static method was created (staticStars is True), then use it</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop_static</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop_static</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="p">)</span>
-        
-        <span class="c1"># get all array sizes</span>
-        <span class="n">nStars</span> <span class="o">=</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span>
-        <span class="n">nTimes</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span>
-        <span class="k">assert</span> <span class="n">nStars</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="n">nStars</span><span class="p">,</span> \
-                <span class="s2">&quot;If multiple times and targets, currentTime and sInds sizes must match&quot;</span>
-        
-        <span class="c1"># target star ICRS coordinates</span>
-        <span class="n">coord_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="c1"># right ascension and declination</span>
-        <span class="n">ra</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">ra</span>
-        <span class="n">dec</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">dec</span>
-        <span class="c1"># directions</span>
-        <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
-        <span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)])</span>
-        <span class="n">r0</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">/</span><span class="n">coord_old</span><span class="o">.</span><span class="n">distance</span>
-        <span class="c1"># proper motion vector</span>
-        <span class="n">mu0</span> <span class="o">=</span> <span class="n">p0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">+</span> <span class="n">q0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="c1"># space velocity vector</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="n">mu0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> <span class="o">+</span> <span class="n">r0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
-        <span class="c1"># set J2000 epoch</span>
-        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
-        <span class="c1"># target star positions vector in heliocentric equatorial frame</span>
-        <span class="n">dr</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="n">r_targ</span> <span class="o">=</span> <span class="p">(</span><span class="n">coord_old</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span> <span class="o">+</span> <span class="n">dr</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pc&#39;</span><span class="p">)</span>
-        
-        <span class="k">if</span> <span class="n">eclip</span><span class="p">:</span>
-            <span class="c1"># transform to heliocentric true ecliptic frame</span>
-            <span class="n">coord_new</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">r_targ</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">r_targ</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">r_targ</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> 
-                    <span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span>
-            <span class="n">r_targ</span> <span class="o">=</span> <span class="n">coord_new</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pc&#39;</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">r_targ</span></div>
-
 <div class="viewcode-block" id="TargetList.populate_target_list"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.populate_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">populate_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; This function is actually responsible for populating values from the star </span>
 <span class="sd">        catalog (or any other source) into the target list attributes.</span>
@@ -289,13 +220,12 @@
 <div class="viewcode-block" id="TargetList.filter_target_list"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.filter_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">filter_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This function is responsible for filtering by any required metrics.</span>
 <span class="sd">        </span>
-<span class="sd">        The prototype implementation does the following:</span>
-<span class="sd">            * binary stars are removed</span>
-<span class="sd">            * systems with planets inside the IWA removed</span>
-<span class="sd">            * systems where maximum delta mag is not in allowable orbital range </span>
-<span class="sd">              removed</span>
-<span class="sd">            * systems where integration time is longer than maximum time removed</span>
-<span class="sd">            * systems not meeting the completeness threshold removed</span>
+<span class="sd">        The prototype implementation removes the following stars:</span>
+<span class="sd">            * Stars with NAN values in their parameters</span>
+<span class="sd">            * Binary stars</span>
+<span class="sd">            * Systems with planets inside the OpticalSystem fundamental IWA</span>
+<span class="sd">            * Systems where minimum integration time is longer than OpticalSystem cutoff</span>
+<span class="sd">            * Systems not meeting the Completeness threshold</span>
 <span class="sd">        </span>
 <span class="sd">        Additional filters can be provided in specific TargetList implementations.</span>
 <span class="sd">        </span>
@@ -303,12 +233,13 @@
         
         <span class="c1"># filter out binary stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_filter</span><span class="p">()</span>
+        
         <span class="c1"># filter out systems with planets within the IWA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outside_IWA_filter</span><span class="p">()</span>
-        <span class="c1"># filter out systems where maximum delta mag is not in allowable orbital range</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_dmag_filter</span><span class="p">()</span>
+        
         <span class="c1"># filter out systems where minimum integration time is longer than cutoff</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">int_cutoff_filter</span><span class="p">()</span>
+        
         <span class="c1"># filter out systems which do not reach the completeness threshold</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">()</span></div>
 
@@ -412,14 +343,17 @@
 <div class="viewcode-block" id="TargetList.max_dmag_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">[docs]</a>    <span class="k">def</span> <span class="nf">max_dmag_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Includes stars if maximum delta mag is in the allowed orbital range</span>
 <span class="sd">        </span>
+<span class="sd">        Removed from prototype filters. Prototype is already calling the </span>
+<span class="sd">        int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
         <span class="n">PPMod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
-        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         
         <span class="c1"># s and beta arrays</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">OS</span><span class="o">.</span><span class="n">IWA</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">WA0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span>
         <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">scaleOrbits</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.10472881476178</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
@@ -435,7 +369,7 @@
         <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">Rprange</span><span class="p">)</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="n">Phi</span> <span class="o">=</span> <span class="n">PPMod</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">Rp</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">Phi</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">Rp</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">Phi</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.int_cutoff_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">[docs]</a>    <span class="k">def</span> <span class="nf">int_cutoff_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -451,7 +385,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">minComp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.revise_lists"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">[docs]</a>    <span class="k">def</span> <span class="nf">revise_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">):</span>
@@ -502,6 +436,71 @@
         <span class="c1"># if additional filters are desired, need self.catalog_atts fully populated</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;MsEst&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;MsTrue&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TargetList.starprop"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.starprop">[docs]</a>    <span class="k">def</span> <span class="nf">starprop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds target star positions vector in heliocentric equatorial (default)</span>
+<span class="sd">        or ecliptic frame for current time (MJD).</span>
+<span class="sd">        </span>
+<span class="sd">        This method uses ICRS coordinates which is approximately the same as </span>
+<span class="sd">        equatorial coordinates. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Integer indices of the stars of interest</span>
+<span class="sd">            currentTime (astropy Time):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">            eclip (boolean):</span>
+<span class="sd">                Boolean used to switch to heliocentric ecliptic frame. Defaults to </span>
+<span class="sd">                False, corresponding to heliocentric equatorial frame.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            r_targ (astropy Quantity nx3 array): </span>
+<span class="sd">                Target star positions vector in heliocentric equatorial (default)</span>
+<span class="sd">                or ecliptic frame in units of pc</span>
+<span class="sd">        </span>
+<span class="sd">        Note: Use eclip=True to get ecliptic coordinates.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># cast sInds to array</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="c1"># if the starprop_static method was created (staticStars is True), then use it</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop_static</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">starprop_static</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">,</span> <span class="n">eclip</span><span class="p">)</span>
+        
+        <span class="c1"># get all array sizes</span>
+        <span class="n">nStars</span> <span class="o">=</span> <span class="n">sInds</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">nTimes</span> <span class="o">=</span> <span class="n">currentTime</span><span class="o">.</span><span class="n">size</span>
+        <span class="k">assert</span> <span class="n">nStars</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">nTimes</span><span class="o">==</span><span class="n">nStars</span><span class="p">,</span> \
+                <span class="s2">&quot;If multiple times and targets, currentTime and sInds sizes must match&quot;</span>
+        
+        <span class="c1"># target star ICRS coordinates</span>
+        <span class="n">coord_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># right ascension and declination</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">ra</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">dec</span>
+        <span class="c1"># directions</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">size</span><span class="p">)])</span>
+        <span class="n">q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ra</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">dec</span><span class="p">)])</span>
+        <span class="n">r0</span> <span class="o">=</span> <span class="n">coord_old</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">/</span><span class="n">coord_old</span><span class="o">.</span><span class="n">distance</span>
+        <span class="c1"># proper motion vector</span>
+        <span class="n">mu0</span> <span class="o">=</span> <span class="n">p0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pmra</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">+</span> <span class="n">q0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># space velocity vector</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">mu0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">parx</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span> <span class="o">+</span> <span class="n">r0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">rv</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+        <span class="c1"># set J2000 epoch</span>
+        <span class="n">j2000</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="mf">2000.</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jyear&#39;</span><span class="p">)</span>
+        <span class="c1"># target star positions vector in heliocentric equatorial frame</span>
+        <span class="n">dr</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="p">(</span><span class="n">currentTime</span><span class="o">.</span><span class="n">mjd</span> <span class="o">-</span> <span class="n">j2000</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="n">r_targ</span> <span class="o">=</span> <span class="p">(</span><span class="n">coord_old</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span> <span class="o">+</span> <span class="n">dr</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pc&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">eclip</span><span class="p">:</span>
+            <span class="c1"># transform to heliocentric true ecliptic frame</span>
+            <span class="n">coord_new</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">r_targ</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">r_targ</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">r_targ</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> 
+                    <span class="n">representation</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span>
+            <span class="n">r_targ</span> <span class="o">=</span> <span class="n">coord_new</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">xyz</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;pc&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">r_targ</span></div>
 
 <div class="viewcode-block" id="TargetList.starMag"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.starMag">[docs]</a>    <span class="k">def</span> <span class="nf">starMag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">lam</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates star visual magnitudes with B-V color using empirical fit </span>
@@ -590,7 +589,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

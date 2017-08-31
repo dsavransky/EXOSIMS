@@ -1069,12 +1069,16 @@ class SurveySimulation(object):
         if genNewPlanets:
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
-        # re-initialize systems if requested (default)
-        if rewindPlanets:
-            SU.init_systems()
+        else:
+            # re-initialize systems if requested (default)
+            if rewindPlanets:
+                SU.init_systems()
+                
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules
+        if 'seed' in specs:
+            specs.pop('seed')
         self.__init__(**specs)
         
         self.vprint("Simulation reset.")

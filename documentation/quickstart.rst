@@ -182,14 +182,34 @@ Now we must decide what kind of universe we will be modeling.  Let's select the 
      "erange": [0, 0.3]
     }
 
-We again build a ``MissionSim`` object called ``sim`` using this script and then verify that our ``erange`` has overwritten the default by looking at the contents of ``sim.PlanetPopulation.erange``.
+We again build a ``MissionSim`` object called ``sim`` using this script and then verify that our ``erange`` has overwritten the default by looking at the contents of ``sim.PlanetPopulation.erange`` and by printing ``sim.SimulatedUniverse.e.min(), sim.SimulatedUniverse.e.max()``.  The former shows us the range used in sampling by the ``PlanetPopulation`` while the latter shows the range of values actually sampled when creating the simulated universe.
 
-.. note::
- 
-    If we print ``sim.SimulatedUniverse.e.max()`` we may see that the maximum eccentricity value generated for our simulated planets is actually outside of the specified eccentricity range.  This is because the ``EarthTwinHabZone`` implementations defulat the ``scaleOrbits`` flag to ``True``.  This flag forces all orbital radii to be within the semi-major axis range (so that :math:`a(1+e) \le a_\mathrm{max}` and  :math:`a(1-e) \ge a_\mathrm{min}`).  This setting partially overrides the eccentricity limits. 
+Another important thing to note is that the ``EarthTwinHabZone2`` populations set the ``constrainOrbits`` keyword to ``True`` by default.   This flag forces all orbital radii to be within the semi-major axis range (so that :math:`a(1+e) \le a_\mathrm{max}` and  :math:`a(1-e) \ge a_\mathrm{min}`). At the same time, the ``EarthTwinHabZone`` implementations also set the ``scaleOrbits`` flag to ``True``, which causes the semi-major axes to be scaled by the square root of the stellar luminosities as they are generated in the ``SimulatedUniverse``.  To verify that these things are happening we can execute the following:
 
+.. code-block:: python
 
-At this point, we should have a large number of stars in our target list (verify by printing ``sim.TargetList.nStars``) because the prototype Completeness isn't calculating the true completeness, and the default instrument settings will result in very low integration times for most stars.  
+    import numpy as np
+    Ls = sim.TargetList.L[sim.SimulatedUniverse.plan2star]
+    smas = sim.SimulatedUniverse.a/np.sqrt(Ls)
+    print(np.all((smas <= sim.PlanetPopulation.arange[1]) & (smas >= sim.PlanetPopulation.arange[0])))
+    print(np.all((smas*(1+sim.SimulatedUniverse.e) <= sim.PlanetPopulation.arange[1]) & (smas*(1-sim.SimulatedUniverse.e) >= sim.PlanetPopulation.arange[0])))
+
+The ``plan2star`` attribute maps the simulated planets to their parent stars in the target list object, allowing us to extract the stellar luminosities.  Both of the logical tests should evaluate to ``True`` (both the semi-major axes and extrema of the orbital radii should fall within the semi-major axis range with the default flags).
+
+Another thing to test is that we are generating the proper number of planets.  In this population, this is controlled by the ``eta`` parameter (also settable in the JSON script), which defaults to 0.1, meaning that we expect one planet per ten stars, on average.  As these are generated probabilistically, we will not have an exact occurrence rate of 0.1 in any given simulation, but over many simulations, we should expect to average to this rate.  We can explicitly test this by executing the following:
+
+.. code-block:: python
+
+    rate = 0
+    for j in range(100):
+        rate += float(len(sim.SimulatedUniverse.plan2star))/sim.TargetList.nStars
+        sim.reset_sim()
+
+    print(rate/100.0)
+
+The rate should be very nearly 0.1 (with standard Poisson error).
+
+At this point, we should have a large number of stars in our target list (verify by printing ``sim.TargetList.nStars``) because the prototype Completeness isn't calculating the true completeness, and the default instrument settings will result in very low integration times for most stars, meaning that they won't be filtered out based on your integration time cutoff, encoded in ``sim.OpticalSystem.intCutoff`` with a default value of 50 days, and also settable as ``intCutoff`` in the JSON script.  The filtering works by calculating the minimum necessary integration time (with no zodiacal light contribution) for a planet of ``sim.OpticalSystem.dMag0`` at a working angle of ``sim.OpticalSystem.WA0`` (both of these also settable in the JSON script as ``dMag0`` and ``WA0``, respectively. The default ``dMag0`` is 15 (:math:`10^{-6}` contrast), meaning that the vast majority of targets are retained. 
 
 Step 3
 -------
@@ -294,13 +314,16 @@ Our JSON script now looks as follows:
     }
 
 
-Building the ``sim`` object will now take considerably longer as the Monte Carlo completeness calculation executes (and the output will include status messages regarding this calculation).  Note that this will only happen once per script, as the completeness is cached on disk.   Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: ``minComp`` and ``dMagLim``.  The former sets the cutoff below which targets are discarded, and the second sets the limiting :math:`\Delta`\mag of the dimmest planets of interest (the effective instrumental contrast floor used in the completeness calculation). The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the ``sim.Completeness`` object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values. If we wish to expand our initial target list, we can change on or the other (or both).  It is important to note that the ``dMagLim`` parameter value serves as the default for the ``dMagint`` parameter in the ``SurveySimulation`` module, which (in the prototype implementation) determines the target planet magnitude to use in determining integration times for each target.  Increasing ``dMagLim`` without changing ``dMagInt`` will therefore cause integration times to grow, and may potentially waste a lot of mission time. We therefore allow for independent setting of these two parameters.  
+Building the ``sim`` object will now take considerably longer as the Monte Carlo completeness calculation executes (and the output will include status messages regarding this calculation).  Note that this will only happen once per script, as the completeness is cached on disk.   
+Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: ``minComp`` and ``dMagLim``.  The former sets the cutoff below which targets are discarded, and the second sets the limiting :math:`\Delta`\mag of the dimmest planets of interest (the effective instrumental contrast floor used in the completeness calculation). The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the ``sim.Completeness`` object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values. 
+
+If we wish to expand our initial target list, we can change ``dMagLim`` or ``minComp`` (or both).  It is important to note that the ``dMagLim`` parameter value serves as the default for the ``dMagint`` parameter in the ``SurveySimulation`` module, which (in the prototype implementation) sets the target planet magnitude used in determining integration times for each target.  Increasing ``dMagLim`` without changing ``dMagInt`` will therefore cause integration times to grow, and may potentially waste a lot of mission time. We therefore allow for independent setting of these two parameters. However, once you select a ``dMagInt`` that is different from the ``dMagLim``, you explicitly decouple the completeness from the execution of the survey (this is not a large consideration, as the two are always fundamentally different, but is important to remember when interpreting results).
 
 
 
 Step 5
 ----------
-At the same time, we will make this a five year mission with one year of integration time dedicated to planet finding.   We also wish to only perform detections, and not spend any time on spectral characterizations.  This is controlled by setting the SNR to zero in the characterization observing mode.  Right now, there is only one observing mode that was automatically generated from the single instrument and starlight suppression system, so we will have to define a dummy spectrometer instrument and two modes - one for detection and one for characterization.  Our JSON script now looks like this:
+Finally, we will fill in a few more mission details.  We will make this a five year mission with one year of integration time dedicated to planet finding.   We also wish to only perform detections, and not spend any time on spectral characterizations.  This is achieved by setting the SNR to zero in the characterization observing mode.  Right now, there is only one observing mode that is automatically generated from the single instrument and starlight suppression system (stored in ``sim.OpticalSystem.observingModes``), so we will have to define a dummy spectrometer instrument and two modes - one for detection and one for characterization.  Our JSON script now looks like this:
 
 .. code-block:: json
 
@@ -347,12 +370,12 @@ At the same time, we will make this a five year mission with one year of integra
         }
      ],
      "minComp": 0.01,
-     "dMagLim": 25,
+     "dMagLim": 26,
      "missionLife": 5,
      "missionPortion": 0.2
     }
 
-We are now ready to run our simulation.
+After creating a new ``sim`` object with this script, we are now ready to run our simulation.
 
 
 

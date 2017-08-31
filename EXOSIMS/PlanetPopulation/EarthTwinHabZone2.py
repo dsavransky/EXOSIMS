@@ -57,11 +57,13 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
         # check if constrainOrbits == True for eccentricity
         if self.constrainOrbits:
             tmpa = a.to('AU').value
+
             # upper limit for eccentricity given sma
             elim = np.zeros(len(a))
             amean = np.mean(ar)
             elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
             elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
+            elim[elim > self.erange[1]] = self.erange[1]
         
             # uniform distribution
             e = np.random.uniform(low=self.erange[0], high=elim, size=n)

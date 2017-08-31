@@ -44,6 +44,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
             SS.run_sim()
             DRM = SS.DRM[:]
             systems = SS.SimulatedUniverse.dump_systems()
+            seed = SS.seed
         except Exception as e:
             # if anything goes wrong, log the error and reset simulation
             with open(os.path.join(outpath,'log.err'), 'ab') as f:
@@ -64,7 +65,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
-        cPickle.dump({'DRM':DRM,'systems':systems}, f)
+        cPickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
         
     return 0
 

@@ -1047,16 +1047,17 @@ class SurveySimulation(object):
         
         2) If genNewPlanets is True (default) then it will also generate all new 
         planets based on the original input specification. If genNewPlanets is False, 
-        then the original planets will remain, but they will not be rewound to their 
+        then the original planets will remain. Setting to True forces rewindPlanets to
+        be True as well.
+
+        3) If rewindPlanets is True (default), then the current set of planets will be 
+        reset to their original orbital phases. If both genNewPlanets and rewindPlanet
+        are False, the original planets will be retained and will not be rewound to their 
         initial starting locations (i.e., all systems will remain at the times they 
         were at the end of the last run, thereby effectively randomizing planet phases.
-        
-        3) If rewindPlanets is True (default), then the current set of planets will be 
-        reset to their original orbital phases. This has no effect if genNewPlanets is 
-        True, but if genNewPlanets is False, will have the effect of resetting the full 
-        simulation to its exact original state.
-        
-        4) Re-initializing the SurveySimulation object, including resetting the DRM to []
+
+        4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
+        The random seed will be reset as well.
         
         """
         
@@ -1069,11 +1070,9 @@ class SurveySimulation(object):
         if genNewPlanets:
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
-        else:
-            # re-initialize systems if requested (default)
-            if rewindPlanets:
-                SU.init_systems()
-                
+        # re-initialize systems if requested (default)
+        if rewindPlanets:
+            SU.init_systems()
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules

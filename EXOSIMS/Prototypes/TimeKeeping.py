@@ -32,34 +32,32 @@ class TimeKeeping(object):
             Mission finish normalized time in units of day
         missionFinishAbs (astropy Time):
             Mission finish absolute time in MJD
-        nextTimeAvail (astropy Quantity):
-            Next time available for planet-finding in units of day
         currentTimeNorm (astropy Quantity):
             Current mission time normalized to zero at mission start in units of day
         currentTimeAbs (astropy Time):
             Current absolute mission time in MJD
         OBnumber (integer):
             Index/number associated with the current observing block (OB). Each 
-            observaing has a duration, an start time, an end time, and can host 
-            one or multiple observations.
+            observing block has a duration, a start time, an end time, and can 
+            host one or multiple observations.
         OBduration (astropy Quantity):
             Default allocated duration of observing blocks, in units of day. If 
             no OBduration was specified, a new observing block is created for 
             each new observation in the SurveySimulation module. 
         OBstartTimes (astropy Quantity array):
             Array containing the normalized start times of each observing block 
-            thoughout the mission, in units of day
+            throughout the mission, in units of day
         OBendTimes (astropy Quantity array):
             Array containing the normalized end times of each observing block 
-            thoughout the mission, in units of day
+            throughout the mission, in units of day
         obsStart (astropy Quantity):
             Normalized start time of the observation currently executed by the 
-            Survey Simulation
+            Survey Simulation, in units of day
         obsEnd (astropy Quantity):
             Normalized end time of the observation currently executed by the 
-            Survey Simulation
+            Survey Simulation, in units of day
         waitTime (astropy Quantity):
-            Default allocated duration to wait in units of day, in case the
+            Default allocated duration to wait in units of day, when the
             Survey Simulation does not find any observable target
         waitMultiple (float):
             Multiplier applied to the wait time in case of repeated empty lists of 

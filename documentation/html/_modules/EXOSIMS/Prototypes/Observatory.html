@@ -59,22 +59,20 @@
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs: </span>
 <span class="sd">            user specified values</span>
-<span class="sd">        forceStaticEphem (bool):</span>
-<span class="sd">            If True, forces use of stored ephemerides for solar system objects</span>
-<span class="sd">            and uses eccanom utility to propagate.  Defaults to False.</span>
 <span class="sd">        spkpath (str):</span>
 <span class="sd">            Path to SPK file on disk (Defaults to de432s.bsp). </span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        koAngleMin (astropy Quantity):</span>
 <span class="sd">            Telescope minimum keepout angle in units of deg</span>
+<span class="sd">        koAngleMinMoon (astropy Quantity):</span>
+<span class="sd">            Telescope minimum keepout angle in units of deg, for the Moon only</span>
+<span class="sd">        koAngleMinEarth (astropy Quantity):</span>
+<span class="sd">            Telescope minimum keepout angle in units of deg, for the Earth only</span>
 <span class="sd">        koAngleMax (astropy Quantity):</span>
 <span class="sd">            Telescope maximum keepout angle (for occulter) in units of deg</span>
 <span class="sd">        koAngleSmall (astropy Quantity):</span>
 <span class="sd">            Telescope keepout angle for smaller (angular size) bodies in units of deg</span>
-<span class="sd">        checkKeepoutEnd (boolean):</span>
-<span class="sd">            Boolean signifying if the keepout method must be called at the end of </span>
-<span class="sd">            each observation</span>
 <span class="sd">        settlingTime (astropy Quantity): </span>
 <span class="sd">            Instrument settling time after repoint in units of day</span>
 <span class="sd">        thrust (astropy Quantity): </span>
@@ -95,10 +93,11 @@
 <span class="sd">            Default burn portion</span>
 <span class="sd">        flowRate (astropy Quantity): </span>
 <span class="sd">            Slew flow rate in units of kg/day</span>
+<span class="sd">        checkKeepoutEnd (boolean):</span>
+<span class="sd">            Boolean signifying if the keepout method must be called at the end of </span>
+<span class="sd">            each observation</span>
 <span class="sd">        forceStaticEphem (boolean):</span>
 <span class="sd">            Boolean used to force static ephemerides</span>
-<span class="sd">        checkKeepoutEnd (boolean):</span>
-<span class="sd">            Boolean used to call keepout method at the end of each observation</span>
 <span class="sd">    </span>
 <span class="sd">    Notes:</span>
 <span class="sd">        For finding positions of solar system bodies, this routine will attempt to </span>
@@ -112,20 +111,25 @@
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;Observatory&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">koAngleMin</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">koAngleMax</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">koAngleSmall</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">settlingTime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">thrust</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">slewIsp</span><span class="o">=</span><span class="mi">4160</span><span class="p">,</span> <span class="n">scMass</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">dryMass</span><span class="o">=</span><span class="mi">3400</span><span class="p">,</span> <span class="n">coMass</span><span class="o">=</span><span class="mi">5800</span><span class="p">,</span>
-            <span class="n">occulterSep</span><span class="o">=</span><span class="mi">55000</span><span class="p">,</span> <span class="n">skIsp</span><span class="o">=</span><span class="mi">220</span><span class="p">,</span> <span class="n">defburnPortion</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">spkpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">forceStaticEphem</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">checkKeepoutEnd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">koAngleMin</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">koAngleMinMoon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">koAngleMinEarth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">koAngleMax</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">koAngleSmall</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">settlingTime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">thrust</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span> <span class="n">slewIsp</span><span class="o">=</span><span class="mi">4160</span><span class="p">,</span> 
+            <span class="n">scMass</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">dryMass</span><span class="o">=</span><span class="mi">3400</span><span class="p">,</span> <span class="n">coMass</span><span class="o">=</span><span class="mi">5800</span><span class="p">,</span> <span class="n">occulterSep</span><span class="o">=</span><span class="mi">55000</span><span class="p">,</span> <span class="n">skIsp</span><span class="o">=</span><span class="mi">220</span><span class="p">,</span> 
+            <span class="n">defburnPortion</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">spkpath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkKeepoutEnd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+            <span class="n">forceStaticEphem</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         
         <span class="c1"># validate inputs</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">forceStaticEphem</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;forceStaticEphem must be a boolean.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">checkKeepoutEnd</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;checkKeepoutEnd must be a boolean.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">forceStaticEphem</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;forceStaticEphem must be a boolean.&quot;</span>
         
         <span class="c1"># default Observatory values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMin</span> <span class="o">=</span> <span class="n">koAngleMin</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>          <span class="c1"># keepout minimum angle</span>
+        <span class="n">koAngleMinMoon</span> <span class="o">=</span> <span class="n">koAngleMin</span> <span class="k">if</span> <span class="n">koAngleMinMoon</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">koAngleMinMoon</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMinMoon</span> <span class="o">=</span> <span class="n">koAngleMinMoon</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>  <span class="c1"># keepout minimum angle: Moon-only</span>
+        <span class="n">koAngleMinEarth</span> <span class="o">=</span> <span class="n">koAngleMin</span> <span class="k">if</span> <span class="n">koAngleMinEarth</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">koAngleMinEarth</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMinEarth</span> <span class="o">=</span> <span class="n">koAngleMinEarth</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="c1"># keepout minimum angle: Earth-only</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMax</span> <span class="o">=</span> <span class="n">koAngleMax</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>          <span class="c1"># keepout maximum angle (occulter)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">koAngleSmall</span> <span class="o">=</span> <span class="n">koAngleSmall</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>      <span class="c1"># keepout angle for smaller bodies</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">settlingTime</span> <span class="o">=</span> <span class="n">settlingTime</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>        <span class="c1"># instru. settling time after repoint</span>
@@ -137,8 +141,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span> <span class="o">=</span> <span class="n">occulterSep</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span>         <span class="c1"># occulter-telescope distance (km)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skIsp</span> <span class="o">=</span> <span class="n">skIsp</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>                      <span class="c1"># station-keeping Isp (s)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">defburnPortion</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">defburnPortion</span><span class="p">)</span> <span class="c1"># default burn portion</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">forceStaticEphem</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">forceStaticEphem</span><span class="p">)</span><span class="c1"># boolean used to force static ephem</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">checkKeepoutEnd</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">checkKeepoutEnd</span><span class="p">)</span><span class="c1"># true if keepout called at obs end </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forceStaticEphem</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">forceStaticEphem</span><span class="p">)</span><span class="c1"># boolean used to force static ephem</span>
         
         <span class="c1"># set values derived from quantities above</span>
         <span class="c1"># slew flow rate (kg/day)</span>
@@ -146,7 +150,7 @@
         
         <span class="c1"># if jplephem is available, we&#39;ll use that for propagating solar system bodies</span>
         <span class="c1"># otherwise, use static ephemerides</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">forceStaticEphem</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">forceStaticEphem</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="kn">from</span> <span class="nn">jplephem.spk</span> <span class="k">import</span> <span class="n">SPK</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">havejplephem</span> <span class="o">=</span> <span class="kc">True</span>
@@ -719,8 +723,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            TL (TargetList module):</span>
 <span class="sd">                TargetList class object</span>
-<span class="sd">            sInd (integer ndarray):</span>
-<span class="sd">                Integer indices of the star of interest</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Integer index of the star of interest</span>
 <span class="sd">            currentTime (astropy Time):</span>
 <span class="sd">                Current absolute mission time in MJD</span>
 <span class="sd">                </span>

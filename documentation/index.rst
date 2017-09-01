@@ -18,6 +18,7 @@ Contents
    
    quickstart
    install
+   userparams
    docs
    parallel
    EXOSIMS

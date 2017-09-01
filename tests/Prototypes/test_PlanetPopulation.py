@@ -90,6 +90,17 @@ class TestPlanetPopulation(unittest.TestCase):
             hp = 1.0/(hx*np.log(param_range[1]/param_range[0]))
             chi2 = scipy.stats.chisquare(h[0],hp)
             assert(chi2[1] > 0.95)
+    
+    def test_gen_plan_params_constrainOrbits(self):
+        pp = PlanetPopulation(constrainOrbits=True,**self.spec)
+
+        x = 10000
+
+        a, e, p, Rp = pp.gen_plan_params(x)
+
+        self.assertTrue(np.all(a*(1+e) <= pp.arange[1]))
+        self.assertTrue(np.all(a*(1-e) >= pp.arange[0]))
+
 
     
     def test_gen_mass(self):

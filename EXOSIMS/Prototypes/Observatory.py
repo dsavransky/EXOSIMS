@@ -17,9 +17,6 @@ class Observatory(object):
     Args:
         \*\*specs: 
             user specified values
-        forceStaticEphem (bool):
-            If True, forces use of stored ephemerides for solar system objects
-            and uses eccanom utility to propagate.  Defaults to False.
         spkpath (str):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
@@ -34,9 +31,6 @@ class Observatory(object):
             Telescope maximum keepout angle (for occulter) in units of deg
         koAngleSmall (astropy Quantity):
             Telescope keepout angle for smaller (angular size) bodies in units of deg
-        checkKeepoutEnd (boolean):
-            Boolean signifying if the keepout method must be called at the end of 
-            each observation
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -57,10 +51,11 @@ class Observatory(object):
             Default burn portion
         flowRate (astropy Quantity): 
             Slew flow rate in units of kg/day
+        checkKeepoutEnd (boolean):
+            Boolean signifying if the keepout method must be called at the end of 
+            each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
-        checkKeepoutEnd (boolean):
-            Boolean used to call keepout method at the end of each observation
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -77,15 +72,15 @@ class Observatory(object):
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
             koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
-            defburnPortion=0.05, spkpath=None, forceStaticEphem=False, 
-            checkKeepoutEnd=True, **specs):
+            defburnPortion=0.05, spkpath=None, checkKeepoutEnd=True, 
+            forceStaticEphem=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs
-        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
+        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
         self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
@@ -104,8 +99,8 @@ class Observatory(object):
         self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
         self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
-        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
+        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
@@ -113,7 +108,7 @@ class Observatory(object):
         
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides
-        if not forceStaticEphem:
+        if self.forceStaticEphem is False:
             try:
                 from jplephem.spk import SPK
                 self.havejplephem = True
@@ -686,8 +681,8 @@ class Observatory(object):
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInd (integer ndarray):
-                Integer indices of the star of interest
+            sInd (integer):
+                Integer index of the star of interest
             currentTime (astropy Time):
                 Current absolute mission time in MJD
                 

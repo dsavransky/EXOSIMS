@@ -269,8 +269,7 @@
 <div class="viewcode-block" id="SimulatedUniverse.propag_system"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system">[docs]</a>    <span class="k">def</span> <span class="nf">propag_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Propagates planet time-dependant parameters: position, velocity, </span>
 <span class="sd">        planet-star distance, apparent separation, phase function, surface brightness </span>
-<span class="sd">        of exo-zodiacal light, delta magnitude, working angle, and the planet </span>
-<span class="sd">        current time array.</span>
+<span class="sd">        of exo-zodiacal light, delta magnitude, and working angle.</span>
 <span class="sd">        </span>
 <span class="sd">        This method uses the Kepler state transition matrix to propagate a </span>
 <span class="sd">        planet&#39;s state (position and velocity vectors) forward in time using </span>
@@ -348,7 +347,8 @@
 <span class="sd">            None</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            systems (dict)</span>
+<span class="sd">            systems (dict):</span>
+<span class="sd">                Dictionary of planetary properties</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
@@ -401,8 +401,8 @@
 <span class="sd">        and updates the number of planets.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            pInds (ndarray):</span>
-<span class="sd">                1D numpy ndarray of indices to keep</span>
+<span class="sd">            pInds (integer ndarray):</span>
+<span class="sd">                Planet indices to keep</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
        
@@ -420,8 +420,8 @@
 <span class="sd">        planets list accordingly. </span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            sInds (ndarray):</span>
-<span class="sd">                1D numpy ndarray of indices to keep</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Star indices to keep</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         

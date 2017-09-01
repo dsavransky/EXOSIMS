@@ -267,7 +267,7 @@ target list during filtering (called from TargetList.filter_target_list)</p>
 <span id="exosims-prototypes-observatory-module"></span><h2>EXOSIMS.Prototypes.Observatory module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Observatory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMax=90</em>, <em>koAngleSmall=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>spkpath=None</em>, <em>forceStaticEphem=False</em>, <em>checkKeepoutEnd=True</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMinMoon=None</em>, <em>koAngleMinEarth=None</em>, <em>koAngleMax=90</em>, <em>koAngleSmall=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>spkpath=None</em>, <em>checkKeepoutEnd=True</em>, <em>forceStaticEphem=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Observatory class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -278,8 +278,6 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>**specs</strong> &#8211; user specified values</li>
-<li><strong>forceStaticEphem</strong> (<em>bool</em>) &#8211; If True, forces use of stored ephemerides for solar system objects
-and uses eccanom utility to propagate.  Defaults to False.</li>
 <li><strong>spkpath</strong> (<em>str</em>) &#8211; Path to SPK file on disk (Defaults to de432s.bsp).</li>
 </ul>
 </td>
@@ -293,6 +291,18 @@ and uses eccanom utility to propagate.  Defaults to False.</li>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinMoon">
+<code class="descname">koAngleMinMoon</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinMoon" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope minimum keepout angle in units of deg, for the Moon only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinEarth">
+<code class="descname">koAngleMinEarth</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinEarth" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope minimum keepout angle in units of deg, for the Earth only</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMax">
 <code class="descname">koAngleMax</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMax" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Telescope maximum keepout angle (for occulter) in units of deg</p>
@@ -302,13 +312,6 @@ and uses eccanom utility to propagate.  Defaults to False.</li>
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleSmall">
 <code class="descname">koAngleSmall</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleSmall" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Telescope keepout angle for smaller (angular size) bodies in units of deg</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd">
-<code class="descname">checkKeepoutEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>boolean</em> &#8211; Boolean signifying if the keepout method must be called at the end of
-each observation</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -372,15 +375,16 @@ each observation</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem">
-<code class="descname">forceStaticEphem</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>boolean</em> &#8211; Boolean used to force static ephemerides</p>
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd">
+<code class="descname">checkKeepoutEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean signifying if the keepout method must be called at the end of
+each observation</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt>
-<code class="descname">checkKeepoutEnd</code></dt>
-<dd><p><em>boolean</em> &#8211; Boolean used to call keepout method at the end of each observation</p>
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem">
+<code class="descname">forceStaticEphem</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean used to force static ephemerides</p>
 </dd></dl>
 
 <p class="rubric">Notes</p>
@@ -485,7 +489,7 @@ ephemerides for a specific solar system planet.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInd</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the star of interest</li>
+<li><strong>sInd</strong> (<em>integer</em>) &#8211; Integer index of the star of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
 </ul>
 </td>
@@ -2027,7 +2031,9 @@ return an empty dictionary with the selected parameters and their units.</td>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>None</strong> &#8211; </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">systems (dict)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of planetary properties</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">systems (dict)</td>
 </tr>
 </tbody>
 </table>
@@ -2057,8 +2063,7 @@ distances) and their orbital elements (a, e, I, O, w, M0).</p>
 <code class="descname">propag_system</code><span class="sig-paren">(</span><em>sInd</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.propag_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system" title="Permalink to this definition">¶</a></dt>
 <dd><p>Propagates planet time-dependant parameters: position, velocity,
 planet-star distance, apparent separation, phase function, surface brightness
-of exo-zodiacal light, delta magnitude, working angle, and the planet
-current time array.</p>
+of exo-zodiacal light, delta magnitude, and working angle.</p>
 <p>This method uses the Kepler state transition matrix to propagate a
 planet&#8217;s state (position and velocity vectors) forward in time using
 the Kepler state transition matrix.</p>
@@ -2085,7 +2090,7 @@ and updates the number of planets.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pInds</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indices to keep</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pInds</strong> (<em>integer ndarray</em>) &#8211; Planet indices to keep</td>
 </tr>
 </tbody>
 </table>
@@ -2100,7 +2105,7 @@ planets list accordingly.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indices to keep</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Star indices to keep</td>
 </tr>
 </tbody>
 </table>
@@ -2298,10 +2303,21 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>**specs</strong> &#8211; user specified values</li>
+<li><strong>scriptfile</strong> (<em>string</em>) &#8211; JSON script file.  If not set, assumes that dictionary has been
+passed through specs.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.StarCatalog">
+<code class="descname">StarCatalog</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>StarCatalog module</em> &#8211; StarCatalog class object (only retained if keepStarCatalog is True)</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation">
 <code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
@@ -3114,18 +3130,6 @@ the next one.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.dtAlloc">
-<code class="descname">dtAlloc</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.dtAlloc" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Default allocated temporal block in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration">
-<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Maximum duration of planet-finding operations in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm">
 <code class="descname">missionFinishNorm</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Mission finish normalized time in units of day</p>
@@ -3138,12 +3142,6 @@ the next one.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nextTimeAvail">
-<code class="descname">nextTimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nextTimeAvail" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Next time available for planet-finding in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.currentTimeNorm">
 <code class="descname">currentTimeNorm</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.currentTimeNorm" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Current mission time normalized to zero at mission start in units of day</p>
@@ -3153,6 +3151,66 @@ the next one.</p>
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.currentTimeAbs">
 <code class="descname">currentTimeAbs</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.currentTimeAbs" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Time</em> &#8211; Current absolute mission time in MJD</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBnumber">
+<code class="descname">OBnumber</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBnumber" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Index/number associated with the current observing block (OB). Each
+observing block has a duration, a start time, an end time, and can
+host one or multiple observations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBduration">
+<code class="descname">OBduration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBduration" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Default allocated duration of observing blocks, in units of day. If
+no OBduration was specified, a new observing block is created for
+each new observation in the SurveySimulation module.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBstartTimes">
+<code class="descname">OBstartTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBstartTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Array containing the normalized start times of each observing block
+throughout the mission, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBendTimes">
+<code class="descname">OBendTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBendTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Array containing the normalized end times of each observing block
+throughout the mission, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart">
+<code class="descname">obsStart</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Normalized start time of the observation currently executed by the
+Survey Simulation, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd">
+<code class="descname">obsEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Normalized end time of the observation currently executed by the
+Survey Simulation, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime">
+<code class="descname">waitTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Default allocated duration to wait in units of day, when the
+Survey Simulation does not find any observable target</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple">
+<code class="descname">waitMultiple</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Multiplier applied to the wait time in case of repeated empty lists of
+observable targets, which makes the wait time grow exponentially.
+As soon as an observable target is found, the wait time is reinitialized
+to the default waitTime value.</p>
 </dd></dl>
 
 <dl class="method">

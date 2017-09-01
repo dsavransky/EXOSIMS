@@ -85,6 +85,8 @@ The default ensemble will run in sequence. For more details on ensembles and par
 Building Your Own Mission
 ==============================
 
+This is a brief guide to iteratively building up a simulation script, with comments and sanity checks along the way.  It touches on only a subset of all possible user settings for the base modules.  A more complete list is available here: :ref:`userparams`.
+
 Step 1
 --------
 
@@ -391,7 +393,7 @@ We can now use the same tools as described in :ref:`runsimandanalyze` to analyze
 
 
 References
-###########
+============
 
 .. [Nemati2014] Nemati, Bijan (2014) Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph, Proc. SPIE, 91430
 .. [Brown2005] Brown, R. A. (2005) Single-visit photometric and obscurational completeness, ApJ 624

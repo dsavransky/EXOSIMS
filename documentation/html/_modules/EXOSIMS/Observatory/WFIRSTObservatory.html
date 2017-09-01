@@ -170,6 +170,10 @@
         <span class="c1"># create koangles for all bodies, set by telescope minimum keepout angle for </span>
         <span class="c1"># brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies</span>
         <span class="n">koangles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nBodies</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">koAngleMin</span>
+        <span class="c1"># allow Moon, Earth to be set individually (default to koAngleMin)</span>
+        <span class="n">koangles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMinMoon</span> 
+        <span class="n">koangles</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">koAngleMinEarth</span>
+        <span class="c1"># keepout angle for small bodies (other planets)</span>
         <span class="n">koangles</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">koAngleSmall</span>
         
         <span class="c1"># find angles and make angle comparisons to build kogood array:</span>

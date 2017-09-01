@@ -23,8 +23,13 @@ class SurveySimulation(object):
     Args:
         \*\*specs:
             user specified values
+        scriptfile (string):
+            JSON script file.  If not set, assumes that dictionary has been 
+            passed through specs.
             
     Attributes:
+        StarCatalog (StarCatalog module):
+            StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):

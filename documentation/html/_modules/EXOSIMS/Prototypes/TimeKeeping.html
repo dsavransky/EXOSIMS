@@ -70,20 +70,42 @@
 <span class="sd">            Extended mission time in units of year</span>
 <span class="sd">        missionPortion (float):</span>
 <span class="sd">            Portion of mission devoted to planet-finding</span>
-<span class="sd">        dtAlloc (astropy Quantity):</span>
-<span class="sd">            Default allocated temporal block in units of day</span>
-<span class="sd">        duration (astropy Quantity):</span>
-<span class="sd">            Maximum duration of planet-finding operations in units of day</span>
 <span class="sd">        missionFinishNorm (astropy Quantity):</span>
 <span class="sd">            Mission finish normalized time in units of day</span>
 <span class="sd">        missionFinishAbs (astropy Time):</span>
 <span class="sd">            Mission finish absolute time in MJD</span>
-<span class="sd">        nextTimeAvail (astropy Quantity):</span>
-<span class="sd">            Next time available for planet-finding in units of day</span>
 <span class="sd">        currentTimeNorm (astropy Quantity):</span>
 <span class="sd">            Current mission time normalized to zero at mission start in units of day</span>
 <span class="sd">        currentTimeAbs (astropy Time):</span>
 <span class="sd">            Current absolute mission time in MJD</span>
+<span class="sd">        OBnumber (integer):</span>
+<span class="sd">            Index/number associated with the current observing block (OB). Each </span>
+<span class="sd">            observing block has a duration, a start time, an end time, and can </span>
+<span class="sd">            host one or multiple observations.</span>
+<span class="sd">        OBduration (astropy Quantity):</span>
+<span class="sd">            Default allocated duration of observing blocks, in units of day. If </span>
+<span class="sd">            no OBduration was specified, a new observing block is created for </span>
+<span class="sd">            each new observation in the SurveySimulation module. </span>
+<span class="sd">        OBstartTimes (astropy Quantity array):</span>
+<span class="sd">            Array containing the normalized start times of each observing block </span>
+<span class="sd">            throughout the mission, in units of day</span>
+<span class="sd">        OBendTimes (astropy Quantity array):</span>
+<span class="sd">            Array containing the normalized end times of each observing block </span>
+<span class="sd">            throughout the mission, in units of day</span>
+<span class="sd">        obsStart (astropy Quantity):</span>
+<span class="sd">            Normalized start time of the observation currently executed by the </span>
+<span class="sd">            Survey Simulation, in units of day</span>
+<span class="sd">        obsEnd (astropy Quantity):</span>
+<span class="sd">            Normalized end time of the observation currently executed by the </span>
+<span class="sd">            Survey Simulation, in units of day</span>
+<span class="sd">        waitTime (astropy Quantity):</span>
+<span class="sd">            Default allocated duration to wait in units of day, when the</span>
+<span class="sd">            Survey Simulation does not find any observable target</span>
+<span class="sd">        waitMultiple (float):</span>
+<span class="sd">            Multiplier applied to the wait time in case of repeated empty lists of </span>
+<span class="sd">            observable targets, which makes the wait time grow exponentially. </span>
+<span class="sd">            As soon as an observable target is found, the wait time is reinitialized </span>
+<span class="sd">            to the default waitTime value.</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -124,7 +146,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">OBduration</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="n">maxOBduration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span><span class="p">,</span> <span class="n">maxOBduration</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span><span class="p">,</span> <span class="n">maxOBduration</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
         <span class="c1"># initialize single observation START and END times</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>

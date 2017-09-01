@@ -28,20 +28,42 @@ class TimeKeeping(object):
             Extended mission time in units of year
         missionPortion (float):
             Portion of mission devoted to planet-finding
-        dtAlloc (astropy Quantity):
-            Default allocated temporal block in units of day
-        duration (astropy Quantity):
-            Maximum duration of planet-finding operations in units of day
         missionFinishNorm (astropy Quantity):
             Mission finish normalized time in units of day
         missionFinishAbs (astropy Time):
             Mission finish absolute time in MJD
-        nextTimeAvail (astropy Quantity):
-            Next time available for planet-finding in units of day
         currentTimeNorm (astropy Quantity):
             Current mission time normalized to zero at mission start in units of day
         currentTimeAbs (astropy Time):
             Current absolute mission time in MJD
+        OBnumber (integer):
+            Index/number associated with the current observing block (OB). Each 
+            observing block has a duration, a start time, an end time, and can 
+            host one or multiple observations.
+        OBduration (astropy Quantity):
+            Default allocated duration of observing blocks, in units of day. If 
+            no OBduration was specified, a new observing block is created for 
+            each new observation in the SurveySimulation module. 
+        OBstartTimes (astropy Quantity array):
+            Array containing the normalized start times of each observing block 
+            throughout the mission, in units of day
+        OBendTimes (astropy Quantity array):
+            Array containing the normalized end times of each observing block 
+            throughout the mission, in units of day
+        obsStart (astropy Quantity):
+            Normalized start time of the observation currently executed by the 
+            Survey Simulation, in units of day
+        obsEnd (astropy Quantity):
+            Normalized end time of the observation currently executed by the 
+            Survey Simulation, in units of day
+        waitTime (astropy Quantity):
+            Default allocated duration to wait in units of day, when the
+            Survey Simulation does not find any observable target
+        waitMultiple (float):
+            Multiplier applied to the wait time in case of repeated empty lists of 
+            observable targets, which makes the wait time grow exponentially. 
+            As soon as an observable target is found, the wait time is reinitialized 
+            to the default waitTime value.
         
     """
 
@@ -82,7 +104,7 @@ class TimeKeeping(object):
         self.OBduration = float(OBduration)*u.day
         self.OBstartTimes = [0.]*u.day
         maxOBduration = self.missionFinishNorm*self.missionPortion
-        self.OBendTimes = [min(self.OBduration, maxOBduration).to('d').value]*u.d
+        self.OBendTimes = [min(self.OBduration, maxOBduration).to('day').value]*u.day
         
         # initialize single observation START and END times
         self.obsStart = 0.*u.day

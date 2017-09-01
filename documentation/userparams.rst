@@ -75,7 +75,7 @@ OpticalSystem
    separations.
 
 -  **OWA** (float) Fundamental Outer Working Angle in units of
-   :math:`arcsec`. Set to :math:`Inf`for no OWA. JSON values of 0
+   :math:`arcsec`. Set to :math:`Inf` for no OWA. JSON values of 0
    will be interpreted as :math:`Inf`.
 
 -  **intCutoff** (float) Maximum allowed integration time in units of

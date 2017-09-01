@@ -25,6 +25,15 @@ class TestPlanetPopulation(unittest.TestCase):
         
 
     def test_gen_angles(self):
+        """
+        Test generation of orientation angles.
+        
+        We expect long. and periapse to be uniformly distributed and
+        inclination to be sinusoidally distributed.
+
+        Test method: chi squares
+        """
+
         pp = PlanetPopulation(**self.spec)
 
         x = 100000
@@ -53,6 +62,14 @@ class TestPlanetPopulation(unittest.TestCase):
 
     
     def test_gen_plan_params(self):
+        """
+        Test generation of planet orbital and phyiscal properties.
+
+        We expect eccentricity and albedo to be uniformly distributed
+        and sma and radius to be log-uniform
+
+        Test method: chi squares
+        """
         pp = PlanetPopulation(**self.spec)
 
         x = 10000
@@ -81,6 +98,13 @@ class TestPlanetPopulation(unittest.TestCase):
             assert(chi2[1] > 0.95)
     
     def test_gen_plan_params_constrainOrbits(self):
+        """
+        Test that constrainOrbits is consistently applied
+
+        Generated orbital radii must be within the rrange, which 
+        is the original arange.
+        """
+
         pp = PlanetPopulation(constrainOrbits=True,**self.spec)
 
         x = 10000
@@ -90,28 +114,119 @@ class TestPlanetPopulation(unittest.TestCase):
         self.assertTrue(np.all(a*(1+e) <= pp.rrange[1]))
         self.assertTrue(np.all(a*(1-e) >= pp.rrange[0]))
 
+    def test_dist_eccen_from_sma(self):
+        """
+        Test that eccentricities generating radii outside of arange
+        have zero probability.
+        """
+        
+        pp = PlanetPopulation(**self.spec)
+        x = 10000
+        a, e, p, Rp = pp.gen_plan_params(x)
+
+        f = pp.dist_eccen_from_sma(e,a)
+        self.assertTrue(np.all(f[a*(1+e) > pp.arange[1]] == 0))
+        self.assertTrue(np.all(f[a*(1-e) < pp.arange[0]] == 0))
+
+    def test_dist_sma(self):
+        """
+        Test that smas outside of the range have zero probability
+
+        """
+        pp = PlanetPopulation(**self.spec)
+
+        a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*100.),100) 
+
+        fa = pp.dist_sma(a)
+        self.assertTrue(np.all(fa[a < pp.arange[0].value] == 0))
+        self.assertTrue(np.all(fa[a > pp.arange[1].value] == 0))
+        self.assertTrue(np.all(fa[(a >= pp.arange[0].value) & (a <= pp.arange[1].value)] > 0))
+
+    def test_dist_eccen(self):
+        """
+        Test that eccentricities outside of the range have zero probability
+
+        """
+        pp = PlanetPopulation(**self.spec)
+
+        e = np.linspace(pp.erange[0]-1,pp.erange[1]+1,100)
+
+        fe = pp.dist_eccen(e)
+        self.assertTrue(np.all(fe[e < pp.erange[0]] == 0))
+        self.assertTrue(np.all(fe[e > pp.erange[1]] == 0))
+        self.assertTrue(np.all(fe[(e >= pp.erange[0]) & (e <= pp.erange[1])] > 0))
+
+    def test_dist_albedo(self):
+        """
+        Test that albedos outside of the range have zero probability
+
+        """
+        pp = PlanetPopulation(**self.spec)
+
+        p = np.linspace(pp.prange[0]-1,pp.prange[1]+1,100)
+
+        fp = pp.dist_albedo(p)
+        self.assertTrue(np.all(fp[p < pp.prange[0]] == 0))
+        self.assertTrue(np.all(fp[p > pp.prange[1]] == 0))
+        self.assertTrue(np.all(fp[(p >= pp.prange[0]) & (p <= pp.prange[1])] > 0))
+
+
+    def test_dist_radius(self):
+        """
+        Test that radii outside of the range have zero probability
+
+        """
+        pp = PlanetPopulation(**self.spec)
+
+        Rp = np.logspace(np.log10(pp.Rprange[0].value/10.),np.log10(pp.Rprange[1].value*100.),100) 
+
+        fr = pp.dist_radius(Rp)
+        self.assertTrue(np.all(fr[Rp < pp.Rprange[0].value] == 0))
+        self.assertTrue(np.all(fr[Rp > pp.Rprange[1].value] == 0))
+        self.assertTrue(np.all(fr[(Rp >= pp.Rprange[0].value) & (Rp <= pp.Rprange[1].value)] > 0))
+
+    @unittest.skip('Prototype does not correctly enforce mass ranges')
+    def test_dist_mass(self):
+        """
+        Test that masses outside of the range have zero probability
+
+        """
+        pp = PlanetPopulation(**self.spec)
+
+        Mp = np.logspace(np.log10(pp.Mprange[0].value/10.),np.log10(pp.Mprange[1].value*100.),100) 
+
+        fr = pp.dist_mass(Mp)
+        self.assertTrue(np.all(fr[Mp < pp.Mprange[0].value] == 0))
+        self.assertTrue(np.all(fr[Mp > pp.Mprange[1].value] == 0))
+        self.assertTrue(np.all(fr[(Mp >= pp.Mprange[0].value) & (Mp <= pp.Mprange[1].value)] > 0))
+
+
+    def test_checkranges(self):
+        """
+        Test that check ranges is doing what it should do
+
+        """
+
+        pp = PlanetPopulation(arange=[10,1],**self.spec)
+        self.assertTrue(pp.arange[0].value == 1)
+        self.assertTrue(pp.arange[1].value == 10)
+        
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(prange=[-1,1],**self.spec)
+
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(erange=[-1,1],**self.spec)
+
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(arange=[0,1],**self.spec)
+
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(Rprange=[0,1],**self.spec)
+
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(Mprange=[0,1],**self.spec)
 
     
-    def test_gen_mass(self):
-        pp = PlanetPopulation(**self.spec)
-        
-        x = 5000
-        res = pp.gen_mass(x)
-        res = np.log(res.value)
-        resmin = np.amin(res)
-        resmax = np.amax(res)
-        resmean = np.mean(res)
-        
-        v = pp.Mprange.value
-        v = np.log(v)
-        vmin = np.amin(v)
-        vmax = np.amax(v)
-        vmean = np.mean(v)
-        
-        np.testing.assert_allclose(resmin, vmin, rtol=1e-01, atol=0.1)
-        np.testing.assert_allclose(resmax, vmax, rtol=1e-01, atol=0.)
-        np.testing.assert_allclose(resmean, vmean, rtol=1e-01, atol=0.)
-
 
 if __name__ == "__main__":
     unittest.main()

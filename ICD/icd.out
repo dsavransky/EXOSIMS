@@ -19,49 +19,61 @@
 \BOOKMARK [2][-]{subsection.5.3}{Planet Physical Model}{section.5}% 19
 \BOOKMARK [2][-]{subsection.5.4}{Optical System}{section.5}% 20
 \BOOKMARK [3][-]{subsubsection.5.4.1}{Optical System Object Attribute Initialization}{subsection.5.4}% 21
-\BOOKMARK [3][-]{subsubsection.5.4.2}{calc\137maxintTime Method}{subsection.5.4}% 22
+\BOOKMARK [3][-]{subsubsection.5.4.2}{Cp\137Cb\137Csp Method}{subsection.5.4}% 22
 \BOOKMARK [3][-]{subsubsection.5.4.3}{calc\137intTime Method}{subsection.5.4}% 23
-\BOOKMARK [3][-]{subsubsection.5.4.4}{Cp\137Cb\137Csp Method}{subsection.5.4}% 24
-\BOOKMARK [2][-]{subsection.5.5}{Zodiacal Light}{section.5}% 25
-\BOOKMARK [3][-]{subsubsection.5.5.1}{Zodiacal Light Object Attribute Initialization}{subsection.5.5}% 26
-\BOOKMARK [3][-]{subsubsection.5.5.2}{fZ Method}{subsection.5.5}% 27
-\BOOKMARK [3][-]{subsubsection.5.5.3}{fEZ Method}{subsection.5.5}% 28
-\BOOKMARK [2][-]{subsection.5.6}{Background Sources}{section.5}% 29
-\BOOKMARK [3][-]{subsubsection.5.6.1}{dNbackground Method}{subsection.5.6}% 30
-\BOOKMARK [2][-]{subsection.5.7}{Post-Processing}{section.5}% 31
-\BOOKMARK [3][-]{subsubsection.5.7.1}{Post-Processing Object Attribute Initialization}{subsection.5.7}% 32
-\BOOKMARK [3][-]{subsubsection.5.7.2}{det\137occur Method}{subsection.5.7}% 33
-\BOOKMARK [2][-]{subsection.5.8}{Completeness}{section.5}% 34
-\BOOKMARK [3][-]{subsubsection.5.8.1}{Completeness Object Attribute Initialization}{subsection.5.8}% 35
-\BOOKMARK [3][-]{subsubsection.5.8.2}{target\137completeness Method}{subsection.5.8}% 36
-\BOOKMARK [3][-]{subsubsection.5.8.3}{gen\137update Method}{subsection.5.8}% 37
-\BOOKMARK [3][-]{subsubsection.5.8.4}{completeness\137update Method}{subsection.5.8}% 38
-\BOOKMARK [2][-]{subsection.5.9}{Target List}{section.5}% 39
-\BOOKMARK [3][-]{subsubsection.5.9.1}{Target List Object Attribute Initialization}{subsection.5.9}% 40
-\BOOKMARK [3][-]{subsubsection.5.9.2}{starMag Method}{subsection.5.9}% 41
-\BOOKMARK [3][-]{subsubsection.5.9.3}{populate\137target\137list Method}{subsection.5.9}% 42
-\BOOKMARK [3][-]{subsubsection.5.9.4}{filter\137target\137list Method}{subsection.5.9}% 43
-\BOOKMARK [3][-]{subsubsection.5.9.5}{Target List Filtering Helper Methods}{subsection.5.9}% 44
-\BOOKMARK [2][-]{subsection.5.10}{Simulated Universe}{section.5}% 45
-\BOOKMARK [3][-]{subsubsection.5.10.1}{Attributes}{subsection.5.10}% 46
-\BOOKMARK [3][-]{subsubsection.5.10.2}{gen\137physical\137properties Method}{subsection.5.10}% 47
-\BOOKMARK [3][-]{subsubsection.5.10.3}{init\137systems Method}{subsection.5.10}% 48
-\BOOKMARK [3][-]{subsubsection.5.10.4}{propag\137system Method}{subsection.5.10}% 49
-\BOOKMARK [2][-]{subsection.5.11}{Observatory}{section.5}% 50
-\BOOKMARK [3][-]{subsubsection.5.11.1}{Observatory Object Attribute Initialization}{subsection.5.11}% 51
-\BOOKMARK [3][-]{subsubsection.5.11.2}{orbit Method}{subsection.5.11}% 52
-\BOOKMARK [3][-]{subsubsection.5.11.3}{keepout Method}{subsection.5.11}% 53
-\BOOKMARK [3][-]{subsubsection.5.11.4}{solarSystem\137body\137position Method}{subsection.5.11}% 54
-\BOOKMARK [2][-]{subsection.5.12}{Time Keeping}{section.5}% 55
-\BOOKMARK [3][-]{subsubsection.5.12.1}{Time Keeping Object Attribute Initialization}{subsection.5.12}% 56
-\BOOKMARK [3][-]{subsubsection.5.12.2}{allocate\137time Method}{subsection.5.12}% 57
-\BOOKMARK [3][-]{subsubsection.5.12.3}{mission\137is\137over Method}{subsection.5.12}% 58
-\BOOKMARK [2][-]{subsection.5.13}{Survey Simulation}{section.5}% 59
-\BOOKMARK [3][-]{subsubsection.5.13.1}{Survey Simulation Object Attribute Initialization}{subsection.5.13}% 60
-\BOOKMARK [3][-]{subsubsection.5.13.2}{run\137sim Method}{subsection.5.13}% 61
-\BOOKMARK [3][-]{subsubsection.5.13.3}{next\137target Method}{subsection.5.13}% 62
-\BOOKMARK [3][-]{subsubsection.5.13.4}{observation\137detection Method}{subsection.5.13}% 63
-\BOOKMARK [3][-]{subsubsection.5.13.5}{observation\137characterization Method}{subsection.5.13}% 64
-\BOOKMARK [3][-]{subsubsection.5.13.6}{calc\137signal\137noise Method}{subsection.5.13}% 65
-\BOOKMARK [3][-]{subsubsection.5.13.7}{update\137occulter\137mass Method}{subsection.5.13}% 66
-\BOOKMARK [2][-]{subsection.5.14}{Survey Ensemble}{section.5}% 67
+\BOOKMARK [3][-]{subsubsection.5.4.4}{calc\137minintTime Method}{subsection.5.4}% 24
+\BOOKMARK [3][-]{subsubsection.5.4.5}{calc\137dMag\137per\137intTime Method}{subsection.5.4}% 25
+\BOOKMARK [3][-]{subsubsection.5.4.6}{ddMag\137dt Method}{subsection.5.4}% 26
+\BOOKMARK [2][-]{subsection.5.5}{Zodiacal Light}{section.5}% 27
+\BOOKMARK [3][-]{subsubsection.5.5.1}{Zodiacal Light Object Attribute Initialization}{subsection.5.5}% 28
+\BOOKMARK [3][-]{subsubsection.5.5.2}{fZ Method}{subsection.5.5}% 29
+\BOOKMARK [3][-]{subsubsection.5.5.3}{fEZ Method}{subsection.5.5}% 30
+\BOOKMARK [2][-]{subsection.5.6}{Background Sources}{section.5}% 31
+\BOOKMARK [3][-]{subsubsection.5.6.1}{dNbackground Method}{subsection.5.6}% 32
+\BOOKMARK [2][-]{subsection.5.7}{Post-Processing}{section.5}% 33
+\BOOKMARK [3][-]{subsubsection.5.7.1}{Post-Processing Object Attribute Initialization}{subsection.5.7}% 34
+\BOOKMARK [3][-]{subsubsection.5.7.2}{det\137occur Method}{subsection.5.7}% 35
+\BOOKMARK [2][-]{subsection.5.8}{Completeness}{section.5}% 36
+\BOOKMARK [3][-]{subsubsection.5.8.1}{Completeness Object Attribute Initialization}{subsection.5.8}% 37
+\BOOKMARK [3][-]{subsubsection.5.8.2}{target\137completeness Method}{subsection.5.8}% 38
+\BOOKMARK [3][-]{subsubsection.5.8.3}{gen\137update Method}{subsection.5.8}% 39
+\BOOKMARK [3][-]{subsubsection.5.8.4}{completeness\137update Method}{subsection.5.8}% 40
+\BOOKMARK [3][-]{subsubsection.5.8.5}{comp\137per\137intTime Method}{subsection.5.8}% 41
+\BOOKMARK [3][-]{subsubsection.5.8.6}{dcomp\137dt Method}{subsection.5.8}% 42
+\BOOKMARK [2][-]{subsection.5.9}{Target List}{section.5}% 43
+\BOOKMARK [3][-]{subsubsection.5.9.1}{Target List Object Attribute Initialization}{subsection.5.9}% 44
+\BOOKMARK [3][-]{subsubsection.5.9.2}{populate\137target\137list Method}{subsection.5.9}% 45
+\BOOKMARK [3][-]{subsubsection.5.9.3}{filter\137target\137list Method}{subsection.5.9}% 46
+\BOOKMARK [3][-]{subsubsection.5.9.4}{Target List Filtering Helper Methods}{subsection.5.9}% 47
+\BOOKMARK [3][-]{subsubsection.5.9.5}{starprop Method}{subsection.5.9}% 48
+\BOOKMARK [3][-]{subsubsection.5.9.6}{starMag Method}{subsection.5.9}% 49
+\BOOKMARK [3][-]{subsubsection.5.9.7}{stellarTeff Method}{subsection.5.9}% 50
+\BOOKMARK [2][-]{subsection.5.10}{Simulated Universe}{section.5}% 51
+\BOOKMARK [3][-]{subsubsection.5.10.1}{Attributes}{subsection.5.10}% 52
+\BOOKMARK [3][-]{subsubsection.5.10.2}{gen\137physical\137properties Method}{subsection.5.10}% 53
+\BOOKMARK [3][-]{subsubsection.5.10.3}{init\137systems Method}{subsection.5.10}% 54
+\BOOKMARK [3][-]{subsubsection.5.10.4}{propag\137system Method}{subsection.5.10}% 55
+\BOOKMARK [3][-]{subsubsection.5.10.5}{dump\137systems Method}{subsection.5.10}% 56
+\BOOKMARK [3][-]{subsubsection.5.10.6}{dump\137system\137params Method}{subsection.5.10}% 57
+\BOOKMARK [3][-]{subsubsection.5.10.7}{revise\137planets\137list Method}{subsection.5.10}% 58
+\BOOKMARK [3][-]{subsubsection.5.10.8}{revise\137stars\137list Method}{subsection.5.10}% 59
+\BOOKMARK [2][-]{subsection.5.11}{Observatory}{section.5}% 60
+\BOOKMARK [3][-]{subsubsection.5.11.1}{Observatory Object Attribute Initialization}{subsection.5.11}% 61
+\BOOKMARK [3][-]{subsubsection.5.11.2}{orbit Method}{subsection.5.11}% 62
+\BOOKMARK [3][-]{subsubsection.5.11.3}{solarSystem\137body\137position Method}{subsection.5.11}% 63
+\BOOKMARK [3][-]{subsubsection.5.11.4}{keepout Method}{subsection.5.11}% 64
+\BOOKMARK [3][-]{subsubsection.5.11.5}{distForces Method}{subsection.5.11}% 65
+\BOOKMARK [2][-]{subsection.5.12}{Time Keeping}{section.5}% 66
+\BOOKMARK [3][-]{subsubsection.5.12.1}{Time Keeping Object Attribute Initialization}{subsection.5.12}% 67
+\BOOKMARK [3][-]{subsubsection.5.12.2}{allocate\137time Method}{subsection.5.12}% 68
+\BOOKMARK [3][-]{subsubsection.5.12.3}{next\137observing\137block Method}{subsection.5.12}% 69
+\BOOKMARK [3][-]{subsubsection.5.12.4}{mission\137is\137over Method}{subsection.5.12}% 70
+\BOOKMARK [2][-]{subsection.5.13}{Survey Simulation}{section.5}% 71
+\BOOKMARK [3][-]{subsubsection.5.13.1}{Survey Simulation Object Attribute Initialization}{subsection.5.13}% 72
+\BOOKMARK [3][-]{subsubsection.5.13.2}{run\137sim Method}{subsection.5.13}% 73
+\BOOKMARK [3][-]{subsubsection.5.13.3}{next\137target Method}{subsection.5.13}% 74
+\BOOKMARK [3][-]{subsubsection.5.13.4}{observation\137detection Method}{subsection.5.13}% 75
+\BOOKMARK [3][-]{subsubsection.5.13.5}{observation\137characterization Method}{subsection.5.13}% 76
+\BOOKMARK [3][-]{subsubsection.5.13.6}{calc\137signal\137noise Method}{subsection.5.13}% 77
+\BOOKMARK [3][-]{subsubsection.5.13.7}{update\137occulter\137mass Method}{subsection.5.13}% 78
+\BOOKMARK [2][-]{subsection.5.14}{Survey Ensemble}{section.5}% 79

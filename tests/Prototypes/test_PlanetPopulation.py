@@ -15,17 +15,6 @@ import scipy.stats
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
-        #scriptfile = os.path.join(EXOSIMS.__path__[0],'Prototypes','template_WFIRST_EarthTwinHabZone.json')
-        #self.sim = MissionSim.MissionSim(scriptfile)
-        #self.outspecs = self.sim.genOutSpec()
-        #self.targetlist = self.sim.modules['TargetList']
-        
-        """
-        self.spec={"arange": [0.01, 10.], "erange": [10.*np.finfo(np.float).eps ,  0.8],
-                          "wrange": [0., 360.], "Orange": [0., 360.], "prange": [0.0004, 0.6],
-                          "Rrange": [0.027*const.R_jup.to(u.km), 2.04*const.R_jup.to(u.km)],
-                          "Mprange": [6.3e-5*const.M_jup, 28.5*const.M_jup]}
-        """
 
         self.spec = {"modules":{"PlanetPhysicalModel" : "PlanetPhysicalModel"}}
         
@@ -98,8 +87,8 @@ class TestPlanetPopulation(unittest.TestCase):
 
         a, e, p, Rp = pp.gen_plan_params(x)
 
-        self.assertTrue(np.all(a*(1+e) <= pp.arange[1]))
-        self.assertTrue(np.all(a*(1-e) >= pp.arange[0]))
+        self.assertTrue(np.all(a*(1+e) <= pp.rrange[1]))
+        self.assertTrue(np.all(a*(1-e) >= pp.rrange[0]))
 
 
     

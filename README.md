@@ -7,7 +7,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, and Patrick Lowrance.
+Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance and Walker Dula.
 
 EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 

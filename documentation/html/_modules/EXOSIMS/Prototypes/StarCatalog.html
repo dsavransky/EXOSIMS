@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.StarCatalog &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Prototypes.StarCatalog &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +24,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,6 +41,7 @@
             
   <h1>Source code for EXOSIMS.Prototypes.StarCatalog</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.vprint</span> <span class="k">import</span> <span class="n">vprint</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
@@ -55,6 +53,8 @@
 <span class="sd">    Star Catalog Module calculations in exoplanet mission simulation.</span>
 <span class="sd">    </span>
 <span class="sd">    Attributes:</span>
+<span class="sd">        ntargs (integer):</span>
+<span class="sd">            Number of stars</span>
 <span class="sd">        Name (string ndarray):</span>
 <span class="sd">            Star names</span>
 <span class="sd">        Spec (string ndarray):</span>
@@ -82,15 +82,15 @@
 <span class="sd">        BC (float ndarray):</span>
 <span class="sd">            Bolometric correction</span>
 <span class="sd">        L (float ndarray):</span>
-<span class="sd">            Stellar luminosity in Solar luminosities</span>
+<span class="sd">            Stellar luminosity in ln(Solar luminosities)</span>
 <span class="sd">        Binary_Cut (boolean ndarray):</span>
-<span class="sd">            Booleans where True is a star with a companion closer than 10 arcsec</span>
+<span class="sd">            Boolean where True is a binary star with companion closer than 10 arcsec</span>
 <span class="sd">        dist (astropy Quantity array):</span>
 <span class="sd">            Distance to star in units of pc</span>
 <span class="sd">        parx (astropy Quantity array):</span>
 <span class="sd">            Parallax in units of mas</span>
 <span class="sd">        coords (astropy SkyCoord array):</span>
-<span class="sd">            SkyCoord objects containing right ascension, declination, and </span>
+<span class="sd">            SkyCoord object (ICRS frame) containing right ascension, declination, and </span>
 <span class="sd">            distance to star in units of deg, deg, and pc</span>
 <span class="sd">        pmra (astropy Quantity array):</span>
 <span class="sd">            Proper motion in right ascension in units of mas/year</span>
@@ -106,40 +106,51 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntargs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        
+        <span class="c1"># ntargs must be an integer &gt;= 1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ntargs</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ntargs</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        
         <span class="c1"># list of astropy attributes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span> <span class="c1"># distance in parsecs (dist = 1000/parx)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mas&#39;</span><span class="p">,</span><span class="n">equivalencies</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">parallax</span><span class="p">())</span> <span class="c1"># parallax in milliarcseconds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> \
-                <span class="n">distance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span> <span class="c1"># right ascension and declination in degrees</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span> <span class="c1"># proper motion in right ascension in milliarcseconds/year</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span> <span class="c1"># proper motion in declination in milliarcseconds/year</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span> <span class="c1"># radial velocity in kilometers/second</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">pc</span>                        <span class="c1"># distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mas&#39;</span><span class="p">,</span> <span class="n">equivalencies</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">parallax</span><span class="p">())</span> <span class="c1"># parallax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">ra</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="n">dec</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+                <span class="n">distance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dist</span><span class="p">)</span>                             <span class="c1"># ICRS coordinates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span>                 <span class="c1"># proper motion in RA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmdec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">mas</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">yr</span>                <span class="c1"># proper motion in DEC</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>                     <span class="c1"># radial velocity</span>
         
         <span class="c1"># list of non-astropy attributes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of star names</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of spectral types</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Umag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of U magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of B magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of V magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Rmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of R magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of I magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Jmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of J magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Hmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of H magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Kmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of K magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of B-V Johnson magnitude</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of absolute V magnitude (MV = -5 * log(1000/parx) + 5 - Vmag) </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of bolometric correction</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span> <span class="c1"># list of stellar luminosity in Solar luminosities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span> <span class="c1"># boolean list where True is companion closer than 10 arcsec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Name</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;Prototype&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">ntargs</span><span class="p">)</span>              <span class="c1"># star names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Spec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">ntargs</span><span class="p">)</span>                      <span class="c1"># spectral types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Umag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># U magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Bmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># B magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># V magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># R magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># I magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Jmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># J magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Hmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># H magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Kmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                            <span class="c1"># K magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                              <span class="c1"># B-V Johnson magnitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                              <span class="c1"># absolute V magnitude </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">BC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                              <span class="c1"># bolometric correction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">)</span>                               <span class="c1"># stellar luminosity in ln(SolLum)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Binary_Cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ntargs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>          <span class="c1"># binary closer than 10 arcsec</span>
+        
+        <span class="c1"># populate outspecs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;ntargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ntargs</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the StarCatalog object</span>
 <span class="sd">        </span>
 <span class="sd">        When the command &#39;print&#39; is used on the StarCatalog object, this method</span>
-<span class="sd">        will return the values contained in the object&quot;&quot;&quot;</span>
+<span class="sd">        will return the values contained in the object</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Star Catalog class object attributes&#39;</span></div>
 </pre></div>
@@ -175,8 +186,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

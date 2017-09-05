@@ -6,8 +6,9 @@ import astropy.units as u
 class KnownRVSurvey(SurveySimulation):
     """Survey Simulation module based on Know RV planets
     
-    This class uses estimates of flux ratios (dMag) and working angle 
-    (separations) for the known RV planets
+    This class uses estimates of delta magnitude (dMagint) and instrument 
+    working angle (WAint) for integration time calculation, specific to 
+    the known RV planets.
     
     """
 
@@ -19,7 +20,7 @@ class KnownRVSurvey(SurveySimulation):
         TL = self.TargetList
         SU = self.SimulatedUniverse
         
-        # reinitialize separations and flux ratios used for integration
+        # reinitialize working angles and delta magnitudes used for integration
         self.WAint = np.zeros(TL.nStars)*u.arcsec
         self.dMagint = np.zeros(TL.nStars)
         

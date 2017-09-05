@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.ZodiacalLight package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.ZodiacalLight package &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,20 +24,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.util package" href="EXOSIMS.util.html" />
     <link rel="prev" title="EXOSIMS.TargetList package" href="EXOSIMS.TargetList.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -61,17 +58,18 @@ Zodiacal Light Module calculations in exoplanet mission simulation using
 the model from Stark et al. 2014.</p>
 <dl class="method">
 <dt id="EXOSIMS.ZodiacalLight.Stark.Stark.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em>, <em>r_sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/ZodiacalLight/Stark.html#Stark.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.ZodiacalLight.Stark.Stark.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Obs</strong> (<em>Observatory module</em>) &#8211; Observatory class object</li>
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>lam</strong> (<em>astropy Quantity</em>) &#8211; Central wavelength in units of nm</li>
-<li><strong>r_sc</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Observatory (spacecraft) position vector in units of km</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -83,7 +81,6 @@ the model from Stark et al. 2014.</p>
 </tr>
 </tbody>
 </table>
-<p>Note: r_sc must be an array of shape (sInds.size x 3)</p>
 </dd></dl>
 
 </dd></dl>
@@ -145,8 +142,8 @@ the model from Stark et al. 2014.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/EXOSIMS.ZodiacalLight.rst.txt"

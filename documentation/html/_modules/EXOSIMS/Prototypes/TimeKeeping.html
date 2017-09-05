@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.TimeKeeping &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Prototypes.TimeKeeping &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +24,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -43,17 +40,10 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.Prototypes.TimeKeeping</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.util.vprint</span> <span class="k">import</span> <span class="n">vprint</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="c1"># the EXOSIMS logger</span>
-<span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
 
 <div class="viewcode-block" id="TimeKeeping"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">[docs]</a><span class="k">class</span> <span class="nc">TimeKeeping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;TimeKeeping class template.</span>
@@ -80,35 +70,60 @@
 <span class="sd">            Extended mission time in units of year</span>
 <span class="sd">        missionPortion (float):</span>
 <span class="sd">            Portion of mission devoted to planet-finding</span>
-<span class="sd">        dtAlloc (astropy Quantity):</span>
-<span class="sd">            Default allocated temporal block in units of day</span>
-<span class="sd">        duration (astropy Quantity):</span>
-<span class="sd">            Maximum duration of planet-finding operations in units of day</span>
 <span class="sd">        missionFinishNorm (astropy Quantity):</span>
 <span class="sd">            Mission finish normalized time in units of day</span>
 <span class="sd">        missionFinishAbs (astropy Time):</span>
 <span class="sd">            Mission finish absolute time in MJD</span>
-<span class="sd">        nextTimeAvail (astropy Quantity):</span>
-<span class="sd">            Next time available for planet-finding in units of day</span>
 <span class="sd">        currentTimeNorm (astropy Quantity):</span>
 <span class="sd">            Current mission time normalized to zero at mission start in units of day</span>
 <span class="sd">        currentTimeAbs (astropy Time):</span>
 <span class="sd">            Current absolute mission time in MJD</span>
+<span class="sd">        OBnumber (integer):</span>
+<span class="sd">            Index/number associated with the current observing block (OB). Each </span>
+<span class="sd">            observing block has a duration, a start time, an end time, and can </span>
+<span class="sd">            host one or multiple observations.</span>
+<span class="sd">        OBduration (astropy Quantity):</span>
+<span class="sd">            Default allocated duration of observing blocks, in units of day. If </span>
+<span class="sd">            no OBduration was specified, a new observing block is created for </span>
+<span class="sd">            each new observation in the SurveySimulation module. </span>
+<span class="sd">        OBstartTimes (astropy Quantity array):</span>
+<span class="sd">            Array containing the normalized start times of each observing block </span>
+<span class="sd">            throughout the mission, in units of day</span>
+<span class="sd">        OBendTimes (astropy Quantity array):</span>
+<span class="sd">            Array containing the normalized end times of each observing block </span>
+<span class="sd">            throughout the mission, in units of day</span>
+<span class="sd">        obsStart (astropy Quantity):</span>
+<span class="sd">            Normalized start time of the observation currently executed by the </span>
+<span class="sd">            Survey Simulation, in units of day</span>
+<span class="sd">        obsEnd (astropy Quantity):</span>
+<span class="sd">            Normalized end time of the observation currently executed by the </span>
+<span class="sd">            Survey Simulation, in units of day</span>
+<span class="sd">        waitTime (astropy Quantity):</span>
+<span class="sd">            Default allocated duration to wait in units of day, when the</span>
+<span class="sd">            Survey Simulation does not find any observable target</span>
+<span class="sd">        waitMultiple (float):</span>
+<span class="sd">            Multiplier applied to the wait time in case of repeated empty lists of </span>
+<span class="sd">            observable targets, which makes the wait time grow exponentially. </span>
+<span class="sd">            As soon as an observable target is found, the wait time is reinitialized </span>
+<span class="sd">            to the default waitTime value.</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;TimeKeeping&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span> <span class="n">missionLife</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span> <span class="n">extendedLife</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>\
-                  <span class="n">missionPortion</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mf">6.</span><span class="p">,</span> <span class="n">dtAlloc</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">intCutoff</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mi">60634</span><span class="p">,</span> <span class="n">missionLife</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">extendedLife</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+            <span class="n">missionPortion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">OBduration</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">waitTime</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">waitMultiple</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
         
         <span class="c1"># illegal value checks</span>
         <span class="k">assert</span> <span class="n">missionLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Need missionLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">missionLife</span>
         <span class="k">assert</span> <span class="n">extendedLife</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Need extendedLife &gt;= 0, got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">extendedLife</span>
         <span class="c1"># arithmetic on missionPortion fails if it is outside the legal range</span>
         <span class="k">assert</span> <span class="n">missionPortion</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">missionPortion</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> \
-          <span class="s2">&quot;Require missionPortion in the interval ]0,1], got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">missionPortion</span>
+                <span class="s2">&quot;Require missionPortion in the interval ]0,1], got </span><span class="si">%f</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">missionPortion</span>
         
         <span class="c1"># set up state variables</span>
         <span class="c1"># tai scale specified because the default, utc, requires accounting for leap</span>
@@ -117,23 +132,35 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">extendedLife</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">missionPortion</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dtAlloc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dtAlloc</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
-        <span class="c1"># planet-finding operation duration is equal to Optical System intCutoff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">intCutoff</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         
         <span class="c1"># set values derived from quantities above</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionLife</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extendedLife</span>
         
         <span class="c1"># initialize values updated by functions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">=</span> <span class="mi">0</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span>
         
+        <span class="c1"># initialize observing block times arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">OBduration</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="n">maxOBduration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span><span class="p">,</span> <span class="n">maxOBduration</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        
+        <span class="c1"># initialize single observation START and END times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obsEnd</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        
+        <span class="c1"># initialize wait parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waitTime</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">waitTime</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waitMultiple</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">waitMultiple</span><span class="p">)</span>
+        
         <span class="c1"># populate outspec</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,(</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span><span class="n">Time</span><span class="p">))</span> <span class="k">else</span> <span class="n">dat</span>
+            <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vprint&#39;</span><span class="p">]:</span>
+                <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dat</span><span class="p">,(</span><span class="n">u</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span><span class="n">Time</span><span class="p">))</span> <span class="k">else</span> <span class="n">dat</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;String representation of the TimeKeeping object.</span>
@@ -142,68 +169,9 @@
 <span class="sd">        method prints the values contained in the object.&quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)))</span>
         
         <span class="k">return</span> <span class="s1">&#39;TimeKeeping instance at </span><span class="si">%.6f</span><span class="s1"> days&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-
-<div class="viewcode-block" id="TimeKeeping.allocate_time"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">[docs]</a>    <span class="k">def</span> <span class="nf">allocate_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Allocate a temporal block of width dt, advancing the observation window if needed.</span>
-<span class="sd">        </span>
-<span class="sd">        Advance the mission time by dt units.  If this requires moving into the next observation</span>
-<span class="sd">        window, do so.</span>
-<span class="sd">        If dt is longer than the observation window length, making a contiguous observation is</span>
-<span class="sd">        not possible, so return False.  If dt &lt; 0, return False.  Otherwise, allocate time and</span>
-<span class="sd">        return True.</span>
-<span class="sd">        </span>
-<span class="sd">        Caveats:</span>
-<span class="sd">        [1] This does not handle allocations that move beyond the allowed mission time.  This</span>
-<span class="sd">        would be a place for an exception that could be caught in the simulation main loop.</span>
-<span class="sd">        For now, we check for this condition at the top of the simulation loop and not here.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            dt (astropy Quantity):</span>
-<span class="sd">                Amount of time requested in units of day</span>
-<span class="sd">                </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            success (boolean):</span>
-<span class="sd">                True if the requested time fits in the widest window, otherwise False.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># get caller info</span>
-        <span class="n">_</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">line_number</span><span class="p">,</span><span class="n">function_name</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">location</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">line_number</span><span class="p">,</span> <span class="n">function_name</span><span class="p">)</span>
-        <span class="c1"># if no issues, we will advance to this time</span>
-        <span class="n">provisional_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">+</span> <span class="n">dt</span>
-        <span class="n">window_advance</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">dt</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!too long&#39;</span>
-        <span class="k">elif</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;!negative allocation&#39;</span>
-        <span class="k">elif</span> <span class="n">provisional_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
-            <span class="c1"># advance to the next observation window:</span>
-            <span class="c1">#   add &quot;duration&quot; (time for our instrument&#39;s observations)</span>
-            <span class="c1">#   also add a term for other observations based on fraction-available</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> \
-                    <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
-            <span class="c1"># set current time to dt units beyond start of next window</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nextTimeAvail</span> <span class="o">+</span> <span class="n">dt</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionStart</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span>
-            <span class="n">window_advance</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;+window&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># simply advance by dt</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">=</span> <span class="n">provisional_time</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;ok&#39;</span>
-        <span class="c1"># Log a message for the time allocation</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;TK [</span><span class="si">%s</span><span class="s2">]: alloc: </span><span class="si">%.2f</span><span class="s2"> day</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]</span><span class="se">\t</span><span class="s2">[</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
-        <span class="n">Logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">success</span></div>
 
 <div class="viewcode-block" id="TimeKeeping.mission_is_over"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over">[docs]</a>    <span class="k">def</span> <span class="nf">mission_is_over</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Is the time allocated for the mission used up?</span>
@@ -218,10 +186,88 @@
 <span class="sd">                True if the mission time is used up, else False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">is_over</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span>
+        <span class="n">is_over</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">is_over</span></div></div>
+        <span class="k">return</span> <span class="n">is_over</span></div>
 
+<div class="viewcode-block" id="TimeKeeping.wait"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Waits a certain time in case no target can be observed at current time.</span>
+<span class="sd">        </span>
+<span class="sd">        This method is called in the run_sim() method of the SurveySimulation </span>
+<span class="sd">        class object. In the prototype version, it simply allocate a temporal block </span>
+<span class="sd">        of 1 day.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waitTime</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TimeKeeping.allocate_time"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">[docs]</a>    <span class="k">def</span> <span class="nf">allocate_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Allocate a temporal block of width dt, advancing to the next OB if needed.</span>
+<span class="sd">        </span>
+<span class="sd">        Advance the mission time by dt units. If this requires moving into the next OB,</span>
+<span class="sd">        call the next_observing_block() method of the TimeKeeping class object.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            dt (astropy Quantity):</span>
+<span class="sd">                Temporal block allocated in units of day</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">dt</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">+=</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+=</span> <span class="n">dt</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span> 
+                <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_observing_block</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TimeKeeping.next_observing_block"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.next_observing_block">[docs]</a>    <span class="k">def</span> <span class="nf">next_observing_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Defines the next observing block, start and end times.</span>
+<span class="sd">        </span>
+<span class="sd">        This method is called in the allocate_time() method of the TimeKeeping </span>
+<span class="sd">        class object, when the allocated time requires moving outside of the current OB.</span>
+<span class="sd">        </span>
+<span class="sd">        If no OB duration was specified, a new Observing Block is created for </span>
+<span class="sd">        each observation in the SurveySimulation module. </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># number of blocks to wait</span>
+        <span class="n">nwait</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span>
+        
+        <span class="c1"># For the default case called in SurveySimulation, OBendTime is current time</span>
+        <span class="c1"># Note: the next OB must not happen after mission finish</span>
+        <span class="k">if</span> <span class="n">dt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span>
+            <span class="n">nextStart</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span><span class="p">]</span> <span class="o">+</span> <span class="n">nwait</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span>
+            <span class="n">nextEnd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span>
+        <span class="c1"># else, the OB duration is a fixed value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OBduration</span>
+            <span class="n">nextStart</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span><span class="p">]</span> <span class="o">+</span> <span class="n">nwait</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span><span class="p">)</span>
+            <span class="n">maxOBduration</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">-</span> <span class="n">nextStart</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">missionPortion</span>
+            <span class="n">nextEnd</span> <span class="o">=</span> <span class="n">nextStart</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">maxOBduration</span><span class="p">)</span>
+        
+        <span class="c1"># update OB arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+                <span class="n">nextStart</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> 
+                <span class="n">nextEnd</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="c1"># If mission is not over, move to the next OB, and update observation start time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">nextStart</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OBstartTimes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="n">nextStart</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s1">&#39;OB</span><span class="si">%s</span><span class="s1">: previous block was </span><span class="si">%s</span><span class="s1"> long, advancing </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OBnumber</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> 
+                    <span class="n">dt</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="n">nwait</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span></div></div>
 </pre></div>
 
           </div>
@@ -255,8 +301,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

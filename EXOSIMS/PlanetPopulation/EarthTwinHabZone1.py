@@ -22,40 +22,53 @@ class EarthTwinHabZone1(PlanetPopulation):
         specs['scaleOrbits'] = True
         PlanetPopulation.__init__(self, **specs)
         
-    def gen_sma(self, n):
-        """Generate semi-major axis values in AU
+    def gen_plan_params(self, n):
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
+        planetary radius (earthRad)
         
-        The Earth-twin population assumes a uniform distribution between the minimum and 
-        maximum values.
+        Semi-major axis is uniformly distributed and all other parameters are
+        constant.
         
         Args:
             n (integer):
                 Number of samples to generate
-                
+        
         Returns:
             a (astropy Quantity array):
-                Semi-major axis values in units of AU
+                Semi-major axis in units of AU
+            e (float ndarray):
+                Eccentricity
+            p (float ndarray):
+                Geometric albedo
+            Rp (astropy Quantity array):
+                Planetary radius in units of earthRad
         
         """
         n = self.gen_input_check(n)
-        v = self.arange.to('AU').value
-        a = np.random.uniform(low=v[0], high=v[1], size=n)*u.AU
+        # generate samples of semi-major axis
+        ar = self.arange.to('AU').value
+        a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
+        # generate eccentricity
+        e = np.zeros((n,))
+        # generate samples of geometric albedo
+        p = 0.367*np.ones((n,))
+        # generate samples of planetary radius
+        Rp = np.ones((n,))*u.earthRad
         
-        return a
+        return a, e, p, Rp
 
-    def dist_sma(self, x):
+    def dist_sma(self, a):
         """Probability density function for uniform semi-major axis distribution in AU
         
         
         Args:
-            x (float/ndarray):
+            a (float ndarray):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (ndarray):
+            f (float ndarray):
                 Semi-major axis probability density
         
         """
         
-        return self.uniform(x, self.arange.to('AU').value)
-
+        return self.uniform(a, self.arange.to('AU').value)

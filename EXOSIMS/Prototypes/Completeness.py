@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import numpy as np
+from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+import numpy as np
 
 class Completeness(object):
     """Completeness class template
@@ -11,17 +12,35 @@ class Completeness(object):
     Args:
         \*\*specs: 
             user specified values
+            
+    Attributes:
+        dMagLim (float):
+            Limiting planet-to-star delta magnitude for completeness
+        minComp (float):
+            Minimum completeness value for inclusion in target list
     
     """
 
     _modtype = 'Completeness'
     _outspec = {}
-    
-    def __init__(self, **specs):
+
+    def __init__(self, dMagLim=25, minComp=0.1, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         # import Planet Population and Physical Model class objects
         Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
-        self.PlanetPopulation = Pop # planet population object class
+        self.PlanetPopulation = Pop
         self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
+        
+        # loading attributes
+        self.dMagLim = float(dMagLim)
+        self.minComp = float(minComp)
+        
+        # populate outspec
+        self._outspec['dMagLim'] = self.dMagLim
+        self._outspec['minComp'] = self.minComp
 
     def __str__(self):
         """String representation of Completeness object
@@ -32,7 +51,7 @@ class Completeness(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Completeness class object attributes'
 
@@ -102,3 +121,81 @@ class Completeness(object):
         """
         
         self.updates = self.updates[ind,:]
+
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates completeness values per integration time
+        
+        Note: Prototype does no calculations and always returns the same value
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            comp (float ndarray):
+                Completeness values
+        
+        """
+        
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+        
+        return np.array([0.2]*len(intTimes))
+
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+        """Calculates derivative of completeness with respect to integration time
+        
+        Note: Prototype does no calculations and always returns the same value
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            dcomp (float ndarray):
+                Derivative of completeness with respect to integration time
+        
+        """
+        
+        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        sInds = np.array(sInds, ndmin=1)
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
+        WA = np.array(WA.value, ndmin=1)*WA.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
+        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
+        assert len(WA) == 1, "WA must be constant"
+        
+        return np.array([0.02]*len(intTimes))

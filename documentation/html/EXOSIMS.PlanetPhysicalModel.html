@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.PlanetPhysicalModel package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.PlanetPhysicalModel package &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,20 +24,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
     <link rel="prev" title="EXOSIMS.OpticalSystem package" href="EXOSIMS.OpticalSystem.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -55,8 +52,8 @@
 <dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster">
 <em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPhysicalModel.Forecaster.</code><code class="descname">Forecaster</code><span class="sig-paren">(</span><em>n_pop=4</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1</span></code></a></p>
-<p>Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.
-This module requires to download the fitting_parameters.h5 file from the
+<p>Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.</p>
+<p>This module requires to download the fitting_parameters.h5 file from the
 FORECASTER GitHub repository at <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a>
 and add it to the PlanetPhysicalModel directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -75,9 +72,9 @@ and add it to the PlanetPhysicalModel directory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of Earth mass</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of Earth radius</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
 </tr>
@@ -130,8 +127,9 @@ the grid in Cahoy et al. 2010.</p>
 <dl class="method">
 <dt id="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_albedo_from_sma">
 <code class="descname">calc_albedo_from_sma</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/FortneyMarleyCahoyMix1.html#FortneyMarleyCahoyMix1.calc_albedo_from_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_albedo_from_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for calculating albedo. We assume a uniform distribution
-of metallicities, and then interpolate the grid from Cahoy et al. 2010.</p>
+<dd><p>Helper function for calculating albedo.</p>
+<p>We assume a uniform distribution of metallicities, and then interpolate the
+grid from Cahoy et al. 2010.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -149,16 +147,16 @@ of metallicities, and then interpolate the grid from Cahoy et al. 2010.</p>
 <dl class="method">
 <dt id="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_mass_from_radius">
 <code class="descname">calc_mass_from_radius</code><span class="sig-paren">(</span><em>Rp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/FortneyMarleyCahoyMix1.html#FortneyMarleyCahoyMix1.calc_mass_from_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_mass_from_radius" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for calculating mass given the radius.  The calculation
-is done in two steps, first covering all things that can only ice/rock/iron,
-and then things that can be giants.</p>
+<dd><p>Helper function for calculating mass given the radius.</p>
+<p>The calculation is done in two steps, first covering all things that can
+only be ice/rock/iron, and then things that can be giants.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of km</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of Earth radius</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of kg</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of Earth mass</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
 </tr>
@@ -169,16 +167,16 @@ and then things that can be giants.</p>
 <dl class="method">
 <dt id="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_radius_from_mass">
 <code class="descname">calc_radius_from_mass</code><span class="sig-paren">(</span><em>Mp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/FortneyMarleyCahoyMix1.html#FortneyMarleyCahoyMix1.calc_radius_from_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1.calc_radius_from_mass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for calculating radius given the mass.  The calculation
-is done in two steps, first covering all things that can only ice/rock/iron,
-and then things that can be giants.</p>
+<dd><p>Helper function for calculating radius given the mass.</p>
+<p>The calculation is done in two steps, first covering all things that can
+only be ice/rock/iron, and then things that can be giants.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of Earth mass</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of Earth radius</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
 </tr>
@@ -246,8 +244,8 @@ and then things that can be giants.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/EXOSIMS.PlanetPhysicalModel.rst.txt"

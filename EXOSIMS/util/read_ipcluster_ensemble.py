@@ -11,7 +11,8 @@ import numpy as np
 def gen_summary(run_dir):
     pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
 
-    out = {'detected':[],
+    out = {'fname':[],
+           'detected':[],
            'fullspectra':[],
            'partspectra':[],
            'Rps':[],
@@ -38,6 +39,7 @@ def gen_summary(run_dir):
         with open(f, 'rb') as g:
             res = pickle.load(g)
 
+        out['fname'].append(f)
         dets = np.hstack([row['plan_inds'][row['det_status'] == 1]  for row in res['DRM']])
         out['detected'].append(dets)
         

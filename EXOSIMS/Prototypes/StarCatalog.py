@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -10,19 +11,8 @@ class StarCatalog(object):
     Star Catalog Module calculations in exoplanet mission simulation.
     
     Attributes:
-        dist (astropy Quantity array):
-            Distance to star in units of pc
-        parx (astropy Quantity array):
-            Parallax in units of mas
-        coords (astropy SkyCoord array):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and 
-            distance to star in units of deg, deg, and pc
-        pmra (astropy Quantity array):
-            Proper motion in right ascension in units of mas/year
-        pmdec (astropy Quantity array):
-            Proper motion in declination in units of mas/year
-        rv (astropy Quantity array):
-            Radial velocity in units of km/s
+        ntargs (integer):
+            Number of stars
         Name (string ndarray):
             Star names
         Spec (string ndarray):
@@ -53,6 +43,19 @@ class StarCatalog(object):
             Stellar luminosity in ln(Solar luminosities)
         Binary_Cut (boolean ndarray):
             Boolean where True is a binary star with companion closer than 10 arcsec
+        dist (astropy Quantity array):
+            Distance to star in units of pc
+        parx (astropy Quantity array):
+            Parallax in units of mas
+        coords (astropy SkyCoord array):
+            SkyCoord object (ICRS frame) containing right ascension, declination, and 
+            distance to star in units of deg, deg, and pc
+        pmra (astropy Quantity array):
+            Proper motion in right ascension in units of mas/year
+        pmdec (astropy Quantity array):
+            Proper motion in declination in units of mas/year
+        rv (astropy Quantity array):
+            Radial velocity in units of km/s
         
     """
 
@@ -60,6 +63,12 @@ class StarCatalog(object):
     _outspec = {}
 
     def __init__(self, ntargs=1, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
+        # ntargs must be an integer >= 1
+        self.ntargs = max(int(ntargs), 1)
         
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc                        # distance
@@ -86,6 +95,9 @@ class StarCatalog(object):
         self.BC = np.zeros(ntargs)                              # bolometric correction
         self.L = np.zeros(ntargs)                               # stellar luminosity in ln(SolLum)
         self.Binary_Cut = np.zeros(ntargs, dtype=bool)          # binary closer than 10 arcsec
+        
+        # populate outspecs
+        self._outspec['ntargs'] = self.ntargs
 
     def __str__(self):
         """String representation of the StarCatalog object
@@ -96,6 +108,6 @@ class StarCatalog(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Star Catalog class object attributes'

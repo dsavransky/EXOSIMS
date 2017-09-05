@@ -20,7 +20,7 @@ class PostProcessing2(PostProcessing):
         """
         PostProcessing.__init__(self, **specs)
 
-    def det_occur(self, SNR, SNRmin, sInd, coords, intDepths, OWA):
+    def det_occur(self, SNR, mode, TL, sInd, intTime):
         """Determines if a detection has occurred and returns booleans 
         
         This method returns two booleans where True gives the case.
@@ -28,19 +28,14 @@ class PostProcessing2(PostProcessing):
         Args:
             SNR (float ndarray):
                 signal-to-noise ratio of the planets around the selected target
-            SNRmin (float):
-                signal-to-noise ratio threshold for detection
-            sInd (int):
-                targed star index
-            coords (astropy SkyCoord array):
-                SkyCoord object containing right ascension, declination, and 
-                distance to star of the planets of interest in units of deg, deg and pc
-            intDepths (float ndarray):
-                Integration depths equal to the limiting planet magnitude 
-                (Vmag+dMagLim), i.e. the V magnitude of the dark hole to be 
-                produced for each target. Must be of same length as coords.
-            OWA (float):
-                Outer Working Angle of the observation mode in arcsec
+            mode (dict):
+                Selected observing mode
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
+                Index of the star being observed
+            intTime (astropy Quantity):
+                Selected star integration time for detection
         
         Returns:
             FA (boolean):
@@ -48,18 +43,18 @@ class PostProcessing2(PostProcessing):
             MD (boolean ndarray):
                 Missed detection (false negative) boolean with the size of 
                 number of planets around the target.
-       
-        Notes:
-            TODO: Add backgroundsources hook
-        
+
+        Note:
+            This implementation assumes the dark hole is set by dMagLim.  Alternatively,
+            the true integration depth could be calculated from the integration time.
         """
 
+        #get background source false alarm rate
         BS = self.BackgroundSources
-        bs_density = BS.dNbackground(coords, intDepths).to(1/u.arcsec**2)
-
-        OWA_solidangle = OWA**2
-
-        FABP = bs_density[sInd] * OWA_solidangle # false positive rate due to background sources
+        intDepth = np.array([TL.Completeness.dMagLim + TL.Vmag[sInd]])
+        bs_density = BS.dNbackground(TL.coords[[sInd]], intDepth)
+        OWA_solidangle = mode['OWA']**2
+        FABP = (bs_density * OWA_solidangle).decompose().value # false positive rate due to background sources
         
         # initialize
         FA = False
@@ -68,10 +63,13 @@ class PostProcessing2(PostProcessing):
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p1 = np.random.rand()
         p2 = np.random.rand()
-        if p1 <= self.FAP  or p2 <= FABP:
+        if (p1 <= self.FAP)  or (p2 <= FABP[0]):
             FA = True
         
         # 2/ For each planet: is there a Missed Detection (false negative)?
+        SNRmin = mode['SNR']
         MD[SNR < SNRmin] = True
         
         return FA, MD
+
+

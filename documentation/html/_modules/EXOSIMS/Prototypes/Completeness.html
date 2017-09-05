@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes.Completeness &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Prototypes.Completeness &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +24,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,8 +41,9 @@
             
   <h1>Source code for EXOSIMS.Prototypes.Completeness</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.vprint</span> <span class="k">import</span> <span class="n">vprint</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="Completeness"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness">[docs]</a><span class="k">class</span> <span class="nc">Completeness</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Completeness class template</span>
@@ -56,17 +54,35 @@
 <span class="sd">    Args:</span>
 <span class="sd">        \*\*specs: </span>
 <span class="sd">            user specified values</span>
+<span class="sd">            </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        dMagLim (float):</span>
+<span class="sd">            Limiting planet-to-star delta magnitude for completeness</span>
+<span class="sd">        minComp (float):</span>
+<span class="sd">            Minimum completeness value for inclusion in target list</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_modtype</span> <span class="o">=</span> <span class="s1">&#39;Completeness&#39;</span>
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
-        <span class="c1"># import PlanetPopulation class</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dMagLim</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">minComp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+        
+        <span class="c1"># import Planet Population and Physical Model class objects</span>
         <span class="n">Pop</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">],</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">Pop</span> <span class="c1"># planet population object class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">Pop</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="n">Pop</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        
+        <span class="c1"># loading attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagLim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minComp</span><span class="p">)</span>
+        
+        <span class="c1"># populate outspec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;dMagLim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagLim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;minComp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minComp</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of Completeness object</span>
@@ -77,7 +93,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">att</span><span class="p">)))</span>
         
         <span class="k">return</span> <span class="s1">&#39;Completeness class object attributes&#39;</span>
 
@@ -110,11 +126,10 @@
 <span class="sd">                TargetList class object</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="c1"># initialize number of visits per star</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">visits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span></div>
+        <span class="c1"># Prototype does not use precomputed updates, so set these to zeros</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<div class="viewcode-block" id="Completeness.completeness_update"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">[docs]</a>    <span class="k">def</span> <span class="nf">completeness_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">visits</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates completeness value for stars previously observed</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
@@ -122,8 +137,10 @@
 <span class="sd">                TargetList class object</span>
 <span class="sd">            sInds (integer array):</span>
 <span class="sd">                Indices of stars to update</span>
-<span class="sd">            dt (astropy Quantity):</span>
-<span class="sd">                Time since initial completeness</span>
+<span class="sd">            visits (integer array):</span>
+<span class="sd">                Number of visits for each star</span>
+<span class="sd">            dt (astropy Quantity array):</span>
+<span class="sd">                Time since previous observation</span>
 <span class="sd">        </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            comp0 (float ndarray):</span>
@@ -133,7 +150,97 @@
         <span class="c1"># prototype returns the &quot;virgin&quot; completeness value</span>
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">comp0</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
         
-        <span class="k">return</span> <span class="n">comp0</span></div></div>
+        <span class="k">return</span> <span class="n">comp0</span></div>
+
+<div class="viewcode-block" id="Completeness.revise_updates"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.revise_updates">[docs]</a>    <span class="k">def</span> <span class="nf">revise_updates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Keeps completeness update values only for targets remaining in </span>
+<span class="sd">        target list during filtering (called from TargetList.filter_target_list)</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            ind (ndarray):</span>
+<span class="sd">                1D numpy ndarray of indices to keep</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">updates</span><span class="p">[</span><span class="n">ind</span><span class="p">,:]</span></div>
+
+<div class="viewcode-block" id="Completeness.comp_per_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.comp_per_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">comp_per_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates completeness values per integration time</span>
+<span class="sd">        </span>
+<span class="sd">        Note: Prototype does no calculations and always returns the same value</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            intTimes (astropy Quantity array):</span>
+<span class="sd">                Integration times</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Integer indices of the stars of interest</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            WA (astropy Quantity):</span>
+<span class="sd">                Working angle of the planet of interest in units of arcsec</span>
+<span class="sd">            mode (dict):</span>
+<span class="sd">                Selected observing mode</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            comp (float ndarray):</span>
+<span class="sd">                Completeness values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">intTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intTimes</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">intTimes</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fZ</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">fZ</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fEZ</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">fEZ</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">WA</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">WA</span><span class="o">.</span><span class="n">unit</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span> <span class="s2">&quot;intTimes and sInds must be same length&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fZ</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fZ</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;fZ must be constant or have same length as intTimes&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fEZ</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fEZ</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;fEZ must be constant or have same length as intTimes&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;WA must be constant&quot;</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.2</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Completeness.dcomp_dt"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Completeness.Completeness.dcomp_dt">[docs]</a>    <span class="k">def</span> <span class="nf">dcomp_dt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates derivative of completeness with respect to integration time</span>
+<span class="sd">        </span>
+<span class="sd">        Note: Prototype does no calculations and always returns the same value</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            intTimes (astropy Quantity array):</span>
+<span class="sd">                Integration times</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            sInds (integer ndarray):</span>
+<span class="sd">                Integer indices of the stars of interest</span>
+<span class="sd">            fZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of local zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            WA (astropy Quantity):</span>
+<span class="sd">                Working angle of the planet of interest in units of arcsec</span>
+<span class="sd">            mode (dict):</span>
+<span class="sd">                Selected observing mode</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dcomp (float ndarray):</span>
+<span class="sd">                Derivative of completeness with respect to integration time</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">intTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intTimes</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">intTimes</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fZ</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">fZ</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fEZ</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">fEZ</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">WA</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">WA</span><span class="o">.</span><span class="n">unit</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">),</span> <span class="s2">&quot;intTimes and sInds must be same length&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fZ</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fZ</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;fZ must be constant or have same length as intTimes&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">fEZ</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fEZ</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;fEZ must be constant or have same length as intTimes&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">WA</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;WA must be constant&quot;</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.02</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">intTimes</span><span class="p">))</span></div></div>
 </pre></div>
 
           </div>
@@ -167,8 +274,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

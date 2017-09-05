@@ -1,10 +1,7 @@
 {
-  "missionLife": 0.3,
-  "missionPortion": 0.1,
-  "OBduration": 10,
+  "missionLife": 0.01,
   "minComp": 0.025,
   "ppFact": 0.1,
-  "FAP": 1,
   "scienceInstruments": [
     {
       "name": "imager"
@@ -24,18 +21,18 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KnownRVPlanets",
-    "StarCatalog": " ",
+    "PlanetPopulation": "SAG13",
+    "StarCatalog": "EXOCAT1",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
-    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "PlanetPhysicalModel": "Forecaster",
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": " ",
-    "TargetList": "KnownRVPlanetsTargetList",
-    "SimulatedUniverse": "KnownRVPlanetsUniverse",
+    "Completeness": "BrownCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "SAG13Universe",
     "SurveySimulation": " ",
     "SurveyEnsemble": " "
   }

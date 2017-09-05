@@ -1,3 +1,4 @@
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -27,20 +28,42 @@ class TimeKeeping(object):
             Extended mission time in units of year
         missionPortion (float):
             Portion of mission devoted to planet-finding
-        dtAlloc (astropy Quantity):
-            Default allocated temporal block in units of day
-        duration (astropy Quantity):
-            Maximum duration of planet-finding operations in units of day
         missionFinishNorm (astropy Quantity):
             Mission finish normalized time in units of day
         missionFinishAbs (astropy Time):
             Mission finish absolute time in MJD
-        nextTimeAvail (astropy Quantity):
-            Next time available for planet-finding in units of day
         currentTimeNorm (astropy Quantity):
             Current mission time normalized to zero at mission start in units of day
         currentTimeAbs (astropy Time):
             Current absolute mission time in MJD
+        OBnumber (integer):
+            Index/number associated with the current observing block (OB). Each 
+            observing block has a duration, a start time, an end time, and can 
+            host one or multiple observations.
+        OBduration (astropy Quantity):
+            Default allocated duration of observing blocks, in units of day. If 
+            no OBduration was specified, a new observing block is created for 
+            each new observation in the SurveySimulation module. 
+        OBstartTimes (astropy Quantity array):
+            Array containing the normalized start times of each observing block 
+            throughout the mission, in units of day
+        OBendTimes (astropy Quantity array):
+            Array containing the normalized end times of each observing block 
+            throughout the mission, in units of day
+        obsStart (astropy Quantity):
+            Normalized start time of the observation currently executed by the 
+            Survey Simulation, in units of day
+        obsEnd (astropy Quantity):
+            Normalized end time of the observation currently executed by the 
+            Survey Simulation, in units of day
+        waitTime (astropy Quantity):
+            Default allocated duration to wait in units of day, when the
+            Survey Simulation does not find any observable target
+        waitMultiple (float):
+            Multiplier applied to the wait time in case of repeated empty lists of 
+            observable targets, which makes the wait time grow exponentially. 
+            As soon as an observable target is found, the wait time is reinitialized 
+            to the default waitTime value.
         
     """
 
@@ -48,7 +71,10 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
-            missionPortion=1, OBduration=np.inf, **specs):
+            missionPortion=1, OBduration=np.inf, waitTime=1, waitMultiple=2, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
@@ -78,16 +104,21 @@ class TimeKeeping(object):
         self.OBduration = float(OBduration)*u.day
         self.OBstartTimes = [0.]*u.day
         maxOBduration = self.missionFinishNorm*self.missionPortion
-        self.OBendTimes = [min(self.OBduration, maxOBduration).to('d').value]*u.d
+        self.OBendTimes = [min(self.OBduration, maxOBduration).to('day').value]*u.day
         
         # initialize single observation START and END times
         self.obsStart = 0.*u.day
         self.obsEnd = 0.*u.day
         
+        # initialize wait parameters
+        self.waitTime = float(waitTime)*u.day
+        self.waitMultiple = float(waitMultiple)
+        
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat,(u.Quantity,Time)) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat,(u.Quantity,Time)) else dat
 
     def __str__(self):
         r"""String representation of the TimeKeeping object.
@@ -96,7 +127,7 @@ class TimeKeeping(object):
         method prints the values contained in the object."""
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
@@ -125,9 +156,7 @@ class TimeKeeping(object):
         of 1 day.
         
         """
-        dt = 1.*u.day
-        self.allocate_time(dt)
-        #print '  Waiting %s'%dt.round(2)
+        self.allocate_time(self.waitTime)
 
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
@@ -195,5 +224,5 @@ class TimeKeeping(object):
             self.OBnumber -= 1
         else:
             self.obsStart = nextStart
-            print 'OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, 
-                    dt.round(2), (nwait*dt).round(2))
+            self.vprint('OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, 
+                    dt.round(2), (nwait*dt).round(2)))

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 
@@ -31,6 +32,9 @@ class ZodiacalLight(object):
 
     def __init__(self, magZ=23, magEZ=22, varEZ=0, **specs):
         
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
@@ -41,8 +45,9 @@ class ZodiacalLight(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -53,7 +58,7 @@ class ZodiacalLight(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Zodiacal Light class object attributes'
 

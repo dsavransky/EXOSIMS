@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.Prototypes package &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.Prototypes package &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,20 +24,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.SimulatedUniverse package" href="EXOSIMS.SimulatedUniverse.html" />
-    <link rel="prev" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
+    <link rel="prev" title="EXOSIMS.PostProcessing package" href="EXOSIMS.PostProcessing.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -78,9 +75,9 @@ sources for a given target position and dark hole depth.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>coords</strong> (<em>astropy SkyCoord array</em>) &#8211; SkyCoord object containing right ascension, declination, and
 distance to star of the planets of interest in units of deg, deg and pc</li>
-<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to the limiting planet magnitude
-(Vmag+dMagLim), i.e. the V magnitude of the dark hole to be
-produced for each target. Must be of same length as coords.</li>
+<li><strong>intDepths</strong> (<em>float ndarray</em>) &#8211; Integration depths equal to the planet magnitude (Vmag+dMag),
+i.e. the V magnitude of the dark hole to be produced for each target.
+Must be of same length as coords.</li>
 </ul>
 </td>
 </tr>
@@ -102,7 +99,7 @@ units of 1/arcmin2. Same length as inputs.</p>
 <span id="exosims-prototypes-completeness-module"></span><h2>EXOSIMS.Prototypes.Completeness module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Completeness" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Completeness.</code><code class="descname">Completeness</code><span class="sig-paren">(</span><em>dMagLim=25</em>, <em>minComp=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Completeness class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -115,9 +112,51 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.dMagLim">
+<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.dMagLim" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Limiting planet-to-star delta magnitude for completeness</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.minComp">
+<code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.minComp" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Minimum completeness value for inclusion in target list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.comp_per_intTime">
+<code class="descname">comp_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.comp_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.comp_per_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates completeness values per integration time</p>
+<p>Note: Prototype does no calculations and always returns the same value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Completeness values</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Completeness.Completeness.completeness_update">
-<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update" title="Permalink to this definition">¶</a></dt>
+<code class="descname">completeness_update</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>visits</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.completeness_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.completeness_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updates completeness value for stars previously observed</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -126,7 +165,8 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of stars to update</li>
-<li><strong>dt</strong> (<em>astropy Quantity</em>) &#8211; Time since initial completeness</li>
+<li><strong>visits</strong> (<em>integer array</em>) &#8211; Number of visits for each star</li>
+<li><strong>dt</strong> (<em>astropy Quantity array</em>) &#8211; Time since previous observation</li>
 </ul>
 </td>
 </tr>
@@ -134,6 +174,36 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.TargetList.TargetList.comp0" title="EXOSIMS.Prototypes.TargetList.TargetList.comp0">comp0</a> (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.dcomp_dt">
+<code class="descname">dcomp_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.dcomp_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.dcomp_dt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates derivative of completeness with respect to integration time</p>
+<p>Note: Prototype does no calculations and always returns the same value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of completeness with respect to integration time</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dcomp (float ndarray)</p>
 </td>
 </tr>
 </tbody>
@@ -151,6 +221,21 @@ target list)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Completeness.Completeness.revise_updates">
+<code class="descname">revise_updates</code><span class="sig-paren">(</span><em>ind</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Completeness.html#Completeness.revise_updates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Completeness.Completeness.revise_updates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps completeness update values only for targets remaining in
+target list during filtering (called from TargetList.filter_target_list)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indices to keep</td>
 </tr>
 </tbody>
 </table>
@@ -182,7 +267,7 @@ target list)</p>
 <span id="exosims-prototypes-observatory-module"></span><h2>EXOSIMS.Prototypes.Observatory module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Observatory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>settlingTime=1.0</em>, <em>thrust=450.0</em>, <em>slewIsp=4160.0</em>, <em>scMass=6000.0</em>, <em>dryMass=3400.0</em>, <em>coMass=5800.0</em>, <em>occulterSep=55000.0</em>, <em>skIsp=220.0</em>, <em>defburnPortion=0.05</em>, <em>spkpath=None</em>, <em>forceStaticEphem=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMinMoon=None</em>, <em>koAngleMinEarth=None</em>, <em>koAngleMax=90</em>, <em>koAngleSmall=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>spkpath=None</em>, <em>checkKeepoutEnd=True</em>, <em>forceStaticEphem=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Observatory class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -193,14 +278,42 @@ Observatory Definition Module calculations in exoplanet mission simulation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>**specs</strong> &#8211; user specified values</li>
-<li><strong>forceStaticEphem</strong> (<em>bool</em>) &#8211; If True, forces use of stored ephemerides for solar system objects
-and uses eccanom utility to propagate.  Defaults to False.</li>
 <li><strong>spkpath</strong> (<em>str</em>) &#8211; Path to SPK file on disk (Defaults to de432s.bsp).</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMin">
+<code class="descname">koAngleMin</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMin" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope minimum keepout angle in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinMoon">
+<code class="descname">koAngleMinMoon</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinMoon" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope minimum keepout angle in units of deg, for the Moon only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinEarth">
+<code class="descname">koAngleMinEarth</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMinEarth" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope minimum keepout angle in units of deg, for the Earth only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleMax">
+<code class="descname">koAngleMax</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleMax" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope maximum keepout angle (for occulter) in units of deg</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.koAngleSmall">
+<code class="descname">koAngleSmall</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.koAngleSmall" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Telescope keepout angle for smaller (angular size) bodies in units of deg</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.settlingTime">
 <code class="descname">settlingTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.settlingTime" title="Permalink to this definition">¶</a></dt>
@@ -259,6 +372,19 @@ and uses eccanom utility to propagate.  Defaults to False.</li>
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.flowRate">
 <code class="descname">flowRate</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.flowRate" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Slew flow rate in units of kg/day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd">
+<code class="descname">checkKeepoutEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.checkKeepoutEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean signifying if the keepout method must be called at the end of
+each observation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem">
+<code class="descname">forceStaticEphem</code><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.forceStaticEphem" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean used to force static ephemerides</p>
 </dd></dl>
 
 <p class="rubric">Notes</p>
@@ -336,14 +462,14 @@ ephemerides for a specific solar system planet.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.cent">
-<code class="descclassname">Observatory.</code><code class="descname">cent</code><span class="sig-paren">(</span><em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.cent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.cent" title="Permalink to this definition">¶</a></dt>
+<code class="descname">cent</code><span class="sig-paren">(</span><em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.cent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.cent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds time in Julian centuries since J2000 epoch</p>
 <p>This quantity is needed for many algorithms from Vallado 2013.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">time in Julian centuries since the J2000 epoch</td>
 </tr>
@@ -355,7 +481,7 @@ ephemerides for a specific solar system planet.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.distForces">
-<code class="descclassname">Observatory.</code><code class="descname">distForces</code><span class="sig-paren">(</span><em>TL</em>, <em>sInd</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
+<code class="descname">distForces</code><span class="sig-paren">(</span><em>TL</em>, <em>sInd</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.distForces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.distForces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds lateral and axial disturbance forces on an occulter</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -363,7 +489,7 @@ ephemerides for a specific solar system planet.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInd</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the star of interest</li>
+<li><strong>sInd</strong> (<em>integer</em>) &#8211; Integer index of the star of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
 </ul>
 </td>
@@ -384,8 +510,57 @@ dF_axial (astropy Quantity):</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.eclip2equat">
+<code class="descname">eclip2equat</code><span class="sig-paren">(</span><em>r_eclip</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.eclip2equat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.eclip2equat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotates heliocentric coordinates from ecliptic to equatorial frame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>r_eclip</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Positions vector in heliocentric ecliptic frame in units of AU</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Positions vector in heliocentric equatorial frame in units of AU</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_equat (astropy Quantity nx3 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.equat2eclip">
+<code class="descname">equat2eclip</code><span class="sig-paren">(</span><em>r_equat</em>, <em>currentTime</em>, <em>rotsign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.equat2eclip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.equat2eclip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotates heliocentric coordinates from equatorial to ecliptic frame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>r_equat</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Positions vector in heliocentric equatorial frame in units of AU</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>rotsign</strong> (<em>integer</em>) &#8211; Optional flag, default 1, set -1 to reverse the rotation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Positions vector in heliocentric ecliptic frame in units of AU</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_eclip (astropy Quantity nx3 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.keepout">
-<code class="descclassname">Observatory.</code><code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>koangle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds keepout Boolean values for stars of interest.</p>
 <p>This method defines the data type expected, all values are True.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -396,7 +571,7 @@ dF_axial (astropy Quantity):</p>
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
-<li><strong>koangle</strong> (<em>astropy Quantity</em>) &#8211; Telescope keepout angle in units of degree</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -414,22 +589,25 @@ target unobservable due to obstructions in the keepout zone.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet">
-<code class="descclassname">Observatory.</code><code class="descname">keplerplanet</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keplerplanet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds position vector for solar system objects</p>
+<code class="descname">keplerplanet</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keplerplanet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keplerplanet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds solar system body positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
 <p>This method uses algorithms 2 and 10 from Vallado 2013 to find
-heliocentric equatorial position vectors (astropy Quantity in km) for
-solar system objects.</p>
+heliocentric equatorial position vectors for solar system objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
 <li><strong>bodyname</strong> (<em>string</em>) &#8211; Solar system object name</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Heliocentric equatorial position vector in units of km</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Solar system body positions in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_body (astropy Quantity nx3 array)</p>
@@ -437,11 +615,12 @@ solar system objects.</p>
 </tr>
 </tbody>
 </table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.mass_dec">
-<code class="descclassname">Observatory.</code><code class="descname">mass_dec</code><span class="sig-paren">(</span><em>dF_lateral</em>, <em>t_int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.mass_dec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.mass_dec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mass_dec</code><span class="sig-paren">(</span><em>dF_lateral</em>, <em>t_int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.mass_dec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.mass_dec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns mass_used and deltaV</p>
 <p>The values returned by this method are used to decrement spacecraft
 mass for station-keeping.</p>
@@ -477,17 +656,17 @@ mass_used (astropy Quantity):</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.moon_earth">
-<code class="descclassname">Observatory.</code><code class="descname">moon_earth</code><span class="sig-paren">(</span><em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.moon_earth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.moon_earth" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds geocentric equatorial position vector (km) for Earth&#8217;s moon</p>
+<code class="descname">moon_earth</code><span class="sig-paren">(</span><em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.moon_earth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.moon_earth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds geocentric equatorial positions vector for Earth&#8217;s moon</p>
 <p>This method uses Algorithm 31 from Vallado 2013 to find the geocentric
-equatorial position vector for Earth&#8217;s moon.</p>
+equatorial positions vector for Earth&#8217;s moon.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Geocentric equatorial position vector in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Geocentric equatorial position vector in units of AU</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">r_moon (astropy Quantity nx3 array)</td>
 </tr>
@@ -497,30 +676,38 @@ equatorial position vector for Earth&#8217;s moon.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.orbit">
-<code class="descclassname">Observatory.</code><code class="descname">orbit</code><span class="sig-paren">(</span><em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.orbit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds observatory orbit position vector in heliocentric equatorial frame.</p>
+<code class="descname">orbit</code><span class="sig-paren">(</span><em>currentTime</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.orbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
 <p>This method defines the data type expected, orbits are determined by specific
 instances of Observatory classes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Observatory (spacecraft) position vector in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">r_sc (astropy Quantity nx3 array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_obs (astropy Quantity nx3 array)</p>
+</td>
 </tr>
 </tbody>
 </table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.propeph">
-<code class="descclassname">Observatory.</code><code class="descname">propeph</code><span class="sig-paren">(</span><em>x</em>, <em>TDB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.propeph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.propeph" title="Permalink to this definition">¶</a></dt>
-<dd><p>Propagates ephemeride to current time and returns this value</p>
-<p>This method propagates the ephemerides from Vallado 2013 to the current
-time.</p>
+<code class="descname">propeph</code><span class="sig-paren">(</span><em>x</em>, <em>TDB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.propeph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.propeph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates an ephemeris from Vallado 2013 to current time.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -543,7 +730,7 @@ time.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.rot">
-<code class="descclassname">Observatory.</code><code class="descname">rot</code><span class="sig-paren">(</span><em>th</em>, <em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.rot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.rot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rot</code><span class="sig-paren">(</span><em>th</em>, <em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.rot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.rot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the rotation matrix of angle th about the axis value</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -567,8 +754,9 @@ time.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position">
-<code class="descclassname">Observatory.</code><code class="descname">solarSystem_body_position</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.solarSystem_body_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds position vector for solar system objects</p>
+<code class="descname">solarSystem_body_position</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.solarSystem_body_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds solar system body positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
 <p>This passes all arguments to one of spk_body or keplerplanet, depending
 on the value of self.havejplephem.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -576,12 +764,15 @@ on the value of self.havejplephem.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
 <li><strong>bodyname</strong> (<em>string</em>) &#8211; Solar system object name</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Heliocentric equatorial position vector in units of km</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Solar system body positions in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_body (astropy Quantity nx3 array)</p>
@@ -589,26 +780,30 @@ on the value of self.havejplephem.</p>
 </tr>
 </tbody>
 </table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.spk_body">
-<code class="descclassname">Observatory.</code><code class="descname">spk_body</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.spk_body"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.spk_body" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds position vector for solar system objects</p>
+<code class="descname">spk_body</code><span class="sig-paren">(</span><em>currentTime</em>, <em>bodyname</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.spk_body"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.spk_body" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds solar system body positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
 <p>This method uses spice kernel from NAIF to find heliocentric
-equatorial position vectors (astropy Quantity in km) for solar system
-objects.</p>
+equatorial position vectors for solar system objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
 <li><strong>bodyname</strong> (<em>string</em>) &#8211; Solar system object name</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Heliocentric equatorial position vector in units of km</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Solar system body positions in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_body (astropy Quantity nx3 array)</p>
@@ -616,33 +811,7 @@ objects.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.Observatory.Observatory.starprop">
-<code class="descclassname">Observatory.</code><code class="descname">starprop</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.starprop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.starprop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds target star position vector (km) for current time (MJD)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Position vectors of stars of interest in heliocentric
-equatorial frame in units of km</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_star (astropy Quantity nx3 array)</p>
-</td>
-</tr>
-</tbody>
-</table>
-<p>Note: If multiple times and targets, currentTime and sInds sizes must match.</p>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
 </dd></dl>
 
 </dd></dl>
@@ -652,7 +821,7 @@ equatorial frame in units of km</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, telescopeKeepout=45, attenuation=0.5, intCutoff=50, Ndark=10, scienceInstruments=None, pitch=1e-05, focal=100, idark=0.0005, CIC=0.005, sread=0.2, texp=1000, ENF=1, Rs=70, QE=0.9, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.01, core_contrast=1e-09, platescale=None, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), samp=10, ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None, OWA=None, dMagLim=22.5, WALim=None, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, intCutoff=50, dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10, pixelNumber=1000, pixelSize=1e-05, sread=1e-06, idark=0.0001, CIC=0.001, texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=array([[ 1.,  1.,  1.],        [ 1.,  1.,  1.],        [ 1.,  1.,  1.]]), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -669,7 +838,7 @@ simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.obscurFac">
 <code class="descname">obscurFac</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.obscurFac" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Obscuration factor due to secondary mirror and spiders</p>
+<dd><p><em>float</em> &#8211; Obscuration factor (fraction of PM area) due to secondary mirror and spiders</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -689,31 +858,6 @@ shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea</p>
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea">
 <code class="descname">pupilArea</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Entrance pupil area in units of m2</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout">
-<code class="descname">telescopeKeepout</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.telescopeKeepout" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Telescope keepout angle in units of deg</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation">
-<code class="descname">attenuation</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.attenuation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Non-coronagraph attenuation, equal to the throughput of the optical
-system without the coronagraph elements</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff">
-<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Maximum allowed integration time in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark">
-<code class="descname">Ndark</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Ndark" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Number of dark frames used</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -741,15 +885,24 @@ system without the coronagraph elements</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim">
-<code class="descname">dMagLim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMagLim" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Limiting delta magnitude for integration time calculation</p>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff">
+<code class="descname">intCutoff</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.intCutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Maximum allowed integration time in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WALim">
-<code class="descname">WALim</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WALim" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Limiting working angle for integration time calculation in units of arcsec</p>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMag0">
+<code class="descname">dMag0</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.dMag0" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Favorable planet delta magnitude value used to calculate the minimum
+integration times for inclusion in target list</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WA0">
+<code class="descname">WA0</code><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.WA0" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Favorable instrument working angle value used to calculate the minimum
+integration times for inclusion in target list (defaults to detection
+IWA-OWA midpoint)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -776,34 +929,54 @@ system without the coronagraph elements</p>
 <dt>name (string):</dt>
 <dd>Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
 instrument (imager or spectro). Every instrument should have a unique name.</dd>
-<dt>pitch (astropy Quantity):</dt>
-<dd>Pixel pitch in units of m</dd>
-<dt>focal (astropy Quantity):</dt>
-<dd>Focal length in units of m</dd>
-<dt>idark (astropy Quantity):</dt>
-<dd>Detector dark-current per pixel in units of 1/s</dd>
-<dt>CIC (float):</dt>
-<dd>Clock-induced-charge per frame per pixel</dd>
-<dt>sread (float):</dt>
-<dd>Detector effective read noise per frame per pixel</dd>
-<dt>texp (astropy Quantity):</dt>
-<dd>Exposure time per frame in units of s</dd>
-<dt>ENF (float):</dt>
-<dd>Excess noise factor</dd>
-<dt>Rs (float):</dt>
-<dd>Spectral resolving power</dd>
 <dt>QE (float, callable):</dt>
 <dd>Detector quantum efficiency: either a scalar for constant QE, or a
 two-column array for wavelength-dependent QE, where the first column
 contains the wavelengths in units of nm. May be data or FITS filename.</dd>
+<dt>optics (float):</dt>
+<dd>Attenuation due to optics specific to the science instrument (defaults to 0.5)</dd>
+<dt>FoV (astropy Quantity):</dt>
+<dd>Field of view in units of arcsec</dd>
+<dt>pixelNumber (integer):</dt>
+<dd>Detector array format, number of pixels per detector lines/columns</dd>
+<dt>pixelScale (astropy Quantity):</dt>
+<dd>Detector pixel scale in units of arcsec per pixel</dd>
+<dt>pixelSize (astropy Quantity):</dt>
+<dd>Pixel pitch in units of m</dd>
+<dt>focal (astropy Quantity):</dt>
+<dd>Focal length in units of m</dd>
+<dt>fnumber (float):</dt>
+<dd>Detector f-number</dd>
+<dt>sread (float):</dt>
+<dd>Detector effective read noise per frame per pixel</dd>
+<dt>idark (astropy Quantity):</dt>
+<dd>Detector dark-current per pixel in units of 1/s</dd>
+<dt>CIC (float):</dt>
+<dd>Clock-induced-charge per frame per pixel</dd>
+<dt>texp (astropy Quantity):</dt>
+<dd>Exposure time per frame in units of s</dd>
+<dt>radDos (float):</dt>
+<dd>Radiation dosage</dd>
+<dt>PCeff (float):</dt>
+<dd>Photon counting efficiency</dd>
+<dt>ENF (float):</dt>
+<dd>(Specific to EM-CCDs) Excess noise factor</dd>
+<dt>Rs (float):</dt>
+<dd>(Specific to spectrometers) Spectral resolving power</dd>
+<dt>lenslSamp (float):</dt>
+<dd>(Specific to spectrometers) Lenslet sampling, number of pixel per
+lenslet rows or cols</dd>
 </dl>
 </dd>
 <dt>Common starlight suppression system attributes:</dt>
 <dd><dl class="first last docutils">
 <dt>name (string):</dt>
-<dd>System name (e.g. HLC-465, HLC-565, SPC-660), should also contain the
+<dd>System name (e.g. HLC-565, SPC-660), should also contain the
 central wavelength the system is optimized for. Every system must have
 a unique name.</dd>
+<dt>optics (float):</dt>
+<dd>Attenuation due to optics specific to the coronagraph (defaults to 1),
+e.g. polarizer, Lyot stop, extra flat mirror</dd>
 <dt>lam (astropy Quantity):</dt>
 <dd>Central wavelength in units of nm</dd>
 <dt>deltaLam (astropy Quantity):</dt>
@@ -827,14 +1000,13 @@ the total core intensity as core_mean_intensity * Npix. If not specified,
 then the total core intensity is equal to core_contrast * core_thruput.</dd>
 <dt>core_area (astropy Quantity, callable):</dt>
 <dd>Area of the FWHM region of the planet PSF, in units of arcsec^2</dd>
-<dt>platescale (float):</dt>
-<dd>Platescale used for this set of coronagraph parameters.</dd>
+<dt>core_platescale (float):</dt>
+<dd>Platescale used for a specific set of coronagraph parameters, in units
+of lambda/D per pixel</dd>
 <dt>PSF (float, callable):</dt>
 <dd>Point spread function - 2D ndarray of values, normalized to 1 at
 the core. Note: normalization means that all throughput effects
 must be contained in the throughput attribute.</dd>
-<dt>samp (astropy Quantity):</dt>
-<dd>Sampling of PSF in units of arcsec (per pixel)</dd>
 <dt>ohTime (astropy Quantity):</dt>
 <dd>Overhead time in units of days</dd>
 <dt>occulter (boolean):</dt>
@@ -897,7 +1069,7 @@ and speckle residuals.</p>
 <li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
 <li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
 <li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of mas</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
 <li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 <li><strong>returnExtra</strong> (<em>boolean</em>) &#8211; Optional flag, default False, set True to return additional rates for validation</li>
 </ul>
@@ -917,6 +1089,38 @@ C_b (astropy Quantity array):</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">C_p (astropy Quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_dMag_per_intTime">
+<code class="descname">calc_dMag_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_dMag_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_dMag_per_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds achievable planet delta magnitude for one integration
+time per star in the input list at one or more working angles.</p>
+<p>The prototype returns ones as an m x n array where m corresponds
+to each star in sInds and n corresponds to each working angle in WA.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times in units of day</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Achievable dMag for given integration time and working angle</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag">dMag</a> (float ndarray)</p>
 </td>
 </tr>
 </tbody>
@@ -956,22 +1160,53 @@ determined by specific OpticalSystem classes.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime">
-<code class="descname">calc_maxintTime</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_maxintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_maxintTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds maximum integration times for the whole target list.</p>
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_minintTime">
+<code class="descname">calc_minintTime</code><span class="sig-paren">(</span><em>TL</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.calc_minintTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_minintTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds minimum integration times for the target list filtering.</p>
 <p>This method is called in the TargetList class object. It calculates the
-maximum integration times for all the stars from the target list, at the
-limiting delta magnitude (dMagLim), in the optimistic case of no zodiacal
-noise and at a separation equal to twice the global inner working angle (IWA).</p>
+minimum (optimistic) integration times for all the stars from the target list,
+in the ideal case of no zodiacal noise. It uses a very favorable planet flux
+ratio (dMag0, 15 by default) and working angle (WA0, by default equal to
+the detection IWA-OWA midpoint).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Maximum integration times for target list stars in units of day</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Minimum integration times for target list stars in units of day</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">maxintTime (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">minintTime (astropy Quantity array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.ddMag_dt">
+<code class="descname">ddMag_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.ddMag_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.ddMag_dt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds derivative of achievable dMag with respect to integration time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times in units of day</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of achievable dMag with respect to integration time
+in units of 1/s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ddMagdt (astropy Quantity array)</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -980,21 +1215,22 @@ noise and at a separation equal to twice the global inner working angle (IWA).</
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.get_coro_param">
 <code class="descname">get_coro_param</code><span class="sig-paren">(</span><em>syst</em>, <em>param_name</em>, <em>fill=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem.get_coro_param"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.get_coro_param" title="Permalink to this definition">¶</a></dt>
-<dd><p>For a given starlightSuppressionSystem, loads an input parameter that
-depends on the angular separation and updates the system. Also updates the
-IWA and OWA of the system.</p>
+<dd><p>For a given starlightSuppressionSystem, this method loads an input
+parameter from a table (fits file) or a scalar value. It then creates a
+callable lambda function, which depends on the wavelength of the system
+and the angular separation of the observed planet.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>syst</strong> (<em>dict</em>) &#8211; Dictionnary containing the parameters of one starlight suppression system</li>
+<li><strong>syst</strong> (<em>dict</em>) &#8211; Dictionary containing the parameters of one starlight suppression system</li>
 <li><strong>param_name</strong> (<em>string</em>) &#8211; Name of the parameter that must be loaded</li>
 <li><strong>fill</strong> (<em>float</em>) &#8211; Fill value for working angles outside of the input array definition</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Updated dictionnary of parameters</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Updated dictionary of parameters</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">syst (dict)</p>
@@ -1002,6 +1238,12 @@ IWA and OWA of the system.</p>
 </tr>
 </tbody>
 </table>
+<dl class="docutils">
+<dt>Note 1: The created lambda function handles the specified wavelength by</dt>
+<dd>rescaling the specified working angle by a factor syst[&#8216;lam&#8217;]/mode[&#8216;lam&#8217;].</dd>
+<dt>Note 2: If the input parameter is taken from a table, the IWA and OWA of that</dt>
+<dd>system are constrained by the limits of the allowed WA on that table.</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -1038,7 +1280,40 @@ in units of rad</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet phase function</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Phi (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Phi (ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_Teff">
+<code class="descname">calc_Teff</code><span class="sig-paren">(</span><em>starL</em>, <em>d</em>, <em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPhysicalModel.html#PlanetPhysicalModel.calc_Teff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel.calc_Teff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calcluates the effective planet temperature given the stellar luminosity,
+planet albedo and star-planet distance.</p>
+<p>This calculation represents a basic balckbody power balance, and does not
+take into account the actual emmisivity of the planet, or any non-equilibrium
+effects or temperature variations over the surface.</p>
+<p>Note:  The input albedo is taken to be the bond albedo, as required by the equilibrium
+calculation. For an isotropic scatterer (Lambert phase function) the Bond albedo is
+1.5 times the geometric albedo. However, the Bond albedo must be strictly defined between
+0 and 1, and an albedo of 1 produces a zero effective temperature.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>starL</strong> (<em>float ndarray</em>) &#8211; Stellar luminosities in units of solar luminosity. Not an astropy quantity.</li>
+<li><strong>d</strong> (<em>astropy Quantity array</em>) &#8211; Star-planet distances</li>
+<li><strong>p</strong> (<em>float ndarray</em>) &#8211; Planet albedos</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Planet effective temperature in degrees K</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Teff (astropy quantity)</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1072,9 +1347,9 @@ same value of 0.367.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of km</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of Earth radius</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of kg</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of Earth mass</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
 </tr>
@@ -1091,9 +1366,9 @@ same value of 0.367.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of kg</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of Earth mass</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of km</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of Earth radius</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
 </tr>
@@ -1108,7 +1383,7 @@ same value of 0.367.</p>
 <span id="exosims-prototypes-planetpopulation-module"></span><h2>EXOSIMS.Prototypes.PlanetPopulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PlanetPopulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100], erange=[0.01, 0.99], Irange=[0.0, 180.0], Orange=[0.0, 360.0], wrange=[0.0, 360.0], prange=[0.1, 0.6], Rprange=[1.0, 30.0], Mprange=[1.0, 4131.0], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PlanetPopulation.</code><code class="descname">PlanetPopulation</code><span class="sig-paren">(</span><em>arange=[0.1, 100.0], erange=[0.01, 0.99], Irange=[0.0, 180.0], Orange=[0.0, 360.0], wrange=[0.0, 360.0], prange=[0.1, 0.6], Rprange=[1.0, 30.0], Mprange=[1.0, 4131.0], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Planet Population Description class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1167,13 +1442,13 @@ simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rprange">
 <code class="descname">Rprange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Rprange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet radius range in units of km</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet radius range in units of Earth radius</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Mprange">
 <code class="descname">Mprange</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.Mprange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet mass range in units of kg</p>
+<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Planet mass range in units of Earth mass</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1201,6 +1476,18 @@ simulation.</p>
 per star in a given universe</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.uniform">
+<code class="descname">uniform</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float, callable</em> &#8211; Uniform distribution over a given range</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.logunif">
+<code class="descname">logunif</code><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.logunif" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float, callable</em> &#8211; Log-uniform distribution over a given range</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges">
 <code class="descname">checkranges</code><span class="sig-paren">(</span><em>var</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.checkranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.checkranges" title="Permalink to this definition">¶</a></dt>
@@ -1209,7 +1496,7 @@ per star in a given universe</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_albedo">
-<code class="descname">dist_albedo</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_albedo" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dist_albedo</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_albedo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Probability density function for albedo</p>
 <p>The prototype provides a uniform distribution between the minimum and
 maximum values.</p>
@@ -1217,11 +1504,11 @@ maximum values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Albedo value(s)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p</strong> (<em>float ndarray</em>) &#8211; Albedo value(s)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Albedo probability density</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
 </tr>
 </tbody>
 </table>
@@ -1229,7 +1516,7 @@ maximum values.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_eccen">
-<code class="descname">dist_eccen</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_eccen" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dist_eccen</code><span class="sig-paren">(</span><em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_eccen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Probability density function for eccentricity</p>
 <p>The prototype provides a uniform distribution between the minimum and
 maximum values.</p>
@@ -1237,133 +1524,22 @@ maximum values.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Eccentricity value(s)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>e</strong> (<em>float ndarray</em>) &#8211; Eccentricity value(s)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Eccentricity probability density</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_radius">
-<code class="descname">dist_radius</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_radius" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for planetary radius</p>
-<p>The prototype provides a log-uniform distribution between the minimum
-and maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Planetary radius value(s)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary radius probability density</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_sma">
-<code class="descname">dist_sma</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for semi-major axis in AU</p>
-<p>The prototype provides a log-uniform distribution between the minimum
-and maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>float/ndarray</em>) &#8211; Semi-major axis value(s) in AU</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_I">
-<code class="descname">gen_I</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_I"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_I" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate inclination in degrees</p>
-<p>The prototype provides a sinusoidal distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">I (astropy Quantity units degrees)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_O">
-<code class="descname">gen_O</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_O"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_O" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate longitude of the ascending node in degrees</p>
-<p>The prototype provides a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">O (astropy Quantity units degrees)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_albedo">
-<code class="descname">gen_albedo</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_albedo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate geometric albedo values</p>
-<p>The prototype provides a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">p (numpy ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccen">
-<code class="descname">gen_eccen</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_eccen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate eccentricity values</p>
-<p>The prototype provides a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">e (numpy ndarray)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccen_from_sma">
-<code class="descname">gen_eccen_from_sma</code><span class="sig-paren">(</span><em>n</em>, <em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_eccen_from_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_eccen_from_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate eccentricity values constrained by semi-major axis, such that orbital
-radius always falls within the provided sma range.</p>
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_eccen_from_sma">
+<code class="descname">dist_eccen_from_sma</code><span class="sig-paren">(</span><em>e</em>, <em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_eccen_from_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_eccen_from_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for eccentricity constrained by
+semi-major axis, such that orbital radius always falls within the
+provided sma range.</p>
 <p>The prototype provides a uniform distribution between the minimum and
 maximum allowable values.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1371,13 +1547,106 @@ maximum allowable values.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</li>
-<li><strong>a</strong> (<em>Quantity</em>) &#8211; Array of semi-major axis values of length n</li>
+<li><strong>e</strong> (<em>float ndarray</em>) &#8211; Eccentricity values</li>
+<li><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value in AU. Not an astropy quantity.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">e (numpy ndarray)</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Probability density of eccentricity constrained by semi-major axis</p>
 </td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_mass">
+<code class="descname">dist_mass</code><span class="sig-paren">(</span><em>Mp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary mass in Earth mass</p>
+<p>The prototype provides an unbounded power law distribution. Note
+that this should really be a function of a density model and the radius
+distribution for all implementations that use it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>float ndarray</em>) &#8211; Planetary mass value(s) in Earth mass. Not an astropy quantity.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary mass probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_radius">
+<code class="descname">dist_radius</code><span class="sig-paren">(</span><em>Rp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for planetary radius in Earth radius</p>
+<p>The prototype provides a log-uniform distribution between the minimum
+and maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>float ndarray</em>) &#8211; Planetary radius value(s) in Earth radius. Not an astropy quantity.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary radius probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_sma">
+<code class="descname">dist_sma</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.dist_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.dist_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Probability density function for semi-major axis in AU</p>
+<p>The prototype provides a log-uniform distribution between the minimum
+and maximum values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value(s) in AU. Not an astropy quantity.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_angles">
+<code class="descname">gen_angles</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_angles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_angles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate inclination, longitude of the ascending node, and argument
+of periapse in degrees</p>
+<p>The prototype generates inclination as sinusoidally distributed and
+longitude of the ascending node and argument of periapse as uniformly
+distributed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Inclination in units of degrees
+O (astropy Quantity array):<blockquote>
+<div>Longitude of the ascending node in units of degrees</div></blockquote>
+<dl class="docutils">
+<dt>w (astropy Quantity array):</dt>
+<dd>Argument of periapse in units of degrees</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.I" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.I">I</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -1393,70 +1662,49 @@ Helper function checks that input is integer, casts to int, is &gt;= 0</p>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_mass">
 <code class="descname">gen_mass</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_mass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate planetary mass values in kg</p>
+<dd><p>Generate planetary mass values in units of Earth mass.</p>
 <p>The prototype provides a log-uniform distribution between the minimum and
 maximum values.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Mp (astropy Quantity units kg)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass values in units of Earth mass.</td>
 </tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_radius">
-<code class="descname">gen_radius</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_radius" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate planetary radius values in m</p>
-<p>The prototype provides a log-uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Rp (astropy Quantity units m)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_sma">
-<code class="descname">gen_sma</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_sma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate semi-major axis values in AU</p>
-<p>The prototype provides a log-uniform distribution between the minimum and
-maximum values.</p>
+<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_plan_params">
+<code class="descname">gen_plan_params</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_plan_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_plan_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate semi-major axis (AU), eccentricity, geometric albedo, and
+planetary radius (earthRad)</p>
+<p>The prototype generates semi-major axis and planetary radius with
+log-uniform distributions and eccentricity and geometric albedo with
+uniform distributions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a (astropy Quantity units AU)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU
+e (float ndarray):<blockquote>
+<div>Eccentricity</div></blockquote>
+<dl class="docutils">
+<dt>p (float ndarray):</dt>
+<dd>Geometric albedo</dd>
+<dt>Rp (astropy Quantity array):</dt>
+<dd>Planetary radius in units of earthRad</dd>
+</dl>
+</td>
 </tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_w">
-<code class="descname">gen_w</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PlanetPopulation.html#PlanetPopulation.gen_w"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation.gen_w" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate argument of periapse in degrees</p>
-<p>The prototype provides a uniform distribution between the minimum and
-maximum values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>numeric</em>) &#8211; Number of samples to generate</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">w (astropy Quantity units degrees)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -1469,7 +1717,7 @@ maximum values.</p>
 <span id="exosims-prototypes-postprocessing-module"></span><h2>EXOSIMS.Prototypes.PostProcessing module<a class="headerlink" href="#module-EXOSIMS.Prototypes.PostProcessing" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>FAP=3e-07</em>, <em>MDP=0.001</em>, <em>ppFact=1.0</em>, <em>maxFAfluxratio=1e-06</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.PostProcessing.</code><code class="descname">PostProcessing</code><span class="sig-paren">(</span><em>FAP=3e-07</em>, <em>MDP=0.001</em>, <em>ppFact=1.0</em>, <em>FAdMag0=15</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Post Processing class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -1510,17 +1758,17 @@ units of arcsec. May be data or FITS filename.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.maxFAfluxratio">
-<code class="descname">maxFAfluxratio</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.maxFAfluxratio" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float, callable</em> &#8211; Maximum flux ratio that can be obtained by a false alarm: either a scalar
-for constant flux ratio, or a two-column array for separation-dependent
-flux ratio, where the first column contains the angular separation in
+<dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.FAdMag0">
+<code class="descname">FAdMag0</code><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.FAdMag0" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float, callable</em> &#8211; Minimum delta magnitude that can be obtained by a false alarm: either a scalar
+for constant dMag, or a two-column array for separation-dependent
+dMag, where the first column contains the angular separation in
 units of arcsec. May be data or FITS filename.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur">
-<code class="descname">det_occur</code><span class="sig-paren">(</span><em>SNR</em>, <em>SNRmin</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
+<code class="descname">det_occur</code><span class="sig-paren">(</span><em>SNR</em>, <em>mode</em>, <em>TL</em>, <em>sInd</em>, <em>intTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/PostProcessing.html#PostProcessing.det_occur"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.PostProcessing.PostProcessing.det_occur" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines if a detection has occurred and returns booleans</p>
 <p>This method returns two booleans where True gives the case.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1529,7 +1777,10 @@ units of arcsec. May be data or FITS filename.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>SNR</strong> (<em>float ndarray</em>) &#8211; signal-to-noise ratio of the planets around the selected target</li>
-<li><strong>SNRmin</strong> (<em>float</em>) &#8211; signal-to-noise ratio threshold for detection</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInd</strong> (<em>integer</em>) &#8211; Index of the star being observed</li>
+<li><strong>intTime</strong> (<em>astropy Quantity</em>) &#8211; Selected star integration time for detection</li>
 </ul>
 </td>
 </tr>
@@ -1548,7 +1799,10 @@ number of planets around the target.</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>TODO: Add backgroundsources hook</p>
+<p>The prototype implemenation does not consider background sources
+in calculating false positives, however, the unused TargetList,
+integration time and star index inputs are part of the interface
+to allow an implementation to do this.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1571,6 +1825,12 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.StarCatalog">
+<code class="descname">StarCatalog</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>StarCatalog module</em> &#8211; StarCatalog class object (only retained if keepStarCatalog is True)</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation">
 <code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
@@ -1736,25 +1996,55 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.WA">
 <code class="descname">WA</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.WA" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Working angles of the planets of interest in units of mas</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planTime">
-<code class="descname">planTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.planTime" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Contains the last time the planet was observed in units of day,
-for planet position propagation</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Working angles of the planets of interest in units of arcsec</p>
 </dd></dl>
 
 <p class="rubric">Notes</p>
 <p>PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
 Each target&#8217;s number of planets is a Poisson random variable sampled with lambda=eta.</p>
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dump_system_params">
+<code class="descname">dump_system_params</code><span class="sig-paren">(</span><em>sInd=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.dump_system_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dump_system_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary of time-dependant planet properties for a specific target</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInd</strong> (<em>integer</em>) &#8211; Index of the target system of interest. Default value (None) will
+return an empty dictionary with the selected parameters and their units.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of time-dependant planet properties</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">system_params (dict)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dump_systems">
+<code class="descname">dump_systems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.dump_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dump_systems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionary of planetary properties for archiving use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>None</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of planetary properties</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">systems (dict)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_physical_properties">
 <code class="descname">gen_physical_properties</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.gen_physical_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.gen_physical_properties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates the planetary systems&#8217; physical properties. Populates arrays
-of the orbital elements, albedos, masses and radii of all planets, and
-generates indices that map from planet to parent star.</p>
+<dd><p>Generates the planetary systems&#8217; physical properties.</p>
+<p>Populates arrays of the orbital elements, albedos, masses and radii
+of all planets, and generates indices that map from planet to parent star.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1762,20 +2052,18 @@ generates indices that map from planet to parent star.</p>
 <code class="descname">init_systems</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.init_systems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.init_systems" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds initial time-dependant parameters. Assigns each planet an
 initial position, velocity, planet-star distance, apparent separation,
-phase function, surface brightness of exo-zodiacal light, delta magnitude,
-working angle, and initializes the planet current times to zero.
-This method makes us of the systems&#8217; physical properties (masses, distances)</p>
-<blockquote>
-<div>and their orbital elements (a, e, I, O, w, M0).</div></blockquote>
+phase function, surface brightness of exo-zodiacal light, delta
+magnitude, and working angle.</p>
+<p>This method makes use of the systems&#8217; physical properties (masses,
+distances) and their orbital elements (a, e, I, O, w, M0).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system">
-<code class="descname">propag_system</code><span class="sig-paren">(</span><em>sInd</em>, <em>currentTimeNorm</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.propag_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system" title="Permalink to this definition">¶</a></dt>
+<code class="descname">propag_system</code><span class="sig-paren">(</span><em>sInd</em>, <em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.propag_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.propag_system" title="Permalink to this definition">¶</a></dt>
 <dd><p>Propagates planet time-dependant parameters: position, velocity,
 planet-star distance, apparent separation, phase function, surface brightness
-of exo-zodiacal light, delta magnitude, working angle, and the planet
-current time array.</p>
+of exo-zodiacal light, delta magnitude, and working angle.</p>
 <p>This method uses the Kepler state transition matrix to propagate a
 planet&#8217;s state (position and velocity vectors) forward in time using
 the Kepler state transition matrix.</p>
@@ -1785,9 +2073,39 @@ the Kepler state transition matrix.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>sInd</strong> (<em>integer</em>) &#8211; Index of the target system of interest</li>
-<li><strong>currentTimeNorm</strong> (<em>astropy Quantity</em>) &#8211; Current mission time normalized to zero at mission start in units of day</li>
+<li><strong>dt</strong> (<em>astropy Quantity</em>) &#8211; Time increment in units of day, for planet position propagation</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.revise_planets_list">
+<code class="descname">revise_planets_list</code><span class="sig-paren">(</span><em>pInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.revise_planets_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.revise_planets_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replaces Simulated Universe planet attributes with filtered values,
+and updates the number of planets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pInds</strong> (<em>integer ndarray</em>) &#8211; Planet indices to keep</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.revise_stars_list">
+<code class="descname">revise_stars_list</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.revise_stars_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.revise_stars_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Revises the TargetList with filtered values, and updates the
+planets list accordingly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Star indices to keep</td>
 </tr>
 </tbody>
 </table>
@@ -1805,6 +2123,12 @@ the Kepler state transition matrix.</p>
 <p>Star Catalog class template</p>
 <p>This class contains all variables and methods necessary to perform
 Star Catalog Module calculations in exoplanet mission simulation.</p>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.ntargs">
+<code class="descname">ntargs</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.ntargs" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Number of stars</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Name">
 <code class="descname">Name</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Name" title="Permalink to this definition">¶</a></dt>
@@ -1886,13 +2210,13 @@ Star Catalog Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.L">
 <code class="descname">L</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.L" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Stellar luminosity in Solar luminosities</p>
+<dd><p><em>float ndarray</em> &#8211; Stellar luminosity in ln(Solar luminosities)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.Binary_Cut">
 <code class="descname">Binary_Cut</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.Binary_Cut" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>boolean ndarray</em> &#8211; Booleans where True is a star with a companion closer than 10 arcsec</p>
+<dd><p><em>boolean ndarray</em> &#8211; Boolean where True is a binary star with companion closer than 10 arcsec</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1910,7 +2234,7 @@ Star Catalog Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords">
 <code class="descname">coords</code><a class="headerlink" href="#EXOSIMS.Prototypes.StarCatalog.StarCatalog.coords" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy SkyCoord array</em> &#8211; SkyCoord objects containing right ascension, declination, and
+<dd><p><em>astropy SkyCoord array</em> &#8211; SkyCoord object (ICRS frame) containing right ascension, declination, and
 distance to star in units of deg, deg, and pc</p>
 </dd></dl>
 
@@ -1951,6 +2275,16 @@ distance to star in units of deg, deg, and pc</p>
 </tbody>
 </table>
 <p>Attributes:</p>
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_ensemble">
+<code class="descname">run_ensemble</code><span class="sig-paren">(</span><em>sim</em>, <em>nb_run_sim</em>, <em>run_one=None</em>, <em>genNewPlanets=True</em>, <em>rewindPlanets=True</em>, <em>kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble.run_ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_ensemble" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_one">
+<code class="descname">run_one</code><span class="sig-paren">(</span><em>SS</em>, <em>genNewPlanets=True</em>, <em>rewindPlanets=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble.run_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_one" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1958,7 +2292,7 @@ distance to star in units of deg, deg, and pc</p>
 <span id="exosims-prototypes-surveysimulation-module"></span><h2>EXOSIMS.Prototypes.SurveySimulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>nt_flux=1</em>, <em>logLevel='ERROR'</em>, <em>scriptfile=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Survey Simulation class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -1969,10 +2303,21 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>**specs</strong> &#8211; user specified values</li>
+<li><strong>scriptfile</strong> (<em>string</em>) &#8211; JSON script file.  If not set, assumes that dictionary has been
+passed through specs.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.StarCatalog">
+<code class="descname">StarCatalog</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.StarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>StarCatalog module</em> &#8211; StarCatalog class object (only retained if keepStarCatalog is True)</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation">
 <code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
@@ -2040,12 +2385,6 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.nt_flux">
-<code class="descname">nt_flux</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.nt_flux" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer</em> &#8211; Observation time sampling, to determine the integration time interval</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.fullSpectra">
 <code class="descname">fullSpectra</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.fullSpectra" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>boolean ndarray</em> &#8211; Indicates if planet spectra have been captured</p>
@@ -2058,15 +2397,22 @@ Simulated Universe, Observatory, TimeKeeping, PostProcessing</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starVisits">
-<code class="descname">starVisits</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starVisits" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer ndarray</em> &#8211; Contains the number of times each target was visited</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.propagTimes">
+<code class="descname">propagTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.propagTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Contains the last time the stellar system was propagated in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starTimes">
-<code class="descname">starTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starTimes" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Contains the last time the star was observed in units of day</p>
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastObsTimes">
+<code class="descname">lastObsTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastObsTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Contains the last observation start time for future completeness update
+in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starVisits">
+<code class="descname">starVisits</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starVisits" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer ndarray</em> &#8211; Contains the number of times each target was visited</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2086,20 +2432,56 @@ the mission</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastDetected">
 <code class="descname">lastDetected</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastDetected" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float nx4 ndarray</em> &#8211; For each target, contains 4 lists with planets&#8217; detected status, exozodi
-brightness (in units of 1/arcsec2), delta magnitude, and working angles
-(in units of mas)</p>
+<dd><p><em>float nx4 ndarray</em> &#8211; For each target, contains 4 lists with planets&#8217; detected status (boolean),
+exozodi brightness (in units of 1/arcsec2), delta magnitude,
+and working angles (in units of arcsec)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM">
 <code class="descname">DRM</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list of dicts</em> &#8211; Contains the results of survey simulation</p>
+<dd><p><em>list of dicts</em> &#8211; Design Reference Mission, contains the results of a survey simulation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.ntFlux">
+<code class="descname">ntFlux</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.ntFlux" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Observation time sampling, to determine the integration time interval</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.nVisitsMax">
+<code class="descname">nVisitsMax</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.nVisitsMax" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Maximum number of observations (in detection mode) per star.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.charMargin">
+<code class="descname">charMargin</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.charMargin" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Integration time margin for characterization</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.seed">
+<code class="descname">seed</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.seed" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Random seed used to make all random number generation reproducible</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.WAint">
+<code class="descname">WAint</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.WAint" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Working angle used for integration time calculation in units of arcsec</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.dMagint">
+<code class="descname">dMagint</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.dMagint" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Delta magnitude used for integration time calculation</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.calc_signal_noise">
-<code class="descname">calc_signal_noise</code><span class="sig-paren">(</span><em>sInd</em>, <em>pInds</em>, <em>t_int</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.calc_signal_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.calc_signal_noise" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_signal_noise</code><span class="sig-paren">(</span><em>sInd</em>, <em>pInds</em>, <em>t_int</em>, <em>mode</em>, <em>fZ=None</em>, <em>fEZ=None</em>, <em>dMag=None</em>, <em>WA=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.calc_signal_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.calc_signal_noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the signal and noise fluxes for a given time interval. Called
 by observation_detection and observation_characterization methods in the
 SurveySimulation module.</p>
@@ -2109,9 +2491,13 @@ SurveySimulation module.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>sInd</strong> (<em>integer</em>) &#8211; Integer index of the star of interest</li>
-<li><strong>pInds</strong> (<em>integer</em>) &#8211; Integer indices of the planets of interest</li>
 <li><strong>t_int</strong> (<em>astropy Quantity</em>) &#8211; Integration time interval in units of day</li>
+<li><strong>pInds</strong> (<em>integer</em>) &#8211; Integer indices of the planets of interest</li>
 <li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode (from OpticalSystem)</li>
+<li><strong>fZ</strong> (<em>astropy Quantity</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>©</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) &#8211; Differences in magnitude between planets and their host star</li>
+<li><strong>WA</strong> (<em>astropy Quantity array</em>) &#8211; Working angles of the planets of interest in units of arcsec</li>
 </ul>
 </td>
 </tr>
@@ -2132,8 +2518,11 @@ SurveySimulation module.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target">
-<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTimes</em>, <em>intTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper method for method next_target to simplify alternative implementations.</p>
+<p>Given a subset of targets (pre-filtered by method next_target or some
+other means), select the best next one. The prototype uses completeness
+as the sole heuristic.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2141,7 +2530,8 @@ SurveySimulation module.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>old_sInd</strong> (<em>integer</em>) &#8211; Index of the previous target star</li>
 <li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of available targets</li>
-<li><strong>slewTime</strong> (<em>quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) &#8211; slew times to all stars (must be indexed by sInds)</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times for detection in units of day</li>
 </ul>
 </td>
 </tr>
@@ -2153,9 +2543,27 @@ SurveySimulation module.</p>
 </tr>
 </tbody>
 </table>
-<p>Given a subset of targets (pre-filtered by method next_target or some other means),
-select the best next one.  The prototype uses completeness as the sole heuristic.</p>
-<p>Returns the index sInd of the selected target.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.genOutSpec">
+<code class="descname">genOutSpec</code><span class="sig-paren">(</span><em>tofile=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.genOutSpec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.genOutSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Join all _outspec dicts from all modules into one output dict
+and optionally write out to JSON file on disk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tofile</strong> (<em>string</em>) &#8211; Name of the file containing all output specifications (outspecs).
+Default to None.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary containing additional user specification values and
+desired module names.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">out (dictionary)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -2175,13 +2583,14 @@ Returns None if no target could be found.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Contains the results of survey simulation
-sInd (integer):</p>
-<blockquote>
-<div><p>Index of next target star. Defaults to None.</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>t_det (astropy Quantity):</dt>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Design Reference Mission, contains the results of one complete</dt>
+<dd><p class="first last">observation (detection and characterization)</p>
+</dd>
+<dt>sInd (integer):</dt>
+<dd><p class="first last">Index of next target star. Defaults to None.</p>
+</dd>
+<dt>intTime (astropy Quantity):</dt>
 <dd><p class="first last">Selected star integration time for detection in units of day.
 Defaults to None.</p>
 </dd>
@@ -2189,7 +2598,7 @@ Defaults to None.</p>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM">DRM</a> (dicts)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM">DRM</a> (dict)</p>
 </td>
 </tr>
 </tbody>
@@ -2215,11 +2624,18 @@ Defaults to None.</p>
 <dd><p class="first last">target star including False Alarm if any, where 1 is full spectrum,
 -1 partial spectrum, and 0 not characterized</p>
 </dd>
-<dt>SNR (float list):</dt>
+<dt>fZ (astropy Quantity):</dt>
+<dd><p class="first last">Surface brightness of local zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>systemParams (dict):</dt>
+<dd><p class="first last">Dictionary of time-dependant planet properties averaged over the
+duration of the integration</p>
+</dd>
+<dt>SNR (float ndarray):</dt>
 <dd><p class="first last">Characterization signal-to-noise ratio of the observable planets.
 Defaults to None.</p>
 </dd>
-<dt>t_char (astropy Quantity):</dt>
+<dt>intTime (astropy Quantity):</dt>
 <dd><p class="first last">Selected star characterization time in units of day. Defaults to None.</p>
 </dd>
 </dl>
@@ -2235,28 +2651,33 @@ Defaults to None.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection">
-<code class="descname">observation_detection</code><span class="sig-paren">(</span><em>sInd</em>, <em>t_det</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determines the detection status, and updates the last detected list
-and the revisit list.</p>
-<p>This method encodes detection status values in the DRM
-dictionary.</p>
+<code class="descname">observation_detection</code><span class="sig-paren">(</span><em>sInd</em>, <em>intTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines SNR and detection status for a given integration time
+for detetion. Also updates the lastDetected and starRevisit lists.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>sInd</strong> (<em>integer</em>) &#8211; Integer index of the star of interest</li>
-<li><strong>t_det</strong> (<em>astropy Quantity</em>) &#8211; Selected star integration time for detection in units of day.
+<li><strong>intTime</strong> (<em>astropy Quantity</em>) &#8211; Selected star integration time for detection in units of day.
 Defaults to None.</li>
 <li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode for detection</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>Detection status for each planet orbiting the observed target star,</dt>
-<dd><p class="first last">where 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA</p>
+<dt>Detection status for each planet orbiting the observed target star:</dt>
+<dd><p class="first last">1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA</p>
 </dd>
-<dt>SNR (float list):</dt>
+<dt>fZ (astropy Quantity):</dt>
+<dd><p class="first last">Surface brightness of local zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>systemParams (dict):</dt>
+<dd><p class="first last">Dictionary of time-dependant planet properties averaged over the
+duration of the integration</p>
+</dd>
+<dt>SNR (float ndarray):</dt>
 <dd><p class="first last">Detection signal-to-noise ratio of the observable planets</p>
 </dd>
 <dt>FA (boolean):</dt>
@@ -2266,7 +2687,7 @@ Defaults to None.</li>
 </p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">detected (integer list)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">detected (integer ndarray)</p>
 </td>
 </tr>
 </tbody>
@@ -2274,19 +2695,29 @@ Defaults to None.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim">
+<code class="descname">reset_sim</code><span class="sig-paren">(</span><em>genNewPlanets=True</em>, <em>rewindPlanets=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.reset_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a full reset of the current simulation by:</p>
+<ol class="arabic simple">
+<li>Re-initializing the TimeKeeping object with its own outspec</li>
+</ol>
+<p>2) If genNewPlanets is True (default) then it will also generate all new
+planets based on the original input specification. If genNewPlanets is False,
+then the original planets will remain. Setting to True forces rewindPlanets to
+be True as well.</p>
+<p>3) If rewindPlanets is True (default), then the current set of planets will be
+reset to their original orbital phases. If both genNewPlanets and rewindPlanet
+are False, the original planets will be retained and will not be rewound to their
+initial starting locations (i.e., all systems will remain at the times they
+were at the end of the last run, thereby effectively randomizing planet phases.</p>
+<p>4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
+The random seed will be reset as well.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim">
 <code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.run_sim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the survey simulation</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Messaged printed at the end of a survey simulation.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">mission_end (string)</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -2299,18 +2730,20 @@ the occulter related values in the DRM array.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>DRM</strong> (<em>dicts</em>) &#8211; Contains the results of survey simulation</li>
+<li><strong>DRM</strong> (<em>dict</em>) &#8211; Design Reference Mission, contains the results of one complete
+observation (detection and characterization)</li>
 <li><strong>sInd</strong> (<em>integer</em>) &#8211; Integer index of the star of interest</li>
 <li><strong>t_int</strong> (<em>astropy Quantity</em>) &#8211; Selected star integration time (for detection or characterization)
 in units of day</li>
-<li><strong>skMode</strong> (<em>string</em>) &#8211; Station keeping observing mode type</li>
+<li><strong>skMode</strong> (<em>string</em>) &#8211; Station keeping observing mode type (&#8216;det&#8217; or &#8216;char&#8217;)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Contains the results of survey simulation</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Design Reference Mission, contains the results of one complete
+observation (detection and characterization)</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM">DRM</a> (dicts)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.DRM">DRM</a> (dict)</p>
 </td>
 </tr>
 </tbody>
@@ -2319,12 +2752,23 @@ in units of day</li>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.array_encoder">
+<code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">array_encoder</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#array_encoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.array_encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.</p>
+<p>Called from json.dump for types that it does not already know how to represent,
+like astropy Quantity&#8217;s, numpy arrays, etc.  The json.dump() method encodes types
+like integers, strings, and lists itself, so this code does not see these types.
+Likewise, this routine can and does return such objects, which is OK as long as
+they unpack recursively into types for which encoding is known.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.Prototypes.TargetList">
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>keepStarCatalog=False</em>, <em>minComp=0.1</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -2362,7 +2806,7 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>module</em> &#8211; PlanetPhysicalModel class object</p>
+<dd><p><em>PlanetPhysicalModel module</em> &#8211; PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2398,7 +2842,7 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.tint0">
 <code class="descname">tint0</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.tint0" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Maximum integration time for each target star in units of day</p>
+<dd><p><em>astropy Quantity array</em> &#8211; Minimum integration time values for each target star in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2408,27 +2852,33 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TargetList.TargetList.minComp">
-<code class="descname">minComp</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.minComp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Minimum completeness value for inclusion in target list</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.MsEst">
 <code class="descname">MsEst</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.MsEst" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; &#8216;approximate&#8217; stellar mass in M_sun</p>
+<dd><p><em>float ndarray</em> &#8211; &#8216;approximate&#8217; stellar mass in units of solar mass</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.MsTrue">
 <code class="descname">MsTrue</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.MsTrue" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; &#8216;true&#8217; stellar mass in M_sun</p>
+<dd><p><em>float ndarray</em> &#8211; &#8216;true&#8217; stellar mass in units of solar mass</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.nStars">
 <code class="descname">nStars</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.nStars" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>int</em> &#8211; Number of target stars</p>
+<dd><p><em>integer</em> &#8211; Number of target stars</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.staticStars">
+<code class="descname">staticStars</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.staticStars" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean used to force static target positions set at mission start time</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.keepStarCatalog">
+<code class="descname">keepStarCatalog</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.keepStarCatalog" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Boolean used to avoid deleting StarCatalog after TargetList was built</p>
 </dd></dl>
 
 <dl class="method">
@@ -2453,23 +2903,24 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.filter_target_list">
 <code class="descname">filter_target_list</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.filter_target_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.filter_target_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is responsible for filtering by any required metrics.</p>
-<p>The prototype implementation does the following:</p>
-<p>binary stars are removed
-maximum integration time is calculated
-Filters applied to star catalog data:</p>
-<blockquote>
-<div><a href="#id1"><span class="problematic" id="id2">*</span></a>systems with planets inside the IWA removed
-<a href="#id3"><span class="problematic" id="id4">*</span></a>systems where maximum delta mag is not in allowable orbital range
-removed
-<a href="#id5"><span class="problematic" id="id6">*</span></a>systems where integration time is longer than maximum time removed
-<a href="#id7"><span class="problematic" id="id8">*</span></a>systems not meeting the completeness threshold removed</div></blockquote>
+<dl class="docutils">
+<dt>The prototype implementation removes the following stars:</dt>
+<dd><ul class="first last simple">
+<li>Stars with NAN values in their parameters</li>
+<li>Binary stars</li>
+<li>Systems with planets inside the OpticalSystem fundamental IWA</li>
+<li>Systems where minimum integration time is longer than OpticalSystem cutoff</li>
+<li>Systems not meeting the Completeness threshold</li>
+</ul>
+</dd>
+</dl>
 <p>Additional filters can be provided in specific TargetList implementations.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter">
 <code class="descname">int_cutoff_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.int_cutoff_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.int_cutoff_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Includes stars if calculated integration time is less than cutoff</p>
+<dd><p>Includes stars if calculated minimum integration time is less than cutoff</p>
 </dd></dl>
 
 <dl class="method">
@@ -2488,6 +2939,8 @@ removed
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter">
 <code class="descname">max_dmag_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.max_dmag_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.max_dmag_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Includes stars if maximum delta mag is in the allowed orbital range</p>
+<p>Removed from prototype filters. Prototype is already calling the
+int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim</p>
 </dd></dl>
 
 <dl class="method">
@@ -2505,8 +2958,8 @@ removed
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.populate_target_list">
 <code class="descname">populate_target_list</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.populate_target_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.populate_target_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is actually responsible for populating values from the star catalog
-(or any other source) into the target list attributes.</p>
+<dd><p>This function is actually responsible for populating values from the star
+catalog (or any other source) into the target list attributes.</p>
 <p>The prototype implementation does the following:</p>
 <p>Copy directly from star catalog and remove stars with any NaN attributes
 Calculate completeness and max integration time, and generates stellar masses.</p>
@@ -2514,14 +2967,14 @@ Calculate completeness and max integration time, and generates stellar masses.</
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">
-<code class="descname">revise_lists</code><span class="sig-paren">(</span><em>ind</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.revise_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists" title="Permalink to this definition">¶</a></dt>
+<code class="descname">revise_lists</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.revise_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Replaces Target List catalog attributes with filtered values,
 and updates the number of target stars.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ind</strong> (<em>ndarray</em>) &#8211; 1D numpy ndarray of indices to keep</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</td>
 </tr>
 </tbody>
 </table>
@@ -2555,11 +3008,61 @@ The expression for flux is accurate to about 7%, in the range of validity
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.starprop">
+<code class="descname">starprop</code><span class="sig-paren">(</span><em>sInds</em>, <em>currentTime</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.starprop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.starprop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds target star positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
+<p>This method uses ICRS coordinates which is approximately the same as
+equatorial coordinates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>currentTime</strong> (<em>astropy Time</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Target star positions vector in heliocentric equatorial (default)
+or ecliptic frame in units of pc</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_targ (astropy Quantity nx3 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.stellarTeff">
+<code class="descname">stellarTeff</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.stellarTeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.stellarTeff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the effective stellar temperature based on B-V color.</p>
+<p>This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Indices of the stars of interest</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Stellar effective temperatures in degrees K</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Teff (Quantity array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass">
 <code class="descname">stellar_mass</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.stellar_mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.stellar_mass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Populates target list with &#8216;true&#8217; and &#8216;approximate&#8217; stellar masses</p>
 <p>This method calculates stellar mass via the formula relating absolute V
-magnitude and stellar mass.  The values are in terms of M_sun.</p>
+magnitude and stellar mass.  The values are in units of solar mass.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2583,7 +3086,7 @@ magnitude and stellar mass.  The values are in terms of M_sun.</p>
 <span id="exosims-prototypes-timekeeping-module"></span><h2>EXOSIMS.Prototypes.TimeKeeping module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TimeKeeping" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>missionStart=60634.0</em>, <em>missionLife=6.0</em>, <em>extendedLife=0.0</em>, <em>missionPortion=0.16666666666666666</em>, <em>dtAlloc=1</em>, <em>intCutoff=50</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>missionLife=0.1</em>, <em>extendedLife=0</em>, <em>missionPortion=1</em>, <em>OBduration=inf</em>, <em>waitTime=1</em>, <em>waitMultiple=2</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>TimeKeeping class template.</p>
 <p>This class keeps track of the current mission elapsed time
@@ -2627,18 +3130,6 @@ the next one.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.dtAlloc">
-<code class="descname">dtAlloc</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.dtAlloc" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Default allocated temporal block in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration">
-<code class="descname">duration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.duration" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Maximum duration of planet-finding operations in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm">
 <code class="descname">missionFinishNorm</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Mission finish normalized time in units of day</p>
@@ -2648,12 +3139,6 @@ the next one.</p>
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishAbs">
 <code class="descname">missionFinishAbs</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishAbs" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Time</em> &#8211; Mission finish absolute time in MJD</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nextTimeAvail">
-<code class="descname">nextTimeAvail</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.nextTimeAvail" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Next time available for planet-finding in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2668,28 +3153,77 @@ the next one.</p>
 <dd><p><em>astropy Time</em> &#8211; Current absolute mission time in MJD</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBnumber">
+<code class="descname">OBnumber</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBnumber" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>integer</em> &#8211; Index/number associated with the current observing block (OB). Each
+observing block has a duration, a start time, an end time, and can
+host one or multiple observations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBduration">
+<code class="descname">OBduration</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBduration" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Default allocated duration of observing blocks, in units of day. If
+no OBduration was specified, a new observing block is created for
+each new observation in the SurveySimulation module.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBstartTimes">
+<code class="descname">OBstartTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBstartTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Array containing the normalized start times of each observing block
+throughout the mission, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBendTimes">
+<code class="descname">OBendTimes</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.OBendTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity array</em> &#8211; Array containing the normalized end times of each observing block
+throughout the mission, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart">
+<code class="descname">obsStart</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Normalized start time of the observation currently executed by the
+Survey Simulation, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd">
+<code class="descname">obsEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Normalized end time of the observation currently executed by the
+Survey Simulation, in units of day</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime">
+<code class="descname">waitTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Default allocated duration to wait in units of day, when the
+Survey Simulation does not find any observable target</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple">
+<code class="descname">waitMultiple</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; Multiplier applied to the wait time in case of repeated empty lists of
+observable targets, which makes the wait time grow exponentially.
+As soon as an observable target is found, the wait time is reinitialized
+to the default waitTime value.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">
 <code class="descname">allocate_time</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.allocate_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Allocate a temporal block of width dt, advancing the observation window if needed.</p>
-<p>Advance the mission time by dt units.  If this requires moving into the next observation
-window, do so.
-If dt is longer than the observation window length, making a contiguous observation is
-not possible, so return False.  If dt &lt; 0, return False.  Otherwise, allocate time and
-return True.</p>
-<p>Caveats:
-[1] This does not handle allocations that move beyond the allowed mission time.  This
-would be a place for an exception that could be caught in the simulation main loop.
-For now, we check for this condition at the top of the simulation loop and not here.</p>
+<dd><p>Allocate a temporal block of width dt, advancing to the next OB if needed.</p>
+<p>Advance the mission time by dt units. If this requires moving into the next OB,
+call the next_observing_block() method of the TimeKeeping class object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<em>astropy Quantity</em>) &#8211; Amount of time requested in units of day</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the requested time fits in the widest window, otherwise False.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">success (boolean)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<em>astropy Quantity</em>) &#8211; Temporal block allocated in units of day</td>
 </tr>
 </tbody>
 </table>
@@ -2715,6 +3249,25 @@ on class variables.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.next_observing_block">
+<code class="descname">next_observing_block</code><span class="sig-paren">(</span><em>dt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.next_observing_block"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.next_observing_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the next observing block, start and end times.</p>
+<p>This method is called in the allocate_time() method of the TimeKeeping
+class object, when the allocated time requires moving outside of the current OB.</p>
+<p>If no OB duration was specified, a new Observing Block is created for
+each observation in the SurveySimulation module.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits a certain time in case no target can be observed at current time.</p>
+<p>This method is called in the run_sim() method of the SurveySimulation
+class object. In the prototype version, it simply allocate a temporal block
+of 1 day.</p>
 </dd></dl>
 
 </dd></dl>
@@ -2769,17 +3322,16 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ">
-<code class="descname">fEZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>I</em>, <em>r_orbit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fEZ</code><span class="sig-paren">(</span><em>MV</em>, <em>I</em>, <em>d</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of exo-zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>MV</strong> (<em>integer ndarray</em>) &#8211; Apparent magnitude of the star (in the V band)</li>
 <li><strong>I</strong> (<em>astropy Quantity array</em>) &#8211; Inclination of the planets of interest in units of deg</li>
-<li><strong>r_orbit</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Orbital radii of the planets of interest in units of AU</li>
+<li><strong>d</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Distance to star of the planets of interest in units of AU</li>
 </ul>
 </td>
 </tr>
@@ -2795,17 +3347,18 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>lam</em>, <em>r_sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Obs</strong> (<em>Observatory module</em>) &#8211; Observatory class object</li>
 <li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>lam</strong> (<em>astropy Quantity</em>) &#8211; Central wavelength in units of nm</li>
-<li><strong>r_sc</strong> (<em>astropy Quantity nx3 array</em>) &#8211; Observatory (spacecraft) position vector in units of km</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
 </ul>
 </td>
 </tr>
@@ -2817,7 +3370,6 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </tr>
 </tbody>
 </table>
-<p>Note: r_sc must be an array of shape (sInds.size x 3)</p>
 </dd></dl>
 
 </dd></dl>
@@ -2861,7 +3413,7 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
-      <li>Previous: <a href="EXOSIMS.PlanetPopulation.html" title="previous chapter">EXOSIMS.PlanetPopulation package</a></li>
+      <li>Previous: <a href="EXOSIMS.PostProcessing.html" title="previous chapter">EXOSIMS.PostProcessing package</a></li>
       <li>Next: <a href="EXOSIMS.SimulatedUniverse.html" title="next chapter">EXOSIMS.SimulatedUniverse package</a></li>
   </ul></li>
   </ul></li>
@@ -2892,8 +3444,8 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/EXOSIMS.Prototypes.rst.txt"

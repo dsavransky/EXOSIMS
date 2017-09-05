@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>EXOSIMS.util.keplerSTM &#8212; EXOSIMS 1.1 documentation</title>
+    <title>EXOSIMS.util.keplerSTM &#8212; EXOSIMS 1.3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,18 +24,15 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
-  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,7 +41,11 @@
             
   <h1>Source code for EXOSIMS.util.keplerSTM</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">EXOSIMS.util.KeplerSTM_C.CyKeplerSTM</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Kepler State Transition Matrix</span>
@@ -54,7 +55,7 @@
 <span class="sd">for propagating state vectors forward in time via the Kepler state transition</span>
 <span class="sd">matrix.</span>
 
-<span class="sd">Constructor take the following arguments:</span>
+<span class="sd">Constructor takes the following arguments:</span>
 <span class="sd">    x0 (ndarray):</span>
 <span class="sd">        6n vector of stacked positions and velocities for n planets</span>
 <span class="sd">    mu (ndarray):</span>
@@ -64,6 +65,12 @@
 <span class="sd">    epsmult (float):</span>
 <span class="sd">        default multiplier on floating point precision, used as convergence </span>
 <span class="sd">        metric.  Higher values mean faster convergence, but sacrifice precision.</span>
+<span class="sd">    prefVallado (bool):</span>
+<span class="sd">        If True, always try the Vallado algorithm first, otherwise try Shepherd first.</span>
+<span class="sd">        Defaults False;</span>
+<span class="sd">    noc (bool):</span>
+<span class="sd">        Do not attempt to use cythonized code even if found.  Defaults False.</span>
+
 
 <span class="sd">Step function (updateState) takes the following arguments:</span>
 <span class="sd">    dt (float):</span>
@@ -72,44 +79,78 @@
 <span class="sd">All units must be complementary (i.e., if position is AU and velocity</span>
 <span class="sd">is AU/day, mu must be in AU^3/day^2.</span>
 
-<span class="sd">Algorithm from Shepperd, 1984, using Goodyear&#39;s universal variables</span>
-<span class="sd">and continued fraction to solve the Kepler equation.</span>
+<span class="sd">Two algorithms are implemented, both using Batting/Goodyear universal variables. </span>
+<span class="sd">The first is from Shepperd (1984), using continued fraction to solve the Kepler equation.</span>
+<span class="sd">The second is from Vallado (2004), using Newton iteration to solve the time equation. </span>
+<span class="sd">One algorithm is used preferentially, and the other is called only in the case of convergence</span>
+<span class="sd">failure on the first.  All convergence is calculated to machine precision of the data type and </span>
+<span class="sd">variable size, scaled by a user-selected multiple.</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
-<div class="viewcode-block" id="planSys"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys">[docs]</a><span class="k">class</span> <span class="nc">planSys</span><span class="p">:</span>    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">epsmult</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">):</span>
+
+<div class="viewcode-block" id="planSys"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys">[docs]</a><span class="k">class</span> <span class="nc">planSys</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">epsmult</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span> <span class="n">prefVallado</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">noc</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="c1">#determine number of planets and validate input</span>
-        <span class="n">nplanets</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="mf">6.</span><span class="p">;</span>
+        <span class="n">nplanets</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="mf">6.</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">nplanets</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">nplanets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;The length of x0 must be a multiple of 6.&#39;</span><span class="p">);</span>
-
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;The length of x0 must be a multiple of 6.&#39;</span><span class="p">)</span>
+        
         <span class="k">if</span> <span class="p">(</span><span class="n">mu</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">nplanets</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;The length of mu must be the length of x0 divided by 6&#39;</span><span class="p">);</span>
-
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;The length of mu must be the length of x0 divided by 6&#39;</span><span class="p">)</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nplanets</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span> <span class="o">=</span> <span class="n">epsmult</span>
+        
+        <span class="k">if</span> <span class="n">prefVallado</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">algOrder</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">calcSTM_vallado</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcSTM</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">algOrder</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">calcSTM</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcSTM_vallado</span><span class="p">]</span>
+
+        <span class="c1">#create position and velocity index matrices</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="o">*</span><span class="mi">6</span><span class="p">),(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rinds</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vinds</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">noc</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;EXOSIMS.util.KeplerSTM_C.CyKeplerSTM&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">havec</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">havec</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">updateState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">x0</span><span class="p">))</span>
 
 <div class="viewcode-block" id="planSys.updateState"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys.updateState">[docs]</a>    <span class="k">def</span> <span class="nf">updateState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span>
-        
-        <span class="c1">#create position and velocity matrices</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">r0</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
-        <span class="n">v0</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span>        
+        <span class="n">r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rinds</span><span class="p">]</span>
+        <span class="n">v0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vinds</span><span class="p">]</span>
+ 
+        <span class="c1">#constants</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r0</span><span class="o">**</span><span class="mf">2.</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span> <span class="c1">#||r0||</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v0norm2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">v0</span><span class="o">*</span><span class="n">v0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>          <span class="c1">#||v0||^2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nu0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r0</span><span class="o">*</span><span class="n">v0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>              <span class="c1">#r0 \cdot v0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">v0norm2</span> <span class="c1">#-2E</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nu0osmu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span></div>
 
-        <span class="c1">#constants and allocation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">r0</span><span class="o">**</span><span class="mf">2.</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nu0</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">r0</span><span class="o">*</span><span class="n">v0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span> <span class="o">-</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v0</span><span class="o">*</span><span class="n">v0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span></div>
         
-
 <div class="viewcode-block" id="planSys.takeStep"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys.takeStep">[docs]</a>    <span class="k">def</span> <span class="nf">takeStep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">):</span>
-        <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcSTM</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">havec</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">KeplerSTM_C</span><span class="o">.</span><span class="n">CyKeplerSTM</span><span class="o">.</span><span class="n">CyKeplerSTM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updateState</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;Cython propagation failed.  Falling back to python.&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">algOrder</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;First algorithm error: </span><span class="si">%s</span><span class="se">\n</span><span class="s2"> Trying second algorithm.&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
+            <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">algOrder</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">dt</span><span class="p">)</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">updateState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Phi</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">))</span></div>
         
 
@@ -117,17 +158,16 @@
         <span class="c1">#allocate</span>
         <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">)</span>
         <span class="n">deltaU</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">);</span>
-        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
         
         <span class="c1">#For elliptic orbits, calculate period effects</span>
         <span class="n">eorbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">eorbs</span><span class="p">):</span>
-            <span class="n">P</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">3.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">3.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
             <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">dt</span> <span class="o">+</span> <span class="n">P</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nu0</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">])</span><span class="o">/</span><span class="n">P</span><span class="p">)</span>
-            <span class="n">deltaU</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">*</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
-
-
+            <span class="n">deltaU</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">n</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+        
         <span class="c1">#loop until convergence of the time array to the time step</span>
         <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">))</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
             <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">*</span><span class="n">u</span><span class="o">**</span><span class="mf">2.</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="o">*</span><span class="n">u</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span>
@@ -143,21 +183,21 @@
             <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">U1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu0</span><span class="o">*</span><span class="n">U2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">*</span><span class="n">U3</span>
             <span class="n">u</span> <span class="o">=</span> <span class="n">u</span> <span class="o">-</span> <span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">4.</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">q</span><span class="p">)</span><span class="o">*</span><span class="n">r</span><span class="p">)</span>
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
-
+        
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on t: </span><span class="si">%e</span><span class="s1">/</span><span class="si">%e</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">dt</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
-
+        
         <span class="c1">#Kepler solution</span>
         <span class="n">f</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">U2</span>
         <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">U1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu0</span><span class="o">*</span><span class="n">U2</span>
         <span class="n">F</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">*</span><span class="n">U1</span><span class="o">/</span><span class="n">r</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span>
         <span class="n">G</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="o">/</span><span class="n">r</span><span class="o">*</span><span class="n">U2</span>
-
+        
         <span class="n">Phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">6</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">):</span>
             <span class="n">st</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="mi">6</span>
             <span class="n">Phi</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">st</span><span class="o">+</span><span class="mi">6</span><span class="p">,</span><span class="n">st</span><span class="p">:</span><span class="n">st</span><span class="o">+</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">])),</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">G</span><span class="p">[</span><span class="n">j</span><span class="p">]))))</span>
-
+        
         <span class="k">return</span> <span class="n">Phi</span></div>
 
 <div class="viewcode-block" id="planSys.contFrac"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys.contFrac">[docs]</a>    <span class="k">def</span> <span class="nf">contFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="mf">5.</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="mf">5.</span><span class="o">/</span><span class="mf">2.</span><span class="p">):</span>
@@ -169,7 +209,7 @@
         <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
         <span class="n">G</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-
+        
         <span class="n">Gprev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span>
         <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1">#loop until convergence of continued fraction</span>
@@ -183,11 +223,102 @@
             <span class="n">Gprev</span> <span class="o">=</span> <span class="n">G</span>
             <span class="n">G</span> <span class="o">=</span> <span class="n">G</span> <span class="o">+</span> <span class="n">B</span>
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
-
+        
         <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on G, most likely due to divergence in continued fractions.&#39;</span><span class="p">);</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on G, most likely due to divergence in continued fractions.&#39;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">G</span></div>
 
-        <span class="k">return</span> <span class="n">G</span></div></div>
+<div class="viewcode-block" id="planSys.calcSTM_vallado"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys.calcSTM_vallado">[docs]</a>    <span class="k">def</span> <span class="nf">calcSTM_vallado</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">):</span>
+        <span class="c1">#classify orbits</span>
+        <span class="n">epsval</span> <span class="o">=</span> <span class="mf">1e-12</span>
+
+        <span class="n">eorbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">&gt;=</span> <span class="n">epsval</span>
+        <span class="n">porbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsval</span>
+        <span class="n">horbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="n">epsval</span>
+        
+        <span class="n">xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">eorbs</span><span class="p">):</span>
+            <span class="n">atmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">eorbs</span><span class="p">])</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="n">atmp</span>
+            <span class="n">circinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">atmp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">epsval</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">circinds</span><span class="p">):</span>
+                <span class="n">tmp</span><span class="p">[</span><span class="n">circinds</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.97</span>
+            
+            <span class="n">xi</span><span class="p">[</span><span class="n">eorbs</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">porbs</span><span class="p">):</span>
+            <span class="n">r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rinds</span><span class="p">]</span>
+            <span class="n">v0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">vinds</span><span class="p">]</span>
+
+            <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">r0</span><span class="p">[:,</span><span class="n">porbs</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">v0</span><span class="p">[:,</span><span class="n">porbs</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">h</span><span class="o">*</span><span class="n">h</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">porbs</span><span class="p">]</span>
+        
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,(</span><span class="mf">3.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">porbs</span><span class="p">]</span><span class="o">/</span><span class="n">p</span><span class="o">**</span><span class="mf">3.0</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="p">))</span><span class="o">/</span><span class="mf">2.0</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">s</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span>
+            <span class="n">xi</span><span class="p">[</span><span class="n">porbs</span><span class="p">]</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">*</span><span class="mf">2.</span><span class="o">/</span><span class="n">tan</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">w</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">porbs</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">horbs</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">horbs</span><span class="p">])</span>
+            <span class="n">xi</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span>\
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nu0</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">horbs</span><span class="p">])</span><span class="o">*</span>\
+                    <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="p">[</span><span class="n">horbs</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">[</span><span class="n">horbs</span><span class="p">])))</span>
+
+
+        <span class="c1">#loop</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span>
+        <span class="n">xiup</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">xi</span><span class="p">,</span><span class="n">r</span><span class="p">))))</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xiup</span><span class="p">))</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">xi</span><span class="p">,</span><span class="n">r</span><span class="p">))))))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">):</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">xi</span><span class="o">**</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span>
+            <span class="n">c2</span><span class="p">,</span><span class="n">c3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">psi2c2c3</span><span class="p">(</span><span class="n">ps</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">xi</span><span class="o">**</span><span class="mf">2.0</span><span class="o">*</span><span class="n">c2</span> <span class="o">+</span>  <span class="bp">self</span><span class="o">.</span><span class="n">nu0osmu</span><span class="o">*</span><span class="n">xi</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ps</span><span class="o">*</span><span class="n">c3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ps</span><span class="o">*</span><span class="n">c2</span><span class="p">)</span>
+            <span class="n">xiup</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span> <span class="o">-</span> <span class="n">xi</span><span class="o">**</span><span class="mf">3.0</span><span class="o">*</span><span class="n">c3</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nu0osmu</span><span class="o">*</span><span class="n">xi</span><span class="o">**</span><span class="mf">2.0</span><span class="o">*</span><span class="n">c2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">xi</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ps</span><span class="o">*</span><span class="n">c3</span><span class="p">))</span><span class="o">/</span><span class="n">r</span>
+            <span class="n">xi</span> <span class="o">+=</span> <span class="n">xiup</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                
+        <span class="k">if</span> <span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Failed to converge on xi: </span><span class="si">%e</span><span class="s1">/</span><span class="si">%e</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xiup</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsmult</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">xi</span><span class="p">,</span><span class="n">r</span><span class="p">)))))))</span>
+
+        
+        <span class="c1">#kepler solution</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="o">**</span><span class="mf">2.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">c2</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">-</span> <span class="n">xi</span><span class="o">**</span><span class="mf">3.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span><span class="o">*</span><span class="n">c3</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="n">r</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">r0norm</span><span class="o">*</span><span class="n">xi</span><span class="o">*</span><span class="p">(</span><span class="n">ps</span><span class="o">*</span><span class="n">c3</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">xi</span><span class="o">**</span><span class="mf">2.0</span><span class="o">/</span><span class="n">r</span><span class="o">*</span><span class="n">c2</span>
+
+        <span class="n">Phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">6</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nplanets</span><span class="p">):</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="mi">6</span>
+            <span class="n">Phi</span><span class="p">[</span><span class="n">st</span><span class="p">:</span><span class="n">st</span><span class="o">+</span><span class="mi">6</span><span class="p">,</span><span class="n">st</span><span class="p">:</span><span class="n">st</span><span class="o">+</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">])),</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">G</span><span class="p">[</span><span class="n">j</span><span class="p">]))))</span>
+        
+        <span class="k">return</span> <span class="n">Phi</span></div>
+
+
+<div class="viewcode-block" id="planSys.psi2c2c3"><a class="viewcode-back" href="../../../EXOSIMS.util.html#EXOSIMS.util.keplerSTM.planSys.psi2c2c3">[docs]</a>    <span class="k">def</span> <span class="nf">psi2c2c3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psi0</span><span class="p">):</span>
+
+        <span class="n">c2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psi0</span><span class="p">))</span>
+        <span class="n">c3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psi0</span><span class="p">))</span>
+
+        <span class="n">psi12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">psi0</span><span class="p">))</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">psi0</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="n">neg</span> <span class="o">=</span> <span class="n">psi0</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+            <span class="n">c2</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">psi12</span><span class="p">[</span><span class="n">pos</span><span class="p">]))</span><span class="o">/</span><span class="n">psi0</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+            <span class="n">c3</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">psi12</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">psi12</span><span class="p">[</span><span class="n">pos</span><span class="p">]))</span><span class="o">/</span><span class="n">psi12</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span><span class="o">**</span><span class="mf">3.</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">neg</span><span class="p">):</span>
+            <span class="n">c2</span><span class="p">[</span><span class="n">neg</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cosh</span><span class="p">(</span><span class="n">psi12</span><span class="p">[</span><span class="n">neg</span><span class="p">]))</span><span class="o">/</span><span class="n">psi0</span><span class="p">[</span><span class="n">neg</span><span class="p">]</span>
+            <span class="n">c3</span><span class="p">[</span><span class="n">neg</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sinh</span><span class="p">(</span><span class="n">psi12</span><span class="p">[</span><span class="n">neg</span><span class="p">])</span> <span class="o">-</span> <span class="n">psi12</span><span class="p">[</span><span class="n">neg</span><span class="p">])</span><span class="o">/</span><span class="n">psi12</span><span class="p">[</span><span class="n">neg</span><span class="p">]</span><span class="o">**</span><span class="mf">3.</span>
+
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">c2</span><span class="o">+</span><span class="n">c3</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
+            <span class="n">c2</span><span class="p">[</span><span class="n">tmp</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">2.</span>
+            <span class="n">c3</span><span class="p">[</span><span class="n">tmp</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">6.</span>
+
+        <span class="k">return</span> <span class="n">c2</span><span class="p">,</span><span class="n">c3</span></div></div>
+
 
 </pre></div>
 
@@ -222,8 +353,8 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

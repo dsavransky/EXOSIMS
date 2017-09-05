@@ -1,0 +1,16 @@
+language: python
+python:
+    - "2.7"
+before_install:
+    - wget http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
+    - cp de432s.bsp ./EXOSIMS/Observatory/
+    - mv de432s.bsp ./tests/TestSupport/
+before_script:
+    - cd EXOSIMS/util/KeplerSTM_C/
+    - python CyKeplerSTM_setup.py build_ext --inplace
+    - cd ../../..
+script:
+    coverage run -m unittest discover -v
+after_success:
+    coveralls
+

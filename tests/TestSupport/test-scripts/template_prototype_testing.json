@@ -1,0 +1,58 @@
+{
+  "dMagLim_comment": "turmon: lowered dMagLim to retain a few stars, but not too many hundreds, in the integration-time-filtered list (derived from EXOCAT1)",
+  "dMagLim": 20.75,
+  "minComp_comment": "turmon: lowered minComp from 0.1 (default) to 0.01 to have a few stars in the completeness-filtered list",
+  "minComp_comment2": "the minComp change may only be needed if BrownCompleteness is used - which it is currently *not*.",
+  "minComp": 0.01,
+  "scienceInstruments": [
+    {
+      "name": "imaging-EMCCD",
+      "type": "imaging-EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "spectro-CCD",
+      "type": "spectro-CCD",
+      "lam": 660,
+      "BW": 0.18,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 3,
+      "Rs": 70
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC",
+      "type": "internal-imaging-HLC"
+    },
+    {
+      "name": "internal-spectro-SPC",
+      "type": "internal-spectro-SPC"
+    }
+  ],
+  "modules_comment": "turmon: replaced WFIRSTOpticalSystem by prototype after the former was deprecated",
+  "modules": {
+    "PlanetPopulation": "KeplerLike1",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "",
+    "ZodiacalLight": "ZodiacalLight",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": "TimeKeeping",
+    "PostProcessing": "PostProcessing",
+    "Completeness": "",
+    "TargetList": "TargetList",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": "SurveySimulation",
+    "SurveyEnsemble": "SurveyEnsemble"
+  }
+}
+

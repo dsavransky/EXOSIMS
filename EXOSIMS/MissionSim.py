@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
 import random as py_random
@@ -271,6 +272,33 @@ class MissionSim(object):
         
         out = self.SurveySimulation.genOutSpec(tofile=tofile)
         
+        return out
+
+    def checkScript(self, scriptfile, prettyprint=False, tofile=None):
+        """Calls CheckScript and checks the script file against the mission outspec.
+        
+        Args:
+            scriptfile (string):
+                The path to the scriptfile being used by the sim
+            prettyprint (boolean):
+                Outputs the results of Checkscript in a readable format.
+            tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (String):
+                Output string containing the results of the check.
+
+        """
+        if scriptfile is not None:
+            cs = CheckScript(scriptfile, self.genOutSpec())
+            out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
+            if tofile is not None:
+                cs.write_file(tofile)
+        else:
+            out = None
+
         return out
 
     def DRM2array(self, key, DRM=None):

@@ -232,8 +232,8 @@ class TestPlanetPopulation(unittest.TestCase):
         exclude_setrange = [ ]
         exclude_checkrange = [ ]
 
-        tmp = np.random.rand(1)*180
-        Irangein = np.hstack((tmp,np.random.rand(1)*180+180))
+        tmp = np.random.rand(1)*90
+        Irangein = np.hstack((tmp,np.random.rand(1)*90+90))
         
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

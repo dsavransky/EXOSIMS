@@ -389,7 +389,9 @@ class PlanetPopulation(object):
         
         """
         
-        # convert to Jupiter mass
-        Mjup = (Mp*u.earthMass).to('jupiterMass').value
+        Mearth = np.array(Mp,ndmin=1)*u.earthMass
         
-        return Mjup**(-1.3)
+        tmp = ((Mearth >= self.Mprange[0]) & (Mearth <= self.Mprange[1])).astype(float)
+        Mjup = Mearth.to('jupiterMass').value
+        
+        return tmp*Mjup**(-1.3)

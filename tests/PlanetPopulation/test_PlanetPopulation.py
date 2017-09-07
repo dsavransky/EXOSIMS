@@ -138,7 +138,7 @@ class TestPlanetPopulation(unittest.TestCase):
         """
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
-        exclude_checkrange = [ ]
+        exclude_checkrange = ['KeplerLike1','SAG13']
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))

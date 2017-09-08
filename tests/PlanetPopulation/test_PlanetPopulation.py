@@ -8,16 +8,6 @@ import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
 
-
-from astropy import units as u
-from astropy import constants as const
-import os
-import math
-import scipy.stats
-
-
-
-
 class TestPlanetPopulation(unittest.TestCase):
     """ 
 

@@ -2768,7 +2768,7 @@ they unpack recursively into types for which encoding is known.</p>
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>fillPhotometry=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -2881,6 +2881,13 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dd><p><em>boolean</em> &#8211; Boolean used to avoid deleting StarCatalog after TargetList was built</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.fillPhotometry">
+<code class="descname">fillPhotometry</code><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.fillPhotometry" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>boolean</em> &#8211; Defaults False.  If True, attempts to fill in missing target photometric
+values using interpolants of tabulated values for the stellar type.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.binary_filter">
 <code class="descname">binary_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.binary_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.binary_filter" title="Permalink to this definition">¶</a></dt>
@@ -2897,6 +2904,20 @@ BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv</p>
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList.fgk_filter">
 <code class="descname">fgk_filter</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.fgk_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.fgk_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Includes only F, G, K spectral type stars in Target List</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TargetList.TargetList.fillPhotometryVals">
+<code class="descname">fillPhotometryVals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList.fillPhotometryVals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList.fillPhotometryVals" title="Permalink to this definition">¶</a></dt>
+<dd><p>This routine attempts to fill in missing photometric values, including
+the luminosity, absolute magnitude, V band bolometric correction, and the
+apparent VBHJK magnitudes by interpolating values from a table of standard
+stars by spectral type.</p>
+<p>The data is from:
+&#8220;A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence&#8221;
+<a class="reference external" href="http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt">http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt</a>
+Eric Mamajek (JPL/Caltech, University of Rochester)
+Version 2017.09.06</p>
 </dd></dl>
 
 <dl class="method">

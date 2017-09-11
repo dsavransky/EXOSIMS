@@ -44,8 +44,7 @@ class TestPlanetPopulation(unittest.TestCase):
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
         exclude_checkrange = ['KeplerLike1']
 
-        tmp = np.random.rand(1)*10.0
-        arangein = np.hstack((tmp,tmp*np.random.rand(1)*10.0))
+        arangein = np.sort(np.random.rand(2)*10.0)
         
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
@@ -161,8 +160,7 @@ class TestPlanetPopulation(unittest.TestCase):
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
         exclude_checkrange = ['KeplerLike1']
 
-        tmp = np.random.rand(1)*10.0
-        Rprangein = np.hstack((tmp,tmp*np.random.rand(1)*10.0))
+        Rprangein = np.sort(np.random.rand(2)*10.0)
         
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

@@ -25,6 +25,7 @@ from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 
 SimpleScript = resource_path('test-scripts/simplest.json')
+ErrorScript = resource_path('test-scripts/simplest-error.json')
 
 class TestSurveySimulationMethods(unittest.TestCase):
     r"""Test SurveySimulation class."""
@@ -61,6 +62,41 @@ class TestSurveySimulationMethods(unittest.TestCase):
         self.assertEqual(type(result), type(''))
         # put stdout back
         sys.stdout = original_stdout
+
+    def test_init_fail(self):
+        r"""Test of initialization and __init__ -- failure.
+        """
+        with RedirectStreams(stdout=self.dev_null):
+            with self.assertRaises(ValueError):
+                sim = self.fixture(ErrorScript)
+            
+    def test_init_specs(self):
+        r"""Test of initialization and __init__ -- specs dictionary.
+        """
+        script = open(SimpleScript).read()
+        specs = json.loads(script)
+        with RedirectStreams(stdout=self.dev_null):
+            sim = self.fixture(scriptfile=None, **specs)
+        
+        for rmod in self.required_modules:
+            self.assertIn(rmod, sim.__dict__)
+            self.assertEqual(getattr(sim,rmod)._modtype,rmod)
+            
+    def test_init_file_no_file(self):
+        r"""Test __init__ file handling -- various non-existent input files.
+        """
+        bad_files = ['/dev/null', '/tmp/this/file/is/not/there.json', '/tmp/this_file_is_not_there.json']
+        for bad_file in bad_files:
+            with self.assertRaises(AssertionError):
+                sim = self.fixture(bad_file)
+            
+    def test_init_file_none(self):
+        r"""Test __init__ file handling -- incomplete specs.
+        
+        Note that None is different than a non-existent file.
+        """
+        with self.assertRaises(KeyError):
+            sim = self.fixture(None)
 
 
     def test_choose_next_target(self):

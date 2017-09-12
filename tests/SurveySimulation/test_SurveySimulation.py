@@ -156,14 +156,14 @@ class TestSurveySimulation(unittest.TestCase):
                     sim = mod(scriptfile=self.script)
                 
                 #old sInd is None
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 sInd = sim.choose_next_target(None,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
                 self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd in sInds
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 old_sInd = np.random.choice(sInds)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
                 sInd = sim.choose_next_target(old_sInd,sInds,
@@ -173,7 +173,7 @@ class TestSurveySimulation(unittest.TestCase):
                 self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd not in sInds
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 tmp = list(set(np.arange(sim.TargetList.nStars)) - set(sInds))
                 old_sInd = np.random.choice(tmp)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])

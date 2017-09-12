@@ -34,6 +34,34 @@ class TestSurveySimulation(unittest.TestCase):
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)
 
+    def test_init(self):
+        """
+        Test of initialization and __init__.
+        
+        """
+
+        exclude_mods=['KnownRVSurvey']
+
+        required_modules = [
+            'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
+            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing', 
+            'SimulatedUniverse', 'TargetList', 'TimeKeeping', 'ZodiacalLight' ]
+        
+        for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
+            
+            with RedirectStreams(stdout=self.dev_null):
+                sim = mod(scriptfile=self.script)
+
+            self.assertIsInstance(sim._outspec, dict)
+            # check for presence of a couple of class attributes
+            self.assertIn('DRM', sim.__dict__)
+
+            for rmod in required_modules:
+                self.assertIn(rmod, sim.__dict__)
+                self.assertEqual(getattr(sim,rmod)._modtype,rmod)
+
 
 
     def test_run_sim(self):
@@ -117,7 +145,8 @@ class TestSurveySimulation(unittest.TestCase):
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
-        Approach: Ensure the next target is a valid index
+        Approach: Ensure the next target is a valid index for different cases: old_sInd is none,
+        old_sInd in sInds, old_sInd not in sInds
         """
 
         for mod in self.allmods:
@@ -126,9 +155,29 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
                 
+                #old sInd is None
                 sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
-
                 sInd = sim.choose_next_target(None,sInds,
+                        np.array([1.0]*sim.TargetList.nStars)*u.d,
+                        np.array([1.0]*len(sInds))*u.d)
+                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+
+                #old sInd in sInds
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
+                old_sInd = np.random.choice(sInds)
+                _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
+                sInd = sim.choose_next_target(old_sInd,sInds,
+                        np.array([1.0]*sim.TargetList.nStars)*u.d,
+                        np.array([1.0]*len(sInds))*u.d)
+
+                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+
+                #old sInd not in sInds
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0))
+                tmp = list(set(np.arange(sim.TargetList.nStars)) - set(sInds))
+                old_sInd = np.random.choice(tmp)
+                _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
+                sInd = sim.choose_next_target(old_sInd,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
 

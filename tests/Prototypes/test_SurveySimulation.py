@@ -42,16 +42,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
     def tearDown(self):
         del self.fixture
 
-    def test_init(self):
-        r"""Test of initialization and __init__.
-        """
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
-        self.assertEqual(sim._modtype, 'SurveySimulation')
-        self.assertEqual(type(sim._outspec), type({}))
-        # check for presence of a couple of class attributes
-        self.assertIn('DRM', sim.__dict__)
-        self.assertIn('OpticalSystem', sim.__dict__)
 
     def test_str(self):
         r"""Test __str__ method, for full coverage."""

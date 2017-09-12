@@ -28,19 +28,19 @@ class KeplerLike1(PlanetPopulation):
     from there. Any user-set albedo limits are ignored.
     3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
     settings (the JSON input will be ignored) 
-    4. The radius piece-wise distribution provides the normalization required to
-    get the proper overall eta.  The gen_radius method provided here normalizes
-    in order to return exactly the number of samples requested.  A second method
-    (gen_radius_nonorm) is provided for generating the simulated universe
-    population. The latter assumes a poisson distribution for occurences in each
-    bin.
+    4. The radius piece-wise distribution (from Fressin et al 2012) provides 
+    the normalization required to get the proper overall eta.  The gen_radius 
+    method provided here normalizes in order to return exactly the number of 
+    samples requested.  A second method (gen_radius_nonorm) is provided for 
+    generating the simulated universe population. The latter assumes a poisson 
+    distribution for occurences in each bin.
     5.  Eccentricity is assumed to be Rayleigh distributed with a user-settable 
-    sigma parameter (defaults to 0.25).
+    sigma parameter (defaults to value from Fressin et al 2012).
     
     """
 
-    def __init__(self, smaknee=30, esigma=0.25, prange=[0.083, 0.882],
-            Rprange=[1, 22.6], **specs):
+    def __init__(self, smaknee=30, esigma=0.175/np.sqrt(np.pi/2.), 
+            prange=[0.083, 0.882], Rprange=[1, 22.6], **specs):
         
         specs['prange'] = prange
         specs['Rprange'] = Rprange
@@ -49,8 +49,9 @@ class KeplerLike1(PlanetPopulation):
         # calculate norm for sma distribution with decay point (knee)
         self.smaknee = float(smaknee)
         ar = self.arange.to('AU').value
-        self.smanorm = integrate.quad(lambda x,s0=self.smaknee: \
-                x**-0.62*np.exp(-(x/s0)**2), ar[0], ar[1])[0]
+        # sma distribution without normalization
+        tmp_dist_sma = lambda x,s0=self.smaknee: x**(-0.62)*np.exp(-(x/s0)**2)
+        self.smanorm = integrate.quad(tmp_dist_sma, ar[0], ar[1])[0]
         
         # calculate norm for eccentricity Rayleigh distribution 
         self.esigma = float(esigma)
@@ -61,9 +62,12 @@ class KeplerLike1(PlanetPopulation):
         # define Kepler radius distribution
         Rs = np.array([1,1.4,2.0,2.8,4.0,5.7,8.0,11.3,16,22.6]) #Earth Radii
         Rvals85 = np.array([0.1555,0.1671,0.1739,0.0609,0.0187,0.0071,0.0102,0.0049,0.0014])
-        a85 = ((85.*u.day/2./np.pi)**2*u.solMass*const.G)**(1./3) #sma of 85 days
-        fac1 = integrate.quad(self.dist_sma, 0, a85.to('AU').value)[0]
-        Rvals = integrate.quad(self.dist_sma, 0, ar[1])[0]*(Rvals85/fac1)
+        #sma of 85 days
+        a85 = ((85.*u.day/2./np.pi)**2*u.solMass*const.G)**(1./3.)
+        # sma of 0.8 days (lower limit of Fressin et al 2012)
+        a08 = ((0.8*u.day/2./np.pi)**2*u.solMass*const.G)**(1./3.) 
+        fac1 = integrate.quad(tmp_dist_sma, a08.to('AU').value, a85.to('AU').value)[0]
+        Rvals = integrate.quad(tmp_dist_sma, ar[0], ar[1])[0]*(Rvals85/fac1)
         Rvals[5:] *= 2.5 #account for longer orbital baseline data
         self.Rs = Rs
         self.Rvals = Rvals

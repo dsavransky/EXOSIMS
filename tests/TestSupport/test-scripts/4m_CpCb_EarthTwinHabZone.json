@@ -1,0 +1,84 @@
+{
+  "missionLifetime": 1.0,
+  "missionPortion": 1.0,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "lam": 550,
+  "deltaLam": 0.2,
+  "specLam": 750,
+  "pupilDiam": 4,
+  "obscurFac": 0.,
+  "shapeFac": 0.78539816339,
+  "IWA": 0.0709,
+  "OWA": 7.094,
+  "dMagLim": 26.0,
+  "telescopeKeepout": 45.,
+  "attenuation": 0.6333,
+  "intCutoff": 50.0,
+  "exozodi": 23.34,
+  "exozodiVar": 0,
+  "FAP": 3e-5,
+  "MDP": 1e-3, 
+  "SNimag": 5.0,
+  "SNchar": 10.0,
+  "ppFact": 0.1,
+  "erange":[0., 0.35],
+  "scaleOrbits": true,
+  "scienceInstruments": [
+    {
+      "name": "imaging-EMCCD",
+      "type": "imaging-EMCCD",
+      "lam": 550,
+      "BW": 0.20,
+      "QE": 0.91,
+      "darkCurrent": 5e-4,
+      "CIC": 3e-3,
+      "sread": 3,
+      "ENF": 1,
+      "Gem": 450,
+      "texp": 1000
+    },
+    {
+      "name": "spectro-EMCCD",
+      "type": "spectro-EMCCD",
+      "lam": 750,
+      "BW": 0.1,
+      "QE": 0.91,
+      "darkCurrent": 5e-4,
+      "CIC": 3e-3,
+      "sread": 3,
+      "ENF": 1,
+      "Gem": 450
+      "texp": 1000
+      "Rs": 70
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC"
+      "type": "internal-imaging-HLC"
+      "IWA": 28.4,
+      "OWA": 170,
+      "throughput":0.3,
+	"contrast": 1e-10,
+	"PSF":ones(3)
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "TBD Toy RV",
+    "StarCatalog": "Toy Catalog",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "ZodiacalLight",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "PlanetPhysicalModel",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": "TimeKeeping",
+    "PostProcessing": "PostProcessing",
+    "Completeness": "BrownCompleteness",
+    "TargetList": "TargetList",
+    "SimulatedUniverse": "SimulatedUniverse TBD toyr RV",
+    "SurveySimulation": "SurveySimulation",
+    "SurveyEnsemble": "SurveyEnsemble"
+  }
+}
+

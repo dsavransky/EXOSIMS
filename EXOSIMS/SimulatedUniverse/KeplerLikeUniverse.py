@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 
 class KeplerLikeUniverse(SimulatedUniverse):
     """
@@ -43,14 +42,10 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.plan2star = np.random.randint(0,TL.nStars,self.nPlans)
         self.sInds = np.unique(self.plan2star)
         
-        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
+        self.a, self.e, _, _ = PPop.gen_plan_params(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(PPMod.ggdat['radii'])] = 0.02*u.AU
-        self.e = PPop.gen_eccen(self.nPlans)                # eccentricity
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
         self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass
-

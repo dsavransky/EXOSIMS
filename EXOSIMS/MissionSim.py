@@ -1,6 +1,8 @@
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
-from EXOSIMS.util.get_module import get_module
 import random as py_random
 import numpy as np
 import astropy.units as u
@@ -15,41 +17,62 @@ class MissionSim(object):
     Args:
         \*\*specs:
             user specified values
+        scriptfile (string):
+            JSON script file.  If not set, assumes that dictionary has been 
+            passed through specs.
             
     Attributes:
-        PlanetPopulation (PlanetPopulation):
+        StarCatalog (StarCatalog module):
+            StarCatalog class object (only retained if keepStarCatalog is True)
+        PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel):
+        PlanetPhysicalModel (PlanetPhysicalModel module):
             PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem):
+        OpticalSystem (OpticalSystem module):
             OpticalSystem class object
-        ZodiacalLight (ZodiacalLight):
+        ZodiacalLight (ZodiacalLight module):
             ZodiacalLight class object
-        BackgroundSources (BackgroundSources):
+        BackgroundSources (BackgroundSources module):
             Background Source class object
-        PostProcessing (PostProcessing):
+        PostProcessing (PostProcessing module):
             PostProcessing class object
-        Completeness (Completeness):
+        Completeness (Completeness module):
             Completeness class object
-        TargetList (TargetList):
+        TargetList (TargetList module):
             TargetList class object
-        SimulatedUniverse (SimulatedUniverse):
+        SimulatedUniverse (SimulatedUniverse module):
             SimulatedUniverse class object
-        Observatory (Observatory):
+        Observatory (Observatory module):
             Observatory class object
-        TimeKeeping (TimeKeeping):
+        TimeKeeping (TimeKeeping module):
             TimeKeeping class object
-        SurveySimulation (SurveySimulation):
+        SurveySimulation (SurveySimulation module):
             SurveySimulation class object
-        SurveyEnsemble (SurveyEnsemble):
+        SurveyEnsemble (SurveyEnsemble module):
             SurveyEnsemble class object
+        modules (dict):
+            Dictionary of all modules, except StarCatalog
+        verbose (boolean):
+            Boolean used to create the vprint function, equivalent to the 
+            python print function with an extra verbose toggle parameter 
+            (True by default). The vprint function can be accessed by all 
+            modules from EXOSIMS.util.vprint.
+        seed (integer):
+            Number used to seed the NumPy generator. Generated randomly 
+            by default.
+        logfile (string):
+            Path to the log file. If None, logging is turned off. 
+            If supplied but empty string (''), a temporary file is generated.
+        loglevel (string): 
+            The level of log, defaults to 'INFO'. Valid levels are: CRITICAL, 
+            ERROR, WARNING, INFO, DEBUG (case sensitive).
     
     """
 
     _modtype = 'MissionSim'
     _outspec = {}
 
-    def __init__(self, scriptfile=None, nopar=False, **specs):
+    def __init__(self, scriptfile=None, nopar=False, verbose=True, **specs):
         """Initializes all modules from a given script file or specs dictionary.
         
         Args: 
@@ -59,10 +82,13 @@ class MissionSim(object):
             specs (dictionary):
                 Dictionary containing additional user specification values and 
                 desired module names.
-            nopar (bool):
+            nopar (boolean):
                 If True, ignore any provided ensemble module in the script or specs
                 and force the prototype ensemble.
-        
+            verbose (boolean):
+                Boolean used to create the vprint function, equivalent to the 
+                python print function with an extra verbose toggle parameter.
+            
         """
         
         # extend given specs with (JSON) script file
@@ -73,14 +99,14 @@ class MissionSim(object):
                 specs_from_file = json.loads(script)
                 specs_from_file.update(specs)
             except ValueError as err:
-                print "Error: %s: Input file `%s' improperly formatted."%(self._modtype,
-                        scriptfile)
-                print "Error: JSON error was: ", err
+                print("Error: %s: Input file `%s' improperly formatted."%(self._modtype,
+                        scriptfile))
+                print("Error: JSON error was: %s"%err)
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
             except:
-                print "Error: %s: %s", (self._modtype, sys.exc_info()[0])
+                print("Error: %s: %s"%(self._modtype, sys.exc_info()[0]))
                 raise
         else:
             specs_from_file = {}
@@ -89,12 +115,14 @@ class MissionSim(object):
         if 'modules' not in specs.keys():
             raise ValueError("No modules field found in script.")
         
-        # set up numpy random number seed at top
-        self.seed = specs.get('seed', py_random.randint(1, 1e9))
-        np.random.seed(self.seed)
-        # add seed to specs
+        # set up the verbose level
+        self.verbose = bool(verbose)
+        specs['verbose'] = self.verbose
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        # set up numpy random number and add seed to specs
+        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         specs['seed'] = self.seed
-        print 'MissionSim seed is: ', self.seed
         
         # start logging, with log file and logging level (default: INFO)
         self.logfile = specs.get('logfile', None)
@@ -105,7 +133,8 @@ class MissionSim(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            self._outspec[att] = self.__dict__[att]
+            if att not in ['vprint']:
+                self._outspec[att] = self.__dict__[att]
         
         # initialize top level, import modules
         if nopar:
@@ -169,9 +198,9 @@ class MissionSim(object):
                 f = open(logfile, 'w')
                 f.close()
             except (IOError, OSError) as e:
-                print '%s: Failed to open logfile "%s"'%(__file__, logfile)
+                print('%s: Failed to open logfile "%s"'%(__file__, logfile))
                 return None
-        print "Logging to '%s' at level '%s'"%(logfile, loglevel.upper())
+        self.vprint("Logging to '%s' at level '%s'"%(logfile, loglevel.upper()))
         
         # convert string to a logging.* level
         numeric_level = getattr(logging, loglevel.upper())
@@ -243,6 +272,33 @@ class MissionSim(object):
         
         out = self.SurveySimulation.genOutSpec(tofile=tofile)
         
+        return out
+
+    def checkScript(self, scriptfile, prettyprint=False, tofile=None):
+        """Calls CheckScript and checks the script file against the mission outspec.
+        
+        Args:
+            scriptfile (string):
+                The path to the scriptfile being used by the sim
+            prettyprint (boolean):
+                Outputs the results of Checkscript in a readable format.
+            tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (String):
+                Output string containing the results of the check.
+
+        """
+        if scriptfile is not None:
+            cs = CheckScript(scriptfile, self.genOutSpec())
+            out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
+            if tofile is not None:
+                cs.write_file(tofile)
+        else:
+            out = None
+
         return out
 
     def DRM2array(self, key, DRM=None):

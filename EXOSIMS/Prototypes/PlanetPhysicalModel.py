@@ -1,3 +1,4 @@
+from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -19,6 +20,9 @@ class PlanetPhysicalModel(object):
 
     def __init__(self, **specs):
         
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+        
         return
 
     def __str__(self):
@@ -28,7 +32,7 @@ class PlanetPhysicalModel(object):
         this method will return the values contained in the object"""
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Physical Model class object attributes'
 

@@ -128,6 +128,10 @@ class WFIRSTObservatory(Observatory):
         # create koangles for all bodies, set by telescope minimum keepout angle for 
         # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
         koangles = np.ones(nBodies)*self.koAngleMin
+        # allow Moon, Earth to be set individually (default to koAngleMin)
+        koangles[1] = self.koAngleMinMoon 
+        koangles[2] = self.koAngleMinEarth
+        # keepout angle for small bodies (other planets)
         koangles[3:] = self.koAngleSmall
         
         # find angles and make angle comparisons to build kogood array:

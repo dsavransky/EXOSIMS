@@ -28,7 +28,7 @@
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": " ",
+    "Completeness": "GarrettCompleteness",
     "TargetList": " ",
     "SimulatedUniverse": "KeplerLikeUniverse",
     "SurveySimulation": "linearJScheduler",

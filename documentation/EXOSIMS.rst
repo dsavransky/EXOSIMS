@@ -26,16 +26,16 @@ Subpackages
 Submodules
 ----------
 
-EXOSIMS.MissionSim module
--------------------------
+EXOSIMS\.MissionSim module
+--------------------------
 
 .. automodule:: EXOSIMS.MissionSim
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.e2eTests module
------------------------
+EXOSIMS\.e2eTests module
+------------------------
 
 .. automodule:: EXOSIMS.e2eTests
     :members:

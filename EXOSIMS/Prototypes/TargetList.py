@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import numbers
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.deltaMag import deltaMag
 
 class TargetList(object):
     """Target List class template
@@ -42,14 +43,11 @@ class TargetList(object):
         Completeness (Completeness module):
             Completeness class object
         tint0 (astropy Quantity array):
-            Minimum integration time values at the limiting planet flux ratio 
-            for each target star in units of day
+            Minimum integration time values for each target star in units of day
         comp0 (ndarray):
             Initial completeness value for each target star
         comp (ndarray):
             Completeness value for each target star
-        minComp (float): 
-            Minimum completeness value for inclusion in target list
         MsEst (float ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
@@ -66,26 +64,23 @@ class TargetList(object):
     _modtype = 'TargetList'
     _outspec = {}
 
-    def __init__(self, minComp=0.1, missionStart=60634, staticStars=True,
+    def __init__(self, missionStart=60634, staticStars=True, 
             keepStarCatalog=False, **specs):
-        """Initializes target list
         
-        """
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
-        # validate inputs
-        assert isinstance(minComp, numbers.Number), "minComp must be a number."
+        # validate TargetList inputs
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
-        
-        # default TargetList values
-        self.minComp = float(minComp)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
@@ -123,14 +118,14 @@ class TargetList(object):
         
         # if staticStars is True, the star coordinates are taken at mission start, 
         # and are not propagated during the mission
-        if staticStars:
+        self.starprop_static = None
+        if self.staticStars is True:
             allInds = np.arange(self.nStars)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
-            self.starprop = lambda sInds, currentTime, eclip=False, \
+            self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \
                     c2=self.starprop(allInds, missionStart, eclip=True): \
-                    c1[np.array(sInds, ndmin=1, copy=False)] if eclip==False else \
-                    c2[np.array(sInds, ndmin=1, copy=False)]
+                    c1[sInds] if eclip==False else c2[sInds]
 
     def __str__(self):
         """String representation of the Target List object
@@ -141,69 +136,9 @@ class TargetList(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
-
-    def starprop(self, sInds, currentTime, eclip=False):
-        """Finds target star positions vector in heliocentric equatorial (default)
-        or ecliptic frame for current time (MJD).
-        
-        This method uses ICRS coordinates which is approximately the same as 
-        equatorial coordinates. 
-        
-        Args:
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-            eclip (boolean):
-                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
-                False, corresponding to heliocentric equatorial frame.
-        
-        Returns:
-            r_targ (astropy Quantity nx3 array): 
-                Target star positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of pc
-        
-        Note: Use eclip=True to get ecliptic coordinates.
-        
-        """
-        
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # get all array sizes
-        nStars = sInds.size
-        nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
-        # target star ICRS coordinates
-        coord_old = self.coords[sInds]
-        # right ascension and declination
-        ra = coord_old.ra
-        dec = coord_old.dec
-        # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
-        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
-        r0 = coord_old.cartesian.xyz/coord_old.distance
-        # proper motion vector
-        mu0 = p0*self.pmra[sInds] + q0*self.pmdec[sInds]
-        # space velocity vector
-        v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
-        # set J2000 epoch
-        j2000 = Time(2000., format='jyear')
-        # target star positions vector in heliocentric equatorial frame
-        dr = v*(currentTime.mjd - j2000.mjd)*u.day
-        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
-        
-        if eclip:
-            # transform to heliocentric true ecliptic frame
-            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
-                    representation='cartesian')
-            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
-        
-        return r_targ
 
     def populate_target_list(self, **specs):
         """ This function is actually responsible for populating values from the star 
@@ -246,13 +181,12 @@ class TargetList(object):
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
         
-        The prototype implementation does the following:
-            * binary stars are removed
-            * systems with planets inside the IWA removed
-            * systems where maximum delta mag is not in allowable orbital range 
-              removed
-            * systems where integration time is longer than maximum time removed
-            * systems not meeting the completeness threshold removed
+        The prototype implementation removes the following stars:
+            * Stars with NAN values in their parameters
+            * Binary stars
+            * Systems with planets inside the OpticalSystem fundamental IWA
+            * Systems where minimum integration time is longer than OpticalSystem cutoff
+            * Systems not meeting the Completeness threshold
         
         Additional filters can be provided in specific TargetList implementations.
         
@@ -260,12 +194,13 @@ class TargetList(object):
         
         # filter out binary stars
         self.binary_filter()
+        
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
-        # filter out systems where maximum delta mag is not in allowable orbital range
-        self.max_dmag_filter()
+        
         # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
+        
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
 
@@ -369,14 +304,17 @@ class TargetList(object):
     def max_dmag_filter(self):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
+        Removed from prototype filters. Prototype is already calling the 
+        int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim
+        
         """
         
         PPop = self.PlanetPopulation
         PPMod = self.PlanetPhysicalModel
-        OS = self.OpticalSystem
+        Comp = self.Completeness
         
         # s and beta arrays
-        s = np.tan(OS.IWA)*self.dist
+        s = np.tan(self.OpticalSystem.WA0)*self.dist
         if PPop.scaleOrbits:
             s /= np.sqrt(self.L)
         beta = np.array([1.10472881476178]*len(s))*u.rad
@@ -392,7 +330,7 @@ class TargetList(object):
         Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
-        i = np.where(deltaMag(p, Rp, d, Phi) < OS.dMagLim)[0]
+        i = np.where(deltaMag(p, Rp, d, Phi) < Comp.dMagLim)[0]
         self.revise_lists(i)
 
     def int_cutoff_filter(self):
@@ -408,35 +346,38 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.comp0 > self.minComp)[0]
+        i = np.where(self.comp0 > self.Completeness.minComp)[0]
         self.revise_lists(i)
 
-    def revise_lists(self, ind):
+    def revise_lists(self, sInds):
         """Replaces Target List catalog attributes with filtered values, 
         and updates the number of target stars.
         
         Args:
-            ind (ndarray):
-                1D numpy ndarray of indices to keep
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
         
         """
        
-        if len(ind) == 0:
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        if len(sInds) == 0:
             raise IndexError("Target list filtered to empty.")
         
         for att in self.catalog_atts:
             if att == 'coords':
-                ra = self.coords.ra[ind].to('deg')
-                dec = self.coords.dec[ind].to('deg')
+                ra = self.coords.ra[sInds].to('deg')
+                dec = self.coords.dec[sInds].to('deg')
                 self.coords = SkyCoord(ra, dec, self.dist.to('pc'))
             else:
                 if getattr(self, att).size != 0:
-                    setattr(self, att, getattr(self, att)[ind])
+                    setattr(self, att, getattr(self, att)[sInds])
         try:
-            self.Completeness.revise_updates(ind)
+            self.Completeness.revise_updates(sInds)
         except AttributeError:
             pass
-        self.nStars = len(ind)
+        self.nStars = len(sInds)
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
 
     def stellar_mass(self):
@@ -456,6 +397,71 @@ class TargetList(object):
         # if additional filters are desired, need self.catalog_atts fully populated
         self.catalog_atts.append('MsEst')
         self.catalog_atts.append('MsTrue')
+
+    def starprop(self, sInds, currentTime, eclip=False):
+        """Finds target star positions vector in heliocentric equatorial (default)
+        or ecliptic frame for current time (MJD).
+        
+        This method uses ICRS coordinates which is approximately the same as 
+        equatorial coordinates. 
+        
+        Args:
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            eclip (boolean):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to 
+                False, corresponding to heliocentric equatorial frame.
+        
+        Returns:
+            r_targ (astropy Quantity nx3 array): 
+                Target star positions vector in heliocentric equatorial (default)
+                or ecliptic frame in units of pc
+        
+        Note: Use eclip=True to get ecliptic coordinates.
+        
+        """
+        
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            return self.starprop_static(sInds, currentTime, eclip)
+        
+        # get all array sizes
+        nStars = sInds.size
+        nTimes = currentTime.size
+        assert nStars==1 or nTimes==1 or nTimes==nStars, \
+                "If multiple times and targets, currentTime and sInds sizes must match"
+        
+        # target star ICRS coordinates
+        coord_old = self.coords[sInds]
+        # right ascension and declination
+        ra = coord_old.ra
+        dec = coord_old.dec
+        # directions
+        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
+        q0 = np.array([-np.sin(dec)*np.cos(ra), -np.sin(dec)*np.sin(ra), np.cos(dec)])
+        r0 = coord_old.cartesian.xyz/coord_old.distance
+        # proper motion vector
+        mu0 = p0*self.pmra[sInds] + q0*self.pmdec[sInds]
+        # space velocity vector
+        v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
+        # set J2000 epoch
+        j2000 = Time(2000., format='jyear')
+        # target star positions vector in heliocentric equatorial frame
+        dr = v*(currentTime.mjd - j2000.mjd)*u.day
+        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+        
+        if eclip:
+            # transform to heliocentric true ecliptic frame
+            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                    representation='cartesian')
+            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+        
+        return r_targ
 
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit 
@@ -490,24 +496,24 @@ class TargetList(object):
         
         return mV
 
-    def stellarTeff(self,sInds):
-
-        """
-        Calculate the effective stellar temperature based on B-V color.
-
+    def stellarTeff(self, sInds):
+        """Calculate the effective stellar temperature based on B-V color.
+        
         This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008
-
+        
         Args:
             sInds (integer ndarray):
                 Indices of the stars of interest
-
+        
         Returns:
             Teff (Quantity array):
                 Stellar effective temperatures in degrees K
-
+        
         """
-
+        
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
-
+        
         return Teff
-

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.eccanom import eccanom
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 import os,inspect
-from EXOSIMS.util.eccanom import eccanom
 
 class Observatory(object):
     """Observatory class template
@@ -16,22 +17,20 @@ class Observatory(object):
     Args:
         \*\*specs: 
             user specified values
-        forceStaticEphem (bool):
-            If True, forces use of stored ephemerides for solar system objects
-            and uses eccanom utility to propagate.  Defaults to False.
         spkpath (str):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
         koAngleMin (astropy Quantity):
             Telescope minimum keepout angle in units of deg
+        koAngleMinMoon (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Moon only
+        koAngleMinEarth (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Earth only
         koAngleMax (astropy Quantity):
             Telescope maximum keepout angle (for occulter) in units of deg
         koAngleSmall (astropy Quantity):
             Telescope keepout angle for smaller (angular size) bodies in units of deg
-        checkKeepoutEnd (boolean):
-            Boolean signifying if the keepout method must be called at the end of 
-            each observation
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -52,10 +51,11 @@ class Observatory(object):
             Default burn portion
         flowRate (astropy Quantity): 
             Slew flow rate in units of kg/day
+        checkKeepoutEnd (boolean):
+            Boolean signifying if the keepout method must be called at the end of 
+            each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
-        checkKeepoutEnd (boolean):
-            Boolean used to call keepout method at the end of each observation
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -69,17 +69,25 @@ class Observatory(object):
     _modtype = 'Observatory'
     _outspec = {}
 
-    def __init__(self, koAngleMin=45, koAngleMax=90, koAngleSmall=1, settlingTime=1,
-            thrust=450, slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800,
-            occulterSep=55000, skIsp=220, defburnPortion=0.05, spkpath=None,
-            forceStaticEphem=False, checkKeepoutEnd=True, **specs):
+    def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
+            koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
+            scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+            defburnPortion=0.05, spkpath=None, checkKeepoutEnd=True, 
+            forceStaticEphem=False, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
         
         # validate inputs
-        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
+        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
         self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
+        koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
+        self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
+        koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
+        self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
         self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
         self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
@@ -91,8 +99,8 @@ class Observatory(object):
         self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
         self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
-        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
+        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
@@ -100,22 +108,23 @@ class Observatory(object):
         
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides
-        if not forceStaticEphem:
+        if self.forceStaticEphem is False:
             try:
                 from jplephem.spk import SPK
                 self.havejplephem = True
             except ImportError:
-                print "WARNING: Module jplephem not found, " \
-                        + "using static solar system ephemerides."
+                self.vprint("WARNING: Module jplephem not found, " \
+                        + "using static solar system ephemerides.")
                 self.havejplephem = False
         else:
             self.havejplephem = False
-            print "Using static solar system ephemerides."
+            self.vprint("Using static solar system ephemerides.")
         
         # populate outspec
         for att in self.__dict__.keys():
-            dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if att not in ['vprint']:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)
@@ -233,7 +242,7 @@ class Observatory(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r' % (att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Observatory class object attributes'
 
@@ -672,8 +681,8 @@ class Observatory(object):
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInd (integer ndarray):
-                Integer indices of the star of interest
+            sInd (integer):
+                Integer index of the star of interest
             currentTime (astropy Time):
                 Current absolute mission time in MJD
                 
@@ -816,6 +825,6 @@ class Observatory(object):
             """
             
             for att in self.__dict__.keys():
-                print '%s: %r' % (att, getattr(self, att))
+                print('%s: %r' % (att, getattr(self, att)))
             
             return 'SolarEph class object attributes'

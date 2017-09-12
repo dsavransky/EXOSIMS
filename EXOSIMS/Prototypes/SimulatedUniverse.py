@@ -1,11 +1,11 @@
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-import EXOSIMS.util.statsFun as statsFun 
+from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+import numpy as np
+import astropy.units as u
+import astropy.constants as const
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -18,6 +18,8 @@ class SimulatedUniverse(object):
             user specified values
     
     Attributes:
+        StarCatalog (StarCatalog module):
+            StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):
@@ -85,6 +87,9 @@ class SimulatedUniverse(object):
     _outspec = {}
     
     def __init__(self, **specs):
+        
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
@@ -121,7 +126,7 @@ class SimulatedUniverse(object):
         """
         
         for att in self.__dict__.keys():
-            print '%s: %r'%(att, getattr(self, att))
+            print('%s: %r' % (att, getattr(self, att)))
         
         return 'Simulated Universe class object attributes'
 
@@ -146,20 +151,16 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.a = PPop.gen_sma(self.nPlans)                  # semi-major axis
-        self.e = PPop.gen_eccen_from_sma(self.nPlans, self.a) if PPop.constrainOrbits \
-                else PPop.gen_eccen(self.nPlans)            # eccentricity
-        self.I = PPop.gen_I(self.nPlans)                    # inclination
-        self.O = PPop.gen_O(self.nPlans)                    # longitude of ascending node
-        self.w = PPop.gen_w(self.nPlans)                    # argument of periapsis
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
+        if PPop.scaleOrbits:
+            self.a *= np.sqrt(TL.L[self.plan2star])
         self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Rp = PPop.gen_radius(self.nPlans)              # radius
-        self.Mp = PPop.gen_mass(self.nPlans)                # mass
-        self.p = PPop.gen_albedo(self.nPlans)               # albedo
+        self.Mp = PPop.gen_mass(self.nPlans)                     # mass
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
-        # at 5 AU for characterization. 
+        # at 5 AU to allow for characterization testing.
         # Also generates at least one Jupiter if no planet was generated.
         if TL.Name[0] == 'Prototype' or self.nPlans == 0:
             self.plan2star = np.array([0], dtype=int)
@@ -226,8 +227,7 @@ class SimulatedUniverse(object):
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
         planet-star distance, apparent separation, phase function, surface brightness 
-        of exo-zodiacal light, delta magnitude, working angle, and the planet 
-        current time array.
+        of exo-zodiacal light, delta magnitude, and working angle.
         
         This method uses the Kepler state transition matrix to propagate a 
         planet's state (position and velocity vectors) forward in time using 
@@ -305,7 +305,8 @@ class SimulatedUniverse(object):
             None
         
         Returns:
-            systems (dict)
+            systems (dict):
+                Dictionary of planetary properties
         
         """
         
@@ -358,8 +359,8 @@ class SimulatedUniverse(object):
         and updates the number of planets.
         
         Args:
-            pInds (ndarray):
-                1D numpy ndarray of indices to keep
+            pInds (integer ndarray):
+                Planet indices to keep
         
         """
        
@@ -377,8 +378,8 @@ class SimulatedUniverse(object):
         planets list accordingly. 
         
         Args:
-            sInds (ndarray):
-                1D numpy ndarray of indices to keep
+            sInds (integer ndarray):
+                Star indices to keep
         
         """
         

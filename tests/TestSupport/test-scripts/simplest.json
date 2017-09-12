@@ -7,9 +7,7 @@
   "pupilDiam": 2.37,
   "obscurFac": 0.2,
   "dMagLim": 25,
-  "attenuation": 0.57,
   "intCutoff": 100,
-  "SNchar": 5,
   "ppFact": 0.1,
   "scienceInstruments": [
     {
@@ -45,7 +43,7 @@
     "Observatory": "WFIRSTObservatory",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": "Completeness",
+    "Completeness": " ",
     "TargetList": " ",
     "SimulatedUniverse": " ",
     "SurveySimulation": " ",

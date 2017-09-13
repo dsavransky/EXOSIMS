@@ -165,17 +165,20 @@ class SAG13(KeplerLike2):
         C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
         ar = self.arange.to('AU').value
         if self.constrainOrbits:
+            # restrict semi-major axis limits
+            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
             # clip sma values to sma range
-            sma = np.clip(a.to('AU').value, ar[0], ar[1])
+            sma = np.clip(a.to('AU').value, arcon[0], arcon[1])
             # upper limit for eccentricity given sma
             elim = np.zeros(len(sma))
-            amean = np.mean(ar)
+            amean = np.mean(arcon)
             elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
             elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
             elim[elim > self.erange[1]] = self.erange[1]
             elim[elim < self.erange[0]] = self.erange[0]
             # additional constant
             C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
+            a = sma*u.AU
         else:
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))

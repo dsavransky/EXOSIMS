@@ -232,9 +232,11 @@ class PlanetPopulation(object):
         n = self.gen_input_check(n)
         # generate samples of semi-major axis
         ar = self.arange.to('AU').value
-        a = np.exp(np.random.uniform(low=np.log(ar[0]), high=np.log(ar[1]), size=n))*u.AU
         # check if constrainOrbits == True for eccentricity
         if self.constrainOrbits:
+            # restrict semi-major axis limits
+            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
+            a = np.exp(np.random.uniform(low=np.log(arcon[0]), high=np.log(arcon[1]), size=n))*u.AU
             tmpa = a.to('AU').value
             # upper limit for eccentricity given sma
             elim = np.zeros(len(a))
@@ -247,6 +249,7 @@ class PlanetPopulation(object):
             # uniform distribution
             e = np.random.uniform(low=self.erange[0], high=elim, size=n)
         else:
+            a = np.exp(np.random.uniform(low=np.log(ar[0]), high=np.log(ar[1]), size=n))*u.AU
             e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
         
         # generate geometric albedo
@@ -285,10 +288,10 @@ class PlanetPopulation(object):
         
         # unitless sma range
         ar = self.arange.to('AU').value
-        
+        arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
         # upper limit for eccentricity given sma
         elim = np.zeros(a.shape)
-        amean = np.mean(ar)
+        amean = np.mean(arcon)
         elim[a <= amean] = 1. - ar[0]/a[a <= amean]
         elim[a > amean] = ar[1]/a[a > amean] - 1.
         elim[elim > self.erange[1]] = self.erange[1]
@@ -297,8 +300,9 @@ class PlanetPopulation(object):
         # if e and a are two arrays of different size, create a 2D grid
         if a.size not in [1, e.size]:
             elim, e = np.meshgrid(elim, e)
-        
-        f = self.uniform(e, (self.erange[0], elim))
+        f = np.zeros(e.shape)
+        mask = (a >= arcon[0]) & (a <= arcon[1])
+        f[mask] = self.uniform(e[mask], (self.erange[0], elim[mask]))
         
         return f
 

@@ -239,8 +239,10 @@ class KeplerLike1(PlanetPopulation):
         C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
         ar = self.arange.to('AU').value
         if self.constrainOrbits:
+            # restrict semi-major axis limits
+            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
             # clip sma values to sma range
-            sma = np.clip(a.to('AU').value, ar[0], ar[1])
+            sma = np.clip(a.to('AU').value, arcon[0], arcon[1])
             # upper limit for eccentricity given sma
             elim = np.zeros(len(sma))
             amean = np.mean(ar)
@@ -250,6 +252,7 @@ class KeplerLike1(PlanetPopulation):
             elim[elim < self.erange[0]] = self.erange[0]
             # constants
             C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
+            a = sma*u.AU
         else:
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
@@ -336,10 +339,10 @@ class KeplerLike1(PlanetPopulation):
         
         # unitless sma range
         ar = self.arange.to('AU').value
-        
+        arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
         # upper limit for eccentricity given sma
         elim = np.zeros(a.shape)
-        amean = np.mean(ar)
+        amean = np.mean(arcon)
         elim[a <= amean] = 1. - ar[0]/a[a <= amean]
         elim[a > amean] = ar[1]/a[a > amean] - 1.
         elim[elim > self.erange[1]] = self.erange[1]
@@ -352,7 +355,9 @@ class KeplerLike1(PlanetPopulation):
         norm = np.exp(-self.erange[0]**2/(2.*self.esigma**2)) \
                 - np.exp(-elim**2/(2.*self.esigma**2))
         ins = np.array((e >= self.erange[0]) & (e <= elim), dtype=float, ndmin=1)
-        f = ins*e/self.esigma**2*np.exp(-e**2/(2.*self.esigma**2))/norm
+        f = np.zeros(e.shape)
+        mask = (a >= arcon[0]) & (a <= arcon[1])
+        f[mask] = ins[mask]*e[mask]/self.esigma**2*np.exp(-e[mask]**2/(2.*self.esigma**2))/norm
         
         return f
 

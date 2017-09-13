@@ -14,7 +14,6 @@ try:
 except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
-import time
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
@@ -22,6 +21,11 @@ class GarrettCompleteness(BrownCompleteness):
     This class contains all variables and methods necessary to perform 
     Completeness Module calculations based on Garrett and Savransky 2016
     in exoplanet mission simulation.
+    
+    The completeness calculations performed by this method assume that all 
+    planetary parameters are independently distributed. The probability density
+    functions used here are either independent or marginalized from a joint
+    probability density function.
     
     Args:
         \*\*specs: 

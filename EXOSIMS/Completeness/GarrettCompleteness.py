@@ -189,6 +189,8 @@ class GarrettCompleteness(BrownCompleteness):
             comp0 = self.comp_s(smin, smax, dMagMax)
         else:
             comp0 = dist_sv(smin, smax)
+        # ensure that completeness values are between 0 and 1
+        comp0 = np.clip(comp0, 0., 1.)
 
         return comp0
         
@@ -260,6 +262,8 @@ class GarrettCompleteness(BrownCompleteness):
         comp = np.zeros(smin.shape)
         for i in xrange(len(smin)):
             comp[i] = integrate.fixed_quad(self.f_sv, smin[i], smax[i], args=(dMag[i],), n=50)[0]
+        # ensure completeness values are between 0 and 1
+        comp = np.clip(comp, 0., 1.)
         
         return comp
             
@@ -797,6 +801,8 @@ class GarrettCompleteness(BrownCompleteness):
                 comp[i] = 0.0
             else:
                 comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dMagMax[i], args=(smin[i],smax[i]), n=50)[0]
+        # ensure completeness values are between 0 and 1
+        comp = np.clip(comp, 0., 1.)
         
         return comp
     
@@ -840,6 +846,8 @@ class GarrettCompleteness(BrownCompleteness):
         smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
         smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
         comp = self.comp_dmag(smin, smax, dMag)
+        # ensure that completeness values are between 0 and 1
+        comp = np.clip(comp, 0., 1.)
         
         return comp
         

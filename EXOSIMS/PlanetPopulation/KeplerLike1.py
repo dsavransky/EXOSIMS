@@ -357,7 +357,7 @@ class KeplerLike1(PlanetPopulation):
         ins = np.array((e >= self.erange[0]) & (e <= elim), dtype=float, ndmin=1)
         f = np.zeros(e.shape)
         mask = (a >= arcon[0]) & (a <= arcon[1])
-        f[mask] = ins[mask]*e[mask]/self.esigma**2*np.exp(-e[mask]**2/(2.*self.esigma**2))/norm
+        f[mask] = ins[mask]*e[mask]/self.esigma**2*np.exp(-e[mask]**2/(2.*self.esigma**2))/norm[mask]
         
         return f
 

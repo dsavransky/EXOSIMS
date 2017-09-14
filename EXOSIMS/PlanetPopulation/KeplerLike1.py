@@ -231,8 +231,8 @@ class KeplerLike1(PlanetPopulation):
         
         """
         n = self.gen_input_check(n)
+        PPMod = self.PlanetPhysicalModel
         # generate semi-major axis samples
-        
         a = self.gen_sma(n)
         # check for constrainOrbits == True for eccentricity samples
         # constant
@@ -256,8 +256,8 @@ class KeplerLike1(PlanetPopulation):
         else:
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
-        # generate albedo (independent)
-        p = self.gen_albedo(n)
+        # generate albedo from semi-major axis
+        p = PPMod.calc_albedo_from_sma(a)
         # generate planetary radius
         Rp = self.gen_radius(n)
         

@@ -72,7 +72,7 @@ class TestPlanetPopulation(unittest.TestCase):
         """
 
         exclude_setrange = ['EarthTwinHabZone1']
-        exclude_checkrange = ['EarthTwinHabZone2' ]
+        exclude_checkrange = [ ]
 
         tmp = np.random.rand(1)*0.5
         erangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))

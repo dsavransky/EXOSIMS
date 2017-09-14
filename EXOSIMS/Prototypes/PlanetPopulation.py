@@ -83,6 +83,7 @@ class PlanetPopulation(object):
         er = self.erange
         if self.constrainOrbits:
             self.rrange = [ar[0], ar[1]]*u.AU
+            self.arange = [ar[0]/(1. - er[0]), ar[1]/(1. + er[0])]*u.AU
         else:
             self.rrange = [ar[0]*(1. - er[1]), ar[1]*(1. + er[1])]*u.AU
         assert isinstance(eta, numbers.Number) and (eta > 0),\
@@ -284,6 +285,9 @@ class PlanetPopulation(object):
         # cast a and e to array
         e = np.array(e, ndmin=1, copy=False)
         a = np.array(a, ndmin=1, copy=False)
+        # if a is length 1, copy a to make the same shape as e
+        if a.ndim == 1 and len(a) == 1:
+            a = a*np.ones(e.shape)
         
         # unitless sma range
         ar = self.arange.to('AU').value
@@ -300,7 +304,7 @@ class PlanetPopulation(object):
         if a.size not in [1, e.size]:
             elim, e = np.meshgrid(elim, e)
         f = np.zeros(e.shape)
-        mask = (a >= arcon[0]) & (a <= arcon[1])
+        mask = np.where((a >= arcon[0]) & (a <= arcon[1]))
         f[mask] = self.uniform(e[mask], (self.erange[0], elim[mask]))
         
         return f

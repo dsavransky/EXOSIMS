@@ -336,6 +336,9 @@ class KeplerLike1(PlanetPopulation):
         # cast a and e to array
         e = np.array(e, ndmin=1, copy=False)
         a = np.array(a, ndmin=1, copy=False)
+        # if a is length 1, copy a to make the same shape as e
+        if a.ndim == 1 and len(a) == 1:
+            a = a*np.ones(e.shape)
         
         # unitless sma range
         ar = self.arange.to('AU').value

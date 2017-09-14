@@ -182,9 +182,8 @@ class SAG13(KeplerLike2):
         else:
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
-        # generate albedo (independent)
-        _, sma = self.gen_radius_sma(n)
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(sma)
+        # generate albedo from semi-major axis
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
         
         return a, e, p, Rp
     

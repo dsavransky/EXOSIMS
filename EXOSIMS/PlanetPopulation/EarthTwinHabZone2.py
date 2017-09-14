@@ -53,9 +53,11 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
         n = self.gen_input_check(n)
         # generate samples of semi-major axis
         ar = self.arange.to('AU').value
-        a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
         # check if constrainOrbits == True for eccentricity
         if self.constrainOrbits:
+            # restrict semi-major axis limits
+            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
+            a = np.random.uniform(low=arcon[0], high=arcon[1], size=n)*u.AU
             tmpa = a.to('AU').value
 
             # upper limit for eccentricity given sma
@@ -64,10 +66,12 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
             elim[tmpa <= amean] = 1. - ar[0]/tmpa[tmpa <= amean]
             elim[tmpa > amean] = ar[1]/tmpa[tmpa>amean] - 1.
             elim[elim > self.erange[1]] = self.erange[1]
+            elim[elim < self.erange[0]] = self.erange[0]
         
             # uniform distribution
             e = np.random.uniform(low=self.erange[0], high=elim, size=n)
         else:
+            a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
             e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
         # generate geometric albedo
         p = 0.367*np.ones((n,))

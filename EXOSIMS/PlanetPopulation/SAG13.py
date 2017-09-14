@@ -15,20 +15,20 @@ class SAG13(KeplerLike2):
         SAG13coeffs (float 4x2 ndarray):
             Coefficients used by the SAG13 broken power law. The 4 lines
             correspond to Gamma, alpha, beta, and the minimum radius.
+        Gamma (float ndarray):
+            Gamma coefficients used by SAG13 broken power law.
+        alpha (float ndarray):
+            Alpha coefficients used by SAG13 broken power law.
+        beta (float ndarray):
+            Beta coefficients used by SAG13 broken power law.
+        Rplim (float ndarray):
+            Minimum radius used by SAG13 broken power law.
         SAG13starMass (astropy Quantity):
             Assumed stellar mass corresponding to the given set of coefficients.
-        eta2D (float ndarray):
-            2D array of planet occurrence rate per star, binned by planetary
-            radius and period.
-        lnRp (float ndarray):
-            Logarithm of the eta2D grid radius values in units of Earth radius. 
-        lnT (float ndarray):
-            Logarithm of the eta2D grid period values in units of year. 
-        Trange (astropy Quantity 1x2 array):
-            Period range in units of year.
-        Tknee (float):
-            Location (in year) of period decay point (knee).
-            Not an astropy quantity.
+        mu (astropy Quantity):
+            Gravitational parameter associated with SAG13starMass.
+        Ca (float 2x1 ndarray):
+            Constants used for sampling.
     
     """
 
@@ -36,21 +36,12 @@ class SAG13(KeplerLike2):
             SAG13starMass=1., Rprange=[2/3., 17.0859375],
             arange=[0.09084645, 1.45354324], **specs):
         
-        # first initialize with KerplerLike constructor
+        # first initialize with KeplerLike constructor
         specs['Rprange'] = Rprange
         specs['arange'] = arange
-        KeplerLike2.__init__(self, **specs)
-        
         # load SAG13 star mass in solMass: 1.3 (F), 1 (G), 0.70 (K), 0.35 (M)
         self.SAG13starMass = float(SAG13starMass)*u.solMass
-        
-        # generate period range from sma range, for given SAG13starMass
-        # default sma range [0.09-1.45 AU] corresponds to period range [10-640 day] @ 1solMass
-        mu = const.G*self.SAG13starMass
-        self.Trange = 2.*np.pi*np.sqrt(self.arange**3/mu).to('year')
-        
-        # period value corresponding to KeplerLike smaknee (in year, not a quantity)
-        self.Tknee = 2.*np.pi*np.sqrt((self.smaknee*u.AU)**3/mu).to('year').value
+        self.mu = const.G*self.SAG13starMass
         
         # load SAG13 coefficients (Gamma, alpha, beta, Rplim)
         self.SAG13coeffs = np.array(SAG13coeffs, dtype=float)
@@ -67,38 +58,53 @@ class SAG13(KeplerLike2):
         # sort by minimum radius
         self.SAG13coeffs = self.SAG13coeffs[:,np.argsort(self.SAG13coeffs[3,:])]
         
-        # create grid of radii and periods
-        # SAG13 sampling uses a log base 1.5 for radius, and a log base 2 for period
-        Rplogbase = 1.5
-        Tlogbase = 2.
-        xlim = np.log(self.Rprange.to('earthRad').value)/np.log(Rplogbase)
-        ylim = np.log(self.Trange.to('year').value)/np.log(Tlogbase)
-        nx = np.maximum(int(round(np.diff(xlim))), 1)
-        ny = np.maximum(int(round(np.diff(ylim))), 1)
-        Rp = np.logspace(xlim[0], xlim[1], num=nx+1, base=Rplogbase)
-        T = np.logspace(ylim[0], ylim[1], num=ny+1, base=Tlogbase)
-        self.lnRp = np.log(Rp)
-        self.lnT = np.log(T)
+        # split out SAG13 coeffs
+        self.Gamma = self.SAG13coeffs[0,:]
+        self.alpha = self.SAG13coeffs[1,:]
+        self.beta = self.SAG13coeffs[2,:]
+        self.Rplim = np.append(self.SAG13coeffs[3,:], np.inf)
         
-        # loop over all log values of radii and periods, and generate the eta 2D array
-        self.eta2D = np.zeros((nx, ny))
-        for i in range(nx):
-            for j in range(ny):
-                ranges = [self.lnRp[i:i+2], self.lnT[j:j+2]]
-                self.eta2D[i,j] = integrate.nquad(self.dist_lnradius_lnperiod, ranges)[0]
+        KeplerLike2.__init__(self, **specs)
         
-        # eta is the sum of the eta 2D array
-        self.eta = np.sum(self.eta2D)
+        # intermediate function
+        m = self.mu.to('AU3/year2').value
+        ftmp = lambda x,b,m=m,ak=self.smaknee: (2.*np.pi*np.sqrt(x**3/m))**(b-1.)*(3.*np.pi*np.sqrt(x/m))*np.exp(-(x/ak)**3)
+        # intermediate constants used elsewhere
+        self.Ca = np.zeros((2,))
+        for i in xrange(2):
+            self.Ca[i] = integrate.quad(ftmp, self.arange[0].to('AU').value, self.arange[1].to('AU').value, args=(self.beta[i],))[0]
+        
+        # set up samplers for sma and Rp
+        # probability density function of sma given Rp < Rplim[1]
+        f_sma_given_Rp1 = lambda a, beta=self.beta[0], m=m, C=self.Ca[0], smaknee=self.smaknee: self.dist_sma_given_radius(a,beta,m,C,smaknee)
+        # sampler for Rp < Rplim:
+        # unitless sma range
+        ar = self.arange.to('AU').value
+        self.sma_sampler1 = InverseTransformSampler(f_sma_given_Rp1, ar[0], ar[1])
+        # probability density function of sma given Rp > Rplim[1]
+        f_sma_given_Rp2 = lambda a, beta=self.beta[1], m=m, C=self.Ca[1], smaknee=self.smaknee: self.dist_sma_given_radius(a,beta,m,C,smaknee)
+        self.sma_sampler2 = InverseTransformSampler(f_sma_given_Rp2, ar[0], ar[1])
+        
+        self.Rp_sampler = InverseTransformSampler(self.dist_radius, self.Rprange[0].to('earthRad').value, self.Rprange[1].to('earthRad').value)
+        
+        # determine eta
+        if self.Rprange[1].to('earthRad').value < self.Rplim[1]:
+            self.eta = self.Gamma[0]*(self.Rprange[1].to('earthRad').value**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
+        elif self.Rprange[0].to('earthRad').value > self.Rplim[1]:
+            self.eta = self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rprange[1].to('earthRad').value**self.alpha[1])/self.alpha[1]*self.Ca[1]
+        else:
+            self.eta = self.Gamma[0]*(self.Rplim[1]**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
+            self.eta+= self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rplim[1]**self.alpha[1])/self.alpha[1]*self.Ca[1]
+
         self._outspec['eta'] = self.eta
         
         # populate _outspec with SAG13 specific attributes
         self._outspec['SAG13starMass'] = self.SAG13starMass.to('solMass').value
         self._outspec['SAG13coeffs'] = self.SAG13coeffs
-        self._outspec['eta2D'] = self.eta2D
-        self._outspec['lnRp'] = self.lnRp
-        self._outspec['lnT'] = self.lnT
-        self._outspec['Trange'] = self.Trange.to('year').value
-        self._outspec['Tknee'] = self.Tknee
+        self._outspec['Gamma'] = self.Gamma
+        self._outspec['alpha'] = self.alpha
+        self._outspec['beta'] = self.beta
+        self._outspec['Rplim'] = self.Rplim
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.
@@ -116,27 +122,13 @@ class SAG13(KeplerLike2):
                 Semi-major axis values in units of AU
         
         """
-        # get number of samples per bin
-        nsamp = np.ceil(n*self.eta2D/self.eta).astype(int)
         
-        # generate random radii and period in each bin
-        radius = []
-        period = []
-        for i in range(len(self.lnRp)-1):
-            for j in range(len(self.lnT)-1):
-                radius = np.hstack((radius,np.exp(np.random.uniform(low=self.lnRp[i],
-                        high=self.lnRp[i+1], size=nsamp[i,j])).tolist()))
-                period = np.hstack((period,np.exp(np.random.uniform(low=self.lnT[j],
-                        high=self.lnT[j+1], size=nsamp[i,j])).tolist()))
-        
-        # select exactly n radom planets
-        ind = np.random.choice(len(radius), size=n, replace=len(radius)<n)
-        Rp = radius[ind]*u.earthRad
-        T = period[ind]*u.year
-        
-        # convert periods to sma values
-        mu = const.G*self.SAG13starMass
-        a = ((mu*(T/(2*np.pi))**2)**(1/3.)).to('AU')
+        Rp = self.Rp_sampler(n)
+        a = np.zeros(Rp.shape)
+        a[Rp<self.Rplim[1]] = self.sma_sampler1(len(Rp[Rp<self.Rplim[1]]))
+        a[Rp>=self.Rplim[1]] = self.sma_sampler2(len(Rp[Rp>=self.Rplim[1]]))
+        Rp = Rp*u.earthRad
+        a = a*u.AU
         
         return Rp, a
     
@@ -173,16 +165,20 @@ class SAG13(KeplerLike2):
         C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
         ar = self.arange.to('AU').value
         if self.constrainOrbits:
+            # restrict semi-major axis limits
+            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
             # clip sma values to sma range
-            sma = np.clip(a.to('AU').value, ar[0], ar[1])
+            sma = np.clip(a.to('AU').value, arcon[0], arcon[1])
             # upper limit for eccentricity given sma
             elim = np.zeros(len(sma))
-            amean = np.mean(ar)
+            amean = np.mean(arcon)
             elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
             elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
             elim[elim > self.erange[1]] = self.erange[1]
+            elim[elim < self.erange[0]] = self.erange[0]
             # additional constant
             C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
+            a = sma*u.AU
         else:
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
@@ -191,63 +187,146 @@ class SAG13(KeplerLike2):
         p = self.PlanetPhysicalModel.calc_albedo_from_sma(sma)
         
         return a, e, p, Rp
-
-    def dist_lnradius_lnperiod(self, lnRp, lnT):
-        """Probability density function for logarithm of planetary radius 
-        in Earth radius, and orbital period in year.
+    
+    def dist_sma_radius(self, a, R):
+        """Joint probability density function for semi-major axis (AU) and 
+        planetary radius in Earth radius.
         
-        This method implements the SAG13 broken power law. It returns the joint 
-        distribution of the logarithm of planetary radius and orbital period 
-        values (d2N / (dlnRp * dlnT).
-        
-        It also integrates the decay point (smaknee/Tknee) defined 
-        in the KeplerLike module.
+        This method performs a change of variables on the SAG13 broken power 
+        law (originally in planetary radius and period).
         
         Args:
-            lnRp (float ndarray):
-                Logarithm of planetary radius value(s) in Earth radius. 
-                Not an astropy quantity.
-            lnT (float ndarray):
-                Logarithm of orbital period value(s) in year. Not an astropy quantity.
-                
+            a (float ndarray):
+                Semi-major axis values in AU. Not an astropy quantity
+            R (float ndarray):
+                Planetary radius values in Earth radius. Not an astropy quantity
+        
         Returns:
             f (ndarray):
-                Joint (radius and period) probability density matrix
-                of shape (len(x),len(y))
+                Joint (semi-major axis and planetary radius) probability density
+                matrix of shape (len(R),len(a))
+        
+        """
+        # cast to arrays
+        a = np.array(a, ndmin=1, copy=False)
+        R = np.array(R, ndmin=1, copy=False)
+        aa, RR = np.meshgrid(a,R)
+
+        mu = self.mu.to('AU3/year2')
+        
+        f = np.zeros(aa.shape)
+        mask1 = RR < self.Rplim[1]
+        mask2 = RR > self.Rplim[1]
+        
+        # for R < boundary radius
+        f[mask1] = self.Gamma[0]*RR[mask1]**(self.alpha[0]-1.)
+        f[mask1]*= (2.*np.pi*np.sqrt(aa[mask1]**3/mu))**(self.beta[0]-1.)
+        f[mask1]*= (3.*np.pi*np.sqrt(aa[mask1]/mu))*np.exp(-(aa[mask1]/self.smaknee)**3)
+        f[mask1]/= self.eta
+        
+        # for R > boundary radius
+        f[mask2] = self.Gamma[1]*RR[mask2]**(self.alpha[1]-1.)
+        f[mask2]*= (2.*np.pi*np.sqrt(aa[mask2]**3/mu))**(self.beta[1]-1.)
+        f[mask2]*= (3.*np.pi*np.sqrt(aa[mask2]/mu))*np.exp(-(aa[mask2]/self.smaknee)**3)
+        f[mask2]/= self.eta
+        
+        return f
+    
+    def dist_sma(self, a):
+        """Marginalized probability density function for semi-major axis in AU.
+        
+        Args:
+            a (float ndarray):
+                Semi-major axis value(s) in AU. Not an astropy quantity.
+                
+        Returns:
+            f (float ndarray):
+                Semi-major axis probability density
+        
+        """
+        # cast to array
+        a = np.array(a, ndmin=1, copy=False)
+        # unitless sma range
+        ar = self.arange.to('AU').value
+        mu = self.mu.to('AU3/year2').value
+        f = np.zeros(np.size(a))
+        mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
+        
+        Rmin = self.Rprange[0].to('earthRad').value
+        Rmax = self.Rprange[1].to('earthRad').value
+        
+        f[mask] = (3.*np.pi*np.sqrt(a[mask]/mu))*np.exp(-(a[mask]/self.smaknee)**3)
+        
+        if Rmin < self.Rplim[1] and Rmax < self.Rplim[1]:
+            C1 = self.Gamma[0]*(Rmax**self.alpha[0]-Rmin**self.alpha[0])/self.alpha[0]
+            f[mask]*= C1*(2.*np.pi*np.sqrt(a[mask]**3/mu))**(self.beta[0]-1.)
+        elif Rmin > self.Rplim[1] and Rmax > self.Rplim[1]:
+            C2 = self.Gamma[1]*(Rmax**self.alpha[1]-Rmin**self.alpha[1])/self.alpha[1]
+            f[mask]*= C2*(2.*np.pi*np.sqrt(a[mask]**3/mu))**(self.beta[1]-1.)
+        else:
+            C1 = self.Gamma[0]*(self.Rplim[1]**self.alpha[0]-Rmin**self.alpha[0])/self.alpha[0]
+            C2 = self.Gamma[1]*(Rmax**self.alpha[1]-self.Rplim[1]**self.alpha[1])/self.alpha[1]
+            f[mask]*= (C1*(2.*np.pi*np.sqrt(a[mask]**3/mu))**(self.beta[0]-1.) + C2*(2.*np.pi*np.sqrt(a[mask]**3/mu))**(self.beta[1]-1.))
+        
+        f /= self.eta
+        
+        return f
+    
+    def dist_radius(self, Rp):
+        """Marginalized probability density function for planetary radius in 
+        Earth radius.
+        
+        Args:
+            Rp (float ndarray):
+                Planetary radius value(s) in Earth radius. Not an astropy quantity.
+                
+        Returns:
+            f (float ndarray):
+                Planetary radius probability density
         
         """
         
-        # SAG13 coeffs
-        Gamma = self.SAG13coeffs[0,:]
-        alpha = self.SAG13coeffs[1,:]
-        beta = self.SAG13coeffs[2,:]
-        Rplim = np.append(self.SAG13coeffs[3,:], np.inf)
+        # cast Rp to array
+        Rp = np.array(Rp, ndmin=1, copy=False)
+        f = np.zeros(Rp.shape)
+        # unitless Rp range
+        Rr = self.Rprange.to('earthRad').value
         
-        # get radius and period values
-        Rp = np.exp(lnRp)
-        T = np.exp(lnT)
+        mask1 = np.array((Rp >= Rr[0]) & (Rp <= self.Rplim[1]), ndmin=1)
+        mask2 = np.array((Rp >= self.Rplim[1]) & (Rp <= Rr[1]), ndmin=1)
         
-        # decay exponential
-        decay = np.exp(-(T/self.Tknee)**2)
+        masks = [mask1, mask2]
+        for i in xrange(2):
+            f[masks[i]] = self.Gamma[i]*Rp[masks[i]]**(self.alpha[i]-1.)*self.Ca[i]/self.eta
         
-        # scalar case
-        if np.size(Rp)*np.size(T) == 1:
-            for k in range(len(Rplim) - 1):
-                if (Rp >= Rplim[k]) & (Rp < Rplim[k+1]):
-                    f = Gamma[k] * Rp**alpha[k] * T**beta[k] 
-            # apply exponential decay
-            f *= decay
+        return f
+    
+    def dist_sma_given_radius(self, a, beta, m, C, smaknee):
+        """Conditional probability density function of semi-major axis given 
+        planetary radius.
         
-        # array case
-        else:
-            # create an (Rp, T) coordinate matrix
-            Rps, Ts = np.meshgrid(Rp, T)
-            # generate the probability density matrix
-            f = np.zeros(Rps.shape)
-            for k in range(len(Rplim) - 1):
-                mask = (Rps[0,:] >= Rplim[k]) & (Rps[0,:] < Rplim[k+1])
-                f[:,mask] = Gamma[k] * Rps[:,mask]**alpha[k] * Ts[:,mask]**beta[k] 
-            # apply exponential decay
-            f = (f.T*decay).T
+        Args:
+            a (float ndarray):
+                Semi-major axis value(s) in AU. Not an astropy quantity
+            beta (float):
+                Exponent for distribution
+            m (float):
+                Gravitational parameter (AU3/year2)
+            C (float):
+                Normalization for distribution
+            smaknee (float):
+                Coefficient for decay
+        
+        Returns:
+            f (ndarray):
+                Probability density
+        
+        """
+        # cast a to array
+        a = np.array(a, ndmin=1, copy=False)
+        ar = self.arange.to('AU').value
+        mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
+        f = np.zeros(a.shape)
+        f[mask] = (2.*np.pi*np.sqrt(a[mask]**3/m))**(beta-1.)*(3.*np.pi*np.sqrt(a[mask]/m))*np.exp(-(a/smaknee)**3)/C
         
         return f

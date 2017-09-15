@@ -83,7 +83,6 @@ class PlanetPopulation(object):
         er = self.erange
         if self.constrainOrbits:
             self.rrange = [ar[0], ar[1]]*u.AU
-            self.arange = [ar[0]/(1. - er[0]), ar[1]/(1. + er[0])]*u.AU
         else:
             self.rrange = [ar[0]*(1. - er[1]), ar[1]*(1. + er[1])]*u.AU
         assert isinstance(eta, numbers.Number) and (eta > 0),\

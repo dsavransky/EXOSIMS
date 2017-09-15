@@ -23,8 +23,8 @@ import pdb
 # the EXOSIMS logger
 Logger = logging.getLogger(__name__)
 
-class deanAYO(SurveySimulation):
-    """deanAYO 
+class starkAYO(SurveySimulation):
+    """starkAYO 
     
     This class implements a Scheduler that selects the current highest Completeness/Integration Time.
 

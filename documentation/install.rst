@@ -8,9 +8,7 @@ Obtaining EXOSIMS
 
 ``EXOSIMS`` is hosted on github at https://github.com/dsavransky/EXOSIMS.  The master branch is a development branch and may be frequently changed.  We strongly recommend using a tagged release:
 
-https://github.com/dsavransky/EXOSIMS/tree/v1.3
-https://github.com/dsavransky/EXOSIMS/tree/v1.2
-https://github.com/dsavransky/EXOSIMS/tree/v1.1
+https://github.com/dsavransky/EXOSIMS/tree/v1.31
 
 Environment and Package Dependencies
 ==========================================

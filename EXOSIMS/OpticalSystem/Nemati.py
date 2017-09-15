@@ -123,7 +123,7 @@ class Nemati(OpticalSystem):
         # calculate planet delta magnitude
         dMag = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, 25, WA, mode)
             dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes[i] + C_sp**2) \
                     /(C_F0*10.0**(-0.4*mV[i])*core_thruput*inst['PCeff'])).decompose().value)
         
@@ -162,7 +162,7 @@ class Nemati(OpticalSystem):
         
         ddMagdt = np.zeros((len(sInds), len(WA)))
         for i in xrange(len(sInds)):
-            _, Cb, Csp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, self.dMagLim, WA, mode)
+            _, Cb, Csp = self.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, 25, WA, mode)
             ddMagdt[i,:] = 2.5/(2.0*np.log(10.0))*(Cb/(Cb*intTimes[i] \
                     + (Csp*intTimes[i])**2)).to('1/s').value
         

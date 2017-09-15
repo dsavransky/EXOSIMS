@@ -7,6 +7,8 @@ Created by Dmitry Savransky
 
 Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, and Patrick Lowrance.
 
+EXOSIMS optionally uses values from: Mamjek, E. "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence", http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt, Version 2017.09.06
+
 EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 
 Install and Quick Start Guide

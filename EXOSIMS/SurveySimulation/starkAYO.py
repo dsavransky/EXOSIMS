@@ -23,8 +23,8 @@ import pdb
 # the EXOSIMS logger
 Logger = logging.getLogger(__name__)
 
-class starkAYO(SurveySimulation):
-    """starkAYO 
+class deanAYO(SurveySimulation):
+    """deanAYO 
     
     This class implements a Scheduler that selects the current highest Completeness/Integration Time.
 
@@ -350,9 +350,6 @@ class starkAYO(SurveySimulation):
         #print('calcTint time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         
-
-        #Integration time for each star
-        ##################################################################
     
         #Calculate C vs T spline######################################
         self.splineCvsTau()
@@ -391,6 +388,8 @@ class starkAYO(SurveySimulation):
         #self.plotCompvsTau()
         #self.plotCompbyTauvsTau()
         #self.plotdCompbydTauvsTau()
+        #print(saltyburrito)
+        #I HAVE CONFIRMED AT THIS POINT THAT spl2 is a positive spline and ok.
         ####
 
         #Pull Untouched Star List#####################################
@@ -422,24 +421,6 @@ class starkAYO(SurveySimulation):
         #########################################################################
         """
 
-
-        #Update maxIntTime#########################
-        #Calculate the Maximum Integration Time and dmag for each star
-        maxTint, maxdmag = self.calcMaxTint(sInds)
-        self.maxTint = maxTint
-        self.maxdmag = maxdmag
-        assert maxTint[0] != 0#i think unnecessary at this point
-        maxIntTime = maxTint
-        #Aug 28, 2017 execution time 3.213
-        #print('calcMaxTint time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-
-        #Check maxIntTime Validity
-        for i in range(len(maxIntTime)):
-            if(maxIntTime[i] < 0):
-                print('ERROR in MaxIntTime Calculation. A Value is Negative!')
-        ###########################################
-
         #Define Intial Integration Times#########################################
         missionLength = TK.missionLife.to(u.day).value
 
@@ -467,10 +448,23 @@ class starkAYO(SurveySimulation):
             #calculates initial completeness at initial integration times...
         ###########################################
 
+        lastTime = timeit.default_timer()
         #Initialize C/T############################
         for n in range(sInds.shape[0]):
-            CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+            CbyT[n] = fspl2[n](t_dets[n])#CbyT is the editable list of CbyT for each star
         ###########################################
+        print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+        print(CbyT)
+        lastTime = timeit.default_timer()
+        fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
+        fEZ = 0./u.arcsec**2# ZL.fEZ0
+        CbyTtmp = self.Completeness.dcomp_dt(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode)
+        print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+        print(CbyT-CbyTtmp)
+        print(CbyT)
+        print(saltyburrito)
 
         #Initialize Comp############################
         for n in range(sInds.shape[0]):
@@ -483,6 +477,25 @@ class starkAYO(SurveySimulation):
 
 
         #print(saltyburrito1)
+        #I confirm spl2 is still valid at this point. fslp2 is also good at this point
+
+        #Update maxIntTime#########################
+        #Calculate the Maximum Integration Time and dmag for each star
+        maxTint, maxdmag = self.calcMaxTint(sInds, fspl2)
+        self.maxTint = maxTint
+        self.maxdmag = maxdmag
+        assert maxTint[0] != 0#i think unnecessary at this point
+        maxIntTime = maxTint
+        #Aug 28, 2017 execution time 3.213
+        #print('calcMaxTint time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+
+        #Check maxIntTime Validity
+        for i in range(maxIntTime.shape[0]):
+            if(maxIntTime[i] < 0):
+                print('ERROR in MaxIntTime Calculation. A Value is Negative!')
+        ###########################################
+
 
         #Check Validity of Star Integration Times####################################
         ##THE PROBLEM CAUSING HIGH COMP00 VALUES STEMS FROM INITIAL TIMES ASSIGNED BEING SUBSTANTIALLY LARGER THAN MAXIMUM INTEGRATION TIMES
@@ -490,7 +503,7 @@ class starkAYO(SurveySimulation):
         ok_t_dets = [maxIntTime[x] < t_dets[x] for x in range(len(t_dets))]#Find T_dets greater than the maximum allowed and assign them to TRUE in matrix form
         #Sum Excess Time
         excessTime = 0
-        for i in range(len(t_dets)):
+        for i in range(t_dets.shape[0]):
             if(ok_t_dets[i]):#This star was initially assigned an invalid t_dets
                 #print('too large t_dets ' + str(t_dets[i]) + ' Its maxIntTime ' + str(maxIntTime[i]))
                 excessTime = excessTime + (t_dets[i] - maxIntTime[i])#sum excess time off this observation
@@ -528,6 +541,7 @@ class starkAYO(SurveySimulation):
         ###################################################################
 
         #print(saltyburrito2)
+        #I confirm that spl2 is still valid at this point. fspl2 is also good
 
         firstIteration = 1
         numits = 0
@@ -555,15 +569,14 @@ class starkAYO(SurveySimulation):
 
             #Sort Descending by dC/dT###########################################################################
             #1 Find Indexes to sort by############
-
+            #print(saltyburrito)
 
             dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime = self.sacrificeStarCbyT(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
             
             ################################################
             #THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM
             if(sInds.shape[0] <= missionLength-7):#condition where the observation schedule could be done within the mission time
-                #redistribute dt on first Iteration
-                if(firstIteration == 1):
+                if(firstIteration == 1):#redistribute dt on first Iteration
                     #print('We now have a realizable mission schedule!')
                     firstIteration = 0
                     t_dets = np.zeros(sInds.shape[0]) + (missionLength-sInds.shape[0]*1)/float(sInds.shape[0])
@@ -574,33 +587,7 @@ class starkAYO(SurveySimulation):
                     sacrificedStarTime = sacrificedStarTime + float(1)#we add 1 day to account for the overhead gained by dropping a star
             else:
                 sacrificedStarTime = sacrificedStarTime
-
             ##################################################
-
-
-            """I BELIEVE THIS SECTION CAN BE REMOVED BECAUSE THE ABOVE FUNCTION PERFORMS ITS ACTION FASTER
-            #2 Reorder data#######################
-            dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime= self.reOrderCbyT(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
-            #Aug 28, 2017 execution time 0.00039
-            #print('Reorder time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-
-            #3 Sacrifice Worst Performing Star####
-            #We now perform AYO selection. We add the integration time of the last star to the highest ranking dC/dT star that will not exceed the maximum integration time.
-            sacrificedStarTime = t_dets[-1]#retrieves last Int time from sorted sched_Tdet list
-
-            #4 Remove last Observation from schedule################################
-            t_dets = t_dets[:-1]#remove last element from Tdet
-            dCbydT = dCbydT[:-1]#remove last element from List of Targets
-            sInds = sInds[:-1]#sacrifice last element from List of Targets
-            fsplDeriv = fsplDeriv[:-1]#remove last element from dCbydT curves
-            Tint = Tint[:-1]#removes laste element from Integration Times
-            fspl2 = fspl2[:-1]
-            CbyT = CbyT[:-1]
-            Comp00 = Comp00[:-1]
-            fspl = fspl[:-1]
-            maxIntTime = maxIntTime[:-1]
-            """
             #Aug 28, 2017 execution time ????infinitesimally small
             #print('sacrifice time = '+str(timeit.default_timer() - lastTime))
             lastTime = timeit.default_timer()
@@ -613,6 +600,7 @@ class starkAYO(SurveySimulation):
             #print('distributedt time = '+str(timeit.default_timer() - lastTime))
             lastTime = timeit.default_timer()
 
+            #TECHNICALLY THESE HAVE ALREADY BEEN UPDATED YB DISTRIBUTEDT
             #6 Update Lists #########################################################3
             #Update dC/dT#################
             for n in range(sInds.shape[0]):
@@ -629,6 +617,8 @@ class starkAYO(SurveySimulation):
                 Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
             ###########################################
 
+            #print(saltyturrito)
+
             #Sort Descending by dC/dT#######################################
             #dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime= self.reOrder(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
             # #1 Find Indexes to sort by############
@@ -644,7 +634,7 @@ class starkAYO(SurveySimulation):
             
             #if any(i < 0.05 for i in spl2[sInds](t_dets)):
             #    continue#run next iteration
-            print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)) + ' Sum C/T ' + str(sum(CbyT)))
+            print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)) + ' Avg C/T ' + str(np.average(CbyT)))
             if(sum(CbyT)<0):
                 print('CbyT<0')
                 print(saltyburrito)
@@ -842,7 +832,7 @@ class starkAYO(SurveySimulation):
         self.rawTint = newRawTint
         self.Tint = newTint
 
-    def calcMaxTint(self, sInds):
+    def calcMaxTint(self, sInds, fspl2):
         """calcMaxTint estimates the maximum integration time allowed and the associated maximum dmag allowed for a given star
         NOTE that this only returns an approximate... The resolution is determined by the fidelity of the dmag_startSaved array
 
@@ -862,13 +852,46 @@ class starkAYO(SurveySimulation):
         #print(len(rawTint))
         #pdb.set_trace()
         #print(saltyburrito)
+        #Situation where
+        #Select Maximum Tint based on calculated values
         maxTint = np.zeros(len(Tint[:]))#declare array
         maxdmag = np.zeros(len(Tint[:]))#declare array
-        for i in range(0, len(Tint[:])):
-            maxTint[i] = max(Tint[i][:])
-            occur = [k for k, j in enumerate(Tint[i][:]) if j == maxTint[i]]
-            maxdmag[i] = self.dmag_startSaved[occur[0]]
+        for i in xrange(sInds.shape[0]):#0, len(Tint[:])):#iterate through all stars
+            occur = np.argmax(Tint[i][:])#Find index of maxTint
+            maxTint[i] = Tint[i][occur]
+            maxdmag[i] = self.dmag_startSaved[occur]
 
+        #Calculate MaxTint based on Maximum positive CbyT (still connected to expected CbyT peak) 
+        #import matplotlib.pyplot as plt
+        numInSeq = np.zeros([sInds.shape[0],100])
+        seqEndIndex = np.zeros([sInds.shape[0],100])
+        seqStartIndex = np.zeros([sInds.shape[0],100])
+        for i in xrange(sInds.shape[0]):
+            intTime = np.arange(100,dtype=np.float)/100*maxTint[i]
+            tmpCbyT = fspl2[i](intTime)
+
+            tmpCbyTbool = [fspl2[i](time) > 0 for time in intTime]
+            CbyTindicies = [j for j, x in enumerate(tmpCbyTbool) if x]#pull out all indicies where CbyT is less than 0
+            #find indicies
+            for j in range(len(CbyTindicies)-1):
+                #iterate through all indicies
+                seqNum = 0
+                if(CbyTindicies[j+1]-CbyTindicies[j] > 1.1):#there is more than 1 index between these points
+                    seqNum = seqNum+1
+                    numInSeq[i,seqNum] = 1
+                    seqEndIndex[i] = j
+                    seqStartIndex[i] = j+1
+                else:
+                    numInSeq[i,seqNum] = numInSeq[i,seqNum] + 1
+            #Now we have Number of points in a sequence for each star, the start values, and the end values
+            seqOfMaxLength = np.argmax(numInSeq[i,:])
+            if(intTime[int(seqEndIndex[i,seqOfMaxLength])] < maxTint[i]):
+                #print('We are swapping ' + str(maxTint[i]) + ' With ' + str(intTime[int(seqEndIndex[i,seqOfMaxLength])]) + ' for sInd ' + str(sInds[i]))
+                maxTint[i] = intTime[int(seqEndIndex[i,seqOfMaxLength])]
+
+            #plt.plot(intTime,tmpCbyT)
+            #plt.axis([0,max(intTime),0,max(tmpCbyT)])
+            #plt.show()
         return maxTint, maxdmag
 
     def calcTint_core(self, sInds, dmag):
@@ -919,7 +942,7 @@ class starkAYO(SurveySimulation):
         newTint = list()#initialize list to store integration times greater tha 10**-10
         for j in range(sInds.shape[0]):
                 newRawTint.append(Tint[j,:])
-                newTint.append(Tint[j][np.where(Tint[j] > 10**-15)[0]])
+                newTint.append(Tint[j][np.where(Tint[j] > 10**-10)[0]])
 
         #Here is where we add in Dmitry's overhead time...
         #for j in range(sInds.shape[0]):
@@ -950,7 +973,7 @@ class starkAYO(SurveySimulation):
 
         starComps = list()
         for j in schedule:#xrange(schedule.shape[0]):
-            starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-15)[0]])
+            starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-10)[0]])
 
 
         #HERE IS A TEMPORARY FIX FOR A PROBLEM IN COMPLETENESS CALCULATION########################
@@ -965,7 +988,7 @@ class starkAYO(SurveySimulation):
             if starComps[j][-1] < 10**-15:#If the last value of starComps is a 0. We assume this means there exists a discontinuity in completeness
                 #find How many Indicies are 0
                 for k in range(len(starComps[j]))[::-1]:#Iterate through completeness from last index to first
-                    #find first index of value greater than 10 **-10
+                    #find first index of value greater than 10 **-15
                     if starComps[j][k] > 10**-15:
                         index = k
                         break
@@ -978,7 +1001,7 @@ class starkAYO(SurveySimulation):
         ##########################################################################################
 
         spl = list()
-        for q in range(len(schedule)):
+        for q in range(schedule.shape[0]):#len(schedule)):
             spl.append(UnivariateSpline(Tint[q], starComps[q], k=4, s=0))#Finds star Comp vs Tint SPLINE
         self.spl_startSaved = spl#updates self.spl
         self.starComps = starComps#updates self.starComps
@@ -991,23 +1014,26 @@ class starkAYO(SurveySimulation):
 
         Returns:
             updates self.spl2_startSaved (spl2 is the spline fitting C/T vs T)
-            Dimensions are spl2_startSaved[nStars][Tint > 10**-10]
+            Dimensions are spl2_startSaved[nStars][Tint > 10**-15]
         """
 
-        #self.calcTint(self.schedule)#,self.mode,self.startTime2)
+        #self.calcTint(self.schedule)#,self.mode,self.startTime2)#I think we can remove this
         rawTint = self.rawTint
         Tint = self.Tint
         sInds = self.schedule_startSaved
+        starComps = self.starComps
 
-        starComps = list()
-        for j in xrange(sInds.shape[0]):
-                starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-15)[0]])
+        #I think we can remove this
+        #starComps = list()
+        #for j in xrange(sInds.shape[0]):
+        #        starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-15)[0]])
 
-        spl = self.spl_startSaved
+        #spl = self.spl_startSaved
         sInds = self.schedule_startSaved
         spl2 = list()
-        for x in range(len(sInds)):
-            spl2.append(UnivariateSpline(Tint[x],spl[x](Tint[x])/Tint[x], k=4, s=0))
+        for x in range(sInds.shape[0]):#len(sInds)):
+            #spl2.append(UnivariateSpline(Tint[x],spl[x](Tint[x])/Tint[x], k=4, s=0))#I think we can remove this
+            spl2.append(UnivariateSpline(Tint[x],starComps[x]/Tint[x], k=4, s=0))
         self.spl2_startSaved = spl2
 
     def splinedCbydTauvsTau(self):#,spl2,myTint,sInds):
@@ -1182,7 +1208,7 @@ class starkAYO(SurveySimulation):
 
         """
         timeToDistribute = sacrificedStarTime
-        dt_static = 0.1#sacrificedStarTime/50#1
+        dt_static = sacrificedStarTime/50#1
         dt = dt_static
         #Now decide where to put dt
         numItsDist = 0
@@ -1368,7 +1394,14 @@ class starkAYO(SurveySimulation):
         return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
 
     def sacrificeStarCbyT(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
+        maxIntTimeCbyT, OneFifthmaxIntTimeCbyT, OneHalfmaxIntTimeCbyT, OneDayIntTimeCbyT = self.calcMaxCbyT(sInds, fspl2, maxIntTime)
+        maxIntTimeC, OneFifthmaxIntTimeC, OneHalfmaxIntTimeC, OneDayIntTimeC = self.calcMaxComps(sInds, fspl, maxIntTime)
         sacrificeIndex = np.argmin(CbyT)#finds index of star to sacrifice
+
+        #print(saltyburrito)
+
+
+        #Need index of sacrificed star by this point
         sacrificedStarTime = t_dets[sacrificeIndex]#saves time being sacrificed
         dCbydT = np.delete(dCbydT,sacrificeIndex)
         sInds = np.delete(sInds,sacrificeIndex)
@@ -1381,6 +1414,30 @@ class starkAYO(SurveySimulation):
         fspl = np.delete(fspl,sacrificeIndex)
         maxIntTime = np.delete(maxIntTime,sacrificeIndex)
         return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime
+
+    def calcMaxCbyT(self, sInds, fspl2, maxIntTime):
+        maxIntTimeCbyT = np.zeros(sInds.shape[0])
+        OneFifthmaxIntTimeCbyT = np.zeros(sInds.shape[0])
+        OneHalfmaxIntTimeCbyT  = np.zeros(sInds.shape[0])
+        OneDayIntTimeCbyT  = np.zeros(sInds.shape[0])
+        for n in range(sInds.shape[0]):
+            maxIntTimeCbyT[n] = fspl2[n](maxIntTime[n])#calculate the CbyT at the maxIntTime
+            OneFifthmaxIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
+            OneHalfmaxIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/2)#calculate the CbyT at the maxIntTime/5
+            OneDayIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
+        return maxIntTimeCbyT, OneFifthmaxIntTimeCbyT, OneHalfmaxIntTimeCbyT, OneDayIntTimeCbyT
+
+    def calcMaxComps(self, sInds, fspl, maxIntTime):
+        maxIntTimeC = np.zeros(sInds.shape[0])
+        OneFifthmaxIntTimeC = np.zeros(sInds.shape[0])
+        OneHalfmaxIntTimeC  = np.zeros(sInds.shape[0])
+        OneDayIntTimeC  = np.zeros(sInds.shape[0])
+        for n in range(sInds.shape[0]):
+            maxIntTimeC[n] = fspl[n](maxIntTime[n])#calculate the CbyT at the maxIntTime
+            OneFifthmaxIntTimeC[n] = fspl[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
+            OneHalfmaxIntTimeC[n] = fspl[n](maxIntTime[n]/2)#calculate the CbyT at the maxIntTime/5
+            OneDayIntTimeC[n] = fspl[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
+        return maxIntTimeC, OneFifthmaxIntTimeC, OneHalfmaxIntTimeC, OneDayIntTimeC
 
     def calc_maxdMag(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
         """ DEPRICATED... ORIGINALLY THIS WAS GOING TO SOLVE FOR THE MAXIMUM DMAG FOR OBSERVATION OF ANY GIVEN STAR BUT THE SOLVE FUNCTION IS TOO SLOW AS IT CURRENTLY STANDS

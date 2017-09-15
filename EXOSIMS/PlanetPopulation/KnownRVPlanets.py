@@ -59,7 +59,7 @@ class KnownRVPlanets(KeplerLike1):
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             filename = 'RVplanets_ipac_2016-05-15.votable'
             rvplanetfilepath = os.path.join(classpath, filename)
-        if not os.path.exists(rvplanetfilepath):
+        if not os.path.isfile(rvplanetfilepath):
             raise IOError('RV Planet File %s Not Found.'%rvplanetfilepath)
         
         #read votable

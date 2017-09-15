@@ -38,19 +38,12 @@ class TestPlanetPopulation(unittest.TestCase):
 
         x = 100000
         I, O, w = pp.gen_angles(x)
-        assert(I.min() >= pp.Irange[0])
-        assert(I.max() <= pp.Irange[1])
-        assert(O.min() >= pp.Orange[0])
-        assert(O.max() <= pp.Orange[1])
-        assert(w.min() >= pp.wrange[0])
-        assert(w.max() <= pp.wrange[1])
 
         #O & w are expected to be uniform
         for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):
             h = np.histogram(param,100,density=True)
             chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range.value)[0]]*len(h[0]))
             self.assertGreater(chi2[1], 0.95)
-
 
         #I is expected to be sinusoidal
         hI = np.histogram(I.to(u.rad).value,100,density=True)
@@ -78,8 +71,6 @@ class TestPlanetPopulation(unittest.TestCase):
 
         #expect e and p to be uniform
         for param,param_range in zip([e,p],[pp.erange,pp.prange]):
-            assert(param.min() >= param_range[0])
-            assert(param.max() <= param_range[1])
 
             h = np.histogram(param,100,density=True)
             chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range)[0]]*len(h[0]))
@@ -88,8 +79,6 @@ class TestPlanetPopulation(unittest.TestCase):
 
         #expect a and Rp to be log-uniform
         for param,param_range in zip([a.value,Rp.value],[pp.arange.value,pp.Rprange.value]):
-            assert(param.min() >= param_range[0])
-            assert(param.max() <= param_range[1])
 
             h = np.histogram(param,100,density=True)
             hx = np.diff(h[1])/2.+h[1][:-1]

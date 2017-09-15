@@ -61,6 +61,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
+                self.assertEqual(len(a),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(a.value <= obj.arange[1].value),'sma high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(a.value >= obj.arange[0].value),'sma low bound failed for %s'%mod.__name__)
 
@@ -92,6 +93,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
+                self.assertEqual(len(e),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(e <= obj.erange[1]),'e high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(e >= obj.erange[0]),'e low bound failed for %s'%mod.__name__)
 
@@ -109,8 +111,8 @@ class TestPlanetPopulation(unittest.TestCase):
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(constrainOrbits=True,**self.spec)
-            self.assertTrue(obj.constrainOrbits)
-
+            self.assertTrue(obj.constrainOrbits,'constrainOrbits not set for %s'%mod.__name__)
+            self.assertTrue(np.all(obj.arange == obj.rrange),'arange and rrange do not match with constrainOrbits set for %s'%mod.__name__)
 
             #ignore any cases where gen_plan_params is inherited
             if (mod.__name__ not in exclude_check) and ('gen_plan_params' in mod.__dict__):
@@ -147,6 +149,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
+                self.assertEqual(len(p),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(p <= obj.prange[1]),'p high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(p >= obj.prange[0]),'p low bound failed for %s'%mod.__name__)
 
@@ -177,9 +180,39 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
+                self.assertEqual(len(Rp),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(Rp.value <= obj.Rprange[1].value),'Rp high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(Rp.value >= obj.Rprange[0].value),'Rp low bound failed for %s'%mod.__name__)
 
+    def test_honor_Mprange(self):
+        """
+        Tests that the input range for planet mass is properly set 
+        and is used when generating mass samples.
+        """
+
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_checkrange = ['KeplerLike1']
+
+        Mprangein = np.sort(np.random.rand(2)*10.0)
+        
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(Mprange = Mprangein,**self.spec)
+
+            #test that the input arange is used
+            if mod.__name__ not in exclude_setrange:
+                self.assertTrue(obj.Mprange[0].value == Mprangein[0],'Mp low bound set failed for %s'%mod.__name__)
+                self.assertTrue(obj.Mprange[1].value == Mprangein[1],'Mp high bound set failed for %s'%mod.__name__)
+
+
+            #test that generated values honor range
+            #ignore any cases where gen_plan_params is inherited
+            if (mod.__name__ not in exclude_checkrange) and ('gen_mass' in mod.__dict__):
+                x = 10000
+                Mp = obj.gen_mass(x)
+                self.assertEqual(len(Mp),x,'Incorrect number of samples generated for %s'%mod.__name__)
+                self.assertTrue(np.all(Mp.value <= obj.Mprange[1].value),'Mp high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(Mp.value >= obj.Mprange[0].value),'Mp low bound failed for %s'%mod.__name__)
 
     def test_honor_wrange(self):
         """
@@ -208,6 +241,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 x = 10000
                 I, O, w = obj.gen_angles(x)
+                self.assertEqual(len(w),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(w <= obj.wrange[1]),'w high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(w >= obj.wrange[0]),'w low bound failed for %s'%mod.__name__)
 
@@ -238,6 +272,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 x = 10000
                 I, O, w = obj.gen_angles(x)
+                self.assertEqual(len(I),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(I <= obj.Irange[1]),'I high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(I >= obj.Irange[0]),'I low bound failed for %s'%mod.__name__)
 
@@ -269,6 +304,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 x = 10000
                 I, O, w = obj.gen_angles(x)
+                self.assertEqual(len(O),x,'Incorrect number of samples generated for %s'%mod.__name__)
                 self.assertTrue(np.all(O <= obj.Orange[1]),'O high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(O >= obj.Orange[0]),'O low bound failed for %s'%mod.__name__)
 

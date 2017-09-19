@@ -127,7 +127,7 @@ class starkAYO(SurveySimulation):
 
         lastTime = timeit.default_timer()
 
-        ##NEED SOME CHECKS TO DETRMINE WHETHER COMPLETENESS IS OKAY OR NOT
+        ##NEED SOME CHECKS TO DETRMINE WHETHER COMPLETENESS FILE IS OKAY OR NOT
 
         #IF Completeness Distribution has not been calculated Generate Completeness and Generate that File
         if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
@@ -274,13 +274,15 @@ class starkAYO(SurveySimulation):
         self.calcTint(None)#Calculate Integration Time for all Stars (relatively quick process)
 
 
-        lastTime = timeit.default_timer()
+        
         #Generate fZ vs time########################################################
+        lastTime = timeit.default_timer()
         self.generate_fZ(sInds)
-        ############################################################################
         print('generate_fZ time= '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
+        ############################################################################
         
+        #some deletable testing of fZ and Cp_Cb_Csp speeds
         WA = OS.WA0
         lastTime = timeit.default_timer()
         fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
@@ -288,9 +290,10 @@ class starkAYO(SurveySimulation):
         lastTime = timeit.default_timer()
         fEZ = ZL.fEZ0
         lastTime = timeit.default_timer()
-        self.OpticalSystem.Cp_Cb_Csp(TL, sInds[i], fZ, fEZ, 25, WA, self.mode)
+        self.OpticalSystem.Cp_Cb_Csp(TL, sInds, fZ, fEZ, 25, WA, self.mode)
         print('Cp_Cb_Csp = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
+        ###########################################
 
         print("Done starkAYO init")
         #END INIT##################################################################
@@ -357,6 +360,14 @@ class starkAYO(SurveySimulation):
         #Create DRM
         DRM = {}
 
+        #CACHE Cb Cp Csp################################################
+        #we calculate these values to cache them and accelerate starkAYO execution
+        fZ = self.fZ_startSaved
+
+        fEZ = ZL.fEZ(starMagnitude, inclination, star_dist)
+        Cp, Cb, Csp = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag, WA, self.mode)
+        ################################################################
+
         # Aluserslocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         #shouldn't need this??? maybe its here because of DRM...
@@ -397,18 +408,6 @@ class starkAYO(SurveySimulation):
         #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         ##############################################################
-
-        ## Run Dmitry's Code....
-
-        ######################
-
-        ##Plot All the Things
-        #self.plotCompvsTau()
-        #self.plotCompbyTauvsTau()
-        #self.plotdCompbydTauvsTau()
-        #print(saltyburrito)
-        #I HAVE CONFIRMED AT THIS POINT THAT spl2 is a positive spline and ok.
-        ####
 
         #Pull Untouched Star List#####################################
         sInds = self.schedule_startSaved
@@ -458,7 +457,6 @@ class starkAYO(SurveySimulation):
         fspl = [spl[i] for i in sInds]
         fTint = [Tint[i] for i in sInds]
         fspl2 = [spl2[i] for i in sInds]
-        #fstarComps = [starComps[i] for i in sInds]
 
         #Initialize dC/dT##########################
         for n in range(sInds.shape[0]):
@@ -495,10 +493,6 @@ class starkAYO(SurveySimulation):
         #print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
 
-
-
-        #print(saltyburrito1)
-        #I confirm spl2 is still valid at this point. fslp2 is also good at this point
 
         #Update maxIntTime#########################
         #Calculate the Maximum Integration Time and dmag for each star
@@ -718,8 +712,6 @@ class starkAYO(SurveySimulation):
                 Index of next target star
         
         """
-    
-        #
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
@@ -744,17 +736,14 @@ class starkAYO(SurveySimulation):
         separation
         
         Created to put s first in the function (necessary since first term is integrated over)
-
         Args:
             dmag (float):
                 Value of dMag
             s (float):
                 Value of projected separation (AU)
-        
         Returns:
             f (float):
                 Value of joint probability density
-        
         """
         self.mindmag = self.Completeness.mindmag
         self.maxdmag = self.Completeness.maxdmag
@@ -773,29 +762,6 @@ class starkAYO(SurveySimulation):
                     f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=61)[0]
         return f
 
-        
-        #def f_dmag2(self,dmag,star_dist):
-        #"""Marginalizes the joint probability density function of dMag and projected separation
-        #over projected separation ****This produces Completeness as a Function of dmag
-        #
-        #Args:
-        #    dmag (float):
-        #        Value of dMag
-        #    s (float):
-        #        Value of projected separation (AU)
-        #
-        #Returns:
-        #    f (float):
-        #        Value of joint probability density
-        #
-        #"""
-        #IWA = self.OpticalSystem.IWA.value
-        #OWA = self.OpticalSystem.OWA.value
-        #Smin = star_dist*IWA
-        #Smax = star_dist*OWA
-        #f = integrate.fixed_quad(self.f_dmags2, Smin, Smax, args=(dmag,), n=61)[0]
-        #return f
-
     def f_dmag2(self, dmag, star_dist):
         """Calculates probability density of dmag marginalized
         from Smin to Smax #note this is similat to the f_s function...
@@ -804,12 +770,10 @@ class starkAYO(SurveySimulation):
             dmag (float):
                 dMag to evaluate completeness as
             star_dist ():
-                determines min and max separation marginalizing over...
-                
+                determines min and max separation marginalizing over...       
         Returns:
             f (float):
                 Probability density
-        
         """
 
         if (s == 0.0) or (s == self.rmax):
@@ -823,7 +787,6 @@ class starkAYO(SurveySimulation):
                 f = 0.0
             else:
                 f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=31)[0]
-
         return f
 
     def calcTint(self, sInds):
@@ -924,7 +887,7 @@ class starkAYO(SurveySimulation):
         return maxTint, maxdmag
 
     def calcTint_core(self, sInds, dmag):
-        """Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,
+        """Calculates integration times for all stars in sInds given a dmag or list of dmags. If None is passed to sInds,
         the integration times for all stars in self.schedule_startSaved will be calculated.
         This could be made more efficient bt calculating integration times for only those
         stars still in the schedule but that would elimintate the possibility of reading 
@@ -934,7 +897,6 @@ class starkAYO(SurveySimulation):
 
         Args:
             sInds (None or np.ndarray or shape #stars)
-            calculates orbital position of SC at currentTime
 
         Returns:
             This function updates self.rawTint
@@ -947,34 +909,26 @@ class starkAYO(SurveySimulation):
         """
         if sInds is None:
             sInds = self.schedule_startSaved
-        #else:
-        #    sInds = sInds
 
-        #dmag = self.dmag_startSaved
         OS = self.OpticalSystem
         WA = OS.WA0
         ZL = self.ZodiacalLight
         TL = self.TargetList
         Obs = self.Observatory
         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
-        r_sc_list = Obs.orbit(startTime)#list of orbital positions the length of startTime
         fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
         fEZ = 0./u.arcsec**2# ZL.fEZ0
         print(' Note The fZ and fEZ are spoofed')
-        Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by dmags(500)
+        Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
         #Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]
-        for i in xrange(dmag.shape[0]):#len(dmag)):#Tint of shape Tint[StarInd, dmag]
+        for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
             Tint[:,i] = OS.calc_intTime(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode).value#it is in units of days
         
         newRawTint = list()#initialize list to store all integration times
-        newTint = list()#initialize list to store integration times greater tha 10**-10
+        newTint = list()#initialize list to store integration times greater than 10**-10
         for j in range(sInds.shape[0]):
             newRawTint.append(Tint[j,:])
-            newTint.append(Tint[j][np.where(Tint[j] > 10**-10)[0]])
-
-        #Here is where we add in Dmitry's overhead time...
-        #for j in range(sInds.shape[0]):
-        #    newTint[j] = newTint[j]+1
+            newTint.append(Tint[j][np.where(Tint[j] > 10**-10)[0]])#filter out unrealistically small/negative Tint
 
         #self.rawTint = newRawTint
         #self.Tint = newTint
@@ -1633,17 +1587,33 @@ class starkAYO(SurveySimulation):
                 time = startTime + dt*resolution[i]
                 fZ[i,:] = ZL.fZ(Obs, TL, sInds, time, self.mode)
             #This section of Code takes 68 seconds
-
-            #Now write to file.
+            #Save fZ to File######################################
+            try:#Here we delete the previous fZ file
+                print('Trying to save fZ vs Time for Each Star to File')
+                timeNow = datetime.datetime.now()
+                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
+                fnameNew = '/' + timeString +  'moved_fZAllStars.csv'
+                os.rename(dir_path+fname,dir_path+fnameNew)
+            except OSError:
+                print('There was an error writing the file')
+                pass
+            with open(dir_path+fname, "wb") as fo:
+                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                for i in range(sInds.shape[0]):#iterate through all stars
+                    wr.writerow(fZ[:,i])#Write the fZ to file
+                fo.close()
+                print('Saving fZ vs ToY for Each Star to File time = '+str(timeit.default_timer() - lastTime))
+                lastTime = timeit.default_timer()
+                print('Finished Saving fZ vs ToY for Each Star to File')
         
         #Load fZ dMag for Each Star From File######################################
-        print('Load Completeness for Each Star from File')
+        print('Load fZ for Each Star from File')
         with open(dir_path+fname, 'rb') as f:
             reader = csv.reader(f)
             your_list = list(reader)
             f.close()
         for i in range(len(your_list)):
             tmp = np.asarray(your_list[i]).astype(np.float)
-            self.starComps_startSaved.append(tmp)#Unfiltered Completeness Lists
-        #need to save this to a file
-        return fZ
+            self.fZ_startSaved.append(tmp)#static fZ values as function of time
+        #return fZ
+

@@ -215,7 +215,19 @@ class Test_TargetList_prototype(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.targetlist.revise_lists(i2)        
         #self.assertEqual( len(self.targetlist.Name) , 0)
-        
+       
+    def test_fillPhotometry(self):
+        """
+        Filling in photometry should result in larger or equal sized target list
+        """
+
+        with RedirectStreams(stdout=self.dev_null):
+            sim = MissionSim.MissionSim(scriptfile,fillPhotometry=True)
+
+        self.assertTrue(sim.TargetList.fillPhotometry)
+        self.assertGreaterEqual(sim.TargetList.nStars, self.targetlist.nStars)
+
+
 
 if __name__ == '__main__':
     unittest.main()

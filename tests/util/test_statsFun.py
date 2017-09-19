@@ -33,10 +33,10 @@ class TestStatsFun(unittest.TestCase):
         self.assertGreaterEqual(nsample.min(), nlim[0])
         self.assertLessEqual(nsample.min(), nlim[1])
 
-        self.assertGreaterEqual(scipy.stats.kstest(usample,'uniform')[1],0.01)
-        self.assertGreaterEqual(scipy.stats.kstest(nsample,'norm')[1],0.01)
-        self.assertLessEqual(scipy.stats.kstest(nsample,'uniform')[1],0.01)
-        self.assertLessEqual(scipy.stats.kstest(usample,'norm')[1],0.01)
+        self.assertGreaterEqual(scipy.stats.kstest(usample,'uniform')[1],0.01,'Uniform sample does not look uniform.')
+        self.assertGreaterEqual(scipy.stats.kstest(nsample,'norm')[1],0.01,'Normal sample does not look normal.')
+        self.assertLessEqual(scipy.stats.kstest(nsample,'uniform')[1],0.01,'Normal sample looks too uniform.')
+        self.assertLessEqual(scipy.stats.kstest(usample,'norm')[1],0.01,'Uniform sample looks too normal.')
 
     def test_simpSample_trivial(self):
         """ Test simple rejection sampler with trivial inputs

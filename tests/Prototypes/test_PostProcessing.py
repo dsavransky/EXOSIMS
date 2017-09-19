@@ -11,7 +11,7 @@ Paul Nunez, JPL, Aug. 2016
 """
 
 # need a dummy BackgroundSources
-specs = {'modules':{'BackgroundSources':''}}
+specs = {'modules':{'BackgroundSources':' '}}
 
 
 class Test_PostProcessing_prototype(unittest.TestCase):
@@ -20,30 +20,6 @@ class Test_PostProcessing_prototype(unittest.TestCase):
         self.TL = {}
         self.mode = {'SNR':5.0}
     
-    #Testing some limiting cases below
-    def test_zeroFAP(self):
-        #case that false alarm probability is 0 and missed det prob is 0  
-        obj = PostProcessing.PostProcessing(FAP=0.0,MDP=0.0,**specs)
-
-        SNRin = np.array([1.0,2.0,3.0,4.0,5.0,5.1,6.0])
-        expected_MDresult = [True,True,True,True,False,False,False] 
-        FA, MD = obj.det_occur(SNRin,self.mode,self.TL,0,0)     
-        for x,y in zip(MD,expected_MDresult):
-            self.assertEqual( x,y )
-        self.assertEqual( FA, False)
-
-    #another limiting case
-    def test_oneFAP(self):
-        #case that false alarm probability is 1 and missed det prob is 0
-        obj = PostProcessing.PostProcessing(FAP=1.0,MDP=0.0,**specs)
-
-        SNRin = np.array([1.0,2.0,3.0,4.0,5.0,5.1,6.0])
-        expected_MDresult = [True,True,True,True,False,False,False] 
-        FA, MD = obj.det_occur(SNRin,self.mode,self.TL,0,0)        
-        for x,y in zip(MD,expected_MDresult):
-            self.assertEqual( x,y )
-        self.assertEqual( FA, True)
-
 
     def test_nontrivialFAP(self):
         obj = PostProcessing.PostProcessing(FAP=0.1,MDP=0.0,**specs)

@@ -7,6 +7,7 @@ import random as py_random
 import numpy as np
 import astropy.units as u
 import copy, re, inspect, subprocess
+import matplotlib.pyplot as plt
 
 class MissionSim(object):
     """Mission Simulation (backbone) class
@@ -285,7 +286,7 @@ class MissionSim(object):
             tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Default to None.
-                
+
         Returns:
             out (String):
                 Output string containing the results of the check.
@@ -317,6 +318,8 @@ class MissionSim(object):
         intTime_sum = 0*u.d
         comp_sum = 0
         num_stars = 0
+        comp_sums = []
+        intTime_sums = []
         for sInd in sInds_sorted:
             if intTime_sum + intTimes[sInd] > duration*u.d:
                 break
@@ -324,8 +327,19 @@ class MissionSim(object):
             intTime_sum += intTimes[sInd]
             comp_sum += comps[sInd]
             num_stars +=1
+            comp_sums.append(comp_sum)
+            intTime_sums.append(intTime_sum.value)
 
-        return [num_stars, comp_sum, intTime_sum]
+        if tofile is not None:
+            mpath = os.path.split(inspect.getfile(self.__class__))[0]
+            plt.scatter(intTime_sums, comp_sums, s=4, color = '0.25')
+            plt.ylabel('Total Completeness')
+            plt.xlabel('Time (d)')
+            plt.title('Total Completeness Over {} Star Visits'.format(num_stars))
+            plt.grid(True)
+            plt.savefig(os.path.join(mpath, tofile))
+
+        return {"numStars":num_stars, "Total Completeness":comp_sum, "Total intTime":intTime_sum}
 
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.
@@ -348,7 +362,8 @@ class MissionSim(object):
             cs = CheckScript(scriptfile, self.genOutSpec())
             out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
             if tofile is not None:
-                cs.write_file(tofile)
+                mpath = os.path.split(inspect.getfile(self.__class__))[0]
+                cs.write_file(os.path.join(mpath, tofile))
         else:
             out = None
 

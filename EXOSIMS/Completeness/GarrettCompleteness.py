@@ -843,8 +843,14 @@ class GarrettCompleteness(BrownCompleteness):
         assert len(WA) == 1, "WA must be constant"
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        # calculate separations based on IWA
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
+        if np.isinf(OWA):
+            smax = self.rmax
+        else:
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.comp_dmag(smin, smax, dMag)
         # ensure that completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)

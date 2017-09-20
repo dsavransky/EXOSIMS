@@ -140,7 +140,10 @@ class BrownCompleteness(Completeness):
                     smax[dMagMax>ymin].to('AU').value, 0.0, dMagMax[dMagMax>ymin])
         else:
             comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagMax)
+        # remove small values
         comp0[comp0<1e-6] = 0.0
+        # ensure that completeness is between 0 and 1
+        comp0 = np.clip(comp0, 0., 1.)
         
         return comp0
 
@@ -265,6 +268,8 @@ class BrownCompleteness(Completeness):
                     
                 if (sInd+1) % 50 == 0:
                     print 'stars: %r / %r' % (sInd+1,TL.nStars)
+            # ensure that completeness values are between 0 and 1
+            self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
             pickle.dump(self.updates, open(path, 'wb'))
             print 'Dynamic completeness calculations finished'
@@ -465,6 +470,8 @@ class BrownCompleteness(Completeness):
         #smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
         smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.EVPOC(smin, smax, 0., dMag)
+        # ensure completeness values are between 0 and 1
+        comp = np.clip(comp, 0., 1.)
         
         return comp
 

@@ -274,6 +274,59 @@ class MissionSim(object):
         
         return out
 
+    def genWaypoint(self, duration=365, tofile=None):
+        """Calls CheckScript and checks the script file against the mission outspec.
+        
+        Args:
+            scriptfile (string):
+                The path to the scriptfile being used by the sim
+            prettyprint (boolean):
+                Outputs the results of Checkscript in a readable format.
+            tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (String):
+                Output string containing the results of the check.
+
+        """
+        SS = self.SurveySimulation
+        OS = SS.OpticalSystem
+        ZL = SS.ZodiacalLight
+        Comp = SS.Completeness
+        TL = SS.TargetList
+        Obs = SS.Observatory
+        TK = SS.TimeKeeping
+
+        allModes = OS.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+
+        startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
+        sInds = np.arange(TL.nStars)
+        fZ = ZL.fZ(Obs, TL, sInds, startTimes, det_mode)
+        fEZ = ZL.fEZ0
+        dMag = SS.dMagint
+        WA = SS.WAint
+
+        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode)
+        CbT = comps/intTimes
+        sInds_sorted = np.flip(np.argsort(CbT), 0)
+
+        intTime_sum = 0*u.d
+        comp_sum = 0
+        num_stars = 0
+        for sInd in sInds_sorted:
+            if intTime_sum + intTimes[sInd] > duration*u.d:
+                break
+
+            intTime_sum += intTimes[sInd]
+            comp_sum += comps[sInd]
+            num_stars +=1
+
+        return [num_stars, comp_sum, intTime_sum]
+
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.
         

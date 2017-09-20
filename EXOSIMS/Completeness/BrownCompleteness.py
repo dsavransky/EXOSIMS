@@ -461,7 +461,9 @@ class BrownCompleteness(Completeness):
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        OWA = 20*TL.OpticalSystem.IWA
+        #smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.EVPOC(smin, smax, 0., dMag)
         
         return comp

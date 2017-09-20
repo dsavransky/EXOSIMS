@@ -24,6 +24,7 @@ import astropy.constants as const
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
+import copy
 
 
 # First few entries in Table 6 of Traub et al., JATIS, Jan 2016: detectable RV planets
@@ -85,12 +86,12 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         specs = {}
         specs['modules'] = {}
         specs['modules']['PlanetPhysicalModel'] = ' ' # so the Prototype for PhysMod will be used
-
+        self.specs = copy.deepcopy(specs)
+        
         # the with clause allows the chatter on stdout/stderr during
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null, stderr=self.dev_null):
             self.fixture = KnownRVPlanets(**specs)
-        #self.fixture = KnownRVPlanets
 
     def tearDown(self):
         del self.fixture
@@ -104,7 +105,6 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         self.assertIn('sma', plan_pop.__dict__)
 
 
-    #@unittest.skip('skipping init')
     def test_init_trivial(self):
         r"""Test of initialization and __init__ -- trivial setup/teardown test.
         """
@@ -118,7 +118,15 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
                 if key == 'table': continue
                 print key, '==>', value
 
-    # this is disabled on purpose
+    def test_init_file_no_file(self):
+        r"""Test __init__ file handling -- various non-existent input files.
+        """
+        bad_files = ['/dev/null', '/tmp/this/file/is/not/there.json', '/tmp/this_file_is_not_there.json']
+        for bad_file in bad_files:
+            with self.assertRaises(IOError):
+                plan_pop =  KnownRVPlanets(rvplanetfilepath=bad_file,**self.specs)
+
+
     def test_init_traub_etal(self):
         r"""Test of initialization and __init__ -- compare values to Traub et al., JATIS, Mar. 2016.
 
@@ -154,17 +162,6 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             self.assertAlmostEqual(np.abs(delta_sma), 0.0, delta=0.08)
             # proportional difference in mass
             self.assertAlmostEqual(np.abs(delta_mass), 0.0, delta=0.25)
-
-            if False:
-                print "* `%s' a.k.a. `%s'" % (name, name_alt)
-                #print name, np.count_nonzero(index), plan_pop.sma[index], 'vs', sma
-                print '  SMA = %.3g [exosims]; = %.3g [Traub et al]; delta = %.2f%%' % (
-                    plan_pop.sma[index][index2].value, sma.value, delta_sma*100.0)
-                delta_std = ((plan_pop.mass[index][index2] - mass) /
-                             plan_pop.masserr[index][index2]).decompose().value
-                #masserr = plan_pop.masserr[index][index2]
-                print '  mass = %.3g [exosims]; = %.3g [Traub et al]; delta = %.2f %%; = %.2f [std]' % (
-                    plan_pop.mass[index][index2].value, mass.value, delta_mass*100.0, delta_std)
 
 
     def test_init_ipac_compare(self):

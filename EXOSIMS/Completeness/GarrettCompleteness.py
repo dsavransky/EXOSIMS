@@ -102,13 +102,13 @@ class GarrettCompleteness(BrownCompleteness):
         self.d4 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         self.d5 = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         # vectorize scalar methods
-        self.rgrand2v = np.vectorize(self.rgrand2)
-        self.f_dmagsv = np.vectorize(self.f_dmags)
-        self.f_sdmagv = np.vectorize(self.f_sdmag)
-        self.f_dmagv = np.vectorize(self.f_dmag)
-        self.f_sv = np.vectorize(self.f_s)
-        self.mindmagv = np.vectorize(self.mindmag)
-        self.maxdmagv = np.vectorize(self.maxdmag)
+        self.rgrand2v = np.vectorize(self.rgrand2, otypes=[np.float64])
+        self.f_dmagsv = np.vectorize(self.f_dmags, otypes=[np.float64])
+        self.f_sdmagv = np.vectorize(self.f_sdmag, otypes=[np.float64])
+        self.f_dmagv = np.vectorize(self.f_dmag, otypes=[np.float64])
+        self.f_sv = np.vectorize(self.f_s, otypes=[np.float64])
+        self.mindmagv = np.vectorize(self.mindmag, otypes=[np.float64])
+        self.maxdmagv = np.vectorize(self.maxdmag, otypes=[np.float64])
         # inverse functions for phase angle
         b1 = np.linspace(0.0, self.bstar, 20000)
         # b < bstar
@@ -168,7 +168,7 @@ class GarrettCompleteness(BrownCompleteness):
         Cpath = os.path.join(self.classpath, self.filename+'.acomp')
         
         dist_s = self.genComp(Cpath, TL)
-        dist_sv = np.vectorize(dist_s.integral)
+        dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
@@ -179,16 +179,21 @@ class GarrettCompleteness(BrownCompleteness):
             smax = self.rmax
         else:
             smax = (np.tan(OWA)*TL.dist).to('AU').value
+        smax[smax>self.rmax] = self.rmax
         
+        comp0 = np.zeros(smin.shape)
         # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
-            comp0 = self.comp_s(smin, smax, dMagMax)
+            mask = smin<self.rmax
+            comp0[mask] = self.comp_s(smin[mask], smax[mask], dMagMax[mask])
         else:
-            comp0 = dist_sv(smin, smax)
+            mask = smin<self.rmax
+            comp0[mask] = dist_sv(smin[mask], smax[mask])
+
         # ensure that completeness values are between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
 
@@ -843,8 +848,14 @@ class GarrettCompleteness(BrownCompleteness):
         assert len(WA) == 1, "WA must be constant"
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        # calculate separations based on IWA
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
+        if np.isinf(OWA):
+            smax = self.rmax
+        else:
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.comp_dmag(smin, smax, dMag)
         # ensure that completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)

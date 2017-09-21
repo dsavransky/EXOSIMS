@@ -111,7 +111,7 @@ class BrownCompleteness(Completeness):
         #save interpolant to object
         self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-        self.EVPOC = np.vectorize(self.EVPOCpdf.integral)
+        self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew  
             
@@ -125,23 +125,26 @@ class BrownCompleteness(Completeness):
             smax = xedges[-1]*u.AU
         else:
             smax = np.tan(OWA)*TL.dist
+        smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
         
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
-        # calculate dMags based on maximum dMag
+        comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
-            comp0 = np.zeros(smin.shape)
-            comp0[dMagMax>ymin] = self.EVPOC(smin[dMagMax>ymin].to('AU').value, \
-                    smax[dMagMax>ymin].to('AU').value, 0.0, dMagMax[dMagMax>ymin])
+            mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
+            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
+                    smax[mask].to('AU').value, 0.0, dMagMax[mask])
         else:
-            comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagMax)
+            mask = smin<self.PlanetPopulation.rrange[1]
+            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
+
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         

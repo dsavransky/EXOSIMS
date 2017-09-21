@@ -176,10 +176,10 @@ class GarrettCompleteness(BrownCompleteness):
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value
         if np.isinf(OWA):
-            smax = self.rmax
+            smax = np.array([self.rmax]*len(smin))
         else:
             smax = (np.tan(OWA)*TL.dist).to('AU').value
-        smax[smax>self.rmax] = self.rmax
+            smax[smax>self.rmax] = self.rmax        
         
         comp0 = np.zeros(smin.shape)
         # calculate dMags based on maximum dMag

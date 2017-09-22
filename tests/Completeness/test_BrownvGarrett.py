@@ -54,7 +54,6 @@ class TestBrownvGarrett(unittest.TestCase):
 
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
 
-    @unittest.skip("current issue with constrainOrbits")
     def test_target_completeness_constrainOrbits(self):
         """
         Compare calculated completenesses for multiple targets with constrain orbits set to true
@@ -106,4 +105,33 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.assertLessEqual(meandiff,0.1)
 
-        
+    def test_target_completeness_varrange(self):
+        """
+        Compare calculated completenesses for multiple targets with varying albedos and radii
+        """
+            
+        with RedirectStreams(stdout=self.dev_null):
+            spec = copy.deepcopy(self.spec)
+            spec['Rprange'] = [1,10]
+            spec['prange'] = [0.2,0.5]
+            TL = TargetList(ntargs=100,**copy.deepcopy(spec))
+
+            mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
+            IWA = mode['IWA']
+            OWA = mode['OWA']
+            rrange = TL.PlanetPopulation.rrange
+            maxd = (rrange[1]/np.tan(IWA)).to(u.pc).value
+            mind = (rrange[0]/np.tan(OWA)).to(u.pc).value
+
+            #want distances to span from outer edge below IWA to inner edge above OWA
+            TL.dist = np.logspace(np.log10(mind/10.),np.log10(maxd*10.),TL.nStars)*u.pc
+
+
+            Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(spec))
+            Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
+
+            cBrown = Brown.target_completeness(TL)
+            cGarrett = Garrett.target_completeness(TL)
+
+        np.testing.assert_allclose(cGarrett,cBrown,rtol=0.15,atol=1e-6)
+

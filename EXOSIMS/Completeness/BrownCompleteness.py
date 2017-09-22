@@ -122,10 +122,10 @@ class BrownCompleteness(Completeness):
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
         if np.isinf(OWA):
-            smax = xedges[-1]*u.AU
+            smax = np.array([xedges[-1]]*len(smin))*u.AU
         else:
             smax = np.tan(OWA)*TL.dist
-        smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
+            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
         
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim

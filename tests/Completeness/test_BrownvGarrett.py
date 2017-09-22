@@ -105,17 +105,18 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.assertLessEqual(meandiff,0.1)
 
-    @unittest.skip("taking way too long")
     def test_target_completeness_varrange(self):
         """
-        Compare calculated completenesses for multiple targets with varying albedos and radii
+        Garrett completeness takes different logical pathways depending on which parameters are 
+        held constant.  Checking all of these against BrownCompleteness would take multiple hours
+        so we'll just run through the Garrett logical branches and check for self-consistency.
+
+        The comparison tests already cover Rp and p constant, so we need to check a constant, e constant
+        a + e constant.
         """
             
         with RedirectStreams(stdout=self.dev_null):
-            spec = copy.deepcopy(self.spec)
-            spec['Rprange'] = [1,10]
-            spec['prange'] = [0.2,0.5]
-            TL = TargetList(ntargs=100,**copy.deepcopy(spec))
+            TL = TargetList(ntargs=100,**copy.deepcopy(self.spec))
 
             mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
             IWA = mode['IWA']
@@ -128,11 +129,41 @@ class TestBrownvGarrett(unittest.TestCase):
             TL.dist = np.logspace(np.log10(mind/10.),np.log10(maxd*10.),TL.nStars)*u.pc
 
 
-        Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(spec))
+        #a constant, everything else var
+        spec = copy.deepcopy(self.spec)
+        spec['arange'] = [1,1]
+        spec['Rprange'] = [1,10]
+        spec['prange'] = [0.2,0.5]
         Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
-
-        cBrown = Brown.target_completeness(TL)
         cGarrett = Garrett.target_completeness(TL)
+        self.assertTrue(np.all(cGarrett[TL.dist > maxd*u.pc] == 0))
 
-        np.testing.assert_allclose(cGarrett,cBrown,rtol=0.15,atol=1e-6)
+        #e constant everything else var
+        spec = copy.deepcopy(self.spec)
+        spec['erange'] = [0,0]
+        spec['Rprange'] = [1,10]
+        spec['prange'] = [0.2,0.5]
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
+        cGarrett = Garrett.target_completeness(TL)
+        self.assertTrue(np.all(cGarrett[TL.dist > maxd*u.pc] == 0))
+
+        #a and e constant, everything else var
+        spec = copy.deepcopy(self.spec)
+        spec['arange'] = [1,1]
+        spec['erange'] = [0,0]
+        spec['Rprange'] = [1,10]
+        spec['prange'] = [0.2,0.5]
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
+        cGarrett = Garrett.target_completeness(TL)
+        self.assertTrue(np.all(cGarrett[TL.dist > maxd*u.pc] == 0))
+
+        #a constant and constrainOrbits
+        spec = copy.deepcopy(self.spec)
+        spec['arange'] = [1,1]
+        spec['constrainOrbits'] = True
+        spec['Rprange'] = [1,10]
+        spec['prange'] = [0.2,0.5]
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
+        cGarrett = Garrett.target_completeness(TL)
+        self.assertTrue(np.all(cGarrett[TL.dist > maxd*u.pc] == 0))
 

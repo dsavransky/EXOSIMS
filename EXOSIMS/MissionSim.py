@@ -301,8 +301,11 @@ class MissionSim(object):
                       'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
         keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR', 
                   'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
-        
-        assert key in (keysStar + keysPlans + keysParams + keysFA), \
+        keysOcculter = ['slew_time','slew_dV','det_dF_lateral','scMass',
+                        'char_dF_axial','det_mass_used','slew_mass_used',
+                        'det_dF_axial','det_dV','slew_angle','char_dF_lateral']
+
+        assert key in (keysStar + keysPlans + keysParams + keysFA + keysOcculter), \
                 "'%s' is not a relevant DRM keyword."
         
         # extract arrays for each relevant keyword in the DRM

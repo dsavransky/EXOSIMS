@@ -1,4 +1,5 @@
 [run]
 source = EXOSIMS
-
-
+omit = 
+  EXOSIMS/e2eTests.py
+  EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py

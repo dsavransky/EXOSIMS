@@ -71,7 +71,7 @@ distribution.</p>
 <dd><p>Generates the planetary systems&#8217; physical properties. Populates arrays
 of the orbital elements, albedos, masses and radii of all planets, and
 generates indices that map from planet to parent star.</p>
-<p>All paramters except for albedo and mass are sampled, while those are
+<p>All parameters except for albedo and mass are sampled, while those are
 calculated via the physical model.</p>
 </dd></dl>
 
@@ -117,9 +117,9 @@ catalog values for each planet.</p>
 <dl class="method">
 <dt id="EXOSIMS.SimulatedUniverse.SAG13Universe.SAG13Universe.gen_physical_properties">
 <code class="descname">gen_physical_properties</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SimulatedUniverse/SAG13Universe.html#SAG13Universe.gen_physical_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SimulatedUniverse.SAG13Universe.SAG13Universe.gen_physical_properties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generating universe based on planet radius and period sampling.</p>
-<p>This method requires the SAG13 PlanetPopulation module, and
-is calling the following SAG13 attributes: lnRp, lnT, eta2D.</p>
+<dd><p>Generating universe based on SAG13 planet radius and period sampling.</p>
+<p>All parameters except for albedo and mass are sampled, while those are
+calculated via the physical model.</p>
 </dd></dl>
 
 </dd></dl>

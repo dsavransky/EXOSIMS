@@ -46,11 +46,11 @@ class TestBrownvGarrett(unittest.TestCase):
             TL.dist = np.logspace(np.log10(mind/10.),np.log10(maxd*10.),TL.nStars)*u.pc
 
 
-            Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(self.spec))
-            Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec))
+        Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(self.spec))
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec))
 
-            cBrown = Brown.target_completeness(TL)
-            cGarrett = Garrett.target_completeness(TL)
+        cBrown = Brown.target_completeness(TL)
+        cGarrett = Garrett.target_completeness(TL)
 
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
 
@@ -74,11 +74,11 @@ class TestBrownvGarrett(unittest.TestCase):
             TL.dist = np.logspace(np.log10(mind/10.),np.log10(maxd*10.),TL.nStars)*u.pc
 
 
-            Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(constrainOrbits=True,**copy.deepcopy(self.spec))
-            Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(constrainOrbits=True,**copy.deepcopy(self.spec))
+        Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(constrainOrbits=True,**copy.deepcopy(self.spec))
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(constrainOrbits=True,**copy.deepcopy(self.spec))
 
-            cBrown = Brown.target_completeness(TL)
-            cGarrett = Garrett.target_completeness(TL)
+        cBrown = Brown.target_completeness(TL)
+        cGarrett = Garrett.target_completeness(TL)
 
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
 
@@ -93,15 +93,15 @@ class TestBrownvGarrett(unittest.TestCase):
             TL.dist =  np.exp(np.random.uniform(low=np.log(1.0), high=np.log(30.), size=TL.nStars))*u.pc
             TL.L = np.exp(np.random.uniform(low=np.log(0.1), high=np.log(10.), size=TL.nStars))
 
-            Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(scaleOrbits=True,**copy.deepcopy(self.spec))
-            Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(scaleOrbits=True,**copy.deepcopy(self.spec))
+        Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(scaleOrbits=True,**copy.deepcopy(self.spec))
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(scaleOrbits=True,**copy.deepcopy(self.spec))
 
-            cBrown = Brown.target_completeness(TL)
-            cGarrett = Garrett.target_completeness(TL)
-            
-            cGarrett = cGarrett[cBrown != 0 ]
-            cBrown = cBrown[cBrown != 0]
-            meandiff = np.mean(np.abs(cGarrett - cBrown)/cBrown)
+        cBrown = Brown.target_completeness(TL)
+        cGarrett = Garrett.target_completeness(TL)
+        
+        cGarrett = cGarrett[cBrown != 0 ]
+        cBrown = cBrown[cBrown != 0]
+        meandiff = np.mean(np.abs(cGarrett - cBrown)/cBrown)
 
         self.assertLessEqual(meandiff,0.1)
 
@@ -127,11 +127,11 @@ class TestBrownvGarrett(unittest.TestCase):
             TL.dist = np.logspace(np.log10(mind/10.),np.log10(maxd*10.),TL.nStars)*u.pc
 
 
-            Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(spec))
-            Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
+        Brown = EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness(**copy.deepcopy(spec))
+        Garrett = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(spec))
 
-            cBrown = Brown.target_completeness(TL)
-            cGarrett = Garrett.target_completeness(TL)
+        cBrown = Brown.target_completeness(TL)
+        cGarrett = Garrett.target_completeness(TL)
 
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.15,atol=1e-6)
 

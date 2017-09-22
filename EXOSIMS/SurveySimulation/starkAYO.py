@@ -7,21 +7,17 @@ import time
 import json
 from scipy.optimize import fsolve
 import scipy
-import timeit#used for debugging and timing my functions
+import timeit
 from astropy.time import Time
 import scipy
 from scipy.interpolate import UnivariateSpline
 import matplotlib.pyplot as plt
-from IPython.core.debugger import Tracer #debugging
-import csv #saving completenesses to file
+from IPython.core.debugger import Tracer
+import csv
 import os
 import os.path
 import scipy.integrate as integrate
-import logging
 import pdb
-
-# the EXOSIMS logger
-Logger = logging.getLogger(__name__)
 
 class starkAYO(SurveySimulation):
     """starkAYO 
@@ -277,47 +273,22 @@ class starkAYO(SurveySimulation):
         
         #Generate fZ vs time########################################################
         lastTime = timeit.default_timer()
-        self.generate_fZ(sInds)
+        self.fZ_startSaved = self.generate_fZ(sInds)
+        #Sept 21, 2017 execution time 0.725 sec
         print('generate_fZ time= '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         ############################################################################
-        
-        #some deletable testing of fZ and Cp_Cb_Csp speeds
-        WA = OS.WA0
-        lastTime = timeit.default_timer()
-        fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-        print('ZL.fZ= '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        fEZ = ZL.fEZ0
-        lastTime = timeit.default_timer()
-        self.OpticalSystem.Cp_Cb_Csp(TL, sInds, fZ, fEZ, 25, WA, self.mode)
-        print('Cp_Cb_Csp = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        ###########################################
 
         print("Done starkAYO init")
         #END INIT##################################################################
 
     def next_target(self, sInds, mode):
-        start_time_AlgorithmSpeeds = timeit.default_timer()
-        OS = self.OpticalSystem
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        Obs = self.Observatory
-        TK = self.TimeKeeping
-        ZL = self.ZodiacalLight
-        dmag = self.dmag_startSaved
-        WA = OS.WA0
-        slewTime = np.zeros(TL.nStars)*u.d
-        startTime = TK.currentTimeAbs+slewTime
-        tovisit = np.zeros(TL.nStars, dtype=bool)
         """Generate Schedule based off of AYO at this instant in time
 
         Args:
             sInds (integer array):
                 Array of all indexes of stars from sInds = np.array(TL.nStars)
             dmag ():
-
 
             WA ():
 
@@ -356,20 +327,16 @@ class starkAYO(SurveySimulation):
         TK = self.TimeKeeping
         ZL = self.ZodiacalLight
         TK.obsStart = TK.currentTimeNorm.to('day')
+        start_time_AlgorithmSpeeds = timeit.default_timer()
+        dmag = self.dmag_startSaved
+        WA = OS.WA0
+        slewTime = np.zeros(TL.nStars)*u.d
+        startTime = TK.currentTimeAbs+slewTime
+        tovisit = np.zeros(TL.nStars, dtype=bool)
 
-        #Create DRM
-        DRM = {}
+        DRM = {}#Create DRM
 
-        #CACHE Cb Cp Csp################################################
-        #we calculate these values to cache them and accelerate starkAYO execution
-        fZ = self.fZ_startSaved
-
-        fEZ = ZL.fEZ(starMagnitude, inclination, star_dist)
-        Cp, Cb, Csp = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag, WA, self.mode)
-        ################################################################
-
-        # Aluserslocate settling time + overhead time
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
         #shouldn't need this??? maybe its here because of DRM...
         lastTime = start_time_AlgorithmSpeeds
         #print(str(timeit.default_timer()-lastTime))
@@ -380,7 +347,6 @@ class starkAYO(SurveySimulation):
         #print('calcTint time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         
-    
         #Calculate C vs T spline######################################
         self.splineCvsTau()
         spl = self.spl_startSaved
@@ -392,7 +358,7 @@ class starkAYO(SurveySimulation):
         #A Note: Technically starComps is the completeness of each star at each dmag specified in the init section of starkAYO
         #the myTint is evaluated at each one of these dmags.
         ##############################################################
-    
+
         #Calculate C/T vs T spline####################################
         self.splineCbyTauvsTau()
         spl2 = self.spl2_startSaved
@@ -411,6 +377,42 @@ class starkAYO(SurveySimulation):
 
         #Pull Untouched Star List#####################################
         sInds = self.schedule_startSaved
+
+        #CACHE Cb Cp Csp################################################
+        #we calculate these values to cache them and accelerate starkAYO execution
+        #Interpolate start times to find fZ
+        fZ = np.zeros(sInds.shape[0])
+        tmp = np.asarray(self.fZ_startSaved)
+        indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])
+        fZ[:] = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac+1)]
+        fZ = fZ/u.arcsec**2
+        del tmp
+        fEZ = np.zeros(sInds.shape[0]) + ZL.fEZ0
+        mode = self.mode
+        allModes = self.OpticalSystem.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        #dmag = self.dmag_startSaved
+        Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
+        Cb = np.zeros([sInds.shape[0],dmag.shape[0]])
+        Csp = np.zeros([sInds.shape[0],dmag.shape[0]])
+        for i in xrange(dmag.shape[0]):
+            Cp[:,i], Cb[:,i], Csp[:,i] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, det_mode)
+        #Sept 20, 2017 execution time 10.108 sec
+        #print('calc Cp Cb Csp time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+        ################################################################
+
+        #Timing calc_intTimeLIGHT delete later##########################
+        lastTime = timeit.default_timer()
+        Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
+        #Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]
+        for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
+            Tint[:,i] = OS.calc_intTimeLIGHT(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode, Cp[:,i], Cb[:,i], Csp[:,i]).value#it is in units of days
+        #Sept 20, 2017 execution time 0.794 sec
+        #print('calc_intTimeLIGHT time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+        ################################################################
+        
         ##############################################################
         """###FILTERING IS TEMPORARILY REMOVED FOR RUNNING DMITRY'S TEST DO NOT DELETE
         #FILTER OUT STARS########################################################
@@ -472,7 +474,6 @@ class starkAYO(SurveySimulation):
         print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
 
-
         #print(CbyT)
         #lastTime = timeit.default_timer()
         #fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
@@ -493,7 +494,6 @@ class starkAYO(SurveySimulation):
         #print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
 
-
         #Update maxIntTime#########################
         #Calculate the Maximum Integration Time and dmag for each star
         maxTint, maxdmag = self.calcMaxTint(sInds, fspl2)
@@ -510,7 +510,6 @@ class starkAYO(SurveySimulation):
             if(maxIntTime[i] < 0):
                 print('ERROR in MaxIntTime Calculation. A Value is Negative!')
         ###########################################
-
 
         #Check Validity of Star Integration Times####################################
         ##THE PROBLEM CAUSING HIGH COMP00 VALUES STEMS FROM INITIAL TIMES ASSIGNED BEING SUBSTANTIALLY LARGER THAN MAXIMUM INTEGRATION TIMES
@@ -555,11 +554,8 @@ class starkAYO(SurveySimulation):
         maxIntTime = maxIntTime[sortIndex]
         ###################################################################
 
-        #print(saltyburrito2)
-        #I confirm that spl2 is still valid at this point. fspl2 is also good
-
-        firstIteration = 1
-        numits = 0
+        firstIteration = 1#checks if this is the first iteration.
+        numits = 0#ensure an infinite loop does not occur. Should be depricated
         lastIterationSumComp  = -10000000 #this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
         while numits < 100000 and sInds is not None:
             #print('numits ' + str(numits))#we impose numits to limit the total number of iterations of this loop. This may be depreicated later
@@ -582,14 +578,10 @@ class starkAYO(SurveySimulation):
             #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
             lastTime = timeit.default_timer()
 
-            #Sort Descending by dC/dT###########################################################################
-            #1 Find Indexes to sort by############
-            #print(saltyburrito)
-
+            #Sacrifice Lowest Performing Star###############################################################################
             dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime = self.sacrificeStarCbyT(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
             
-            ################################################
-            #THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM
+            #THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM#################################
             if(sInds.shape[0] <= missionLength-7):#condition where the observation schedule could be done within the mission time
                 if(firstIteration == 1):#redistribute dt on first Iteration
                     #print('We now have a realizable mission schedule!')
@@ -607,8 +599,7 @@ class starkAYO(SurveySimulation):
             #print('sacrifice time = '+str(timeit.default_timer() - lastTime))
             lastTime = timeit.default_timer()
 
-            #5 Distribute Sacrificed Time to new star observations
-            #print('Last Time to Redistribute ' + str(sacrificedStarTime))
+            #Distribute Sacrificed Time to new star observations#############################
             dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.distributedt(sacrificedStarTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
             #Aug 28, 2017 execution time 9e-6
             #Sept 13, 2017 execution time ~0.2 depending on schedule length for dt/10
@@ -631,15 +622,6 @@ class starkAYO(SurveySimulation):
             for n in range(sInds.shape[0]):
                 Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
             ###########################################
-
-            #print(saltyturrito)
-
-            #Sort Descending by dC/dT#######################################
-            #dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime= self.reOrder(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
-            # #1 Find Indexes to sort by############
-            # sortIndex = np.argsort(dCbydT,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array
-            # #index list from highest dCbydT to lowest dCbydT....
-
 
             #AYO Termination Conditions
             #1 If the nthElement that time was added to has dCbydT less than the last star (star to be taken from next)
@@ -683,10 +665,6 @@ class starkAYO(SurveySimulation):
         ##Define Output of AYO Process
         sInd = sInds[0]
         t_det = t_dets[0]*u.d
-
-        ##### Delete Some Terms    for use in next iteration        
-        #del splDeriv
-        #del spl
 
         #Update List of Visited stars########
         self.starVisits[sInd] += 1
@@ -875,15 +853,15 @@ class starkAYO(SurveySimulation):
                 #print('We are swapping ' + str(maxTint[i]) + ' With ' + str(intTime[int(seqEndIndex[i,seqOfMaxLength])]) + ' for sInd ' + str(sInds[i]))
                 maxTint[i] = intTime[int(seqEndIndex[i,seqOfMaxLength])]
 
-
+            #Calculate dC by dT using Daniel's method
             fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
             fEZ = 0./u.arcsec**2# ZL.fEZ0
             for j in xrange(intTime.shape[0]):
                 CbyTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value
-            plt.plot(intTime,tmpCbyT)
-            plt.plot(intTime,CbyTtmp[i,:])
-            plt.axis([0,max(intTime),0,max(tmpCbyT)])
-            plt.show()
+            #plt.plot(intTime,tmpCbyT)
+            #plt.plot(intTime,CbyTtmp[i,:])
+            #plt.axis([0,max(intTime),0,max(tmpCbyT)])
+            #plt.show()
         return maxTint, maxdmag
 
     def calcTint_core(self, sInds, dmag):
@@ -1571,8 +1549,19 @@ class starkAYO(SurveySimulation):
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
         fname = '/cachedfZ.csv'
+        #Check File Length
+        fileLength = 0
+        try: 
+            with open(dir_path+fname, 'rb') as f:
+                reader = csv.reader(f)
+                your_list = list(reader)
+                fileLength = len(your_list)
+                f.close()
+        except:
+            fileLength = 0
+        #print('fileLength is ' + str(fileLength))
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
+        if not os.path.isfile(dir_path+fname) or fileLength != sInds.shape[0]:# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
             print('Calculating fZ for Each Star over 1 Yr')
             OS = self.OpticalSystem
             WA = OS.WA0
@@ -1602,18 +1591,18 @@ class starkAYO(SurveySimulation):
                 for i in range(sInds.shape[0]):#iterate through all stars
                     wr.writerow(fZ[:,i])#Write the fZ to file
                 fo.close()
-                print('Saving fZ vs ToY for Each Star to File time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
                 print('Finished Saving fZ vs ToY for Each Star to File')
         
         #Load fZ dMag for Each Star From File######################################
+        #Sept 20, 2017 execution time 1.747 sec
         print('Load fZ for Each Star from File')
+        fZ = list()
         with open(dir_path+fname, 'rb') as f:
             reader = csv.reader(f)
             your_list = list(reader)
             f.close()
         for i in range(len(your_list)):
             tmp = np.asarray(your_list[i]).astype(np.float)
-            self.fZ_startSaved.append(tmp)#static fZ values as function of time
-        #return fZ
+            fZ.append(tmp)
+        return fZ
 

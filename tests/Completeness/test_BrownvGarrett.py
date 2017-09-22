@@ -105,6 +105,7 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.assertLessEqual(meandiff,0.1)
 
+    @unittest.skip("taking way too long")
     def test_target_completeness_varrange(self):
         """
         Compare calculated completenesses for multiple targets with varying albedos and radii

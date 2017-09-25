@@ -133,8 +133,7 @@ class TestOpticalSystem(unittest.TestCase):
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
         
-            self.assertEqual(dMag.shape,(self.TL.nStars,self.TL.nStars))
-            
+            self.assertEqual(dMag.shape,np.arange(self.TL.nStars).shape)            
             
 
     def test_ddMag_dt(self):
@@ -151,7 +150,7 @@ class TestOpticalSystem(unittest.TestCase):
                     self.TL, np.arange(self.TL.nStars), 
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
-            
-            self.assertEqual(ddMag.shape,(self.TL.nStars,self.TL.nStars))
+
+            self.assertEqual(ddMag.shape,np.arange(self.TL.nStars).shape)
 
 

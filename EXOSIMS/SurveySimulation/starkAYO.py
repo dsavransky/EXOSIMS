@@ -23,39 +23,20 @@ class starkAYO(SurveySimulation):
     """starkAYO 
     
     This class implements a Scheduler that selects the current highest Completeness/Integration Time.
-
-    
     """
-
     def __init__(self, **specs):
-        
         SurveySimulation.__init__(self, **specs)
-        
         # bring inherited class objects to top level of Survey Simulation
         SU = self.SimulatedUniverse
-        self.PlanetPopulation = SU.PlanetPopulation
-        self.PlanetPhysicalModel = SU.PlanetPhysicalModel
-        self.OpticalSystem = SU.OpticalSystem
-        self.ZodiacalLight = SU.ZodiacalLight
-        self.BackgroundSources = SU.BackgroundSources
-        self.PostProcessing = SU.PostProcessing
+        OS = SU.OpticalSystem
+        ZL = SU.ZodiacalLight
         self.Completeness = SU.Completeness
-        self.TargetList = SU.TargetList
-
-        OS = self.OpticalSystem
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
+        TL = SU.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
-        ZL = self.ZodiacalLight
         
         self.starVisits = np.zeros(TL.nStars,dtype=int)
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.starTimes = np.zeros(TL.nStars)*u.d
         self.starRevisit = np.array([])
-        self.starExtended = np.array([])
-        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
 
         detMode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
         spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
@@ -64,242 +45,49 @@ class starkAYO(SurveySimulation):
         #Create and start Schedule
         self.schedule = np.arange(TL.nStars)#self.schedule is meant to be editable
         self.schedule_startSaved = np.arange(TL.nStars)#preserves initial list of targets
-        sInd = None
+        TK.allocate_time(Obs.settlingTime + self.mode['syst']['ohTime'])#I do not know why this is called
         
-        DRM = {}
-        
-        TK.allocate_time(Obs.settlingTime + self.mode['syst']['ohTime'])
-        
-        
-        # 0/ initialize arrays
         slewTime = np.zeros(TL.nStars)*u.d#
         fZs = np.zeros(TL.nStars)/u.arcsec**2#
         t_dets = np.zeros(TL.nStars)*u.d
         tovisit = np.zeros(TL.nStars, dtype=bool)
         sInds = self.schedule_startSaved#the list of potential targets sInds is schedule_startSaved
-
-        ##Removed 1 Occulter Slew Time
-        startTime = TK.currentTimeAbs + slewTime#create array of times the length of the number of stars (length of slew time)
         
-        #The below has all been taken verbatim (almost) from completeness. They are necessary to compute with f_s
-        self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)
+        self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)#Required For self.f_dmag2()
         dMagLim = self.Completeness.dMagLim
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
-        dmag = self.dmag_startSaved
-        amax = self.PlanetPopulation.arange.max().value
-        emax = self.PlanetPopulation.erange.max()
-        rmax = amax*(1+emax)
-        SMH = self.SimulatedUniverse.Completeness#using this because I had to port over a lot of code. Equivalent to self.Completeness...
-        beta = np.linspace(0.0,np.pi,1000)*u.rad
-        Phis = SMH.PlanetPhysicalModel.calc_Phi(beta)
-        SMH.Phi = scipy.interpolate.InterpolatedUnivariateSpline(beta.value,Phis,k=3,ext=1)
-        SMH.val = np.sin(SMH.bstar)**2*SMH.Phi(SMH.bstar)
-        b1 = np.linspace(0.0, SMH.bstar, 25000)
-        SMH.binv1 = scipy.interpolate.InterpolatedUnivariateSpline(np.sin(b1)**2*SMH.Phi(b1), b1, k=3, ext=1)
-        b2 = np.linspace(SMH.bstar, np.pi, 25000)
-        b2val = np.sin(b2)**2*SMH.Phi(b2)
-        SMH.binv2 = scipy.interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=3, ext=1)
-        z = np.linspace(SMH.pmin*SMH.Rmin**2, SMH.pmax*SMH.Rmax**2, 1000)
-        fz = np.zeros(z.shape)
-        for i in xrange(len(z)):
-            fz[i] = SMH.f_z(z[i])
-        print('Done fz')
-        SMH.dist_z = scipy.interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
-        SMH.rgrand2v = np.vectorize(SMH.rgrand2)
-        r = np.linspace(SMH.rmin, SMH.rmax, 1000)
-        fr = np.zeros(r.shape)
-        for i in xrange(len(r)):
-            fr[i] = SMH.f_r(r[i])#this is really slow. On the order of 30 sec or so
-        print('Done fr')
-        SMH.dist_r = scipy.interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
+        #dmag = self.dmag_startSaved
 
         dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
         fname = '/starComps.csv'
         self.starComps_startSaved = list()#contains all comps vs dmag for stars
-        self.compData = list()#contains all data from completeness csv file
-        
-        IWA = self.OpticalSystem.IWA.value#of telescope. to be used for min s
-        OWA = self.OpticalSystem.OWA.value#of telescope to be used for max s
 
-        lastTime = timeit.default_timer()
-
-        ##NEED SOME CHECKS TO DETRMINE WHETHER COMPLETENESS FILE IS OKAY OR NOT
-
-        #IF Completeness Distribution has not been calculated Generate Completeness and Generate that File
-        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
-            #Calculate Completeness for Each Star##############################
-            print('Calculate Completeness 1')
-            starSmin = np.zeros(len(sInds))#contains Smin for each star
-            starSmax = np.zeros(len(sInds))#contains Smax for each star
-            #Calculate Smin and Smax for all Stars in List
-            for q in range(len(sInds)):#iterate through each star
-                star_dist = self.TargetList.dist[sInds[q]].value
-                starSmin[q] = star_dist*IWA
-                starSmax[q] = star_dist*OWA
-            absSmax = np.amin(starSmin)#find largest Smax of entire list
-            absSmin = np.amax(starSmax)#find smallest Smin of entire list
-
-            #Calculate S range to calculate over
-            Smat = np.linspace(absSmin,absSmax,400)
-            fComp = np.zeros((len(Smat),len(dmag)))
-            for j in range(len(dmag)):#for each arbitrary dmaglim between 0 and dMagLim
-                dmaglim = dmag[j]#artificial dmaglim to be set by a smaller integration time
-                #fComp = range(len(Smat))#same lengt of smat and contains all fComp
-                for i in range(len(Smat)):#iterate through star separations
-                        fComp[i][j] = self.Completeness.f_s(Smat[i],dmaglim)#calculates fComp
-                #myComp[j] = (starS[q][-1]-starS[q][0])*sum(fComp)/40#sum fComp over S and normalize
-                print('Calculating fComp for dmag ' + str(j) + ' of ' + str(len(dmag)))
-            #generates fComp which is a fComp[Smat][dmag] matrix and holds the completeness value for each one of those
-            #Aug 28, 2017 execution time 3701 for 400x5000... depends on size...
-            print('Calculating Completeness PDF time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-            print('Done Calculating Completeness 1')
-
-            #Save Completeness to File######################################
-            try:#Here we delete the previous completeness file
-                print('Trying to save Completeness to File')
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_starComps.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                wr.writerow(Smat)#writes the 1st row Separations
-                wr.writerow(dmag)#writes the 2nd row dmags
-                for i in range(len(fComp)):
-                    wr.writerow(fComp[i])#self.starComps_startSaved)#writes the completeness
-                fo.close()
-                #Aug 28, 2017 execution time 
-                print('Saving Completeness PDF To File time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
-                print('Finished Saving Completeness To File')
+        #Generate partial Completeness vs S and dMag
+        self.generatefComp(dir_path, fname, sInds)
 
         #Load Completeness From File######################################
-        print('Load Completeness pdf from File')
+        self.compData = list()#contains all data from completeness csv file
         SmatRead = list()
         dmagRead = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            if i == 0:
-                SmatRead = np.asarray(your_list[i]).astype(np.float)
-            elif i == 1:
-                dmagRead = np.asarray(your_list[i]).astype(np.float)
-            else:
-                tmp = np.asarray(your_list[i]).astype(np.float)
-                self.compData.append(tmp)#Unfiltered Completeness Lists
-        #Sept 6, 2017 execution time 0.0922 sec
-        #print('Load Completeness File time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        print('Finished Loading Completeness pdf from File')
-        #Iterate through each star, interpolate which completeness to start summing at do for all stars.
-        #if not os.path.isfile(dir_path+fname) or len(self.starComps_startSaved) != sInds.shape[0]:#If this file does not exist or the length of the file is not appropriate 
-        starS = list()#contains separation amtrix for each star
-        compvsdmagDat = np.zeros((len(sInds),len(dmagRead)))
+        SmatRead, dmagRead = self.loadCompData(dir_path, fname)#and creates self.compData[]
 
 
         fname = '/starCompsAllStars.csv'
-        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
-            print('Calculating Completeness for Each Star vs dmag')
-            for q in range(sInds.shape[0]):#iterates through each star
-                star_dist = self.TargetList.dist[sInds[q]].value
-                Smin = star_dist*IWA
-                Smax = star_dist*OWA
-                #find index of Smin
-                SminIndex = np.argmin(np.abs([(x - Smin) for x in SmatRead]))
-                #find index of Smax
-                SmaxIndex = np.argmin(np.abs([(Smax - x) for x in SmatRead]))
-                for i in range(dmagRead.shape[0]):
-                    #Iterate through each column and sum down the column over the range specified
-                    compvsdmagDat[q][i] = sum([self.compData[x][i] for x in range(SmaxIndex,SminIndex)])*np.abs(SmatRead[SminIndex]-SmatRead[SmaxIndex])/np.abs(SmaxIndex-SminIndex)
-                self.starComps_startSaved.append(compvsdmagDat[q])
-            del compvsdmagDat
-            #Save Completeness to File######################################
-            try:#Here we delete the previous completeness file
-                print('Trying to save Completeness vs dMag for Each Star to File')
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_starCompsAllStars.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                print('There was an error writing the file')
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                for i in range(sInds.shape[0]):#iterate through all stars
-                    wr.writerow(self.starComps_startSaved[i])#self.starComps_startSaved)#writes the completeness
-                fo.close()
-                #Aug 28, 2017 execution time 
-                print('Saving Completeness vs dMag for Each Star to File time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
-                print('Finished Saving Completeness vs dMag for Each Star to File')
-
-        #Load Completeness vs dMag for Each Star From File######################################
-        print('Load Completeness for Each Star from File')
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            self.starComps_startSaved.append(tmp)#Unfiltered Completeness Lists
-        #Sept 6, 2017 execution time  sec
-        #print('Load Completeness File time = '+str(timeit.default_timer() - lastTime))
+        self.generateAllStarsComp(dir_path, fname, sInds, SmatRead, dmagRead)#Sept 6, 2017 execution time 70.629 sec to calculate
+        #print('CalcEach Star Completeness time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
-        print('Finished Loading Completeness vs dMags for Each Star from File')
-        #Iterate through each star, interpolate which completeness to start summing at do for all stars.
-
-
-
-        #MAKE THIS FASTER BY LOADING FROM FILE.... THIS TAKES MAYBE 30 SECONDS FOR CALCULATION OR SOMETHING.... JUST A TAD BIT TOO LONG
-        #Sept 6, 2017 execution time 70.629 sec
-        print('CalcEach Star Completeness time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        print('Done Calculating Completeness for Each Star vs dmag')
+        #print('Done Calculating Completeness for Each Star vs dmag')
 
         #Calculate myTint for an initial startimg position#########################
-        slewTime2 = np.zeros(sInds.shape[0])*u.d#initialize slewTime for each star
-        startTime2 = TK.currentTimeAbs + slewTime2#calculate slewTime
-        
-        #update self.Tint, self.rawTint
-        self.calcTint(None)#Calculate Integration Time for all Stars (relatively quick process)
-
-
-        
+        self.calcTint(None)#Calculate Integration Time for all Stars (relatively quick process)#update self.Tint, self.rawTint
+   
         #Generate fZ vs time########################################################
-        lastTime = timeit.default_timer()
-        self.fZ_startSaved = self.generate_fZ(sInds)
-        #Sept 21, 2017 execution time 0.725 sec
-        print('generate_fZ time= '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        ############################################################################
-
-        print("Done starkAYO init")
-        #END INIT##################################################################
+        self.fZ_startSaved = self.generate_fZ(sInds)#Sept 21, 2017 execution time 0.725 sec
+        print("Done starkAYO init")#END INIT##################################################################
 
     def next_target(self, sInds, mode):
-        """Generate Schedule based off of AYO at this instant in time
-
+        """Generate Next Target to Select based off of AYO at this instant in time
         Args:
-            sInds (integer array):
-                Array of all indexes of stars from sInds = np.array(TL.nStars)
-            dmag ():
-
-            WA ():
-
-            dir_path (string):
-                string containing the path to starComps.csv. This should be the EXOSIMS SurveySimulation folder
-            fname (string):
-                string containing starComps.csv (aside: This name should be improved to encode the list of stars being used)
-            startTime (float array):
-                observation start time of each observation
-            tovisit (idk):
-                uhhhhh
 
         Returns:
             DRM
@@ -309,23 +97,14 @@ class starkAYO(SurveySimulation):
             t_det (float):
                 detection time of next observation
         """
-        mode = self.mode
+        #mode = self.mode
         SU = self.SimulatedUniverse
-        self.PlanetPopulation = SU.PlanetPopulation
-        self.PlanetPhysicalModel = SU.PlanetPhysicalModel
-        self.OpticalSystem = SU.OpticalSystem
-        self.ZodiacalLight = SU.ZodiacalLight
-        self.BackgroundSources = SU.BackgroundSources
-        self.PostProcessing = SU.PostProcessing
+        OS = SU.OpticalSystem
+        ZL = SU.ZodiacalLight
         self.Completeness = SU.Completeness
-        self.TargetList = SU.TargetList
-
-        OS = self.OpticalSystem
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
+        TL = SU.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
-        ZL = self.ZodiacalLight
         TK.obsStart = TK.currentTimeNorm.to('day')
         start_time_AlgorithmSpeeds = timeit.default_timer()
         dmag = self.dmag_startSaved
@@ -337,7 +116,6 @@ class starkAYO(SurveySimulation):
         DRM = {}#Create DRM
 
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
-        #shouldn't need this??? maybe its here because of DRM...
         lastTime = start_time_AlgorithmSpeeds
         #print(str(timeit.default_timer()-lastTime))
         #Calculate Tint at this time#####################################
@@ -829,9 +607,9 @@ class starkAYO(SurveySimulation):
         numInSeq = np.zeros([sInds.shape[0],100])
         seqEndIndex = np.zeros([sInds.shape[0],100])
         seqStartIndex = np.zeros([sInds.shape[0],100])
-        CbyTtmp = np.zeros([sInds.shape[0],len(np.arange(100))])
+        dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(100))])
         for i in xrange(sInds.shape[0]):
-            intTime = np.arange(100,dtype=np.float)/100*maxTint[i]
+            intTime = np.arange(1000,dtype=np.float)/1000*maxTint[i]
             tmpCbyT = fspl2[i](intTime)
 
             tmpCbyTbool = [fspl2[i](time) > 0 for time in intTime]
@@ -857,11 +635,11 @@ class starkAYO(SurveySimulation):
             fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
             fEZ = 0./u.arcsec**2# ZL.fEZ0
             for j in xrange(intTime.shape[0]):
-                CbyTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value
-            #plt.plot(intTime,tmpCbyT)
-            #plt.plot(intTime,CbyTtmp[i,:])
-            #plt.axis([0,max(intTime),0,max(tmpCbyT)])
-            #plt.show()
+                dCbydTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value
+            plt.plot(intTime,tmpCbyT)
+            plt.plot(intTime,dCbydTtmp[i,:])
+            plt.axis([0,max(intTime),0,max(tmpCbyT)])
+            plt.show()
         return maxTint, maxdmag
 
     def calcTint_core(self, sInds, dmag):
@@ -927,7 +705,7 @@ class starkAYO(SurveySimulation):
         #we must remove any 0's that occur above the max value of completeness for the star
         #to do this, we filter any myTint that is less than some threshold value...
         ##Remove all Tints that are 0 and save to list
-        self.calcTint(None)#self.schedule)#,self.mode,self.startTime2)
+        self.calcTint(None)
         rawTint = self.rawTint
         Tint = self.Tint
 
@@ -969,25 +747,15 @@ class starkAYO(SurveySimulation):
 
     def splineCbyTauvsTau(self):
         """Calculate the spline fit to Completeness/Tau vs Tau
-
         Args:
-
         Returns:
             updates self.spl2_startSaved (spl2 is the spline fitting C/T vs T)
             Dimensions are spl2_startSaved[nStars][Tint > 10**-15]
         """
-
-        #self.calcTint(self.schedule)#,self.mode,self.startTime2)#I think we can remove this
         rawTint = self.rawTint
         Tint = self.Tint
         sInds = self.schedule_startSaved
         starComps = self.starComps
-
-        #I think we can remove this
-        #starComps = list()
-        #for j in xrange(sInds.shape[0]):
-        #        starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-15)[0]])
-
         #spl = self.spl_startSaved
         sInds = self.schedule_startSaved
         spl2 = list()
@@ -1120,44 +888,6 @@ class starkAYO(SurveySimulation):
             fig.savefig(figscriptfile)
             plt.close()
         print('Done dC/dT vs T')
-
-    def saveComp(self, starComps):
-        """Saves Completeness vs dmag for each star to folder
-
-        Args:
-            starComps (List)
-                List of form Completeness = starComps[star][dmag index]
-        Returns:
-
-        """
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/starComps.csv'
-        with open(dir_path+fname, "wb") as fo:
-            wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-            wr.writerows(starComps)
-            fo.close()
-
-    def loadComp(self):
-        """Loads Completeness from starComps.csv on this path
-
-        Args:
-
-        Returns:
-            starComps (list):
-                List of Completeness at dmags
-        """
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/starComps.csv'
-        with open(dir_path+fname,'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        starComps = list()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i])
-            tmp = tmp.astype(np.float)
-            starComps.append(tmp)
-        return starComps
 
     def distributedt(self,sacrificedStarTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):#distributing the sacrificed time
         """#here we want to add integration time to the highest performing stars in our selection box
@@ -1295,36 +1025,6 @@ class starkAYO(SurveySimulation):
 
     def reOrderCbyT(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
         sortIndex = np.argsort(CbyT,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array
-        #index list from highest dCbydT to lowest dCbydT....
-
-        #2 Reorder data#######################
-        #sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)
-        sInds = sInds[sortIndex]
-        #if numits > 200:
-        #    pdb.set_trace()
-        t_dets = t_dets[sortIndex]
-        dCbydT = dCbydT[sortIndex]
-        fsplDeriv = [fsplDeriv[i] for i in sortIndex]
-        tmp2 = list()#this tmp2 operation efficienct might be able to be increased
-        tmp2[:] = [Tint[i] for i in sortIndex]#there must be a better single line way to do this...
-        Tint = tmp2
-        del tmp2
-        fspl2 = [fspl2[i] for i in sortIndex]
-        fspl = [fspl[i] for i in sortIndex]
-        CbyT = CbyT[sortIndex]
-        Comp00 = Comp00[sortIndex]
-        maxIntTime = maxIntTime[sortIndex]
-
-        #FOR DEBUGGING
-        #print('sortNum sInd dCbydT maxIntTime CbyT Comp00 t_dets')
-        #for i in range(len(dCbydT)):
-        #    print(str(i) + ' ' + str(sInds[i]) + ' ' + str(dCbydT[i]) + ' ' + str(maxIntTime[i]) + ' ' + str(CbyT[i]) + ' ' + str(Comp00[i]) + ' ' + str(t_dets[i]))
-        #print(saltyburrito)
-
-        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
-
-    def reOrderMaxComp(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
-        sortIndex = np.argsort(Comp00,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array
         #index list from highest dCbydT to lowest dCbydT....
 
         #2 Reorder data#######################
@@ -1544,7 +1244,7 @@ class starkAYO(SurveySimulation):
     def generate_fZ(self, sInds):
         """
         This function calculates fZ values for each star over an entire orbit of the sun
-
+        This function is called in init
         returns: fZ[resolution, sInds] where fZ is the zodiacal light for each star
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
@@ -1606,3 +1306,137 @@ class starkAYO(SurveySimulation):
             fZ.append(tmp)
         return fZ
 
+    def generatefComp(self,dir_path, fname, sInds):
+        #This function is called in init.
+        #This function should be moved to Completeness
+        dmag = self.dmag_startSaved
+        IWA = self.OpticalSystem.IWA.value#of telescope. to be used for min s
+        OWA = self.OpticalSystem.OWA.value#of telescope to be used for max s
+
+        ##NEED SOME CHECKS TO DETRMINE WHETHER COMPLETENESS FILE IS OKAY OR NOT
+
+        #IF Completeness Distribution has not been calculated Generate Completeness and Generate that File
+        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
+            print('Calculate Completeness 1')#Calculate Completeness for Each Star##############################
+            starSmin = np.zeros(len(sInds))#contains Smin for each star
+            starSmax = np.zeros(len(sInds))#contains Smax for each star
+            #Calculate Smin and Smax for all Stars in List
+            for q in range(len(sInds)):#iterate through each star
+                star_dist = self.TargetList.dist[sInds[q]].value
+                starSmin[q] = star_dist*IWA
+                starSmax[q] = star_dist*OWA
+            absSmax = np.amin(starSmin)#find largest Smax of entire list
+            absSmin = np.amax(starSmax)#find smallest Smin of entire list
+
+            Smat = np.linspace(absSmin,absSmax,400)#Calculate S range to calculate over
+            fComp = np.zeros((len(Smat),len(dmag)))
+            for j in range(len(dmag)):#for each arbitrary dmaglim between 0 and dMagLim
+                dmaglim = dmag[j]#artificial dmaglim to be set by a smaller integration time
+                for i in range(len(Smat)):#iterate through star separations
+                        fComp[i][j] = self.Completeness.f_s(Smat[i],dmaglim)#calculates fComp
+                print('Calculating fComp for dmag ' + str(j) + ' of ' + str(len(dmag)))
+            #generates fComp which is a fComp[Smat][dmag] matrix and holds the completeness value for each one of those
+            #Aug 28, 2017 execution time 3701 for 400x5000... depends on size... 
+            print('Done Calculating Completeness 1')
+
+            #Save Completeness to File######################################
+            try:#Here we delete the previous completeness file
+                print('Trying to save Completeness to File')
+                timeNow = datetime.datetime.now()
+                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
+                fnameNew = '/' + timeString +  'moved_starComps.csv'
+                os.rename(dir_path+fname,dir_path+fnameNew)
+            except OSError:
+                pass
+            with open(dir_path+fname, "wb") as fo:
+                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                wr.writerow(Smat)#writes the 1st row Separations
+                wr.writerow(dmag)#writes the 2nd row dmags
+                for i in range(len(fComp)):
+                    wr.writerow(fComp[i])#self.starComps_startSaved)#writes the completeness
+                fo.close()
+                print('Finished Saving Completeness To File')
+
+    def loadCompData(self, dir_path, fname):
+        """Loads Completeness from starComps.csv on this path
+        This is called in init
+
+        Args: dir_path, a string containing the filepath and fname, a string containing the filename
+
+        Returns:
+            SmatRead, a list of all discrete planet separations evaluated over
+            dmagRead, a list of all discrete planet dmag evaluated over
+        """
+        SmatRead = list()
+        dmagRead = list()
+        with open(dir_path+fname, 'rb') as f:
+            reader = csv.reader(f)
+            your_list = list(reader)
+            f.close()
+        for i in range(len(your_list)):
+            if i == 0:
+                SmatRead = np.asarray(your_list[i]).astype(np.float)
+            elif i == 1:
+                dmagRead = np.asarray(your_list[i]).astype(np.float)
+            else:
+                tmp = np.asarray(your_list[i]).astype(np.float)
+                self.compData.append(tmp)#Unfiltered Completeness Lists
+        #Sept 6, 2017 execution time 0.0922 sec
+        print('Finished Loading Completeness pdf from File')
+        return SmatRead, dmagRead
+
+    def generateAllStarsComp(self,dir_path, fname, sInds, SmatRead, dmagRead):
+        IWA = self.OpticalSystem.IWA.value#of telescope. to be used for min s
+        OWA = self.OpticalSystem.OWA.value#of telescope to be used for max s
+        #Iterate through each star, interpolate which completeness to start summing at do for all stars.
+        #if not os.path.isfile(dir_path+fname) or len(self.starComps_startSaved) != sInds.shape[0]:#If this file does not exist or the length of the file is not appropriate 
+        starS = list()#contains separation amtrix for each star
+        compvsdmagDat = np.zeros((len(sInds),len(dmagRead)))
+
+        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
+            print('Calculating Completeness for Each Star vs dmag')
+            for q in range(sInds.shape[0]):#iterates through each star
+                star_dist = self.TargetList.dist[sInds[q]].value
+                Smin = star_dist*IWA
+                Smax = star_dist*OWA 
+                SminIndex = np.argmin(np.abs([(x - Smin) for x in SmatRead]))#find index of Smin
+                SmaxIndex = np.argmin(np.abs([(Smax - x) for x in SmatRead]))#find index of Smax
+                for i in range(dmagRead.shape[0]):#Iterate through each column and sum down the column over the range specified
+                    compvsdmagDat[q][i] = sum([self.compData[x][i] for x in range(SmaxIndex,SminIndex)])*np.abs(SmatRead[SminIndex]-SmatRead[SmaxIndex])/np.abs(SmaxIndex-SminIndex)
+                self.starComps_startSaved.append(compvsdmagDat[q])
+            del compvsdmagDat
+            #Save Completeness to File######################################
+            try:#Here we delete the previous completeness file
+                print('Trying to save Completeness vs dMag for Each Star to File')
+                timeNow = datetime.datetime.now()
+                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
+                fnameNew = '/' + timeString +  'moved_starCompsAllStars.csv'
+                os.rename(dir_path+fname,dir_path+fnameNew)
+            except OSError:
+                print('There was an error writing the file')
+                pass
+            with open(dir_path+fname, "wb") as fo:
+                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                for i in range(sInds.shape[0]):#iterate through all stars
+                    wr.writerow(self.starComps_startSaved[i])#self.starComps_startSaved)#writes the completeness
+                fo.close()
+                #Aug 28, 2017 execution time 
+                print('Saving Completeness vs dMag for Each Star to File time = '+str(timeit.default_timer() - lastTime))
+                lastTime = timeit.default_timer()
+                print('Finished Saving Completeness vs dMag for Each Star to File')
+
+        #Load Completeness vs dMag for Each Star From File######################################
+        print('Load Completeness for Each Star from File')
+        with open(dir_path+fname, 'rb') as f:
+            reader = csv.reader(f)
+            your_list = list(reader)
+            f.close()
+        for i in range(len(your_list)):
+            tmp = np.asarray(your_list[i]).astype(np.float)
+            self.starComps_startSaved.append(tmp)#Unfiltered Completeness Lists
+        #Sept 6, 2017 execution time  sec
+        #print('Load Completeness File time = '+str(timeit.default_timer() - lastTime))
+        lastTime = timeit.default_timer()
+        print('Finished Loading Completeness vs dMags for Each Star from File')
+        #Iterate through each star, interpolate which completeness to start summing at do for all stars.

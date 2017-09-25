@@ -156,7 +156,7 @@ e (float ndarray):<blockquote>
 <span id="exosims-planetpopulation-keplerlike1-module"></span><h2>EXOSIMS.PlanetPopulation.KeplerLike1 module<a class="headerlink" href="#module-EXOSIMS.PlanetPopulation.KeplerLike1" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1">
-<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.KeplerLike1.</code><code class="descname">KeplerLike1</code><span class="sig-paren">(</span><em>smaknee=30, esigma=0.25, prange=[0.083, 0.882], Rprange=[1, 22.6], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPopulation.KeplerLike1.</code><code class="descname">KeplerLike1</code><span class="sig-paren">(</span><em>smaknee=30, esigma=0.13962979814050144, prange=[0.083, 0.882], Rprange=[1, 22.6], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation" title="EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation</span></code></a></p>
 <p>Population based on Kepler radius distribution with RV-like semi-major axis
 distribution with exponential decay.</p>
@@ -188,14 +188,14 @@ there.  Any user-set mass limits are ignored.
 from there. Any user-set albedo limits are ignored.
 3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user
 settings (the JSON input will be ignored)
-4. The radius piece-wise distribution provides the normalization required to
-get the proper overall eta.  The gen_radius method provided here normalizes
-in order to return exactly the number of samples requested.  A second method
-(gen_radius_nonorm) is provided for generating the simulated universe
-population. The latter assumes a poisson distribution for occurences in each
-bin.
+4. The radius piece-wise distribution (from Fressin et al 2012) provides
+the normalization required to get the proper overall eta.  The gen_radius
+method provided here normalizes in order to return exactly the number of
+samples requested.  A second method (gen_radius_nonorm) is provided for
+generating the simulated universe population. The latter assumes a poisson
+distribution for occurences in each bin.
 5.  Eccentricity is assumed to be Rayleigh distributed with a user-settable
-sigma parameter (defaults to 0.25).</p>
+sigma parameter (defaults to value from Fressin et al 2012).</p>
 <dl class="method">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_albedo">
 <code class="descname">dist_albedo</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/KeplerLike1.html#KeplerLike1.dist_albedo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.dist_albedo" title="Permalink to this definition">¶</a></dt>
@@ -624,66 +624,131 @@ correspond to Gamma, alpha, beta, and the minimum radius.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Gamma">
+<code class="descname">Gamma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Gamma coefficients used by SAG13 broken power law.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.alpha">
+<code class="descname">alpha</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Alpha coefficients used by SAG13 broken power law.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.beta">
+<code class="descname">beta</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.beta" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Beta coefficients used by SAG13 broken power law.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Rplim">
+<code class="descname">Rplim</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Rplim" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float ndarray</em> &#8211; Minimum radius used by SAG13 broken power law.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13starMass">
 <code class="descname">SAG13starMass</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13starMass" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>astropy Quantity</em> &#8211; Assumed stellar mass corresponding to the given set of coefficients.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.eta2D">
-<code class="descname">eta2D</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.eta2D" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; 2D array of planet occurrence rate per star, binned by planetary
-radius and period.</p>
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.mu">
+<code class="descname">mu</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.mu" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> &#8211; Gravitational parameter associated with SAG13starMass.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.lnRp">
-<code class="descname">lnRp</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.lnRp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Logarithm of the eta2D grid radius values in units of Earth radius.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.lnT">
-<code class="descname">lnT</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.lnT" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Logarithm of the eta2D grid period values in units of year.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Trange">
-<code class="descname">Trange</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Trange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Period range in units of year.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Tknee">
-<code class="descname">Tknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Tknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in year) of period decay point (knee).
-Not an astropy quantity.</p>
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Ca">
+<code class="descname">Ca</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Ca" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float 2x1 ndarray</em> &#8211; Constants used for sampling.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_lnradius_lnperiod">
-<code class="descname">dist_lnradius_lnperiod</code><span class="sig-paren">(</span><em>lnRp</em>, <em>lnT</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/SAG13.html#SAG13.dist_lnradius_lnperiod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_lnradius_lnperiod" title="Permalink to this definition">¶</a></dt>
-<dd><p>Probability density function for logarithm of planetary radius
-in Earth radius, and orbital period in year.</p>
-<p>This method implements the SAG13 broken power law. It returns the joint
-distribution of the logarithm of planetary radius and orbital period
-values (d2N / (dlnRp * dlnT).</p>
-<p>It also integrates the decay point (smaknee/Tknee) defined
-in the KeplerLike module.</p>
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_radius">
+<code class="descname">dist_radius</code><span class="sig-paren">(</span><em>Rp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/SAG13.html#SAG13.dist_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marginalized probability density function for planetary radius in
+Earth radius.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>float ndarray</em>) &#8211; Planetary radius value(s) in Earth radius. Not an astropy quantity.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary radius probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma">
+<code class="descname">dist_sma</code><span class="sig-paren">(</span><em>a</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/SAG13.html#SAG13.dist_sma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marginalized probability density function for semi-major axis in AU.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value(s) in AU. Not an astropy quantity.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">f (float ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma_given_radius">
+<code class="descname">dist_sma_given_radius</code><span class="sig-paren">(</span><em>a</em>, <em>beta</em>, <em>m</em>, <em>C</em>, <em>smaknee</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/SAG13.html#SAG13.dist_sma_given_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma_given_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conditional probability density function of semi-major axis given
+planetary radius.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>lnRp</strong> (<em>float ndarray</em>) &#8211; Logarithm of planetary radius value(s) in Earth radius.
-Not an astropy quantity.</li>
-<li><strong>lnT</strong> (<em>float ndarray</em>) &#8211; Logarithm of orbital period value(s) in year. Not an astropy quantity.</li>
+<li><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value(s) in AU. Not an astropy quantity</li>
+<li><strong>beta</strong> (<em>float</em>) &#8211; Exponent for distribution</li>
+<li><strong>m</strong> (<em>float</em>) &#8211; Gravitational parameter (AU3/year2)</li>
+<li><strong>C</strong> (<em>float</em>) &#8211; Normalization for distribution</li>
+<li><strong>smaknee</strong> (<em>float</em>) &#8211; Coefficient for decay</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Joint (radius and period) probability density matrix
-of shape (len(x),len(y))</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Probability density</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma_radius">
+<code class="descname">dist_sma_radius</code><span class="sig-paren">(</span><em>a</em>, <em>R</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPopulation/SAG13.html#SAG13.dist_sma_radius"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.dist_sma_radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Joint probability density function for semi-major axis (AU) and
+planetary radius in Earth radius.</p>
+<p>This method performs a change of variables on the SAG13 broken power
+law (originally in planetary radius and period).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis values in AU. Not an astropy quantity</li>
+<li><strong>R</strong> (<em>float ndarray</em>) &#8211; Planetary radius values in Earth radius. Not an astropy quantity</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Joint (semi-major axis and planetary radius) probability density
+matrix of shape (len(R),len(a))</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>

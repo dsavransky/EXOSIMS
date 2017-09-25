@@ -141,6 +141,9 @@ TargetList
    the star catalog after assembling the target list. If true, object
    reference will be available from TargetList object.
 
+-  **fillPhotometry** (boolean) If True, attempt to fill in missing 
+   photometric values based on target spectral type.
+
 Observatory
 --------------
 

@@ -61,6 +61,17 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         # create interpolant for orbital velocity (years & AU/yr units)
         self.v_halo_interp = interpolate.interp1d(self.t_halo.value,
                 self.v_halo.value.T, kind='linear')
+                
+        # orbital properties used in Circular Restricted 3 Body Problem
+        self.L2_dist = halo['x_lpoint'][0][0]*u.AU
+        self.r_halo_L2 = halo['state'][:,0:3]*u.AU
+        # position wrt L2
+        self.r_halo_L2[:,0] -= self.L2_dist 
+        
+        # create new interpolant for CR3BP (years & AU units)
+        self.r_halo_interp_L2 = interpolate.interp1d(self.t_halo.value,
+                self.r_halo_L2.value.T, kind='linear')
+
 
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)

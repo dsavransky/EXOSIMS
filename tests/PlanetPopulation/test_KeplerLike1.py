@@ -11,18 +11,11 @@ r"""KeplerLike1 module unit tests
 Michael Turmon, JPL, May 2016
 """
 
-import sys
 import os
-import json
-import csv
-import logging
-import StringIO
 import unittest
-from collections import defaultdict
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
-from scipy import integrate,stats
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats

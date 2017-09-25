@@ -111,7 +111,7 @@ class BrownCompleteness(Completeness):
         #save interpolant to object
         self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-        self.EVPOC = np.vectorize(self.EVPOCpdf.integral)
+        self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew  
             
@@ -122,25 +122,31 @@ class BrownCompleteness(Completeness):
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
         if np.isinf(OWA):
-            smax = xedges[-1]*u.AU
+            smax = np.array([xedges[-1]]*len(smin))*u.AU
         else:
             smax = np.tan(OWA)*TL.dist
+            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
         
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
-        # calculate dMags based on maximum dMag
+        comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
-            comp0 = np.zeros(smin.shape)
-            comp0[dMagMax>ymin] = self.EVPOC(smin[dMagMax>ymin].to('AU').value, \
-                    smax[dMagMax>ymin].to('AU').value, 0.0, dMagMax[dMagMax>ymin])
+            mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
+            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
+                    smax[mask].to('AU').value, 0.0, dMagMax[mask])
         else:
-            comp0 = self.EVPOC(smin.to('AU').value, smax.to('AU').value, 0.0, dMagMax)
+            mask = smin<self.PlanetPopulation.rrange[1]
+            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
+        # remove small values
         comp0[comp0<1e-6] = 0.0
+
+        # ensure that completeness is between 0 and 1
+        comp0 = np.clip(comp0, 0., 1.)
         
         return comp0
 
@@ -265,6 +271,8 @@ class BrownCompleteness(Completeness):
                     
                 if (sInd+1) % 50 == 0:
                     print 'stars: %r / %r' % (sInd+1,TL.nStars)
+            # ensure that completeness values are between 0 and 1
+            self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
             pickle.dump(self.updates, open(path, 'wb'))
             print 'Dynamic completeness calculations finished'
@@ -460,9 +468,17 @@ class BrownCompleteness(Completeness):
         assert len(WA) == 1, "WA must be constant"
         
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        # calculate separations based on IWA and OWA
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
+        if np.isinf(OWA):
+            smax = self.PlanetPopulation.rrange[1].to('AU').value
+        else:
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.EVPOC(smin, smax, 0., dMag)
+        # ensure completeness values are between 0 and 1
+        comp = np.clip(comp, 0., 1.)
         
         return comp
 

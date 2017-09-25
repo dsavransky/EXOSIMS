@@ -7,6 +7,12 @@ import numbers
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+import astropy.io
+import re
+import scipy.interpolate
+import os.path
+import inspect
+
 
 class TargetList(object):
     """Target List class template
@@ -58,6 +64,9 @@ class TargetList(object):
             Boolean used to force static target positions set at mission start time
         keepStarCatalog (boolean):
             Boolean used to avoid deleting StarCatalog after TargetList was built
+        fillPhotometry (boolean):
+            Defaults False.  If True, attempts to fill in missing target photometric 
+            values using interpolants of tabulated values for the stellar type.
     
     """
 
@@ -65,7 +74,7 @@ class TargetList(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, staticStars=True, 
-            keepStarCatalog=False, **specs):
+            keepStarCatalog=False, fillPhotometry=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -73,8 +82,10 @@ class TargetList(object):
         # validate TargetList inputs
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
+        assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
+        self.fillPhotometry = bool(fillPhotometry)
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -140,10 +151,10 @@ class TargetList(object):
         
         return 'Target List class object attributes'
 
-    def populate_target_list(self, **specs):
+    def populate_target_list(self,**specs):
         """ This function is actually responsible for populating values from the star 
         catalog (or any other source) into the target list attributes.
-        
+
         The prototype implementation does the following:
         
         Copy directly from star catalog and remove stars with any NaN attributes
@@ -165,6 +176,10 @@ class TargetList(object):
         
         # number of target stars
         self.nStars = len(self.Name)
+    
+        if self.fillPhotometry:
+            self.fillPhotometryVals()
+
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
         # populate completeness values
@@ -177,7 +192,126 @@ class TargetList(object):
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
+    
+    def fillPhotometryVals(self):
+        """
+        This routine attempts to fill in missing photometric values, including
+        the luminosity, absolute magnitude, V band bolometric correction, and the 
+        apparent VBHJK magnitudes by interpolating values from a table of standard
+        stars by spectral type.  
 
+        The data is from:
+        "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence"
+        http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
+        Eric Mamajek (JPL/Caltech, University of Rochester) 
+        Version 2017.09.06
+
+        """
+        
+        #Looking for file EEM_dwarf_UBVIJHK_colors_Teff.txt in the TargetList folder
+        filename = 'EEM_dwarf_UBVIJHK_colors_Teff.txt'
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        classpath = os.path.normpath(os.path.join(classpath, '..', 
+                'TargetList'))
+        datapath = os.path.join(classpath, filename)
+        assert os.path.isfile(datapath),'Could not locate %s in TargetList directory.'%filename
+
+        data = astropy.io.ascii.read(datapath,fill_values=[('...',np.nan),('....',np.nan),('.....',np.nan)])
+
+        specregex = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+)V')
+        specregex2 = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+).*')
+
+        MK = []
+        MKn = []
+        for s in data['SpT'].data:
+            m = specregex.match(s)
+            MK.append(m.groups()[0])
+            MKn.append(m.groups()[1])
+        MK = np.array(MK)
+        MKn = np.array(MKn)
+
+        #create dicts of interpolants
+        Mvi = {}
+        BmVi = {}
+        logLi = {}
+        BCi = {}
+        VmKi = {}
+        HmKi = {}
+        JmHi = {}
+        for l in 'OBAFGKM':
+            Mvi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['Mv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            BmVi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['B-V'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            logLi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['logL'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            VmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Ks'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            HmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['H-K'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            JmHi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['J-H'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            BCi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['BCv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+
+
+        #first try to fill in missing Vmags
+        if np.any(np.isnan(self.Vmag)):
+            inds = np.where(np.isnan(self.Vmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    self.Vmag[i] = Mvi[m.groups()[0]](m.groups()[1])
+                    self.MV[i] = self.Vmag[i] - 5*(np.log10(self.dist[i].to('pc').value) - 1)
+
+        #next, try to fill in any missing B mags
+        if np.any(np.isnan(self.Bmag)):
+            inds = np.where(np.isnan(self.Bmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    self.BV[i] = BmVi[m.groups()[0]](m.groups()[1])
+                    self.Bmag[i] = self.BV[i] + self.Vmag[i]
+
+        #next fix any missing luminosities
+        if np.any(np.isnan(self.L)):
+            inds = np.where(np.isnan(self.L))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])
+
+        #and bolometric corrections
+        if np.any(np.isnan(self.BC)):
+            inds = np.where(np.isnan(self.BC))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    self.BC[i] = BCi[m.groups()[0]](m.groups()[1])
+
+
+        #next fill in K mags
+        if np.any(np.isnan(self.Kmag)):
+            inds = np.where(np.isnan(self.Kmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    VmK = VmKi[m.groups()[0]](m.groups()[1])
+                    self.Kmag[i] = self.Vmag[i] - VmK
+
+        #next fill in H mags
+        if np.any(np.isnan(self.Hmag)):
+            inds = np.where(np.isnan(self.Hmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    HmK = HmKi[m.groups()[0]](m.groups()[1])
+                    self.Hmag[i] = self.Kmag[i] + HmK
+
+        #next fill in J mags
+        if np.any(np.isnan(self.Jmag)):
+            inds = np.where(np.isnan(self.Jmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    JmH = JmHi[m.groups()[0]](m.groups()[1])
+                    self.Jmag[i] = self.Hmag[i] + JmH
+
+
+    
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
         

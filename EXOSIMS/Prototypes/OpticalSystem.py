@@ -722,7 +722,7 @@ class OpticalSystem(object):
         
         return minintTime
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds achievable planet delta magnitude for one integration 
         time per star in the input list at one or more working angles.
         
@@ -744,6 +744,11 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
                 
         Returns:
             dMag (float ndarray):
@@ -761,7 +766,7 @@ class OpticalSystem(object):
         
         return dMag
 
-    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds derivative of achievable dMag with respect to integration time.
         
         Args:
@@ -779,6 +784,11 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
             
         Returns:
             ddMagdt (astropy Quantity array):

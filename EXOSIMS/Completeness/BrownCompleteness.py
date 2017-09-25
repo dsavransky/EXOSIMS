@@ -431,7 +431,7 @@ class BrownCompleteness(Completeness):
         
         return s, dMag
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates completeness for integration time
         
         Args:
@@ -449,6 +449,11 @@ class BrownCompleteness(Completeness):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
                 
         Returns:
             comp (array):
@@ -467,16 +472,20 @@ class BrownCompleteness(Completeness):
         assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']
         OWA = mode['OWA']
-        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
+        smin = np.tan(IWA)*TL.dist
         if np.isinf(OWA):
-            smax = self.PlanetPopulation.rrange[1].to('AU').value
+            smax = np.array([self.xedges[-1]]*len(smin))
         else:
-            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
+            smax = np.tan(OWA)*TL.dist
+            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1].to('AU').value
+        
         comp = self.comp_calc(smin, smax, dMag)
+        mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
+        comp[mask] = 0.
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
         
@@ -504,7 +513,7 @@ class BrownCompleteness(Completeness):
         
         return comp
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
@@ -522,6 +531,11 @@ class BrownCompleteness(Completeness):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)                
                 
         Returns:
             dcomp (array):
@@ -540,11 +554,20 @@ class BrownCompleteness(Completeness):
         assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
         
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp).reshape((len(intTimes),))
+        # calculate separations based on IWA and OWA
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = np.tan(IWA)*TL.dist
+        if np.isinf(OWA):
+            smax = np.array([self.xedges[-1]]*len(smin))
+        else:
+            smax = np.tan(OWA)*TL.dist
+            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1].to('AU').value
         ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
+        mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
+        dcomp[mask] = 0.
         
         return dcomp*ddMag
     

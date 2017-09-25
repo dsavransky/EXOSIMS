@@ -102,13 +102,13 @@ class GarrettCompleteness(BrownCompleteness):
         self.d4 = -2.5*np.log10(self.pmax*(self.Rmax*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         self.d5 = -2.5*np.log10(self.pmin*(self.Rmin*self.x/self.rmax)**2*self.Phi(np.pi/2.0))
         # vectorize scalar methods
-        self.rgrand2v = np.vectorize(self.rgrand2)
-        self.f_dmagsv = np.vectorize(self.f_dmags)
-        self.f_sdmagv = np.vectorize(self.f_sdmag)
-        self.f_dmagv = np.vectorize(self.f_dmag)
-        self.f_sv = np.vectorize(self.f_s)
-        self.mindmagv = np.vectorize(self.mindmag)
-        self.maxdmagv = np.vectorize(self.maxdmag)
+        self.rgrand2v = np.vectorize(self.rgrand2, otypes=[np.float64])
+        self.f_dmagsv = np.vectorize(self.f_dmags, otypes=[np.float64])
+        self.f_sdmagv = np.vectorize(self.f_sdmag, otypes=[np.float64])
+        self.f_dmagv = np.vectorize(self.f_dmag, otypes=[np.float64])
+        self.f_sv = np.vectorize(self.f_s, otypes=[np.float64])
+        self.mindmagv = np.vectorize(self.mindmag, otypes=[np.float64])
+        self.maxdmagv = np.vectorize(self.maxdmag, otypes=[np.float64])
         # inverse functions for phase angle
         b1 = np.linspace(0.0, self.bstar, 20000)
         # b < bstar
@@ -168,7 +168,7 @@ class GarrettCompleteness(BrownCompleteness):
         Cpath = os.path.join(self.classpath, self.filename+'.acomp')
         
         dist_s = self.genComp(Cpath, TL)
-        dist_sv = np.vectorize(dist_s.integral)
+        dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
         mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
@@ -176,19 +176,24 @@ class GarrettCompleteness(BrownCompleteness):
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value
         if np.isinf(OWA):
-            smax = self.rmax
+            smax = np.array([self.rmax]*len(smin))
         else:
             smax = (np.tan(OWA)*TL.dist).to('AU').value
+            smax[smax>self.rmax] = self.rmax        
         
+        comp0 = np.zeros(smin.shape)
         # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
-            comp0 = self.comp_s(smin, smax, dMagMax)
+            mask = smin<self.rmax
+            comp0[mask] = self.comp_s(smin[mask], smax[mask], dMagMax[mask])
         else:
-            comp0 = dist_sv(smin, smax)
+            mask = smin<self.rmax
+            comp0[mask] = dist_sv(smin[mask], smax[mask])
+
         # ensure that completeness values are between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
 
@@ -806,94 +811,46 @@ class GarrettCompleteness(BrownCompleteness):
         
         return comp
     
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Calculates completeness for integration time
+    def comp_calc(self, smin, smax, dMag):
+        """Calculates completeness for given minimum and maximum separations
+        and dMag
         
         Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            WA (astropy Quantity):
-                Working angle of the planet of interest in units of arcsec
-            mode (dict):
-                Selected observing mode
-                
+            smin (float ndarray):
+                Minimum separation(s) in AU
+            smax (float ndarray):
+                Maximum separation(s) in AU
+            dMag (float ndarray):
+                Difference in brightness magnitude
+        
         Returns:
-            comp (array):
-                Completeness values
+            comp (float ndarray):
+                Completeness value(s)
         
         """
         
-        # cast inputs to arrays and check
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
-        assert len(WA) == 1, "WA must be constant"
-        
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
         comp = self.comp_dmag(smin, smax, dMag)
-        # ensure that completeness values are between 0 and 1
-        comp = np.clip(comp, 0., 1.)
         
         return comp
-        
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
-        """Calculates derivative of completeness with respect to integration time
+    
+    def calc_fdmag(self, dMag, smin, smax):
+        """Calculates probability density of dMag by integrating over projected
+        separation
         
         Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            WA (astropy Quantity):
-                Working angle of the planet of interest in units of arcsec
-            mode (dict):
-                Selected observing mode
-                
+            dMag (float ndarray):
+                Planet delta magnitude(s)
+            smin (float ndarray):
+                Value of minimum projected separation (AU) from instrument
+            smax (float ndarray):
+                Value of maximum projected separation (AU) from instrument
+        
         Returns:
-            dcomp (array):
-                Derivative of completeness with respect to integration time
+            f (float):
+                Value of probability density
         
         """
         
-        # cast inputs to arrays and check
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        sInds = np.array(sInds, ndmin=1)
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
-        assert len(WA) == 1, "WA must be constant"
-        
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
-        fdmag = np.zeros(intTimes.shape)
-        for i in xrange(len(intTimes)):
-            fdmag[i] = self.f_dmagv(dMag[i], smin[i], smax[i])
-        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(fdmag),))
-        dcomp = fdmag*ddMag
-        
-        return dcomp
+        f = self.f_dmagv(dMag, smin, smax)
+            
+        return f

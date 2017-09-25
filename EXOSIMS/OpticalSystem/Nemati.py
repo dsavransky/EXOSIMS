@@ -101,12 +101,9 @@ class Nemati(OpticalSystem):
         
         return intTime.to('day')
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds achievable dMag for one integration time per star in the input 
-        list at one or more working angles.
-        
-        Achievable dMag is returned as an m x n array where m corresponds to 
-        each star in sInds and n corresponds to each working angle in WA.
+        list at one working angle.
         
         Args:
             intTimes (astropy Quantity array):
@@ -116,13 +113,20 @@ class Nemati(OpticalSystem):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+                Surface brightness of local zodiacal light for each star in sInds
+                in units of 1/arcsec2
             fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Surface brightness of exo-zodiacal light for each star in sInds
+                in units of 1/arcsec2
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
+                Working angle for each star in sInds in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
             
         Returns:
             dMag (ndarray):
@@ -130,13 +134,16 @@ class Nemati(OpticalSystem):
                 
         """
         
-        # cast sInds, WA and intTimes to arrays
+        # cast sInds, WA, fZ, fEZ, and intTimes to arrays
         sInds = np.array(sInds, ndmin=1, copy=False)
         WA = np.array(WA.value, ndmin=1)*WA.unit
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
         assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
+        assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
 
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
@@ -161,16 +168,15 @@ class Nemati(OpticalSystem):
         core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet delta magnitude
-        dMag = np.zeros((len(sInds), len(WA)))
+        #        dMag = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
-        for i in xrange(len(sInds)):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ[i], fEZ[i], dMagLim, WA, mode)
-            dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes[i] + C_sp**2) \
-                    /(C_F0*10.0**(-0.4*mV[i])*core_thruput*inst['PCeff'])).decompose().value)
+        if (C_b is None) or (C_sp is None):
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
+        dMag = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes + C_sp**2)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
         
         return dMag
 
-    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds derivative of achievable dMag with respect to integration time
         
         Args:
@@ -181,13 +187,20 @@ class Nemati(OpticalSystem):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+                Surface brightness of local zodiacal light for each star in sInds
+                in units of 1/arcsec2
             fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Surface brightness of exo-zodiacal light for each star in sInds
+                in units of 1/arcsec2
             WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
+                Working angle for each star in sInds in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
             
         Returns:
             ddMagdt (ndarray):
@@ -195,17 +208,21 @@ class Nemati(OpticalSystem):
         
         """
         
-        # cast sInds, WA and intTimes to arrays
+        # cast sInds, WA, fZ, fEZ, and intTimes to arrays
         sInds = np.array(sInds, ndmin=1, copy=False)
         WA = np.array(WA.value, ndmin=1)*WA.unit
+        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
+        assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
+        assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
         
-        ddMagdt = np.zeros((len(sInds), len(WA)))
+        #ddMagdt = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
-        for i in xrange(len(sInds)):
-            _, Cb, Csp = self.Cp_Cb_Csp(TL, sInds[i], fZ[i], fEZ, dMagLim, WA, mode)
-            ddMagdt[i,:] = 2.5/(2.0*np.log(10.0))*(Cb/(Cb*intTimes[i] \
-                    + (Csp*intTimes[i])**2)).to('1/s').value
+        if (C_b is None) or (C_sp is None):
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
+        ddMagdt = 2.5/(2.0*np.log(10.0))*(C_b/(C_b*intTimes + (C_sp*intTimes)**2)).to('1/s').value
         
         return ddMagdt/u.s

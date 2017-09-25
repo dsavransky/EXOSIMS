@@ -190,6 +190,11 @@ class starkAYO(SurveySimulation):
         #print('calc_intTimeLIGHT time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         ################################################################
+
+
+
+
+
         
         ##############################################################
         """###FILTERING IS TEMPORARILY REMOVED FOR RUNNING DMITRY'S TEST DO NOT DELETE
@@ -297,27 +302,19 @@ class starkAYO(SurveySimulation):
         excessTime = 0
         for i in range(t_dets.shape[0]):
             if(ok_t_dets[i]):#This star was initially assigned an invalid t_dets
-                #print('too large t_dets ' + str(t_dets[i]) + ' Its maxIntTime ' + str(maxIntTime[i]))
                 excessTime = excessTime + (t_dets[i] - maxIntTime[i])#sum excess time off this observation
                 t_dets[i] = maxIntTime[i]#set t_dets to the maxIntTime
-        #Redistribute excessTime
-        dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.distributedt(excessTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
+        dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.distributedt(excessTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)#Redistribute excessTime
         #Sept 6, 2017 execution time 0.00155 sec
-        #print('Distribute Initial Integration Times = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
-        #All stars should have valid assigned integration times given the schedule...
         #####################################################################
 
         #REORDER SO SINDS ARE IN ORDER FOR COMPAIRISON TO DIMITRY'S CODE
         #CAN DELETE AFTER DONE WITH DMITRY'S TESTING
         sortIndex = np.argsort(-sInds,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from smallest to largest. argsort sorts from smallest to largest, [::-1] flips array
         #index list from highest dCbydT to lowest dCbydT....
-
-        #2 Reorder data#######################
         #sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)
         sInds = sInds[sortIndex]
-        #if numits > 200:
-        #    pdb.set_trace()
         t_dets = t_dets[sortIndex]
         dCbydT = dCbydT[sortIndex]
         fsplDeriv = [fsplDeriv[i] for i in sortIndex]
@@ -359,7 +356,7 @@ class starkAYO(SurveySimulation):
             #Sacrifice Lowest Performing Star###############################################################################
             dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime = self.sacrificeStarCbyT(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
             
-            #THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM#################################
+            #OVERHEAD: THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM#################################
             if(sInds.shape[0] <= missionLength-7):#condition where the observation schedule could be done within the mission time
                 if(firstIteration == 1):#redistribute dt on first Iteration
                     #print('We now have a realizable mission schedule!')
@@ -373,8 +370,7 @@ class starkAYO(SurveySimulation):
             else:
                 sacrificedStarTime = sacrificedStarTime
             ##################################################
-            #Aug 28, 2017 execution time ????infinitesimally small
-            #print('sacrifice time = '+str(timeit.default_timer() - lastTime))
+
             lastTime = timeit.default_timer()
 
             #Distribute Sacrificed Time to new star observations#############################
@@ -485,7 +481,6 @@ class starkAYO(SurveySimulation):
         
         return sInd
 
-
     def calcTint(self, sInds):
         """Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,
         the integration times for all stars in self.schedule_startSaved will be calculated.
@@ -548,7 +543,24 @@ class starkAYO(SurveySimulation):
         numInSeq = np.zeros([sInds.shape[0],100])
         seqEndIndex = np.zeros([sInds.shape[0],100])
         seqStartIndex = np.zeros([sInds.shape[0],100])
-        dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(100))])
+        dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
+        CbyTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
+
+        fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
+        fEZ = 0./u.arcsec**2# ZL.fEZ0
+        intTime = np.arange(100,dtype=np.float)/100*50#use 50days as max Integration Time
+        TOTALTIMETime = timeit.default_timer()
+        for j in xrange(len(intTime)):
+            tmpintTime = np.zeros(len(sInds)) + intTime[j]
+            tmpfZ = np.zeros(len(sInds)) + fZ
+            tmpfEZ = np.zeros(len(sInds)) + fEZ
+            lastTime = timeit.default_timer()
+            CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode)#takes 5 seconds to do 1 time for all stars
+            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(sInds)))
+        print('comp_per_intTime for All Stars time = '+str(timeit.default_timer() - TOTALTIMETime))
+        lastTime = timeit.default_timer()
+        print(saltyburrito)
+
         for i in xrange(sInds.shape[0]):
             intTime = np.arange(1000,dtype=np.float)/1000*maxTint[i]
             tmpCbyT = fspl2[i](intTime)
@@ -571,14 +583,26 @@ class starkAYO(SurveySimulation):
             if(intTime[int(seqEndIndex[i,seqOfMaxLength])] < maxTint[i]):
                 #print('We are swapping ' + str(maxTint[i]) + ' With ' + str(intTime[int(seqEndIndex[i,seqOfMaxLength])]) + ' for sInd ' + str(sInds[i]))
                 maxTint[i] = intTime[int(seqEndIndex[i,seqOfMaxLength])]
-
+            #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
+            lastTime = timeit.default_timer()
             #Calculate dC by dT using Daniel's method
             fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
             fEZ = 0./u.arcsec**2# ZL.fEZ0
+            lastTime = timeit.default_timer()
+            CbyTtmp[i,:] = self.Completeness.comp_per_intTime(intTime[:]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode)
+            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime))
+            lastTime = timeit.default_timer()
+            print(saltyburrito)
             for j in xrange(intTime.shape[0]):
-                dCbydTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value
+                dCbydTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value#0.048 sec
+                print('dcomp_dt time = '+str(timeit.default_timer() - lastTime))
+                lastTime = timeit.default_timer()
+                CbyTtmp[i,j] = self.Completeness.comp_per_intTime(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode)/intTime[j]#1.459 sec
+                print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime))
+                lastTime = timeit.default_timer()
             plt.plot(intTime,tmpCbyT)
             plt.plot(intTime,dCbydTtmp[i,:])
+            plt.plot(intTime,CbyTtmp[i,:])
             plt.axis([0,max(intTime),0,max(tmpCbyT)])
             plt.show()
         return maxTint, maxdmag

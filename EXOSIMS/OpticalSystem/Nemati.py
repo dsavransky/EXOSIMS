@@ -130,7 +130,7 @@ class Nemati(OpticalSystem):
         core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet delta magnitude
-        dMag = np.zeros((len(sInds), len(WA)))
+#        dMag = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
@@ -181,7 +181,7 @@ class Nemati(OpticalSystem):
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
         
-        ddMagdt = np.zeros((len(sInds), len(WA)))
+#        ddMagdt = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)

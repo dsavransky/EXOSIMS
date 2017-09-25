@@ -724,10 +724,7 @@ class OpticalSystem(object):
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds achievable planet delta magnitude for one integration 
-        time per star in the input list at one or more working angles.
-        
-        The prototype returns ones as an m x n array where m corresponds 
-        to each star in sInds and n corresponds to each working angle in WA.
+        time per star in the input list at one working angle.
         
         Args:
             intTimes (astropy Quantity array):
@@ -756,13 +753,7 @@ class OpticalSystem(object):
                 
         """
         
-        # cast sInds, WA and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        
-        dMag = np.ones((len(sInds), len(WA)))
+        dMag = np.ones((len(sInds),))
         
         return dMag
 
@@ -797,6 +788,6 @@ class OpticalSystem(object):
         
         """
         
-        ddMagdt = np.zeros((len(sInds),len(WA)))/u.s
+        ddMagdt = np.zeros((len(sInds),))/u.s
         
         return ddMagdt

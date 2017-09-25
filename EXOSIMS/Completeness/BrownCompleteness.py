@@ -587,13 +587,13 @@ class BrownCompleteness(Completeness):
         # make constants arrays of same length as sInds if len(sInds) != 1
         if len(sInds) != 1:
             if len(intTimes) == 1:
-                intTimes = np.array([intTimes.value]*len(sInds))*intTimes.unit
+                intTimes = np.repeat(intTimes.value, len(sInds))*intTimes.unit
             if len(fZ) == 1:
-                fZ = np.array([fZ.value]*len(sInds))*fZ.unit
+                fZ = np.repeat(fZ.value, len(sInds))*fZ.unit
             if len(fEZ) == 1:
-                fEZ = np.array([fEZ.value]*len(sInds))*fEZ.unit
+                fEZ = np.repeat(fEZ.value, len(sInds))*fEZ.unit
             if len(WA) == 1:
-                WA = np.array([WA.value]*len(sInds))*WA.unit
+                WA = np.repeat(WA.value, len(sInds))*WA.unit
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']

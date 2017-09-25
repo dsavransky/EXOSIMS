@@ -476,9 +476,31 @@ class BrownCompleteness(Completeness):
             smax = self.PlanetPopulation.rrange[1].to('AU').value
         else:
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
-        comp = self.EVPOC(smin, smax, 0., dMag)
+        comp = self.comp_calc(smin, smax, dMag)
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
+        
+        return comp
+    
+    def comp_calc(self, smin, smax, dMag):
+        """Calculates completeness for given minimum and maximum separations
+        and dMag
+        
+        Args:
+            smin (float ndarray):
+                Minimum separation(s) in AU
+            smax (float ndarray):
+                Maximum separation(s) in AU
+            dMag (float ndarray):
+                Difference in brightness magnitude
+        
+        Returns:
+            comp (float ndarray):
+                Completeness value(s)
+        
+        """
+        
+        comp = self.EVPOC(smin, smax, 0., dMag)
         
         return comp
 
@@ -522,8 +544,30 @@ class BrownCompleteness(Completeness):
         smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
         smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
         ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        dcomp = np.zeros(len(intTimes))
-        for k,(dm,ddm) in enumerate(zip(dMag,ddMag)):
-            dcomp[k] = interpolate.InterpolatedUnivariateSpline(self.xnew,self.EVPOCpdf(self.xnew,dm),ext=1).integral(smin[k],smax[k])
+        dcomp = self.calc_fdmag(dMag, smin, smax)
         
         return dcomp*ddMag
+    
+    def calc_fdmag(self, dMag, smin, smax):
+        """Calculates probability density of dMag by integrating over projected
+        separation
+        
+        Args:
+            dMag (float ndarray):
+                Planet delta magnitude(s)
+            smin (float ndarray):
+                Value of minimum projected separation (AU) from instrument
+            smax (float ndarray):
+                Value of maximum projected separation (AU) from instrument
+        
+        Returns:
+            f (float):
+                Value of probability density
+        
+        """
+        
+        f = np.zeros(len(smin))
+        for k, (dm,ddm) in enumerate(zip(dMag,smin)):
+            f[k] = interpolate.InterpolatedUnivariateSpline(self.xnew,self.EVPOC(self.xnew,dm),ext=1).integral(smin[k],smax[k])
+            
+        return f

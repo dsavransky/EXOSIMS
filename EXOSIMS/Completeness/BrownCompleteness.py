@@ -463,12 +463,16 @@ class BrownCompleteness(Completeness):
         assert len(fZ) in [1, len(intTimes)], "fZ must be constant or have same length as intTimes"
         assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
-        
+ 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        smin = (np.tan(TL.OpticalSystem.IWA)*TL.dist[sInds]).to('AU').value
-        OWA = 20*TL.OpticalSystem.IWA
-        #smax = (np.tan(TL.OpticalSystem.OWA)*TL.dist[sInds]).to('AU').value
-        smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
+        # calculate separations based on IWA and OWA
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
+        if np.isinf(OWA):
+            smax = self.PlanetPopulation.rrange[1].to('AU').value
+        else:
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
         comp = self.EVPOC(smin, smax, 0., dMag)
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)

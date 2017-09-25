@@ -97,7 +97,9 @@ class Nemati(OpticalSystem):
         WA = np.array(WA.value, ndmin=1)*WA.unit
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        
+        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
+        assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
+                
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']
@@ -122,9 +124,9 @@ class Nemati(OpticalSystem):
         
         # calculate planet delta magnitude
         dMag = np.zeros((len(sInds), len(WA)))
-        dMagLim = np.ones(sInds.shape) * 25
+        dMagLim = np.zeros(len(sInds)) + 25
         for i in xrange(len(sInds)):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ[i], fEZ, dMagLim[i], WA, mode)
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds[i], fZ[i], fEZ[i], dMagLim, WA, mode)
             dMag[i,:] = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes[i] + C_sp**2) \
                     /(C_F0*10.0**(-0.4*mV[i])*core_thruput*inst['PCeff'])).decompose().value)
         

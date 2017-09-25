@@ -307,6 +307,7 @@ class MissionSim(object):
         sInds = np.arange(TL.nStars)
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, det_mode)
         fEZ = ZL.fEZ0
+        fEZ = np.ones(sInds.shape) * fEZ
         dMag = SS.dMagint
         WA = SS.WAint
 

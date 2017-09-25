@@ -594,6 +594,7 @@ class BrownCompleteness(Completeness):
                 fEZ = np.repeat(fEZ.value, len(sInds))*fEZ.unit
             if len(WA) == 1:
                 WA = np.repeat(WA.value, len(sInds))*WA.unit
+
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']

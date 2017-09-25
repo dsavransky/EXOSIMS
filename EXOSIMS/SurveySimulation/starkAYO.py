@@ -468,10 +468,8 @@ class starkAYO(SurveySimulation):
                 Index of next target star
         
         """
-        OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
         
         comps = TL.comp0[sInds]#completeness of each star in TL
@@ -487,63 +485,6 @@ class starkAYO(SurveySimulation):
         
         return sInd
 
-    def f_dmags2(self, s, dmag):
-        """Calculates the joint probability density of dMag and projected
-        separation
-        
-        Created to put s first in the function (necessary since first term is integrated over)
-        Args:
-            dmag (float):
-                Value of dMag
-            s (float):
-                Value of projected separation (AU)
-        Returns:
-            f (float):
-                Value of joint probability density
-        """
-        self.mindmag = self.Completeness.mindmag
-        self.maxdmag = self.Completeness.maxdmag
-        if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)):
-            f = 0.0
-        else:
-            ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
-            if ztest >= self.zmax:
-                f = 0.0
-            elif (self.pconst & self.Rconst):
-                f = self.f_dmagsz(self.zmin,dmag,s)
-            else:
-                if ztest < self.zmin:
-                    f = integrate.fixed_quad(self.f_dmagsz, self.zmin, self.zmax, args=(dmag, s), n=61)[0]
-                else:
-                    f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=61)[0]
-        return f
-
-    def f_dmag2(self, dmag, star_dist):
-        """Calculates probability density of dmag marginalized
-        from Smin to Smax #note this is similat to the f_s function...
-        
-        Args:
-            dmag (float):
-                dMag to evaluate completeness as
-            star_dist ():
-                determines min and max separation marginalizing over...       
-        Returns:
-            f (float):
-                Probability density
-        """
-
-        if (s == 0.0) or (s == self.rmax):
-            f = 0.0
-        else:
-            d1 = self.mindmag(s)
-            d2 = self.maxdmag(s)
-            if d2 > dmaglim:
-                d2 = dmaglim
-            if d1 > d2:
-                f = 0.0
-            else:
-                f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=31)[0]
-        return f
 
     def calcTint(self, sInds):
         """Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,

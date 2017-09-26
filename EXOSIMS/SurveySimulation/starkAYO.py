@@ -53,7 +53,6 @@ class starkAYO(SurveySimulation):
         tovisit = np.zeros(TL.nStars, dtype=bool)
         sInds = self.schedule_startSaved#the list of potential targets sInds is schedule_startSaved
         
-        self.Completeness.f_dmagsv = np.vectorize(self.Completeness.f_dmags)#Required For self.f_dmag2()
         dMagLim = self.Completeness.dMagLim
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
         #dmag = self.dmag_startSaved
@@ -106,21 +105,26 @@ class starkAYO(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         TK.obsStart = TK.currentTimeNorm.to('day')
-        start_time_AlgorithmSpeeds = timeit.default_timer()
+
         dmag = self.dmag_startSaved
         WA = OS.WA0
         slewTime = np.zeros(TL.nStars)*u.d
-        startTime = TK.currentTimeAbs+slewTime
+        #startTime = TK.currentTimeAbs+slewTime
+
+        if (sInds is None):#Pull Untouched Star List#####################################
+            sInds = self.schedule_startSaved
+
+        startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
         tovisit = np.zeros(TL.nStars, dtype=bool)
 
         DRM = {}#Create DRM
 
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
+        start_time_AlgorithmSpeeds = timeit.default_timer()
         lastTime = start_time_AlgorithmSpeeds
         #print(str(timeit.default_timer()-lastTime))
         #Calculate Tint at this time#####################################
         self.calcTint(None)#self.schedule)#updates self.Tint and self.rawTint
-        myTint = self.Tint
         #Aug 28, 2017 execution time 3.27
         #print('calcTint time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
@@ -134,7 +138,6 @@ class starkAYO(SurveySimulation):
         #print('splineCvsTau time = '+str(timeit.default_timer() - lastTime))
         lastTime = timeit.default_timer()
         #A Note: Technically starComps is the completeness of each star at each dmag specified in the init section of starkAYO
-        #the myTint is evaluated at each one of these dmags.
         ##############################################################
 
         #Calculate C/T vs T spline####################################
@@ -153,46 +156,93 @@ class starkAYO(SurveySimulation):
         lastTime = timeit.default_timer()
         ##############################################################
 
-        #Pull Untouched Star List#####################################
-        sInds = self.schedule_startSaved
+
 
         #CACHE Cb Cp Csp################################################
         #we calculate these values to cache them and accelerate starkAYO execution
         #Interpolate start times to find fZ
-        fZ = np.zeros(sInds.shape[0])
-        tmp = np.asarray(self.fZ_startSaved)
-        indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])
-        fZ[:] = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac+1)]
-        fZ = fZ/u.arcsec**2
-        del tmp
-        fEZ = np.zeros(sInds.shape[0]) + ZL.fEZ0
-        mode = self.mode
+        fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode)#0./u.arcsec**2#
+        fEZ = ZL.fEZ0#0./u.arcsec**2#
+        #fZ = np.zeros(sInds.shape[0])
+        #tmp = np.asarray(self.fZ_startSaved)
+        #indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])
+        #fZ[:] = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac+1)]
+        #fZ = fZ/u.arcsec**2
+        #del tmp
+        #fEZ = np.zeros(sInds.shape[0]) + ZL.fEZ0
+        mode = self.mode#resolve this mode is passed into next_target
         allModes = self.OpticalSystem.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         #dmag = self.dmag_startSaved
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
-        Cb = np.zeros([sInds.shape[0],dmag.shape[0]])
-        Csp = np.zeros([sInds.shape[0],dmag.shape[0]])
+        Cb = np.zeros(sInds.shape[0])
+        Csp = np.zeros(sInds.shape[0])
         for i in xrange(dmag.shape[0]):
-            Cp[:,i], Cb[:,i], Csp[:,i] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, det_mode)
+            Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, det_mode)
+        self.Cb = Cb[:]/u.s#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
+        self.Csp = Csp[:]/u.s#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
+        #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
         #Sept 20, 2017 execution time 10.108 sec
-        #print('calc Cp Cb Csp time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
         ################################################################
 
-        #Timing calc_intTimeLIGHT delete later##########################
-        lastTime = timeit.default_timer()
-        Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
-        #Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]
-        for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
-            Tint[:,i] = OS.calc_intTimeLIGHT(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode, Cp[:,i], Cb[:,i], Csp[:,i]).value#it is in units of days
-        #Sept 20, 2017 execution time 0.794 sec
-        #print('calc_intTimeLIGHT time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
+        #just see if they run
+        t_dets = 0.01*u.d
+        CbyT = self.Completeness.comp_per_intTime(t_dets, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)/t_dets
+        dCbydt = self.Completeness.dcomp_dt(t_dets, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)
+        print('Finished CbyT and dCbydt check')
+        print(saltyburrito)
+
+        # #Timing calc_intTimeLIGHT delete later##########################
+        # Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
+        # for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
+        #     Tint[:,i] = OS.calc_intTimeLIGHT(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode, Cp[:,i], self.Cb.value, self.Csp.value).value#it is in units of days
+        # #Sept 20, 2017 execution time 0.794 sec
+
+        #Calculate comp per intTime##########################################
+        #WA = self.OpticalSystem.WA0#only for Garret Comp Compairison#delete
+        #TL = self.TargetList#Only for Garret Comp Compairison#delete
+
+        # Tint, rawTint = self.calcTint_core(sInds, self.dmag_startSaved)#Tint is of form Tint[#stars][#dmag] for stars in sInds. rawTint has all stars
+        # #Select Maximum Tint based on calculated values
+        # #maxTint = np.zeros(len(Tint[:]))#declare array
+        # #maxdmag = np.zeros(len(Tint[:]))#declare array
+        # #for i in xrange(sInds.shape[0]):#0, len(Tint[:])):#iterate through all stars
+        # #    occur = np.argmax(Tint[i][:])#Find index of maxTint
+        # #    maxTint[i] = Tint[i][occur]
+        # #    maxdmag[i] = self.dmag_startSaved[occur]
+        # #Calculate MaxTint based on Maximum positive CbyT (still connected to expected CbyT peak) 
+        # numInSeq = np.zeros([sInds.shape[0],100])
+        # seqEndIndex = np.zeros([sInds.shape[0],100])
+        # seqStartIndex = np.zeros([sInds.shape[0],100])
+        # dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
+        # CbyTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
+
+        # fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
+        # fEZ = 0./u.arcsec**2# ZL.fEZ0
+        # intTime = np.arange(1000,dtype=np.float)/1000*50#use 50days as max Integration Time
+        # TOTALTIMETime = timeit.default_timer()
+        # for j in xrange(len(intTime)):
+        #     tmpintTime = np.zeros(len(sInds)) + intTime[j]
+        #     tmpfZ = np.zeros(len(sInds)) + fZ
+        #     tmpfEZ = np.zeros(len(sInds)) + fEZ
+        #     lastTime = timeit.default_timer()
+        #     CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode, self.Cb, self.Csp)/intTime[j]#takes 5 seconds to do 1 time for all stars
+        #     print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(intTime)))
+        # print('comp_per_intTime for All Stars time = '+str(timeit.default_timer() - TOTALTIMETime))
+        # lastTime = timeit.default_timer()
+        # #plt.plot(intTime,tmpCbyT)
+        # #plt.plot(intTime,dCbydTtmp[i,:])
+        # tmpIntTime = np.zeros([CbyTtmp.shape[0],len(intTime)])#[nStars, intTimes]
+        # for i in xrange(len(intTime)):
+        #     tmpIntTime[:,i] =  np.zeros(CbyTtmp.shape[0]) + intTime[i]
+        # plt.plot(tmpIntTime[0,:],CbyTtmp[0,:])
+        # plt.axis([0,max(tmpIntTime[0,:]),0,max(CbyTtmp[0,:])])
+        # #plt.axis([0,max(tmpIntTime[0,:]),0,max(CbyTtmp[:,-1])])
+        # plt.show()
+        # print(saltyburrito)
+
+
         ################################################################
-
-
-
 
 
         
@@ -313,7 +363,7 @@ class starkAYO(SurveySimulation):
         #CAN DELETE AFTER DONE WITH DMITRY'S TESTING
         sortIndex = np.argsort(-sInds,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from smallest to largest. argsort sorts from smallest to largest, [::-1] flips array
         #index list from highest dCbydT to lowest dCbydT....
-        #sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)
+        #sort star index list, integration time list, dC/dT list, splDeriv list (contains integrationt time splines for each star)
         sInds = sInds[sortIndex]
         t_dets = t_dets[sortIndex]
         dCbydT = dCbydT[sortIndex]
@@ -336,21 +386,21 @@ class starkAYO(SurveySimulation):
             #print('numits ' + str(numits))#we impose numits to limit the total number of iterations of this loop. This may be depreicated later
             numits = numits+1#we increment numits each loop iteration
 
-            #Update dC/dT#################
-            for n in range(sInds.shape[0]):
-                dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###############################
+            # #Update dC/dT#################
+            # for n in range(sInds.shape[0]):
+            #     dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+            # ###############################
 
-            #Update C/T############################
-            for n in range(sInds.shape[0]):
-                CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###########################################
+            # #Update C/T############################
+            # for n in range(sInds.shape[0]):
+            #     CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+            # ###########################################
 
-            #Update Comp############################
-            for n in range(sInds.shape[0]):
-                Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###########################################
-            #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
+            # #Update Comp############################
+            # for n in range(sInds.shape[0]):
+            #     Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+            # ###########################################
+            # #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
             lastTime = timeit.default_timer()
 
             #Sacrifice Lowest Performing Star###############################################################################
@@ -524,13 +574,7 @@ class starkAYO(SurveySimulation):
         WA = self.OpticalSystem.WA0#only for Garret Comp Compairison
         TL = self.TargetList#Only for Garret Comp Compairison
 
-        Tint, rawTint = self.calcTint_core(sInds, self.dmag_startSaved)
-        #Tint is of form Tint[#stars][#dmag] for stars in sInds. rawTint has all stars
-        #print(len(Tint))
-        #print(len(rawTint))
-        #pdb.set_trace()
-        #print(saltyburrito)
-        #Situation where
+        Tint, rawTint = self.calcTint_core(sInds, self.dmag_startSaved)#Tint is of form Tint[#stars][#dmag] for stars in sInds. rawTint has all stars
         #Select Maximum Tint based on calculated values
         maxTint = np.zeros(len(Tint[:]))#declare array
         maxdmag = np.zeros(len(Tint[:]))#declare array
@@ -548,15 +592,15 @@ class starkAYO(SurveySimulation):
 
         fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
         fEZ = 0./u.arcsec**2# ZL.fEZ0
-        intTime = np.arange(100,dtype=np.float)/100*50#use 50days as max Integration Time
+        intTime = np.arange(1000,dtype=np.float)/1000*50#use 50days as max Integration Time
         TOTALTIMETime = timeit.default_timer()
         for j in xrange(len(intTime)):
             tmpintTime = np.zeros(len(sInds)) + intTime[j]
             tmpfZ = np.zeros(len(sInds)) + fZ
             tmpfEZ = np.zeros(len(sInds)) + fEZ
             lastTime = timeit.default_timer()
-            CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode)#takes 5 seconds to do 1 time for all stars
-            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(sInds)))
+            CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode, self.Cb, self.Csp)/intTime[j]#takes 5 seconds to do 1 time for all stars
+            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(intTime)))
         print('comp_per_intTime for All Stars time = '+str(timeit.default_timer() - TOTALTIMETime))
         lastTime = timeit.default_timer()
         print(saltyburrito)
@@ -668,7 +712,7 @@ class starkAYO(SurveySimulation):
         schedule = self.schedule_startSaved
 
         #we must remove any 0's that occur above the max value of completeness for the star
-        #to do this, we filter any myTint that is less than some threshold value...
+        #to do this, we filter any Tint that is less than some threshold value...
         ##Remove all Tints that are 0 and save to list
         self.calcTint(None)
         rawTint = self.rawTint
@@ -729,7 +773,7 @@ class starkAYO(SurveySimulation):
             spl2.append(UnivariateSpline(Tint[x],starComps[x]/Tint[x], k=4, s=0))
         self.spl2_startSaved = spl2
 
-    def splinedCbydTauvsTau(self):#,spl2,myTint,sInds):
+    def splinedCbydTauvsTau(self):#,spl2,sInds):
         """Calculates the spline for dC/dT vs T
 
         Returns:
@@ -931,21 +975,23 @@ class starkAYO(SurveySimulation):
                         dt = dt - (maxIntTime[i]-t_dets[i])
                         timeToDistribute = timeToDistribute - (maxIntTime[i]-t_dets[i])
                         t_dets[i] = maxIntTime[i]
-                #Update Lists #########################################################3
-                #Update dC/dT#################
-                for n in range(sInds.shape[0]):
-                    dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                ###############################
+                # #Update Lists #########################################################3
+                # #Update dC/dT#################
+                # for n in range(sInds.shape[0]):
+                #     dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+                # ###############################
 
-                #Update C/T############################
-                for n in range(sInds.shape[0]):
-                    CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                ###########################################
+                # #Update C/T############################
+                # for n in range(sInds.shape[0]):
+                #     CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+                # ###########################################
 
-                #Update Comp############################
-                for n in range(sInds.shape[0]):
-                    Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                ###########################################
+                # #Update Comp############################
+                # for n in range(sInds.shape[0]):
+                #     Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
+                # ###########################################
+
+                #Update Lists
 
                 #reorder lists. will be used to determine most deserving star to give time to
                 #Sept 13, runs in 0.0005 sec approx
@@ -1019,12 +1065,14 @@ class starkAYO(SurveySimulation):
         return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
 
     def sacrificeStarCbyT(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
-        maxIntTimeCbyT, OneFifthmaxIntTimeCbyT, OneHalfmaxIntTimeCbyT, OneDayIntTimeCbyT = self.calcMaxCbyT(sInds, fspl2, maxIntTime)
-        maxIntTimeC, OneFifthmaxIntTimeC, OneHalfmaxIntTimeC, OneDayIntTimeC = self.calcMaxComps(sInds, fspl, maxIntTime)
+        #for j in xrange(len(sInds)):
+            #tmpintTime = np.zeros(len(sInds)) + intTime[j]
+        fZ = np.zeros(len(sInds)) + fZ
+        fEZ = np.zeros(len(sInds)) + fEZ
+            #CbyT[j] = self.Completeness.comp_per_intTime(t_dets[j]*u.d, TL, sInds[j], fZ[j], fEZ[j], WA, self.mode, self.Cb[j], self.Csp[j])/intTime[j]#takes 5 seconds to do 1 time for all stars
+        CbyT[:] = self.Completeness.comp_per_intTime(t_dets[:]*u.d, TL, sInds[:], fZ[:], fEZ[:], WA, self.mode, self.Cb[:], self.Csp[:])/intTime[:]#takes 5 seconds to do 1 time for all stars
+
         sacrificeIndex = np.argmin(CbyT)#finds index of star to sacrifice
-
-        #print(saltyburrito)
-
 
         #Need index of sacrificed star by this point
         sacrificedStarTime = t_dets[sacrificeIndex]#saves time being sacrificed

@@ -722,12 +722,9 @@ class OpticalSystem(object):
         
         return minintTime
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds achievable planet delta magnitude for one integration 
-        time per star in the input list at one or more working angles.
-        
-        The prototype returns ones as an m x n array where m corresponds 
-        to each star in sInds and n corresponds to each working angle in WA.
+        time per star in the input list at one working angle.
         
         Args:
             intTimes (astropy Quantity array):
@@ -744,6 +741,11 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
                 
         Returns:
             dMag (float ndarray):
@@ -751,17 +753,11 @@ class OpticalSystem(object):
                 
         """
         
-        # cast sInds, WA and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        
-        dMag = np.ones((len(sInds), len(WA)))
+        dMag = np.ones((len(sInds),))
         
         return dMag
 
-    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Finds derivative of achievable dMag with respect to integration time.
         
         Args:
@@ -779,6 +775,11 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
             
         Returns:
             ddMagdt (astropy Quantity array):
@@ -787,6 +788,6 @@ class OpticalSystem(object):
         
         """
         
-        ddMagdt = np.zeros((len(sInds),len(WA)))/u.s
+        ddMagdt = np.zeros((len(sInds),))/u.s
         
         return ddMagdt

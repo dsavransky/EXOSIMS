@@ -599,11 +599,11 @@ class BrownCompleteness(Completeness):
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']
         OWA = mode['OWA']
-        smin = (np.tan(IWA)*TL.dist).to('AU').value
+        smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
         if np.isinf(OWA):
             smax = np.array([self.xedges[-1]]*len(smin))
         else:
-            smax = (np.tan(OWA)*TL.dist).to('AU').value
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value
         smin[smin>smax] = smax[smin>smax]    
         

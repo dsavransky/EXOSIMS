@@ -1,23 +1,11 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
-import itertools
-import datetime
-import time
-import json
-#from scipy.optimize import fsolve
 import scipy
-import timeit
-from astropy.time import Time
-import scipy
-#from scipy.interpolate import UnivariateSpline
-#import matplotlib.pyplot as plt
-#from IPython.core.debugger import Tracer
+from scipy.optimize import fmin
+#import timeit
 import csv
-import os
 import os.path
-import scipy.integrate as integrate
-#import pdb
 
 class starkAYO(SurveySimulation):
     """starkAYO 
@@ -139,14 +127,14 @@ class starkAYO(SurveySimulation):
             numcommas = 0
 
         if(not os.path.isfile(dir_path+fname) or not (fileLength != sInds.shape[0] or numcommas != sInds.shape[0])):#If the file does not exist or is not the proper size, Recalculate
-            from scipy.optimize import fmin
+            
             for i in xrange(sInds.shape[0]):
                 x0 = 0.01
                 maxCbyTtime[i] = fmin(CbyTfunc, x0, xtol=1e-8, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), disp=False)
             t_dets = maxCbyTtime
             #Sept 27, Execution time 101 seconds for 651 stars
 
-            #Save fZ to File######################################
+            #Save maxCbyT to File######################################
             try:#Here we delete the previous fZ file
                 timeNow = datetime.datetime.now()
                 timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
@@ -159,7 +147,7 @@ class starkAYO(SurveySimulation):
                 wr.writerow(maxCbyTtime)#Write the fZ to file
                 fo.close()
 
-        #Load maxCbyTtime for Each Star From File######################################
+        #Load maxCbyTtime for Each Star From File###### Sept 28, 2017 execution time is 0.00057 sec
         maxCbyTtimeList = list()
         with open(dir_path+fname, 'rb') as f:
             reader = csv.reader(f)
@@ -172,7 +160,7 @@ class starkAYO(SurveySimulation):
         t_dets = maxCbyTtime[0][sInds]
         #############################################################################
 
-        #Distribute Excess Mission Time############################
+        #Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
         missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value#TK.missionLife.to(u.day).value#mission length in days
         overheadTime = self.Observatory.settlingTime.value + self.OpticalSystem.observingModes[0]['syst']['ohTime'].value#OH time in days
         while((sum(t_dets) + sInds.shape[0]*overheadTime) > missionLength):#the sum of star observation times is still larger than the mission length
@@ -181,6 +169,7 @@ class starkAYO(SurveySimulation):
         if(sum(t_dets + sInds.shape[0]*overheadTime) > missionLength):#There is some excess time
             sacrificedStarTime = missionLength - (sum(t_dets) + sInds.shape[0]*overheadTime)#The amount of time the list is under the total mission Time
             t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA)
+        ###############################################################################
 
         #STARK AYO LOOP################################################################
         firstIteration = 1#checks if this is the first iteration.
@@ -189,13 +178,13 @@ class starkAYO(SurveySimulation):
         while numits < 100000 and sInds is not None:
             numits = numits+1#we increment numits each loop iteration
 
-            #Sacrifice Lowest Performing Star###############################################################################
+            #Sacrifice Lowest Performing Star################################################Sept 28, 2017 execution time 0.0744 0.032 at smallest list size
             sInds, t_dets, sacrificedStarTime, fZ = self.sacrificeStarCbyT(sInds, t_dets, fZ, fEZ, WA, overheadTime)
 
-            #Distribute Sacrificed Time to new star observations#############################
+            #Distribute Sacrificed Time to new star observations############################# Sept 28, 2017 execution time 0.715, 0.64 at smallest (depends on # stars)
             t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA)
 
-            #AYO Termination Conditions
+            #AYO Termination Conditions###############################Sept 28, 2017 execution time 0.033 sec
             Comp00 = self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)
 
             #change this to an assert

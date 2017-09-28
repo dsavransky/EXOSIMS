@@ -5,19 +5,19 @@ import itertools
 import datetime
 import time
 import json
-from scipy.optimize import fsolve
+#from scipy.optimize import fsolve
 import scipy
 import timeit
 from astropy.time import Time
 import scipy
-from scipy.interpolate import UnivariateSpline
-import matplotlib.pyplot as plt
-from IPython.core.debugger import Tracer
+#from scipy.interpolate import UnivariateSpline
+#import matplotlib.pyplot as plt
+#from IPython.core.debugger import Tracer
 import csv
 import os
 import os.path
 import scipy.integrate as integrate
-import pdb
+#import pdb
 
 class starkAYO(SurveySimulation):
     """starkAYO 
@@ -45,58 +45,24 @@ class starkAYO(SurveySimulation):
         #Create and start Schedule
         self.schedule = np.arange(TL.nStars)#self.schedule is meant to be editable
         self.schedule_startSaved = np.arange(TL.nStars)#preserves initial list of targets
-        TK.allocate_time(Obs.settlingTime + self.mode['syst']['ohTime'])#I do not know why this is called
-        
-        slewTime = np.zeros(TL.nStars)*u.d#
-        fZs = np.zeros(TL.nStars)/u.arcsec**2#
-        t_dets = np.zeros(TL.nStars)*u.d
-        tovisit = np.zeros(TL.nStars, dtype=bool)
-        sInds = self.schedule_startSaved#the list of potential targets sInds is schedule_startSaved
-        
+          
         dMagLim = self.Completeness.dMagLim
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
-        #dmag = self.dmag_startSaved
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/starComps.csv'
-        self.starComps_startSaved = list()#contains all comps vs dmag for stars
-
-        #Generate partial Completeness vs S and dMag
-        self.generatefComp(dir_path, fname, sInds)
-
-        #Load Completeness From File######################################
-        self.compData = list()#contains all data from completeness csv file
-        SmatRead = list()
-        dmagRead = list()
-        SmatRead, dmagRead = self.loadCompData(dir_path, fname)#and creates self.compData[]
-
-
-        fname = '/starCompsAllStars.csv'
-        self.generateAllStarsComp(dir_path, fname, sInds, SmatRead, dmagRead)#Sept 6, 2017 execution time 70.629 sec to calculate
-        #print('CalcEach Star Completeness time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        #print('Done Calculating Completeness for Each Star vs dmag')
-
-        #Calculate myTint for an initial startimg position#########################
-        self.calcTint(None)#Calculate Integration Time for all Stars (relatively quick process)#update self.Tint, self.rawTint
-   
-        #Generate fZ vs time########################################################
-        self.fZ_startSaved = self.generate_fZ(sInds)#Sept 21, 2017 execution time 0.725 sec
-        print("Done starkAYO init")#END INIT##################################################################
+        #END INIT##################################################################
 
     def next_target(self, sInds, mode):
         """Generate Next Target to Select based off of AYO at this instant in time
         Args:
+            sInds - unnecessary
+            mode - 
 
         Returns:
-            DRM
-            schedule
-            sInd ():
-                detection
-            t_det (float):
-                detection time of next observation
+            DRM - A blank structure
+            sInd - the single index of self.schedule_startSaved to observe
+            t_det - the time to observe sInd in days (u.d)
         """
-        #mode = self.mode
+        sInds = self.schedule_startSaved
+
         SU = self.SimulatedUniverse
         OS = SU.OpticalSystem
         ZL = SU.ZodiacalLight
@@ -108,68 +74,32 @@ class starkAYO(SurveySimulation):
 
         dmag = self.dmag_startSaved
         WA = OS.WA0
-        slewTime = np.zeros(TL.nStars)*u.d
-        #startTime = TK.currentTimeAbs+slewTime
-
-        if (sInds is None):#Pull Untouched Star List#####################################
-            sInds = self.schedule_startSaved
-
         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
-        tovisit = np.zeros(TL.nStars, dtype=bool)
+
+        tovisit = np.zeros(sInds.shape[0], dtype=bool)
 
         DRM = {}#Create DRM
 
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
-        start_time_AlgorithmSpeeds = timeit.default_timer()
-        lastTime = start_time_AlgorithmSpeeds
-        #print(str(timeit.default_timer()-lastTime))
-        #Calculate Tint at this time#####################################
-        self.calcTint(None)#self.schedule)#updates self.Tint and self.rawTint
-        #Aug 28, 2017 execution time 3.27
-        #print('calcTint time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
+        #Filter KOGOODSTART########################################################
+        kogoodStart = Obs.keepout(TL, sInds, startTime, mode)#outputs array where 0 values are good keepout stars
+        sInds = sInds[np.where(kogoodStart)[0]]
+        ###########################################################################
         
-        #Calculate C vs T spline######################################
-        self.splineCvsTau()
-        spl = self.spl_startSaved
-        starComps = self.starComps
-        Tint = self.Tint
-        #Aug 28, 2017 execution time 3.138
-        #print('splineCvsTau time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        #A Note: Technically starComps is the completeness of each star at each dmag specified in the init section of starkAYO
-        ##############################################################
-
-        #Calculate C/T vs T spline####################################
-        self.splineCbyTauvsTau()
-        spl2 = self.spl2_startSaved
-        #Aug 28, 2017 execution time 0.0909
-        #print('splineCbyTauvsTau time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        ##############################################################
-
-        #Calculate dC/dTau############################################
-        self.splinedCbydTauvsTau()
-        splDeriv = self.splDeriv_startSaved
-        #Aug 28, 2017 execution time 0.024
-        #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        ##############################################################
-
-
-
-        #CACHE Cb Cp Csp################################################
-        #we calculate these values to cache them and accelerate starkAYO execution
-        #Interpolate start times to find fZ
-        fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode)#0./u.arcsec**2#
+        #Filter out previously visited stars#######################################Aug 28, 2017 execution time 0.235
+        if np.any(sInds):
+            tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
+            if self.starRevisit.size != 0:
+                dt_max = 1.*u.week
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+                tovisit[ind_rev] = True
+            sInds = np.where(tovisit)[0]
+        #########################################################################
+        startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
+        
+        #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
+        fZ = ZL.fZ(Obs, TL, sInds, startTime, self.mode)#0./u.arcsec**2#np.zeros(sInds.shape[0]) + 0./u.arcsec**2
         fEZ = ZL.fEZ0#0./u.arcsec**2#
-        #fZ = np.zeros(sInds.shape[0])
-        #tmp = np.asarray(self.fZ_startSaved)
-        #indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])
-        #fZ[:] = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac+1)]
-        #fZ = fZ/u.arcsec**2
-        #del tmp
-        #fEZ = np.zeros(sInds.shape[0]) + ZL.fEZ0
         mode = self.mode#resolve this mode is passed into next_target
         allModes = self.OpticalSystem.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
@@ -182,337 +112,122 @@ class starkAYO(SurveySimulation):
         self.Cb = Cb[:]/u.s#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         self.Csp = Csp[:]/u.s#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
-        #Sept 20, 2017 execution time 10.108 sec
         ################################################################
 
-        #just see if they run
-        t_dets = 0.01*u.d
-        CbyT = self.Completeness.comp_per_intTime(t_dets, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)/t_dets
-        dCbydt = self.Completeness.dcomp_dt(t_dets, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)
-        print('Finished CbyT and dCbydt check')
-        print(saltyburrito)
+        #Solve Initial Integration Times###############################################
+        def CbyTfunc(t_dets, self, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp):
+            CbyT = -self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp)/t_dets*u.d
+            return CbyT.value
 
-        # #Timing calc_intTimeLIGHT delete later##########################
-        # Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
-        # for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
-        #     Tint[:,i] = OS.calc_intTimeLIGHT(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode, Cp[:,i], self.Cb.value, self.Csp.value).value#it is in units of days
-        # #Sept 20, 2017 execution time 0.794 sec
+        maxCbyTtime = np.zeros(sInds.shape[0])#This contains the time maxCbyT occurs at
+        maxCbyT = np.zeros(sInds.shape[0])#this contains the value of maxCbyT
 
-        #Calculate comp per intTime##########################################
-        #WA = self.OpticalSystem.WA0#only for Garret Comp Compairison#delete
-        #TL = self.TargetList#Only for Garret Comp Compairison#delete
+        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
+        fname = '/cachedMaxCbyTtime.csv'
+        #Check File Length
+        fileLength = 0
+        numcommas = 0
+        try: 
+            with open(dir_path+fname, 'rb') as f:
+                reader = csv.reader(f)
+                your_list = list(reader)
+                fileLength = len(your_list)
+                numcommas = len(your_list[0])
+                f.close()
+        except:
+            fileLength = 0
+            numcommas = 0
 
-        # Tint, rawTint = self.calcTint_core(sInds, self.dmag_startSaved)#Tint is of form Tint[#stars][#dmag] for stars in sInds. rawTint has all stars
-        # #Select Maximum Tint based on calculated values
-        # #maxTint = np.zeros(len(Tint[:]))#declare array
-        # #maxdmag = np.zeros(len(Tint[:]))#declare array
-        # #for i in xrange(sInds.shape[0]):#0, len(Tint[:])):#iterate through all stars
-        # #    occur = np.argmax(Tint[i][:])#Find index of maxTint
-        # #    maxTint[i] = Tint[i][occur]
-        # #    maxdmag[i] = self.dmag_startSaved[occur]
-        # #Calculate MaxTint based on Maximum positive CbyT (still connected to expected CbyT peak) 
-        # numInSeq = np.zeros([sInds.shape[0],100])
-        # seqEndIndex = np.zeros([sInds.shape[0],100])
-        # seqStartIndex = np.zeros([sInds.shape[0],100])
-        # dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
-        # CbyTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
+        if(not os.path.isfile(dir_path+fname) or not (fileLength != sInds.shape[0] or numcommas != sInds.shape[0])):#If the file does not exist or is not the proper size, Recalculate
+            from scipy.optimize import fmin
+            for i in xrange(sInds.shape[0]):
+                x0 = 0.01
+                maxCbyTtime[i] = fmin(CbyTfunc, x0, xtol=1e-8, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), disp=False)
+            t_dets = maxCbyTtime
+            #Sept 27, Execution time 101 seconds for 651 stars
 
-        # fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-        # fEZ = 0./u.arcsec**2# ZL.fEZ0
-        # intTime = np.arange(1000,dtype=np.float)/1000*50#use 50days as max Integration Time
-        # TOTALTIMETime = timeit.default_timer()
-        # for j in xrange(len(intTime)):
-        #     tmpintTime = np.zeros(len(sInds)) + intTime[j]
-        #     tmpfZ = np.zeros(len(sInds)) + fZ
-        #     tmpfEZ = np.zeros(len(sInds)) + fEZ
-        #     lastTime = timeit.default_timer()
-        #     CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode, self.Cb, self.Csp)/intTime[j]#takes 5 seconds to do 1 time for all stars
-        #     print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(intTime)))
-        # print('comp_per_intTime for All Stars time = '+str(timeit.default_timer() - TOTALTIMETime))
-        # lastTime = timeit.default_timer()
-        # #plt.plot(intTime,tmpCbyT)
-        # #plt.plot(intTime,dCbydTtmp[i,:])
-        # tmpIntTime = np.zeros([CbyTtmp.shape[0],len(intTime)])#[nStars, intTimes]
-        # for i in xrange(len(intTime)):
-        #     tmpIntTime[:,i] =  np.zeros(CbyTtmp.shape[0]) + intTime[i]
-        # plt.plot(tmpIntTime[0,:],CbyTtmp[0,:])
-        # plt.axis([0,max(tmpIntTime[0,:]),0,max(CbyTtmp[0,:])])
-        # #plt.axis([0,max(tmpIntTime[0,:]),0,max(CbyTtmp[:,-1])])
-        # plt.show()
-        # print(saltyburrito)
+            #Save fZ to File######################################
+            try:#Here we delete the previous fZ file
+                timeNow = datetime.datetime.now()
+                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
+                fnameNew = '/' + timeString +  'moved_maxCbyTtime.csv'
+                os.rename(dir_path+fname,dir_path+fnameNew)
+            except OSError:
+                pass
+            with open(dir_path+fname, "wb") as fo:
+                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                wr.writerow(maxCbyTtime)#Write the fZ to file
+                fo.close()
 
+        #Load maxCbyTtime for Each Star From File######################################
+        maxCbyTtimeList = list()
+        with open(dir_path+fname, 'rb') as f:
+            reader = csv.reader(f)
+            your_list = list(reader)
+            f.close()
+        for i in range(len(your_list)):
+            tmp = np.asarray(your_list[i]).astype(np.float)
+            maxCbyTtimeList.append(tmp)
+        maxCbyTtime = np.asarray(maxCbyTtimeList, dtype=np.float64)
+        t_dets = maxCbyTtime[0][sInds]
+        #############################################################################
 
-        ################################################################
+        #Distribute Excess Mission Time############################
+        missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value#TK.missionLife.to(u.day).value#mission length in days
+        overheadTime = self.Observatory.settlingTime.value + self.OpticalSystem.observingModes[0]['syst']['ohTime'].value#OH time in days
+        while((sum(t_dets) + sInds.shape[0]*overheadTime) > missionLength):#the sum of star observation times is still larger than the mission length
+            sInds, t_dets, sacrificedStarTime, fZ = self.sacrificeStarCbyT(sInds, t_dets, fZ, fEZ, WA, overheadTime)
 
+        if(sum(t_dets + sInds.shape[0]*overheadTime) > missionLength):#There is some excess time
+            sacrificedStarTime = missionLength - (sum(t_dets) + sInds.shape[0]*overheadTime)#The amount of time the list is under the total mission Time
+            t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA)
 
-        
-        ##############################################################
-        """###FILTERING IS TEMPORARILY REMOVED FOR RUNNING DMITRY'S TEST DO NOT DELETE
-        #FILTER OUT STARS########################################################
-        #start with self.schedule_startSaved
-
-        #Filter KOGOODSTART..... There is a better implementation of this.....
-        #We will not filter KOGOODEND using the logic that any star close enough to the keepout region of the sun will have poor C/Tau performance... This assumption should be revaluated at a future date.
-        kogoodStart = Obs.keepout(TL, sInds, startTime[sInds], mode)#outputs array where 0 values are good keepout stars
-        sInds = sInds[np.where(kogoodStart)[0]]
-        
-        sInds1 = sInds
-        #Filter out previously visited stars#######################################
-        if np.any(sInds):
-            tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
-            if self.starRevisit.size != 0:
-                dt_max = 1.*u.week
-                dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-                tovisit[ind_rev] = True
-            sInds = np.where(tovisit)[0]
-        print('NumStars Before ' + str(len(sInds1)) + ' After Filter ' + str(len(sInds)))
-        #Aug 28, 2017 execution time 0.235
-        #print('KOGOODSTART Filter time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        #########################################################################
-        """
-
-        #Define Intial Integration Times#########################################
-        missionLength = TK.missionLife.to(u.day).value
-
-        #Initial list of integration times for each star
-        t_dets = np.zeros(sInds.shape[0]) + missionLength/float(sInds.shape[0]) #the list of integration times for each star
-        dCbydT = np.zeros(sInds.shape[0])#initialize dCbydT matrix
-        CbyT = np.zeros(sInds.shape[0])#initialize CbyT matrix
-        Comp00 = np.zeros(sInds.shape[0])#initialize Comp00 matrix
-
-        #Here we create the filtered splDeriv etc
-        fspl = list()
-        fstarComps = list()
-        fTint = list()
-        fspl2 = list()
-        fsplDeriv = list()
-        fsplDeriv = [splDeriv[i] for i in sInds]#these filter down into only the splDeriv in sInds
-        fspl = [spl[i] for i in sInds]
-        fTint = [Tint[i] for i in sInds]
-        fspl2 = [spl2[i] for i in sInds]
-
-        #Initialize dC/dT##########################
-        for n in range(sInds.shape[0]):
-            dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            #calculates initial completeness at initial integration times...
-        ###########################################
-
-        lastTime = timeit.default_timer()
-        #Initialize C/T############################
-        for n in range(sInds.shape[0]):
-            CbyT[n] = fspl2[n](t_dets[n])#CbyT is the editable list of CbyT for each star
-        ###########################################
-        print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-
-        #print(CbyT)
-        #lastTime = timeit.default_timer()
-        #fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-        #fEZ = 0./u.arcsec**2# ZL.fEZ0
-        #CbyTtmp = self.Completeness.dcomp_dt(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode)
-        #print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
-        #lastTime = timeit.default_timer()
-        #print(CbyTtmp)
-        #print(CbyT-CbyTtmp)
-        #print(CbyT)
-        #print(saltyburrito)
-
-        #Initialize Comp############################
-        for n in range(sInds.shape[0]):
-            Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-        ###########################################
-        #Aug 28, 2017 execution time 0.020
-        #print('Initialization Stuffs time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-
-        #Update maxIntTime#########################
-        #Calculate the Maximum Integration Time and dmag for each star
-        maxTint, maxdmag = self.calcMaxTint(sInds, fspl2)
-        self.maxTint = maxTint
-        self.maxdmag = maxdmag
-        assert maxTint[0] != 0#i think unnecessary at this point
-        maxIntTime = maxTint
-        #Aug 28, 2017 execution time 3.213
-        #print('calcMaxTint time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-
-        #Check maxIntTime Validity
-        for i in range(maxIntTime.shape[0]):
-            if(maxIntTime[i] < 0):
-                print('ERROR in MaxIntTime Calculation. A Value is Negative!')
-        ###########################################
-
-        #Check Validity of Star Integration Times####################################
-        ##THE PROBLEM CAUSING HIGH COMP00 VALUES STEMS FROM INITIAL TIMES ASSIGNED BEING SUBSTANTIALLY LARGER THAN MAXIMUM INTEGRATION TIMES
-        #find problematic t_dets
-        ok_t_dets = [maxIntTime[x] < t_dets[x] for x in range(len(t_dets))]#Find T_dets greater than the maximum allowed and assign them to TRUE in matrix form
-        #Sum Excess Time
-        excessTime = 0
-        for i in range(t_dets.shape[0]):
-            if(ok_t_dets[i]):#This star was initially assigned an invalid t_dets
-                excessTime = excessTime + (t_dets[i] - maxIntTime[i])#sum excess time off this observation
-                t_dets[i] = maxIntTime[i]#set t_dets to the maxIntTime
-        dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.distributedt(excessTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)#Redistribute excessTime
-        #Sept 6, 2017 execution time 0.00155 sec
-        lastTime = timeit.default_timer()
-        #####################################################################
-
-        #REORDER SO SINDS ARE IN ORDER FOR COMPAIRISON TO DIMITRY'S CODE
-        #CAN DELETE AFTER DONE WITH DMITRY'S TESTING
-        sortIndex = np.argsort(-sInds,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from smallest to largest. argsort sorts from smallest to largest, [::-1] flips array
-        #index list from highest dCbydT to lowest dCbydT....
-        #sort star index list, integration time list, dC/dT list, splDeriv list (contains integrationt time splines for each star)
-        sInds = sInds[sortIndex]
-        t_dets = t_dets[sortIndex]
-        dCbydT = dCbydT[sortIndex]
-        fsplDeriv = [fsplDeriv[i] for i in sortIndex]
-        tmp2 = list()#this tmp2 operation efficienct might be able to be increased
-        tmp2[:] = [Tint[i] for i in sortIndex]#there must be a better single line way to do this...
-        Tint = tmp2
-        del tmp2
-        fspl2 = [fspl2[i] for i in sortIndex]
-        fspl = [fspl[i] for i in sortIndex]
-        CbyT = CbyT[sortIndex]
-        Comp00 = Comp00[sortIndex]
-        maxIntTime = maxIntTime[sortIndex]
-        ###################################################################
-
+        #STARK AYO LOOP################################################################
         firstIteration = 1#checks if this is the first iteration.
         numits = 0#ensure an infinite loop does not occur. Should be depricated
         lastIterationSumComp  = -10000000 #this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
         while numits < 100000 and sInds is not None:
-            #print('numits ' + str(numits))#we impose numits to limit the total number of iterations of this loop. This may be depreicated later
             numits = numits+1#we increment numits each loop iteration
 
-            # #Update dC/dT#################
-            # for n in range(sInds.shape[0]):
-            #     dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            # ###############################
-
-            # #Update C/T############################
-            # for n in range(sInds.shape[0]):
-            #     CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            # ###########################################
-
-            # #Update Comp############################
-            # for n in range(sInds.shape[0]):
-            #     Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            # ###########################################
-            # #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-
             #Sacrifice Lowest Performing Star###############################################################################
-            dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime = self.sacrificeStarCbyT(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
-            
-            #OVERHEAD: THIS SECTION OF CODE ACCOUNTS FOR OVERHEAD IN THE SYSTEM#################################
-            if(sInds.shape[0] <= missionLength-7):#condition where the observation schedule could be done within the mission time
-                if(firstIteration == 1):#redistribute dt on first Iteration
-                    #print('We now have a realizable mission schedule!')
-                    firstIteration = 0
-                    t_dets = np.zeros(sInds.shape[0]) + (missionLength-sInds.shape[0]*1)/float(sInds.shape[0])
-                    #print('Sum t_dets ' + str(sum(t_dets)) + ' miss-sindshape ' + str(missionLength-sInds.shape[0]*1))
-                    #print(t_dets)
-                    sacrificedStarTime = 0
-                else:
-                    sacrificedStarTime = sacrificedStarTime + float(1)#we add 1 day to account for the overhead gained by dropping a star
-            else:
-                sacrificedStarTime = sacrificedStarTime
-            ##################################################
-
-            lastTime = timeit.default_timer()
+            sInds, t_dets, sacrificedStarTime, fZ = self.sacrificeStarCbyT(sInds, t_dets, fZ, fEZ, WA, overheadTime)
 
             #Distribute Sacrificed Time to new star observations#############################
-            dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.distributedt(sacrificedStarTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
-            #Aug 28, 2017 execution time 9e-6
-            #Sept 13, 2017 execution time ~0.2 depending on schedule length for dt/10
-            #print('distributedt time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-
-            #TECHNICALLY THESE HAVE ALREADY BEEN UPDATED YB DISTRIBUTEDT
-            #6 Update Lists #########################################################3
-            #Update dC/dT#################
-            for n in range(sInds.shape[0]):
-                dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###############################
-
-            #Update C/T############################
-            for n in range(sInds.shape[0]):
-                CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###########################################
-
-            #Update Comp############################
-            for n in range(sInds.shape[0]):
-                Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-            ###########################################
+            t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA)
 
             #AYO Termination Conditions
-            #1 If the nthElement that time was added to has dCbydT less than the last star (star to be taken from next)
-            #2 If the nthElement is the same as the last element
+            Comp00 = self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, self.Cb, self.Csp)
 
-            ### IF ALL TARGETS ARE MAXIMALLY SORTED, STOP STARKayo PROCESS. I.E. IF THEY ALL HAVE MAXINTTIME
-            
-            #if any(i < 0.05 for i in spl2[sInds](t_dets)):
-            #    continue#run next iteration
-            print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)) + ' Avg C/T ' + str(np.average(CbyT)))
-            if(sum(CbyT)<0):
-                print('CbyT<0')
-                print(saltyburrito)
-
-
-            if 1 >= len(dCbydT):#if this is the last ement in the list
-                print('dCbydT maximally sorted (This probably indicates an error)')
-                print(saltyburrito)
+            #change this to an assert
+            if 1 >= len(sInds):#if this is the last ement in the list
+                #print('sInds maximally sorted (This probably indicates an error)')
+                #print(saltyburrito)
                 break
-            maxDeltaIndex = np.argmax(abs(maxIntTime-t_dets))#finds the index where the two are maximally different
-            if(abs(t_dets[maxDeltaIndex]-maxIntTime[maxDeltaIndex])<0.00001):
-                print('THIS SHOULD JUSTIFY A TERMINATION CONDITION')
-                print(saltyburrito)
-            # #If the total sum of completeness at this moment is less than the last sum, then exit
-            # if(sum(Comp00) < lastIterationSumComp):# and (len(sInds) < 20)):
-            #     print('Successfully Sorted List!!')
-            #     print('SumComp is ' + str(sum(Comp00)))
-            #     print(len(sInds))
-            #     #Define Output of AYO Process
-            #     sInd = sInds[0]
-            #     t_det = t_dets[0]*u.d
-            #     #Update List of Visited stars########
-            #     self.starVisits[sInd] += 1
-            #     self.schedule = sInds
-            #     del lastIterationSumComp
-            #     return DRM, sInd, t_det #sInds
-            # else:#else set lastIterationSumComp to current sum Comp00
-            #     lastIterationSumComp = sum(Comp00)
-            #     print('SumComp '+str(lastIterationSumComp) + ' with sInds left '+str(len(sInds)))
 
-        ##Define Output of AYO Process
-        sInd = sInds[0]
-        t_det = t_dets[0]*u.d
+            # # #If the total sum of completeness at this moment is less than the last sum, then exit
+            if(sum(Comp00) < lastIterationSumComp):#If sacrificing the additional target reduced performance, then Define Output of AYO Process
+                CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)/t_dets#takes 5 seconds to do 1 time for all stars
+                selectIndex = np.argmax(CbyT)#finds index of star to sacrifice
+                sInd = sInds[selectIndex]
 
-        #Update List of Visited stars########
-        self.starVisits[sInd] += 1
-        #####################################
-
-        self.schedule = sInds
-        return DRM, sInd, t_det #sInds
+                t_det = t_dets[selectIndex]*u.d
+                
+                self.starVisits[sInd] += 1#Update List of Visited stars########
+                TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
+                return DRM, sInd, t_det
+            else:#else set lastIterationSumComp to current sum Comp00
+                lastIterationSumComp = sum(Comp00)
+                print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)))# + ' Avg C/T ' + str(np.average(CbyT)))
+        #End While Loop
 
     def choose_next_target(self,old_sInd,sInds,slewTime):
-        """Choose next target based on truncated depth first search 
-        of linear cost function.
-        
+        """Select Highest C/T target
         Args:
-            old_sInd (integer):
-                Index of the previous target star
-            sInds (integer array):
-                Indices of available targets
-            slewTime (float array):
-                slew times to all stars (must be indexed by sInds)
-                
+            old_sInd - unnecessary
+            sInds - star indicies being considered
+            slewTime - time to slew to all stars
         Returns:
-            sInd (integer):
-                Index of next target star
-        
+            sInd - indicie of the star to observe
         """
         Comp = self.Completeness
         TL = self.TargetList
@@ -525,931 +240,85 @@ class starkAYO(SurveySimulation):
         
         selMetric=comps/tint#selMetric is the selection metric being used. Here it is Completeness/integration time
 
-        #Here I select the target star to observe
         tmp = sInds[selMetric == max(selMetric)]#this selects maximum completeness/integration time
         sInd = tmp[0]#casts numpy array to single integer
         
         return sInd
-
-    def calcTint(self, sInds):
-        """Calculates integration times for all stars in sInds given a dmag. If None is passed to sInds,
-        the integration times for all stars in self.schedule_startSaved will be calculated.
-        This could be made more efficient bt calculating integration times for only those
-        stars still in the schedule but that would elimintate the possibility of reading 
-        those stars to the schedule...
-
-        Intended to be called from starkAYO only***
-
+  
+    def distributedt(self, sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA):#distributing the sacrificed time
+        """Distributes sacrificedStarTime amoung sInds
         Args:
-            sInds (None or np.ndarray or shape #stars)
-            calculates orbital position of SC at currentTime
-
+            sInds[nStars] - indicies of stars in the list
+            t_dets[nStars] - time to observe each star (in days)
+            sacrificedStarTime - time to distribute in days
+            fZ[nStars] - zodiacal light for each target
+            fEZ - 0 
         Returns:
-            This function updates self.rawTint
-            rawTint contains all Tint over all dmag_startSaved. We must do this in order to filter future values.
-            rawTint has dimensions rawTint[nStars][len(dmag_startSaved)]
-
-            This function updates self.Tint
-            Tint contains Tint greater than 10**-10
-            Dimensions are Tint[nStars][Tint > 10**-10]
+            t_dets[nStars] - time to observe each star (in days)
         """
-        dmag = self.dmag_startSaved
-        newTint, newRawTint = self.calcTint_core(sInds,dmag)
-        self.rawTint = newRawTint
-        self.Tint = newTint
+        #Calculate dCbydT for each star at this point in time
+        dCbydt = self.Completeness.dcomp_dt(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)#dCbydT[nStars]
 
-    def calcMaxTint(self, sInds, fspl2):
-        """calcMaxTint estimates the maximum integration time allowed and the associated maximum dmag allowed for a given star
-        NOTE that this only returns an approximate... The resolution is determined by the fidelity of the dmag_startSaved array
+        if(len(t_dets) <= 1):
+            print('t_dets has one element or less')
+            return t_dets
 
-        Inputs:
-        sInds. requires a list of stars to calculate MaxTint for
-
-        Returns:
-        maxTint
-            The maximum integration times for stars in sInds?... might not be in sInds but Tint...
-        maxdmag
-            The maximum dmag achievable (dmag where maxTint occurs)
-        """
-        WA = self.OpticalSystem.WA0#only for Garret Comp Compairison
-        TL = self.TargetList#Only for Garret Comp Compairison
-
-        Tint, rawTint = self.calcTint_core(sInds, self.dmag_startSaved)#Tint is of form Tint[#stars][#dmag] for stars in sInds. rawTint has all stars
-        #Select Maximum Tint based on calculated values
-        maxTint = np.zeros(len(Tint[:]))#declare array
-        maxdmag = np.zeros(len(Tint[:]))#declare array
-        for i in xrange(sInds.shape[0]):#0, len(Tint[:])):#iterate through all stars
-            occur = np.argmax(Tint[i][:])#Find index of maxTint
-            maxTint[i] = Tint[i][occur]
-            maxdmag[i] = self.dmag_startSaved[occur]
-
-        #Calculate MaxTint based on Maximum positive CbyT (still connected to expected CbyT peak) 
-        numInSeq = np.zeros([sInds.shape[0],100])
-        seqEndIndex = np.zeros([sInds.shape[0],100])
-        seqStartIndex = np.zeros([sInds.shape[0],100])
-        dCbydTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
-        CbyTtmp = np.zeros([sInds.shape[0],len(np.arange(1000))])
-
-        fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-        fEZ = 0./u.arcsec**2# ZL.fEZ0
-        intTime = np.arange(1000,dtype=np.float)/1000*50#use 50days as max Integration Time
-        TOTALTIMETime = timeit.default_timer()
-        for j in xrange(len(intTime)):
-            tmpintTime = np.zeros(len(sInds)) + intTime[j]
-            tmpfZ = np.zeros(len(sInds)) + fZ
-            tmpfEZ = np.zeros(len(sInds)) + fEZ
-            lastTime = timeit.default_timer()
-            CbyTtmp[:,j] = self.Completeness.comp_per_intTime(tmpintTime*u.d, TL, sInds, tmpfZ, tmpfEZ, WA, self.mode, self.Cb, self.Csp)/intTime[j]#takes 5 seconds to do 1 time for all stars
-            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime) + ' and j = ' + str(j) + '  of ' + str(len(intTime)))
-        print('comp_per_intTime for All Stars time = '+str(timeit.default_timer() - TOTALTIMETime))
-        lastTime = timeit.default_timer()
-        print(saltyburrito)
-
-        for i in xrange(sInds.shape[0]):
-            intTime = np.arange(1000,dtype=np.float)/1000*maxTint[i]
-            tmpCbyT = fspl2[i](intTime)
-
-            tmpCbyTbool = [fspl2[i](time) > 0 for time in intTime]
-            CbyTindicies = [j for j, x in enumerate(tmpCbyTbool) if x]#pull out all indicies where CbyT is less than 0
-            #find indicies
-            for j in range(len(CbyTindicies)-1):
-                #iterate through all indicies
-                seqNum = 0
-                if(CbyTindicies[j+1]-CbyTindicies[j] > 1.1):#there is more than 1 index between these points
-                    seqNum = seqNum+1
-                    numInSeq[i,seqNum] = 1
-                    seqEndIndex[i] = j
-                    seqStartIndex[i] = j+1
-                else:
-                    numInSeq[i,seqNum] = numInSeq[i,seqNum] + 1
-            #Now we have Number of points in a sequence for each star, the start values, and the end values
-            seqOfMaxLength = np.argmax(numInSeq[i,:])
-            if(intTime[int(seqEndIndex[i,seqOfMaxLength])] < maxTint[i]):
-                #print('We are swapping ' + str(maxTint[i]) + ' With ' + str(intTime[int(seqEndIndex[i,seqOfMaxLength])]) + ' for sInd ' + str(sInds[i]))
-                maxTint[i] = intTime[int(seqEndIndex[i,seqOfMaxLength])]
-            #print('splinedCbydTauvsTau time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-            #Calculate dC by dT using Daniel's method
-            fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-            fEZ = 0./u.arcsec**2# ZL.fEZ0
-            lastTime = timeit.default_timer()
-            CbyTtmp[i,:] = self.Completeness.comp_per_intTime(intTime[:]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode)
-            print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime))
-            lastTime = timeit.default_timer()
-            print(saltyburrito)
-            for j in xrange(intTime.shape[0]):
-                dCbydTtmp[i,j] = self.Completeness.dcomp_dt(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode).to(1/u.d).value#0.048 sec
-                print('dcomp_dt time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
-                CbyTtmp[i,j] = self.Completeness.comp_per_intTime(intTime[j]*u.d, TL, sInds[i], fZ, fEZ, WA, self.mode)/intTime[j]#1.459 sec
-                print('comp_per_intTime time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
-            plt.plot(intTime,tmpCbyT)
-            plt.plot(intTime,dCbydTtmp[i,:])
-            plt.plot(intTime,CbyTtmp[i,:])
-            plt.axis([0,max(intTime),0,max(tmpCbyT)])
-            plt.show()
-        return maxTint, maxdmag
-
-    def calcTint_core(self, sInds, dmag):
-        """Calculates integration times for all stars in sInds given a dmag or list of dmags. If None is passed to sInds,
-        the integration times for all stars in self.schedule_startSaved will be calculated.
-        This could be made more efficient bt calculating integration times for only those
-        stars still in the schedule but that would elimintate the possibility of reading 
-        those stars to the schedule...
-
-        Intended to be called from starkAYO only***
-
-        Args:
-            sInds (None or np.ndarray or shape #stars)
-
-        Returns:
-            This function updates self.rawTint
-            rawTint contains all Tint over all dmag_startSaved. We must do this in order to filter future values.
-            rawTint has dimensions rawTint[nStars][len(dmag_startSaved)]
-
-            This function updates self.Tint
-            Tint contains Tint greater than 10**-10
-            Dimensions are Tint[nStars][Tint > 10**-10]
-        """
-        if sInds is None:
-            sInds = self.schedule_startSaved
-
-        OS = self.OpticalSystem
-        WA = OS.WA0
-        ZL = self.ZodiacalLight
-        TL = self.TargetList
-        Obs = self.Observatory
-        startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
-        fZ = 0./u.arcsec**2#ZL.fZ(Obs, TL, sInds, startTime, self.mode)#self.mode['lam'])
-        fEZ = 0./u.arcsec**2# ZL.fEZ0
-        print(' Note The fZ and fEZ are spoofed')
-        Tint = np.zeros((sInds.shape[0],dmag.shape[0]))#array of #stars by #dmags
-        #Tint=[[0 for j in range(sInds.shape[0])] for i in range(len(dmag))]
-        for i in xrange(dmag.shape[0]):#Tint of shape Tint[StarInd, dmag]
-            Tint[:,i] = OS.calc_intTime(TL, sInds, fZ, fEZ, dmag[i], WA, self.mode).value#it is in units of days
-        
-        newRawTint = list()#initialize list to store all integration times
-        newTint = list()#initialize list to store integration times greater than 10**-10
-        for j in range(sInds.shape[0]):
-            newRawTint.append(Tint[j,:])
-            newTint.append(Tint[j][np.where(Tint[j] > 10**-10)[0]])#filter out unrealistically small/negative Tint
-
-        #self.rawTint = newRawTint
-        #self.Tint = newTint
-        return newTint, newRawTint#in units of days
-
-    def splineCvsTau(self):
-        """Calculate the spline fit to Completeness vs Tau at simulation start time
-
-        Returns:
-            updates self.spl_startSaved
-            Dimensions are spl_startSaved[nStars][Tint > 10**-10]
-            updates self.starComps_startSaved
-            Dimensions are starComps_startSaved[nStars][Tint > 10**-10]
-            updates self.Tint for any Completeness exceeding 100
-        """
-        schedule = self.schedule_startSaved
-
-        #we must remove any 0's that occur above the max value of completeness for the star
-        #to do this, we filter any Tint that is less than some threshold value...
-        ##Remove all Tints that are 0 and save to list
-        self.calcTint(None)
-        rawTint = self.rawTint
-        Tint = self.Tint
-
-        starComps = list()
-        for j in schedule:#xrange(schedule.shape[0]):
-            starComps.append(self.starComps_startSaved[j][np.where(rawTint[j] > 10**-10)[0]])
-
-
-        #HERE IS A TEMPORARY FIX FOR A PROBLEM IN COMPLETENESS CALCULATION########################
-        #The root problem is that the current completeness calculation in this module (as of 5/22/2017)
-        #produces completness values at dmags near/in excess of 1. Indicating that the completeness calculation is incorrect
-        
-        #if completeness has discontinuity, 
-        #then all values above discontinuity must be truncated
-        #and all corresponding Tint need to be truncated....
-        index = None#will be used later
-        for j in schedule:
-            if starComps[j][-1] < 10**-15:#If the last value of starComps is a 0. We assume this means there exists a discontinuity in completeness
-                #find How many Indicies are 0
-                for k in range(len(starComps[j]))[::-1]:#Iterate through completeness from last index to first
-                    #find first index of value greater than 10 **-15
-                    if starComps[j][k] > 10**-15:
-                        index = k
-                        break
-            if index is not None:
-                starComps[j] = starComps[j][0:k]#starComps is now from 0 to max point
-                Tint[j] = Tint[j][0:k]
-                index = None
-            else:#if index is None
-                index = None
-        ##########################################################################################
-
-        spl = list()
-        for q in range(schedule.shape[0]):#len(schedule)):
-            spl.append(UnivariateSpline(Tint[q], starComps[q], k=4, s=0))#Finds star Comp vs Tint SPLINE
-        self.spl_startSaved = spl#updates self.spl
-        self.starComps = starComps#updates self.starComps
-        self.Tint = Tint#update self.Tint
-
-    def splineCbyTauvsTau(self):
-        """Calculate the spline fit to Completeness/Tau vs Tau
-        Args:
-        Returns:
-            updates self.spl2_startSaved (spl2 is the spline fitting C/T vs T)
-            Dimensions are spl2_startSaved[nStars][Tint > 10**-15]
-        """
-        rawTint = self.rawTint
-        Tint = self.Tint
-        sInds = self.schedule_startSaved
-        starComps = self.starComps
-        #spl = self.spl_startSaved
-        sInds = self.schedule_startSaved
-        spl2 = list()
-        for x in range(sInds.shape[0]):#len(sInds)):
-            #spl2.append(UnivariateSpline(Tint[x],spl[x](Tint[x])/Tint[x], k=4, s=0))#I think we can remove this
-            spl2.append(UnivariateSpline(Tint[x],starComps[x]/Tint[x], k=4, s=0))
-        self.spl2_startSaved = spl2
-
-    def splinedCbydTauvsTau(self):#,spl2,sInds):
-        """Calculates the spline for dC/dT vs T
-
-        Returns:
-            self.splDeriv_startSaved
-            Dimensions are splDeriv_startSaved[nStars][Tint > 10**-10]
-        """
-        sInds = self.schedule_startSaved
-        spl2 = self.spl2_startSaved
-
-        splDeriv = list()
-        for x in range(len(sInds)):
-            splDeriv.append(spl2[x].derivative())
-        self.splDeriv_startSaved = splDeriv
-
-    def plotCompvsTau(self):
-        """Plots Completeness vs Integration Time for every star
-        """
-        print('Plot C vs T')
-        #plot of Comp vs Tint for a few stars##################################################
-        self.splineCvsTau()#Update self.spl and self.starComps
-        starComps = self.starComps
-        spl = self.spl_startSaved
-        Tint = self.Tint
-        TL = self.TargetList
-
-        ##FOR CONFIRMATION OF DMITRY'S CODE####################
-        tintRange = np.linspace(0.1,365,num=2000)*u.d
-        DmitryCompDatamat = np.zeros((TL.nStars,len(tintRange)))
-        self.DmitryCompData = list()
-        with open('/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/compAtdMaglimSavransky.csv', 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            self.DmitryCompData.append(tmp)#Unfiltered Completeness Lists
-        for i in range(len(tintRange)):#here we need to convert dmitry's comp for each star vs tint into a matrix
-            for j in range(TL.nStars):
-                DmitryCompDatamat[j][i] = self.DmitryCompData[i][j]
-        ##############################################################
-        
-        #print(saltyburrito)
-        print('The length of Tint is ' + str(len(Tint)))
-        for m in xrange(len(Tint)):
-            dtos = 24*60*60#days to seconds
-            #PLOT COMPLETENESS VS INT TIME
-            fig = plt.figure()
-            plt.plot(Tint[m]*dtos,starComps[m],'o',Tint[m]*dtos,spl[m](Tint[m]),'-',tintRange.value*dtos,DmitryCompDatamat[m],'--')
-            plt.xscale('log')
-            axes = plt.gca()
-            axes.set_xlim([10e-3,10e8])
-            #axes.set_ylim([0,0.2])
-            plt.grid(True)
-            plt.ylabel('Completeness')
-            plt.xlabel('Integration Time (s)')
-            plt.title(TL.Name[m])
-            folderfig = os.path.normpath(os.path.expandvars('$HOME/Pictures/CompletenessFigs'))
-            filenamefig = 'CompvTint' + str(m) + '.png'
-            figscriptfile = os.path.join(folderfig,filenamefig)
-            fig.savefig(figscriptfile)
-            plt.close()
-        print('Done C vs T')
-        print saltyburrito
-
-    def plotCompbyTauvsTau(self):
-        """Plots Completeness/Integration Time vs Integration Time for every star
-        """
-        #Update splines
-        print('Start Plot C/T vs T')
-        self.splineCvsTau()
-        self.splineCbyTauvsTau()
-        spl2 = self.spl2_startSaved
-        Tint = self.Tint
-        TL = self.TargetList
-
-        for m in xrange(len(Tint)):
-            dtos = 24*60*60
-            #PLOT COMPLETENESS/INT TIME vs INT TIME
-            fig = plt.figure()
-            plt.plot(Tint[m]*dtos,spl2[m](Tint[m])/(Tint[m]*dtos),'-')
-            plt.xscale('log')
-            axes = plt.gca()
-            axes.set_xlim([10e-4,10e6])
-            plt.grid(True)
-            plt.ylabel('Completeness/Tint')
-            plt.xlabel('Integration Time (s)')
-            plt.title(TL.Name[m])
-            folderfig = os.path.normpath(os.path.expandvars('$HOME/Pictures/CompletenessFigs'))
-            filenamefig = 'CompbyTintvTint' + str(m) + '.png'
-            figscriptfile = os.path.join(folderfig,filenamefig)
-            fig.savefig(figscriptfile)
-            plt.close()
-        print('Done C/T vs T')
-
-    def plotdCompbydTauvsTau(self):
-        """Plots dCompleteness/dTint vs Tint for every star
-        """
-        print('Plot dC/dT vs T')
-        self.splineCvsTau()
-        self.splineCbyTauvsTau()
-        self.splinedCbydTauvsTau()
-        splDeriv = self.splDeriv_startSaved
-        Tint = self.Tint#myTint_startSaved
-        TL = self.TargetList
-        for m in xrange(len(Tint)):
-            dtos = 24*60*60
-            #PLOT COMPLETENESS VS INT TIME
-            fig = plt.figure()
-            plt.plot(Tint[m]*dtos,splDeriv[m](Tint[m]),'-')
-            plt.xscale('log')
-            axes = plt.gca()
-            axes.set_xlim([10e-4,10e7])
-            plt.grid(True)
-            plt.ylabel('dC/dTau')
-            plt.xlabel('Integration Time (s)')
-            #plt.show()
-            plt.title(TL.Name[m])
-            folderfig = os.path.normpath(os.path.expandvars('$HOME/Pictures/CompletenessFigs'))
-            filenamefig = 'dCompbydTintvTint' + str(m) + '.png'
-            figscriptfile = os.path.join(folderfig,filenamefig)
-            fig.savefig(figscriptfile)
-            plt.close()
-        print('Done dC/dT vs T')
-
-    def distributedt(self,sacrificedStarTime, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):#distributing the sacrificed time
-        """#here we want to add integration time to the highest performing stars in our selection box
-        #returns nTint for additional integration time added to each star.
-        Args:
-            sacrificedStarTime is the total amount of time to redistribute amoung the other stars
-            maxIntTime is the list of approximate maximum integration times
-
-        """
         timeToDistribute = sacrificedStarTime
-        dt_static = sacrificedStarTime/50#1
+
+        #Decide Size of dt
+        if(sacrificedStarTime/50.0 < 0.1):
+            dt_static = sacrificedStarTime/50.0#1
+        else:
+            dt_static = 0.1
+        #dt_static = 0.01
         dt = dt_static
+
         #Now decide where to put dt
         numItsDist = 0
         while(timeToDistribute > 0):
-            numItsDist = numItsDist + 1
-            if(numItsDist > 100000):#this is an infinite loop check
-                print('numItsDist>100000')
+            if(numItsDist > 1000000):#this is an infinite loop check
+                print('numItsDist>1000000')
                 break
-            if(len(t_dets) <=1):
-                break
+            else:
+                numItsDist = numItsDist + 1
+
             if(timeToDistribute < dt):#if the timeToDistribute is smaller than dt
-                #check if timeToDistribute <=0 (distributedt Termination conditions!) NOTE I SHOULDN'T NEED THIS CODE HERE...
-                #if(timeToDistribute <= 0):
-                #    if(timeToDistribute < 0):#Check if less than 0. If so there is a serious problem
-                #        print('ERROR: Time To Distribute is less than 0')
-                #    #elif(timeToDistribute == 0):#this constitutes nominal operating conditions
-                #    #    print('Time To Distribute is 0')#this is the value timeToDistribute should be otherwise there is a leak
-                #    break
-                #if no problems occur set dt
                 dt = timeToDistribute#dt is now the timeToDistribute
-                #print('dt starts as ' + str(dt))
             else:#timeToDistribute >= dt under nominal conditions, this is dt to use
-                dt = dt_static#this is the maximum quantity of time to distribute at a time.  
-                #THERE IS SOME UNNECESSARY CODE HERE BETWEEN THESE FIRST CHECKS AND THE CHECKS IN THE FOLLOWING FOR LOOP         
-            ##
-            #Find next star that is not at or above maxIntTime
-            numStarsAtMaxIntTime = 0#initialize this
-            for i in xrange(maxIntTime.shape[0]):#len(maxIntTime)):#iterate through each star from top to bottom
-                #check if timeToDistribute is smaller than dt
-                if(timeToDistribute <= dt):#in the case where
-                    if(timeToDistribute > 0):
-                        dt = timeToDistribute#dt needs to be set to the time remaining
-                    elif(timeToDistribute == 0):
-                        #print('Time To Distribute is 0')#we're done with these iterations
-                        break
-                    elif(timeToDistribute < 0):
-                        print('ERROR Time To Distribute is less than 0')
-                        print(saltyburrito)
-                ##
-                #Some checks on the value of dt
-                if(dt <= 0):#There is either no more time to be assigned or the time to be assigned is negative
-                    if(dt == 0):
-                        dt=dt#DO NOTHING
-                        #print('dt is 0 and we are done with these iterations')
-                    elif(dt < 0):
-                        print('ERROR dt is less than zero')
-                    break#we break from the for loop before anything can be assigned
-                ##Distribution of Time
-                if(t_dets[i] >= maxIntTime[i]):#if we cannot add time to this star...
-                    numStarsAtMaxIntTime = numStarsAtMaxIntTime + 1
-                    if(numStarsAtMaxIntTime >= maxIntTime.shape[0]):#len(maxIntTime)):
-                        #print('All Stars At Max Int Time')
-                        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
-                    else:
-                        dt=dt#DO NOTHING... (We need to skip this star so we assign no dt.)
-                        continue
-                elif(t_dets[i] < maxIntTime[i]):#Then we will add time to this star BUT WE MUST DECIDE HOW MUCH
-                    #Check that added time will not Exceed maxIntTime
-                    if(t_dets[i]+dt <= maxIntTime[i]):#If added dt will keep t_dets less than maxIntTime
-                        t_dets[i] = t_dets[i]+dt#we add the time to the star
-                        timeToDistribute = timeToDistribute - dt#we subtract from the total time to redistribute
-                        dt = 0#we set dt to 0 indicating we are done distributing this dt
-                    else:#(t_dets[i]+dt > maxIntTime[i]):#added dt would be greater than maxIntTime
-                        #Add the most time you can to the first star
-                        dt = dt - (maxIntTime[i]-t_dets[i])
-                        timeToDistribute = timeToDistribute - (maxIntTime[i]-t_dets[i])
-                        t_dets[i] = maxIntTime[i]
-                # #Update Lists #########################################################3
-                # #Update dC/dT#################
-                # for n in range(sInds.shape[0]):
-                #     dCbydT[n] = fsplDeriv[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                # ###############################
+                dt = dt_static#this is the maximum quantity of time to distribute at a time.      
 
-                # #Update C/T############################
-                # for n in range(sInds.shape[0]):
-                #     CbyT[n] = fspl2[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                # ###########################################
+            maxdCbydtIndex = np.argmax(dCbydt)#Find most worthy target
 
-                # #Update Comp############################
-                # for n in range(sInds.shape[0]):
-                #     Comp00[n] = fspl[n](t_dets[n])#dCbydT is the editable list of dCbydT for each star
-                # ###########################################
+            t_dets[maxdCbydtIndex] = t_dets[maxdCbydtIndex] + dt#Add dt to the most worthy target
+            timeToDistribute = timeToDistribute - dt#subtract distributed time dt from the timeToDistribute
+            dCbydt[maxdCbydtIndex] = self.Completeness.dcomp_dt(t_dets[maxdCbydtIndex]*u.d, self.TargetList, sInds[maxdCbydtIndex], fZ[maxdCbydtIndex], fEZ, WA, self.mode, self.Cb[maxdCbydtIndex], self.Csp[maxdCbydtIndex])#dCbydT[nStars]
+        #End While Loop
+        return t_dets
 
-                #Update Lists
-
-                #reorder lists. will be used to determine most deserving star to give time to
-                #Sept 13, runs in 0.0005 sec approx
-                #lastTime = timeit.default_timer()
-                dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime = self.reOrder(dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime)
-                #print('distributedt time = '+str(timeit.default_timer() - lastTime))
-                #lastTime = timeit.default_timer()
-            #END For LOOP
-            #print('Time to Distribute is ' + str(timeToDistribute))
-        #END While LOOP
-        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
-
-    def reOrder(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
-        sortIndex = np.argsort(dCbydT,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array
-        #index list from highest dCbydT to lowest dCbydT....
-
-        #2 Reorder data#######################
-        #sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)
-        sInds = sInds[sortIndex]
-        #if numits > 200:
-        #    pdb.set_trace()
-        t_dets = t_dets[sortIndex]
-        dCbydT = dCbydT[sortIndex]
-        fsplDeriv = [fsplDeriv[i] for i in sortIndex]
-        tmp2 = list()#this tmp2 operation efficienct might be able to be increased
-        tmp2[:] = [Tint[i] for i in sortIndex]#there must be a better single line way to do this...
-        Tint = tmp2
-        del tmp2
-        fspl2 = [fspl2[i] for i in sortIndex]
-        fspl = [fspl[i] for i in sortIndex]
-        CbyT = CbyT[sortIndex]
-        Comp00 = Comp00[sortIndex]
-        maxIntTime = maxIntTime[sortIndex]
-
-        #FOR DEBUGGING
-        #print('sortNum sInd dCbydT maxIntTime CbyT Comp00 t_dets')
-        #for i in range(len(dCbydT)):
-        #    print(str(i) + ' ' + str(sInds[i]) + ' ' + str(dCbydT[i]) + ' ' + str(maxIntTime[i]) + ' ' + str(CbyT[i]) + ' ' + str(Comp00[i]) + ' ' + str(t_dets[i]))
-        #print(saltyburrito)
-
-        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
-
-    def reOrderCbyT(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
-        sortIndex = np.argsort(CbyT,axis=-1)[::-1]#sorts indicies and spits out list containing the indicies of the sorted list from largest to smallest. argsort sorts from smallest to largest, [::-1] flips array
-        #index list from highest dCbydT to lowest dCbydT....
-
-        #2 Reorder data#######################
-        #sort star index list, integration time list, dC/dT list, splDeriv list, myTint list (contains integrationt time splines for each star)
-        sInds = sInds[sortIndex]
-        #if numits > 200:
-        #    pdb.set_trace()
-        t_dets = t_dets[sortIndex]
-        dCbydT = dCbydT[sortIndex]
-        fsplDeriv = [fsplDeriv[i] for i in sortIndex]
-        tmp2 = list()#this tmp2 operation efficienct might be able to be increased
-        tmp2[:] = [Tint[i] for i in sortIndex]#there must be a better single line way to do this...
-        Tint = tmp2
-        del tmp2
-        fspl2 = [fspl2[i] for i in sortIndex]
-        fspl = [fspl[i] for i in sortIndex]
-        CbyT = CbyT[sortIndex]
-        Comp00 = Comp00[sortIndex]
-        maxIntTime = maxIntTime[sortIndex]
-
-        #FOR DEBUGGING
-        #print('sortNum sInd dCbydT maxIntTime CbyT Comp00 t_dets')
-        #for i in range(len(dCbydT)):
-        #    print(str(i) + ' ' + str(sInds[i]) + ' ' + str(dCbydT[i]) + ' ' + str(maxIntTime[i]) + ' ' + str(CbyT[i]) + ' ' + str(Comp00[i]) + ' ' + str(t_dets[i]))
-        #print(saltyburrito)
-
-        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime
-
-    def sacrificeStarCbyT(self, dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime):
-        #for j in xrange(len(sInds)):
-            #tmpintTime = np.zeros(len(sInds)) + intTime[j]
-        fZ = np.zeros(len(sInds)) + fZ
-        fEZ = np.zeros(len(sInds)) + fEZ
-            #CbyT[j] = self.Completeness.comp_per_intTime(t_dets[j]*u.d, TL, sInds[j], fZ[j], fEZ[j], WA, self.mode, self.Cb[j], self.Csp[j])/intTime[j]#takes 5 seconds to do 1 time for all stars
-        CbyT[:] = self.Completeness.comp_per_intTime(t_dets[:]*u.d, TL, sInds[:], fZ[:], fEZ[:], WA, self.mode, self.Cb[:], self.Csp[:])/intTime[:]#takes 5 seconds to do 1 time for all stars
+    def sacrificeStarCbyT(self, sInds, t_dets, fZ, fEZ, WA, overheadTime):
+        """Sacrifice the worst performing CbyT star
+        Args:
+            sInds[nStars] - indicies of stars in the list
+            t_dets[nStars] - time to observe each star (in days)
+            fZ[nStars] - zodiacal light for each target
+            fEZ - 0 
+            WA - inner working angle of the instrument
+            overheadTime - overheadTime added to each observation
+        Return:
+            sInds[nStars] - indicies of stars in the list
+            t_dets[nStars] - time to observe each star (in days)
+            sacrificedStarTime - time to distribute in days
+            fZ[nStars] - zodiacal light for each target        
+        """
+        CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)/t_dets#takes 5 seconds to do 1 time for all stars
 
         sacrificeIndex = np.argmin(CbyT)#finds index of star to sacrifice
 
         #Need index of sacrificed star by this point
-        sacrificedStarTime = t_dets[sacrificeIndex]#saves time being sacrificed
-        dCbydT = np.delete(dCbydT,sacrificeIndex)
+        sacrificedStarTime = t_dets[sacrificeIndex] + overheadTime#saves time being sacrificed
         sInds = np.delete(sInds,sacrificeIndex)
         t_dets = np.delete(t_dets,sacrificeIndex)
-        fsplDeriv = np.delete(fsplDeriv,sacrificeIndex)
-        Tint = np.delete(Tint,sacrificeIndex)
-        fspl2 = np.delete(fspl2,sacrificeIndex)
-        CbyT = np.delete(CbyT,sacrificeIndex)
-        Comp00 = np.delete(Comp00,sacrificeIndex)
-        fspl = np.delete(fspl,sacrificeIndex)
-        maxIntTime = np.delete(maxIntTime,sacrificeIndex)
-        return dCbydT, sInds, t_dets, fsplDeriv, Tint, fspl2, CbyT, Comp00, fspl, maxIntTime, sacrificedStarTime
-
-    def calcMaxCbyT(self, sInds, fspl2, maxIntTime):
-        maxIntTimeCbyT = np.zeros(sInds.shape[0])
-        OneFifthmaxIntTimeCbyT = np.zeros(sInds.shape[0])
-        OneHalfmaxIntTimeCbyT  = np.zeros(sInds.shape[0])
-        OneDayIntTimeCbyT  = np.zeros(sInds.shape[0])
-        for n in range(sInds.shape[0]):
-            maxIntTimeCbyT[n] = fspl2[n](maxIntTime[n])#calculate the CbyT at the maxIntTime
-            OneFifthmaxIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
-            OneHalfmaxIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/2)#calculate the CbyT at the maxIntTime/5
-            OneDayIntTimeCbyT[n] = fspl2[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
-        return maxIntTimeCbyT, OneFifthmaxIntTimeCbyT, OneHalfmaxIntTimeCbyT, OneDayIntTimeCbyT
-
-    def calcMaxComps(self, sInds, fspl, maxIntTime):
-        maxIntTimeC = np.zeros(sInds.shape[0])
-        OneFifthmaxIntTimeC = np.zeros(sInds.shape[0])
-        OneHalfmaxIntTimeC  = np.zeros(sInds.shape[0])
-        OneDayIntTimeC  = np.zeros(sInds.shape[0])
-        for n in range(sInds.shape[0]):
-            maxIntTimeC[n] = fspl[n](maxIntTime[n])#calculate the CbyT at the maxIntTime
-            OneFifthmaxIntTimeC[n] = fspl[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
-            OneHalfmaxIntTimeC[n] = fspl[n](maxIntTime[n]/2)#calculate the CbyT at the maxIntTime/5
-            OneDayIntTimeC[n] = fspl[n](maxIntTime[n]/5)#calculate the CbyT at the maxIntTime/5
-        return maxIntTimeC, OneFifthmaxIntTimeC, OneHalfmaxIntTimeC, OneDayIntTimeC
-
-    def calc_maxdMag(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
-        """ DEPRICATED... ORIGINALLY THIS WAS GOING TO SOLVE FOR THE MAXIMUM DMAG FOR OBSERVATION OF ANY GIVEN STAR BUT THE SOLVE FUNCTION IS TOO SLOW AS IT CURRENTLY STANDS
-        Calculates electron count rates for planet signal, background noise, 
-        and speckle residuals.
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of mas
-            mode (dict):
-                Selected observing mode
-            returnExtra (boolean):
-                Optional flag, default False, set True to return additional rates for validation
-        
-        Returns:
-            C_p (astropy Quantity array):
-                Planet signal electron count rate in units of 1/s
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-        
-        """
-        
-        # get scienceInstrument and starlightSuppressionSystem
-        inst = mode['inst']
-        syst = mode['syst']
-        
-        # get mode wavelength
-        lam = mode['lam']
-        lam_min = mode['lam'] - mode['deltaLam']/2.
-        # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
-        
-        # if the mode wavelength is different than the wavelength at which the system 
-        # is defined, we need to rescale the working angles
-        if lam != syst['lam']:
-            WA = WA*lam/syst['lam']
-        
-        # solid angle of photometric aperture, specified by core_area(optional), 
-        # otherwise obtained from (lambda/D)^2
-        Omega = syst['core_area'](lam,WA)*u.arcsec**2 if syst['core_area'] else \
-                np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
-        # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = (Omega/inst['pixelScale']**2).decompose().value
-        
-        # get coronagraph input parameters
-        occ_trans = syst['occ_trans'](lam,WA)
-        core_thruput = syst['core_thruput'](lam,WA)
-        core_contrast = syst['core_contrast'](lam,WA)
-        
-        # get stellar residual intensity in the planet PSF core
-        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
-        if syst['core_mean_intensity'] == None:
-            core_intensity = core_contrast * core_thruput
-        # OPTION 2: otherwise use core_mean_intensity
-        else:
-            core_mean_intensity = syst['core_mean_intensity'](lam,WA)
-            # if a platesale was specified with the coro parameters, apply correction
-            if syst['core_platescale'] != None:
-                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
-                        /(lam/self.pupilDiam)).decompose().value
-            core_intensity = core_mean_intensity * Npix
-        
-        # get star magnitude
-        sInds = np.array(sInds,ndmin=1)
-        mV = TL.starMag(sInds,lam)
-        
-        # ELECTRON COUNT RATES [ s^-1 ]
-        # spectral flux density = F0 * A * Dlam * QE * T (non-coro attenuation)
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*self.attenuation
-        # planet signal
-        C_p = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
-        # starlight residual
-        C_sr = C_F0*10.**(-0.4*mV)*core_intensity
-        # zodiacal light
-        C_z = C_F0*fZ*Omega*occ_trans
-        # exozodiacal light
-        C_ez = C_F0*fEZ*Omega*core_thruput
-        # dark current
-        C_dc = Npix*inst['idark']
-        # clock-induced-charge
-        C_cc = Npix*inst['CIC']/inst['texp']
-        # readout noise
-        C_rn = Npix*inst['sread']/inst['texp']
-        # background
-        C_b = inst['ENF']**2*(C_sr+C_z+C_ez+C_dc+C_cc)+C_rn 
-        # spatial structure to the speckle including post-processing contrast factor
-        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
-        
-        # organize components into an optional fourth result
-        C_extra = dict(
-            C_sr = C_sr.to('1/s'),
-            C_z  = C_z.to('1/s'),
-            C_ez = C_ez.to('1/s'),
-            C_dc = C_dc.to('1/s'),
-            C_cc = C_cc.to('1/s'),
-            C_rn = C_rn.to('1/s'))
-
-        #if returnExtra:
-        #    return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
-        #else:
-        #   return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
-                # for characterization, Cb must include the planet
-        
-        if mode['detectionMode'] == False:
-            C_b = C_b + C_p*mode['inst']['ENF']**2
-        
-        # get SNR threshold
-        SNR = mode['SNR']
-        # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore',invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
-
-        #Solve when numerator is zero
-        from sympy.solvers import Symbol
-        from sympy import Symbol
-        dMag2 = Symbol('dMag2')
-        C_p = C_F0*10.**(-0.4*(mV + dMag2))*core_thruput
-        dMags = solve((C_p**2 - (SNR*C_sp)**2),dMag2)
-
-        C_p = C_F0*10.**(-0.4*(mV + dMags))*core_thruput
-        # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore',invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
-
-        # infinite and NAN are set to zero
-        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
-        # negative values are set to zero
-        intTime[intTime < 0] = 0.*u.d
-        
-        return intTime.to('day')
-
-    def generate_fZ(self, sInds):
-        """
-        This function calculates fZ values for each star over an entire orbit of the sun
-        This function is called in init
-        returns: fZ[resolution, sInds] where fZ is the zodiacal light for each star
-        """
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/cachedfZ.csv'
-        #Check File Length
-        fileLength = 0
-        try: 
-            with open(dir_path+fname, 'rb') as f:
-                reader = csv.reader(f)
-                your_list = list(reader)
-                fileLength = len(your_list)
-                f.close()
-        except:
-            fileLength = 0
-        #print('fileLength is ' + str(fileLength))
-        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if not os.path.isfile(dir_path+fname) or fileLength != sInds.shape[0]:# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
-            print('Calculating fZ for Each Star over 1 Yr')
-            OS = self.OpticalSystem
-            WA = OS.WA0
-            ZL = self.ZodiacalLight
-            TL = self.TargetList
-            Obs = self.Observatory
-            startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
-            resolution = [j for j in range(1000)]
-            fZ = np.zeros([len(resolution),sInds.shape[0]])
-            dt = 365.25/len(resolution)*u.d
-            for i in xrange(len(resolution)):#iterate through all times of year
-                time = startTime + dt*resolution[i]
-                fZ[i,:] = ZL.fZ(Obs, TL, sInds, time, self.mode)
-            #This section of Code takes 68 seconds
-            #Save fZ to File######################################
-            try:#Here we delete the previous fZ file
-                print('Trying to save fZ vs Time for Each Star to File')
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_fZAllStars.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                print('There was an error writing the file')
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                for i in range(sInds.shape[0]):#iterate through all stars
-                    wr.writerow(fZ[:,i])#Write the fZ to file
-                fo.close()
-                print('Finished Saving fZ vs ToY for Each Star to File')
-        
-        #Load fZ dMag for Each Star From File######################################
-        #Sept 20, 2017 execution time 1.747 sec
-        print('Load fZ for Each Star from File')
-        fZ = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            fZ.append(tmp)
-        return fZ
-
-    def generatefComp(self,dir_path, fname, sInds):
-        #This function is called in init.
-        #This function should be moved to Completeness
-        dmag = self.dmag_startSaved
-        IWA = self.OpticalSystem.IWA.value#of telescope. to be used for min s
-        OWA = self.OpticalSystem.OWA.value#of telescope to be used for max s
-
-        ##NEED SOME CHECKS TO DETRMINE WHETHER COMPLETENESS FILE IS OKAY OR NOT
-
-        #IF Completeness Distribution has not been calculated Generate Completeness and Generate that File
-        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
-            print('Calculate Completeness 1')#Calculate Completeness for Each Star##############################
-            starSmin = np.zeros(len(sInds))#contains Smin for each star
-            starSmax = np.zeros(len(sInds))#contains Smax for each star
-            #Calculate Smin and Smax for all Stars in List
-            for q in range(len(sInds)):#iterate through each star
-                star_dist = self.TargetList.dist[sInds[q]].value
-                starSmin[q] = star_dist*IWA
-                starSmax[q] = star_dist*OWA
-            absSmax = np.amin(starSmin)#find largest Smax of entire list
-            absSmin = np.amax(starSmax)#find smallest Smin of entire list
-
-            Smat = np.linspace(absSmin,absSmax,400)#Calculate S range to calculate over
-            fComp = np.zeros((len(Smat),len(dmag)))
-            for j in range(len(dmag)):#for each arbitrary dmaglim between 0 and dMagLim
-                dmaglim = dmag[j]#artificial dmaglim to be set by a smaller integration time
-                for i in range(len(Smat)):#iterate through star separations
-                        fComp[i][j] = self.Completeness.f_s(Smat[i],dmaglim)#calculates fComp
-                print('Calculating fComp for dmag ' + str(j) + ' of ' + str(len(dmag)))
-            #generates fComp which is a fComp[Smat][dmag] matrix and holds the completeness value for each one of those
-            #Aug 28, 2017 execution time 3701 for 400x5000... depends on size... 
-            print('Done Calculating Completeness 1')
-
-            #Save Completeness to File######################################
-            try:#Here we delete the previous completeness file
-                print('Trying to save Completeness to File')
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_starComps.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                wr.writerow(Smat)#writes the 1st row Separations
-                wr.writerow(dmag)#writes the 2nd row dmags
-                for i in range(len(fComp)):
-                    wr.writerow(fComp[i])#self.starComps_startSaved)#writes the completeness
-                fo.close()
-                print('Finished Saving Completeness To File')
-
-    def loadCompData(self, dir_path, fname):
-        """Loads Completeness from starComps.csv on this path
-        This is called in init
-
-        Args: dir_path, a string containing the filepath and fname, a string containing the filename
-
-        Returns:
-            SmatRead, a list of all discrete planet separations evaluated over
-            dmagRead, a list of all discrete planet dmag evaluated over
-        """
-        SmatRead = list()
-        dmagRead = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            if i == 0:
-                SmatRead = np.asarray(your_list[i]).astype(np.float)
-            elif i == 1:
-                dmagRead = np.asarray(your_list[i]).astype(np.float)
-            else:
-                tmp = np.asarray(your_list[i]).astype(np.float)
-                self.compData.append(tmp)#Unfiltered Completeness Lists
-        #Sept 6, 2017 execution time 0.0922 sec
-        print('Finished Loading Completeness pdf from File')
-        return SmatRead, dmagRead
-
-    def generateAllStarsComp(self,dir_path, fname, sInds, SmatRead, dmagRead):
-        IWA = self.OpticalSystem.IWA.value#of telescope. to be used for min s
-        OWA = self.OpticalSystem.OWA.value#of telescope to be used for max s
-        #Iterate through each star, interpolate which completeness to start summing at do for all stars.
-        #if not os.path.isfile(dir_path+fname) or len(self.starComps_startSaved) != sInds.shape[0]:#If this file does not exist or the length of the file is not appropriate 
-        starS = list()#contains separation amtrix for each star
-        compvsdmagDat = np.zeros((len(sInds),len(dmagRead)))
-
-        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if not os.path.isfile(dir_path+fname):# or len(self.compData) != 402:#If this file does not exist or the length of the file is not appropriate 
-            print('Calculating Completeness for Each Star vs dmag')
-            for q in range(sInds.shape[0]):#iterates through each star
-                star_dist = self.TargetList.dist[sInds[q]].value
-                Smin = star_dist*IWA
-                Smax = star_dist*OWA 
-                SminIndex = np.argmin(np.abs([(x - Smin) for x in SmatRead]))#find index of Smin
-                SmaxIndex = np.argmin(np.abs([(Smax - x) for x in SmatRead]))#find index of Smax
-                for i in range(dmagRead.shape[0]):#Iterate through each column and sum down the column over the range specified
-                    compvsdmagDat[q][i] = sum([self.compData[x][i] for x in range(SmaxIndex,SminIndex)])*np.abs(SmatRead[SminIndex]-SmatRead[SmaxIndex])/np.abs(SmaxIndex-SminIndex)
-                self.starComps_startSaved.append(compvsdmagDat[q])
-            del compvsdmagDat
-            #Save Completeness to File######################################
-            try:#Here we delete the previous completeness file
-                print('Trying to save Completeness vs dMag for Each Star to File')
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_starCompsAllStars.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                print('There was an error writing the file')
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                for i in range(sInds.shape[0]):#iterate through all stars
-                    wr.writerow(self.starComps_startSaved[i])#self.starComps_startSaved)#writes the completeness
-                fo.close()
-                #Aug 28, 2017 execution time 
-                print('Saving Completeness vs dMag for Each Star to File time = '+str(timeit.default_timer() - lastTime))
-                lastTime = timeit.default_timer()
-                print('Finished Saving Completeness vs dMag for Each Star to File')
-
-        #Load Completeness vs dMag for Each Star From File######################################
-        print('Load Completeness for Each Star from File')
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            self.starComps_startSaved.append(tmp)#Unfiltered Completeness Lists
-        #Sept 6, 2017 execution time  sec
-        #print('Load Completeness File time = '+str(timeit.default_timer() - lastTime))
-        lastTime = timeit.default_timer()
-        print('Finished Loading Completeness vs dMags for Each Star from File')
-        #Iterate through each star, interpolate which completeness to start summing at do for all stars.
+        fZ = np.delete(fZ,sacrificeIndex)
+        self.Cb = np.delete(self.Cb,sacrificeIndex)
+        self.Csp = np.delete(self.Csp,sacrificeIndex)
+        return sInds, t_dets, sacrificedStarTime, fZ

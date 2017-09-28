@@ -461,15 +461,6 @@ class BrownCompleteness(Completeness):
         
         """
         intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
-        
-        print(len(intTimes))
-        print(len(sInds))
-        print(len(fZ))
-        print(len(fEZ))
-        print(len(WA))
-        print(len(smin))
-        print(len(smax))
-        print(len(dMag))
 
         comp = self.comp_calc(smin, smax, dMag)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value

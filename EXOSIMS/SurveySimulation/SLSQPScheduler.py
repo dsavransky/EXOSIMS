@@ -24,12 +24,14 @@ class SLSQPScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, optt0=None, **specs):
+    def __init__(self, optt0=None, staticOptTimes=False, **specs):
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
 
-        
+        assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
+        self.staticOptTimes = staticOptTimes
+
         #some global defs
         self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime']
@@ -209,20 +211,24 @@ class SLSQPScheduler(SurveySimulation):
                 same dimension as sInds
         """
  
-        # assumed values for detection
-        fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
+        if self.staticOptTimes:
+            intTimes = self.t0[sInds]
+        else:
+            # assumed values for detection
+            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
-        timeLeft = (self.TimeKeeping.missionFinishNorm - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
-        bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
+            timeLeft = (self.TimeKeeping.missionFinishNorm - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
+            bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
 
-        initguess = self.t0[sInds].to(u.d).value
-        ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
-        
-        #update default times for these targets
-        self.t0[sInds] = ires['x']*u.d
+            initguess = self.t0[sInds].to(u.d).value
+            ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
+                    method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+            
+            #update default times for these targets
+            self.t0[sInds] = ires['x']*u.d
 
-        intTimes = ires['x']*u.d
+            intTimes = ires['x']*u.d
+            
         intTimes[intTimes < 0.1*u.s] = 0.0*u.d
             
         return intTimes

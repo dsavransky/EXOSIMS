@@ -526,7 +526,7 @@ class tieredScheduler(SurveySimulation):
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
 
-        # only consider slew distance when there's an occulter
+        # consider slew distance when there's an occulter
         r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs)
         u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
         angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
@@ -620,6 +620,16 @@ class tieredScheduler(SurveySimulation):
         ZL = self.ZodiacalLight
         Obs = self.Observatory
 
+        # num_points = 500
+        # intTimes = np.linspace(1e-5*u.d, OS.intCutoff, num_points)
+        # sInds = np.ones(intTimes.shape) * sInd
+        # fZ = np.ones(intTimes.shape) * fZ
+        # fEZ = np.ones(intTimes.shape) * ZL.fEZ0
+        # WA = self.WAint
+
+        # OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode)
+        # Comp.comp_per_intTime(intTimes, TL, [sInd], fZ, fEZ, WA, mode)
+
         dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
                   Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
         dMagmax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
@@ -634,7 +644,10 @@ class tieredScheduler(SurveySimulation):
 
         # calculate comp as a function of dMag
         smin = TL.dist[sInd] * np.tan(mode['IWA'])
-        smax = TL.dist[sInd] * np.tan(mode['OWA'])
+        if np.isinf(mode['OWA']):
+            smax = Comp.PlanetPopulation.rrange[1].to('AU').value
+        else:
+            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
 
         if self.EVPOC is None:
             self.calc_EVPOC()
@@ -715,7 +728,9 @@ class tieredScheduler(SurveySimulation):
         
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
+            print 'Loading cached completeness file from "%s".' % Cpath
             H = pickle.load(open(Cpath, 'rb'))
+            print 'Completeness loaded from cache.'
         else:
             # run Monte Carlo simulation and pickle the resulting array
             print 'Cached completeness file not found at "%s".' % Cpath
@@ -735,10 +750,8 @@ class tieredScheduler(SurveySimulation):
                     H = h
                 else:
                     H += h
-
-            Nplanets = 1e8
             
-            H = H/(Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
+            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
             pickle.dump(H, open(Cpath, 'wb'))
@@ -794,34 +807,25 @@ class tieredScheduler(SurveySimulation):
         
         # sample uniform distribution of mean anomaly
         M = np.random.uniform(high=2.0*np.pi,size=nplan)
-        # sample semi-major axis
-        a = PPop.gen_sma(nplan).to('AU').value
-        # sample other necessary orbital parameters
+        # sample quantities
+        a, e, p, Rp = PPop.gen_plan_params(nplan)
+        # check if circular orbits
         if np.sum(PPop.erange) == 0:
-            # all circular orbits
             r = a
             e = 0.0
             E = M
         else:
-            # sample eccentricity
-            if PPop.constrainOrbits:
-                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
-            else:
-                e = PPop.gen_eccen(nplan)   
-            # Newton-Raphson to find E
             E = eccanom(M,e)
             # orbital radius
             r = a*(1.0-e*np.cos(E))
 
         beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
-        s = r*np.sin(beta)*u.AU
-        # sample albedo, planetary radius, phase function
-        p = PPop.gen_albedo(nplan)
-        Rp = PPop.gen_radius(nplan)
-        Phi = self.Completeness.PlanetPhysicalModel.calc_Phi(beta)
-        
+        s = r*np.sin(beta)
+        # phase function
+        Phi = self.PlanetPhysicalModel.calc_Phi(beta)
         # calculate dMag
-        dMag = deltaMag(p,Rp,r*u.AU,Phi)
+        dMag = deltaMag(p,Rp,r,Phi)
+        
         return s, dMag
 
     def observation_characterization(self, sInd, mode):

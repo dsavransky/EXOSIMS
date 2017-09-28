@@ -610,7 +610,7 @@ class BrownCompleteness(Completeness):
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist[sInds]).to('AU').value
         if np.isinf(OWA):
-            smax = np.array([self.xedges[-1]]*len(smin))
+            smax = np.array([self.PlanetPopulation.rrange[1].to('AU').value]*len(smin))
         else:
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value

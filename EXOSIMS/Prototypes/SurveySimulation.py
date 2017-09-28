@@ -104,7 +104,7 @@ class SurveySimulation(object):
             
             try:
                 script = open(scriptfile).read()
-                specs = json.loads(script)
+                specs.update(json.loads(script))
             except ValueError:
                 sys.stderr.write("Script file `%s' is not valid JSON."%scriptfile)
                 # must re-raise, or the error will be masked 

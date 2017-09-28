@@ -25,7 +25,7 @@ class Nemati(OpticalSystem):
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration times of target systems for a specific observing 
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
-                
+        
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -56,44 +56,6 @@ class Nemati(OpticalSystem):
         # calculate integration time based on Nemati 2014
         with np.errstate(divide='ignore', invalid='ignore'):
             intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
-        # infinite and NAN are set to zero
-        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
-        # negative values are set to zero
-        intTime[intTime < 0] = 0.*u.d
-        
-        return intTime.to('day')
-
-    def calc_intTimeLIGHT(self, TL, sInds, fZ, fEZ, dMag, WA, mode, C_p, C_b, C_sp):
-        """Finds integration times of target systems for a specific observing 
-        mode (imaging or characterization), based on Nemati 2014 (SPIE).
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
-            mode (dict):
-                Selected observing mode
-        
-        Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
-        
-        """
-        
-        # get SNR threshold
-        SNR = mode['SNR']
-        # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore', invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))*u.d
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
         # negative values are set to zero
@@ -168,7 +130,6 @@ class Nemati(OpticalSystem):
         core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet delta magnitude
-        #        dMag = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
@@ -219,7 +180,6 @@ class Nemati(OpticalSystem):
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
         
-        #ddMagdt = np.zeros((len(sInds), len(WA)))
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)

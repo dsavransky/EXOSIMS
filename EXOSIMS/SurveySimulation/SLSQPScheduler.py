@@ -32,6 +32,8 @@ class SLSQPScheduler(SurveySimulation):
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
 
+        self._outspec['staticOptTimes'] = self.staticOptTimes
+
         #some global defs
         self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime']

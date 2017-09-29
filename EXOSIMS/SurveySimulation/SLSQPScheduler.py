@@ -3,6 +3,12 @@ import astropy.units as u
 import numpy as np
 from ortools.linear_solver import pywraplp
 from scipy.optimize import minimize,minimize_scalar
+import hashlib
+import inspect,os
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -24,15 +30,18 @@ class SLSQPScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, optt0=None, staticOptTimes=False, **specs):
+    def __init__(self, cacheOptTimes=False, staticOptTimes=False, **specs):
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
-
         self._outspec['staticOptTimes'] = self.staticOptTimes
+
+        assert isinstance(cacheOptTimes, bool), 'cacheOptTimes must be boolean.'
+        self._outspec['cacheOptTimes'] = cacheOptTimes
+
 
         #some global defs
         self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
@@ -44,7 +53,24 @@ class SLSQPScheduler(SurveySimulation):
                                              np.sum(x*u.d > 0.1*u.s).astype(float)*self.ohTimeTot.to(u.d).value,
                             'jac':lambda x: np.ones(len(x))*-1.}
 
-        if optt0 is None:
+        self.t0 = None
+        if cacheOptTimes:
+            cachefname = ''
+            mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']
+            for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]
+            cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()
+            cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'t0')
+
+            if os.path.isfile(cachefname):
+                self.vprint("Loading cached t0 from %s"%cachefname)
+                with open(cachefname, 'rb') as f:
+                    self.t0 = pickle.load(f)
+                sInds = np.arange(self.TargetList.nStars)
+                fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+                self.scomp0 = -self.objfun(self.t0.to(u.d).value,sInds,fZ)
+
+
+        if self.t0 is None:
             #find nominal background counts for all targets in list
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, 25.0, self.WAint, self.detmode)
@@ -101,12 +127,13 @@ class SLSQPScheduler(SurveySimulation):
 
             self.t0 = ires['x']*u.d
             self.scomp0 = -ires['fun']
-        else:
-            self.t0 = optt0
-            sInds = np.arange(self.TargetList.nStars)
-            fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
-            self.scomp0 = -self.objfun(self.t0.to(u.d).value,sInds,fZ)
-            
+
+            if cacheOptTimes:
+                with open(cachefname,'wb') as f:
+                    pickle.dump(self.t0, f)
+                self.vprint("Saved cached optimized t0 to %s"%cachefname)
+
+
     def inttimesfeps(self,eps,Cb,Csp):
         """
         Compute the optimal subset of targets for a given epsilon value
@@ -224,7 +251,7 @@ class SLSQPScheduler(SurveySimulation):
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                    method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':100,'ftol':1e-4})
             
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d

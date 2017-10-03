@@ -32,7 +32,7 @@ class SurveyEnsemble(object):
                     rewindPlanets=rewindPlanets)
             res.append(ar)
         t2 = time.time()
-        print("%s survey simulations, completed in %d sec"%(int(nb_run_sim), t2 - t1))
+        self.vprint("%s survey simulations, completed in %d sec"%(int(nb_run_sim), t2 - t1))
         
         return res
 

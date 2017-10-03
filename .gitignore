@@ -86,4 +86,4 @@ fitting_parameters.h5
 statsFun_C
 *.p
 *.pkl
-
+*.t0

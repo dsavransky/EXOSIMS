@@ -620,15 +620,39 @@ class tieredScheduler(SurveySimulation):
         ZL = self.ZodiacalLight
         Obs = self.Observatory
 
-        # num_points = 500
-        # intTimes = np.linspace(1e-5*u.d, OS.intCutoff, num_points)
-        # sInds = np.ones(intTimes.shape) * sInd
-        # fZ = np.ones(intTimes.shape) * fZ
-        # fEZ = np.ones(intTimes.shape) * ZL.fEZ0
-        # WA = self.WAint
+        Cpath = os.path.join(Comp.classpath, Comp.filename+'_curves.comp')
+        intTimes = np.logspace(-5, 2, num_points)*u.d
 
-        # OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode)
-        # Comp.comp_per_intTime(intTimes, TL, [sInd], fZ, fEZ, WA, mode)
+        if os.path.exists(Cpath):
+            print 'Loading cached completeness file from "%s".' % Cpath
+            curves = pickle.load(open(Cpath, 'rb'))
+            print 'Completeness curves loaded from cache.'
+        else:
+            sInds = np.arange(TL.nStars)
+            num_points = 500
+            fZ = np.ones(intTimes.shape) * fZ
+            fEZ = np.ones(intTimes.shape) * ZL.fEZ0
+            WA = np.ones(intTimes.shape) * WA
+
+            curves = np.zeros([2, sInds.shape, intTime.shape])
+
+            # calculate completeness curves for all sInds
+            print 'Cached completeness file not found at "%s".' % Cpath
+            print 'Beginning completeness curve calculations.'
+
+            for i_sInd in sInds:
+                sInd_array = np.ones(intTimes.shape) * i_sInd
+                curves[0,i_sInd,:] = OS.calc_dMag_per_intTime(intTimes, TL, sInd_array, fZ, fEZ, WA, mode)[:,0]
+                curves[1,i_sInd,:] = Comp.comp_per_intTime(intTimes, TL, i_sInd, fZ, fEZ, WA[0], mode)
+
+            pickle.dump(curves, open(Cpath, 'wb'))
+            print 'completeness curves stored in %r' % Cpath
+
+        dm_v_t = curves[0,sInd,:]
+        c_v_t = curves[1,sInd,:]
+        dcdt = np.diff(c_v_t)/np.diff(intTimes)
+
+        #=========================================================
 
         dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
                   Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))

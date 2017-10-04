@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>EXOSIMS.PlanetPopulation package &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.PostProcessing package" href="EXOSIMS.PostProcessing.html" />
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -65,7 +62,7 @@ of JSON inputs.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value(s) in AU. Not an astropy quantity.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) – Semi-major axis value(s) in AU. Not an astropy quantity.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
 </tr>
@@ -86,7 +83,7 @@ constant.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU
 e (float ndarray):<blockquote>
@@ -99,7 +96,7 @@ e (float ndarray):<blockquote>
 </dl>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -130,7 +127,7 @@ other parameters constant.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU
 e (float ndarray):<blockquote>
@@ -143,7 +140,7 @@ e (float ndarray):<blockquote>
 </dl>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -164,21 +161,21 @@ distribution with exponential decay.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).
+<dd><p><em>float</em> – Location (in AU) of semi-major axis decay point (knee).
 Not an astropy quantity.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma">
 <code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike1.KeplerLike1.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+<dd><p><em>float</em> – Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <p>Notes:
@@ -204,7 +201,7 @@ sigma parameter (defaults to 0.25).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p</strong> (<em>float ndarray</em>) &#8211; Albedo value(s)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p</strong> (<em>float ndarray</em>) – Albedo value(s)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Albedo probability density</td>
 </tr>
@@ -222,7 +219,7 @@ sigma parameter (defaults to 0.25).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>e</strong> (<em>float ndarray</em>) &#8211; Eccentricity value(s)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>e</strong> (<em>float ndarray</em>) – Eccentricity value(s)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Eccentricity probability density</td>
 </tr>
@@ -245,8 +242,8 @@ maximum allowable values.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>e</strong> (<em>float ndarray</em>) &#8211; Eccentricity values</li>
-<li><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value in AU. Not an astropy quantity.</li>
+<li><strong>e</strong> (<em>float ndarray</em>) – Eccentricity values</li>
+<li><strong>a</strong> (<em>float ndarray</em>) – Semi-major axis value in AU. Not an astropy quantity.</li>
 </ul>
 </td>
 </tr>
@@ -269,7 +266,7 @@ axis</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>float ndarray</em>) &#8211; Planetary radius value(s) in Earth radius. Not an astropy quantity.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>float ndarray</em>) – Planetary radius value(s) in Earth radius. Not an astropy quantity.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planetary radius probability density</td>
 </tr>
@@ -287,7 +284,7 @@ axis</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) &#8211; Semi-major axis value(s) in AU. Not an astropy quantity.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>float ndarray</em>) – Semi-major axis value(s) in AU. Not an astropy quantity.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis probability density</td>
 </tr>
@@ -307,7 +304,7 @@ and then calculating the albedo from the physical model.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet albedo values</td>
 </tr>
@@ -327,7 +324,7 @@ mass from the physical model.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass values in units of Earth mass</td>
 </tr>
@@ -350,7 +347,7 @@ other parameters. Planetary radius comes from the Kepler observations.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU
 e (float ndarray):<blockquote>
@@ -363,7 +360,7 @@ e (float ndarray):<blockquote>
 </dl>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -379,7 +376,7 @@ with fixed occurrence rates.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius values in units of Earth radius</td>
 </tr>
@@ -400,7 +397,7 @@ occurrence rates of all planets.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of target systems. Total number of samples generated will be,
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of target systems. Total number of samples generated will be,
 on average, n*self.eta</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius values in units of Earth radius</td>
@@ -421,11 +418,11 @@ determined by class attribute smaknee</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis values in units of AU</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -449,21 +446,21 @@ performance improvements.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).
+<dd><p><em>float</em> – Location (in AU) of semi-major axis decay point (knee).
 Not an astropy quantity.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.esigma">
 <code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+<dd><p><em>float</em> – Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <p>Notes:
@@ -491,11 +488,11 @@ determined by class attribute smaknee</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -519,49 +516,49 @@ about the target stars, and so no StarCatalog object is needed (only the
 KnownRvPlanetsTargetList implementation).</p>
 <p>To download a new copy of the data file:
 1. Navigate to the IPAC exoplanet archive at <a class="reference external" href="http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&amp;config=planets">http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&amp;config=planets</a>
-2. Type &#8216;radial&#8217; (minus quotes) in the &#8216;Discovery Method&#8217; search box and
+2. Type ‘radial’ (minus quotes) in the ‘Discovery Method’ search box and
 hit enter.
-3. In the &#8216;Download Table&#8217; menu select &#8216;VOTable Format&#8217;, &#8216;Download all
-Columns&#8217; and &#8216;Download Currently Filtered Rows&#8217;.
-4. In the &#8216;Download Table&#8217; menu  click &#8216;Download Table&#8217;.</p>
+3. In the ‘Download Table’ menu select ‘VOTable Format’, ‘Download all
+Columns’ and ‘Download Currently Filtered Rows’.
+4. In the ‘Download Table’ menu  click ‘Download Table’.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee">
 <code class="descname">smaknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.smaknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in AU) of semi-major axis decay point (knee).
+<dd><p><em>float</em> – Location (in AU) of semi-major axis decay point (knee).
 Not an astropy quantity.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma">
 <code class="descname">esigma</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.esigma" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Sigma value of Rayleigh distribution for eccentricity.</p>
+<dd><p><em>float</em> – Sigma value of Rayleigh distribution for eccentricity.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath">
 <code class="descname">rvplanetfilepath</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.rvplanetfilepath" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Full path to RV planet votable file from IPAC. If None,
+<dd><p><em>string</em> – Full path to RV planet votable file from IPAC. If None,
 assumes default file in PlanetPopulation directory of EXOSIMS.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.period">
 <code class="descname">period</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.period" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity array</em> &#8211; Orbital period in units of day.  Error in perioderr.</p>
+<dd><p><em>astropy Quantity array</em> – Orbital period in units of day.  Error in perioderr.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.tper">
 <code class="descname">tper</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.KnownRVPlanets.KnownRVPlanets.tper" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Time</em> &#8211; Periastron time in units of jd.  Error in tpererr.</p>
+<dd><p><em>astropy Time</em> – Periastron time in units of jd.  Error in tpererr.</p>
 </dd></dl>
 
 <p>Notes:</p>
@@ -575,7 +572,7 @@ Cumming et al. 2010</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass values in units of Earth mass</td>
 </tr>
@@ -594,7 +591,7 @@ Cumming et al. 2010</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius values in units of Earth radius</td>
 </tr>
@@ -619,45 +616,45 @@ These do not yet represent official scientific values.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13coeffs">
 <code class="descname">SAG13coeffs</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13coeffs" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float 4x2 ndarray</em> &#8211; Coefficients used by the SAG13 broken power law. The 4 lines
+<dd><p><em>float 4x2 ndarray</em> – Coefficients used by the SAG13 broken power law. The 4 lines
 correspond to Gamma, alpha, beta, and the minimum radius.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13starMass">
 <code class="descname">SAG13starMass</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.SAG13starMass" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> &#8211; Assumed stellar mass corresponding to the given set of coefficients.</p>
+<dd><p><em>astropy Quantity</em> – Assumed stellar mass corresponding to the given set of coefficients.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.eta2D">
 <code class="descname">eta2D</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.eta2D" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; 2D array of planet occurrence rate per star, binned by planetary
+<dd><p><em>float ndarray</em> – 2D array of planet occurrence rate per star, binned by planetary
 radius and period.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.lnRp">
 <code class="descname">lnRp</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.lnRp" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Logarithm of the eta2D grid radius values in units of Earth radius.</p>
+<dd><p><em>float ndarray</em> – Logarithm of the eta2D grid radius values in units of Earth radius.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.lnT">
 <code class="descname">lnT</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.lnT" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float ndarray</em> &#8211; Logarithm of the eta2D grid period values in units of year.</p>
+<dd><p><em>float ndarray</em> – Logarithm of the eta2D grid period values in units of year.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Trange">
 <code class="descname">Trange</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Trange" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity 1x2 array</em> &#8211; Period range in units of year.</p>
+<dd><p><em>astropy Quantity 1x2 array</em> – Period range in units of year.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.PlanetPopulation.SAG13.SAG13.Tknee">
 <code class="descname">Tknee</code><a class="headerlink" href="#EXOSIMS.PlanetPopulation.SAG13.SAG13.Tknee" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> &#8211; Location (in year) of period decay point (knee).
+<dd><p><em>float</em> – Location (in year) of period decay point (knee).
 Not an astropy quantity.</p>
 </dd></dl>
 
@@ -676,9 +673,9 @@ in the KeplerLike module.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>lnRp</strong> (<em>float ndarray</em>) &#8211; Logarithm of planetary radius value(s) in Earth radius.
+<li><strong>lnRp</strong> (<em>float ndarray</em>) – Logarithm of planetary radius value(s) in Earth radius.
 Not an astropy quantity.</li>
-<li><strong>lnT</strong> (<em>float ndarray</em>) &#8211; Logarithm of orbital period value(s) in year. Not an astropy quantity.</li>
+<li><strong>lnT</strong> (<em>float ndarray</em>) – Logarithm of orbital period value(s) in year. Not an astropy quantity.</li>
 </ul>
 </td>
 </tr>
@@ -706,7 +703,7 @@ other parameters.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Semi-major axis in units of AU
 e (float ndarray):<blockquote>
@@ -719,7 +716,7 @@ e (float ndarray):<blockquote>
 </dl>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.a">a</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a" title="EXOSIMS.Prototypes.Observatory.Observatory.SolarEph.a">a</a> (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -734,7 +731,7 @@ e (float ndarray):<blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; Number of samples to generate</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) – Number of samples to generate</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius values in units of Earth radius
 a (astropy Quantity array):<blockquote>
@@ -811,7 +808,7 @@ a (astropy Quantity array):<blockquote>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

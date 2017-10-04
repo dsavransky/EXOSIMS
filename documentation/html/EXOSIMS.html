@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>EXOSIMS package &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.BackgroundSources package" href="EXOSIMS.BackgroundSources.html" />
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -142,10 +139,10 @@
 <li class="toctree-l1"><a class="reference internal" href="EXOSIMS.SurveySimulation.html">EXOSIMS.SurveySimulation package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.KnownRVSurvey">EXOSIMS.SurveySimulation.KnownRVSurvey module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.SLSQPScheduler">EXOSIMS.SurveySimulation.SLSQPScheduler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.cbytScheduler">EXOSIMS.SurveySimulation.cbytScheduler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.linearJScheduler">EXOSIMS.SurveySimulation.linearJScheduler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.randomWalkScheduler">EXOSIMS.SurveySimulation.randomWalkScheduler module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.starkAYO">EXOSIMS.SurveySimulation.starkAYO module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation">Module contents</a></li>
 </ul>
 </li>
@@ -173,6 +170,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.CheckScript">EXOSIMS.util.CheckScript module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.InverseTransformSampler">EXOSIMS.util.InverseTransformSampler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.RejectionSampler">EXOSIMS.util.RejectionSampler module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.analysis_tools">EXOSIMS.util.analysis_tools module</a></li>
@@ -208,8 +206,8 @@ to carry out a mission simulation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>**specs</strong> &#8211; user specified values</li>
-<li><strong>scriptfile</strong> (<em>string</em>) &#8211; JSON script file.  If not set, assumes that dictionary has been
+<li><strong>**specs</strong> – user specified values</li>
+<li><strong>scriptfile</strong> (<em>string</em>) – JSON script file.  If not set, assumes that dictionary has been
 passed through specs.</li>
 </ul>
 </td>
@@ -219,97 +217,97 @@ passed through specs.</li>
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.StarCatalog">
 <code class="descname">StarCatalog</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.StarCatalog" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>StarCatalog module</em> &#8211; StarCatalog class object (only retained if keepStarCatalog is True)</p>
+<dd><p><em>StarCatalog module</em> – StarCatalog class object (only retained if keepStarCatalog is True)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.PlanetPopulation">
 <code class="descname">PlanetPopulation</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PlanetPopulation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPopulation module</em> &#8211; PlanetPopulation class object</p>
+<dd><p><em>PlanetPopulation module</em> – PlanetPopulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.PlanetPhysicalModel">
 <code class="descname">PlanetPhysicalModel</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PlanetPhysicalModel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PlanetPhysicalModel module</em> &#8211; PlanetPhysicalModel class object</p>
+<dd><p><em>PlanetPhysicalModel module</em> – PlanetPhysicalModel class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.OpticalSystem">
 <code class="descname">OpticalSystem</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.OpticalSystem" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>OpticalSystem module</em> &#8211; OpticalSystem class object</p>
+<dd><p><em>OpticalSystem module</em> – OpticalSystem class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.ZodiacalLight">
 <code class="descname">ZodiacalLight</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.ZodiacalLight" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ZodiacalLight module</em> &#8211; ZodiacalLight class object</p>
+<dd><p><em>ZodiacalLight module</em> – ZodiacalLight class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.BackgroundSources">
 <code class="descname">BackgroundSources</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.BackgroundSources" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>BackgroundSources module</em> &#8211; Background Source class object</p>
+<dd><p><em>BackgroundSources module</em> – Background Source class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.PostProcessing">
 <code class="descname">PostProcessing</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.PostProcessing" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PostProcessing module</em> &#8211; PostProcessing class object</p>
+<dd><p><em>PostProcessing module</em> – PostProcessing class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.Completeness">
 <code class="descname">Completeness</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.Completeness" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Completeness module</em> &#8211; Completeness class object</p>
+<dd><p><em>Completeness module</em> – Completeness class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.TargetList">
 <code class="descname">TargetList</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.TargetList" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TargetList module</em> &#8211; TargetList class object</p>
+<dd><p><em>TargetList module</em> – TargetList class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.SimulatedUniverse">
 <code class="descname">SimulatedUniverse</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SimulatedUniverse module</em> &#8211; SimulatedUniverse class object</p>
+<dd><p><em>SimulatedUniverse module</em> – SimulatedUniverse class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.Observatory">
 <code class="descname">Observatory</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.Observatory" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Observatory module</em> &#8211; Observatory class object</p>
+<dd><p><em>Observatory module</em> – Observatory class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.TimeKeeping">
 <code class="descname">TimeKeeping</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.TimeKeeping" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>TimeKeeping module</em> &#8211; TimeKeeping class object</p>
+<dd><p><em>TimeKeeping module</em> – TimeKeeping class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.SurveySimulation">
 <code class="descname">SurveySimulation</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.SurveySimulation" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SurveySimulation module</em> &#8211; SurveySimulation class object</p>
+<dd><p><em>SurveySimulation module</em> – SurveySimulation class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.SurveyEnsemble">
 <code class="descname">SurveyEnsemble</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.SurveyEnsemble" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SurveyEnsemble module</em> &#8211; SurveyEnsemble class object</p>
+<dd><p><em>SurveyEnsemble module</em> – SurveyEnsemble class object</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.modules">
 <code class="descname">modules</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.modules" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>dict</em> &#8211; Dictionary of all modules, except StarCatalog</p>
+<dd><p><em>dict</em> – Dictionary of all modules, except StarCatalog</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.verbose">
 <code class="descname">verbose</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.verbose" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>boolean</em> &#8211; Boolean used to create the vprint function, equivalent to the
+<dd><p><em>boolean</em> – Boolean used to create the vprint function, equivalent to the
 python print function with an extra verbose toggle parameter
 (True by default). The vprint function can be accessed by all
 modules from EXOSIMS.util.vprint.</p>
@@ -318,21 +316,21 @@ modules from EXOSIMS.util.vprint.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.seed">
 <code class="descname">seed</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.seed" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer</em> &#8211; Number used to seed the NumPy generator. Generated randomly
+<dd><p><em>integer</em> – Number used to seed the NumPy generator. Generated randomly
 by default.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.logfile">
 <code class="descname">logfile</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.logfile" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Path to the log file. If None, logging is turned off.
-If supplied but empty string (&#8216;&#8217;), a temporary file is generated.</p>
+<dd><p><em>string</em> – Path to the log file. If None, logging is turned off.
+If supplied but empty string (‘’), a temporary file is generated.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.MissionSim.MissionSim.loglevel">
 <code class="descname">loglevel</code><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.loglevel" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; The level of log, defaults to &#8216;INFO&#8217;. Valid levels are: CRITICAL,
+<dd><p><em>string</em> – The level of log, defaults to ‘INFO’. Valid levels are: CRITICAL,
 ERROR, WARNING, INFO, DEBUG (case sensitive).</p>
 </dd></dl>
 
@@ -345,8 +343,8 @@ ERROR, WARNING, INFO, DEBUG (case sensitive).</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>key</strong> (<em>string</em>) &#8211; Name of an element of the DRM dictionary</li>
-<li><strong>DRM</strong> (<em>list of dicts</em>) &#8211; Design Reference Mission, contains the results of a survey simulation</li>
+<li><strong>key</strong> (<em>string</em>) – Name of an element of the DRM dictionary</li>
+<li><strong>DRM</strong> (<em>list of dicts</em>) – Design Reference Mission, contains the results of a survey simulation</li>
 </ul>
 </td>
 </tr>
@@ -354,6 +352,32 @@ ERROR, WARNING, INFO, DEBUG (case sensitive).</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">elem (ndarray / astropy Quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.MissionSim.MissionSim.checkScript">
+<code class="descname">checkScript</code><span class="sig-paren">(</span><em>scriptfile</em>, <em>prettyprint=False</em>, <em>tofile=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.checkScript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.checkScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls CheckScript and checks the script file against the mission outspec.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>scriptfile</strong> (<em>string</em>) – The path to the scriptfile being used by the sim</li>
+<li><strong>prettyprint</strong> (<em>boolean</em>) – Outputs the results of Checkscript in a readable format.</li>
+<li><strong>tofile</strong> (<em>string</em>) – Name of the file containing all output specifications (outspecs).
+Default to None.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Output string containing the results of the check.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">out (String)</p>
 </td>
 </tr>
 </tbody>
@@ -370,10 +394,10 @@ for detection or characterization.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>key</strong> (<em>string</em>) &#8211; Name of an element of the DRM dictionary</li>
-<li><strong>status</strong> (<em>integer</em>) &#8211; Status value for detection or characterization</li>
-<li><strong>DRM</strong> (<em>list of dicts</em>) &#8211; Design Reference Mission, contains the results of a survey simulation</li>
-<li><strong>obsMode</strong> (<em>string</em>) &#8211; Observing mode type (&#8216;det&#8217; or &#8216;char&#8217;)</li>
+<li><strong>key</strong> (<em>string</em>) – Name of an element of the DRM dictionary</li>
+<li><strong>status</strong> (<em>integer</em>) – Status value for detection or characterization</li>
+<li><strong>DRM</strong> (<em>list of dicts</em>) – Design Reference Mission, contains the results of a survey simulation</li>
+<li><strong>obsMode</strong> (<em>string</em>) – Observing mode type (‘det’ or ‘char’)</li>
 </ul>
 </td>
 </tr>
@@ -397,7 +421,7 @@ and optionally write out to JSON file on disk.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tofile</strong> (<em>string</em>) &#8211; Name of the file containing all output specifications (outspecs).
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tofile</strong> (<em>string</em>) – Name of the file containing all output specifications (outspecs).
 Default to None.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary containing additional user specification values and
@@ -419,9 +443,9 @@ logging.warning, etc.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>logfile</strong> (<em>string</em>) &#8211; Path to the log file. If None, logging is turned off.
-If supplied but empty string (&#8216;&#8217;), a temporary file is generated.</li>
-<li><strong>loglevel</strong> (<em>string</em>) &#8211; The level of log, defaults to &#8216;INFO&#8217;. Valid levels are: CRITICAL,
+<li><strong>logfile</strong> (<em>string</em>) – Path to the log file. If None, logging is turned off.
+If supplied but empty string (‘’), a temporary file is generated.</li>
+<li><strong>loglevel</strong> (<em>string</em>) – The level of log, defaults to ‘INFO’. Valid levels are: CRITICAL,
 ERROR, WARNING, INFO, DEBUG (case sensitive).</li>
 </ul>
 </td>
@@ -538,7 +562,7 @@ FAIL - Reset</div></blockquote>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

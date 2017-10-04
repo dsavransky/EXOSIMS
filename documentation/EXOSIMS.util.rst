@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+EXOSIMS\.util\.CheckScript module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.CheckScript
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.util\.InverseTransformSampler module
 ---------------------------------------------
 

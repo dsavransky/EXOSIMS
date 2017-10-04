@@ -193,7 +193,6 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             mask = smin<self.rmax
             comp0[mask] = dist_sv(smin[mask], smax[mask])
-
         # ensure that completeness values are between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
 

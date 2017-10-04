@@ -144,7 +144,6 @@ class BrownCompleteness(Completeness):
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
-
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         
@@ -466,7 +465,7 @@ class BrownCompleteness(Completeness):
         assert len(fZ) in [1, len(intTimes)], "fZ must be constant or have same length as intTimes"
         assert len(fEZ) in [1, len(intTimes)], "fEZ must be constant or have same length as intTimes"
         assert len(WA) == 1, "WA must be constant"
-        
+ 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']

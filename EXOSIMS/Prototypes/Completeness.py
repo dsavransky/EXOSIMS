@@ -2,6 +2,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import numpy as np
+import astropy.units as u
 
 class Completeness(object):
     """Completeness class template
@@ -122,7 +123,7 @@ class Completeness(object):
         
         self.updates = self.updates[ind,:]
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates completeness values per integration time
         
         Note: Prototype does no calculations and always returns the same value
@@ -142,6 +143,11 @@ class Completeness(object):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
                 
         Returns:
             comp (float ndarray):
@@ -154,14 +160,14 @@ class Completeness(object):
         fZ = np.array(fZ.value, ndmin=1)*fZ.unit
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
-        assert len(WA) == 1, "WA must be constant"
+        assert len(intTimes) in [1, len(sInds)], "intTimes must be constant or have same length as sInds"
+        assert len(fZ) in [1, len(sInds)], "fZ must be constant or have same length as sInds"
+        assert len(fEZ) in [1, len(sInds)], "fEZ must be constant or have same length as sInds"
+        assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
         
-        return np.array([0.2]*len(intTimes))
+        return np.array([0.2]*len(sInds))
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates derivative of completeness with respect to integration time
         
         Note: Prototype does no calculations and always returns the same value
@@ -183,9 +189,9 @@ class Completeness(object):
                 Selected observing mode
                 
         Returns:
-            dcomp (float ndarray):
-                Derivative of completeness with respect to integration time
-        
+            dcomp (astropy Quantity array):
+                Derivative of completeness with respect to integration time (units 1/time)
+ 
         """
         
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
@@ -193,9 +199,9 @@ class Completeness(object):
         fZ = np.array(fZ.value, ndmin=1)*fZ.unit
         fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
         WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(intTimes) == len(fZ) or len(fZ) == 1, "fZ must be constant or have same length as intTimes"
-        assert len(intTimes) == len(fEZ) or len(fEZ) == 1, "fEZ must be constant or have same length as intTimes"
-        assert len(WA) == 1, "WA must be constant"
+        assert len(intTimes) in [1, len(sInds)], "intTimes must be constant or have same length as sInds"
+        assert len(fZ) in [1, len(sInds)], "fZ must be constant or have same length as sInds"
+        assert len(fEZ) in [1, len(sInds)], "fEZ must be constant or have same length as sInds"
+        assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
         
-        return np.array([0.02]*len(intTimes))
+        return np.array([0.02]*len(sInds))/u.d

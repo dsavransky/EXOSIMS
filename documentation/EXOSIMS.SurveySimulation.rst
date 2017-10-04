@@ -12,6 +12,14 @@ EXOSIMS\.SurveySimulation\.KnownRVSurvey module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.SurveySimulation\.SLSQPScheduler module
+------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.SLSQPScheduler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.SurveySimulation\.cbytScheduler module
 -----------------------------------------------
 

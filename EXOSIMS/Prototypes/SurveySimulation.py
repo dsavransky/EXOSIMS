@@ -104,7 +104,7 @@ class SurveySimulation(object):
             
             try:
                 script = open(scriptfile).read()
-                specs = json.loads(script)
+                specs.update(json.loads(script))
             except ValueError:
                 sys.stderr.write("Script file `%s' is not valid JSON."%scriptfile)
                 # must re-raise, or the error will be masked 
@@ -436,14 +436,14 @@ class SurveySimulation(object):
         # now, start to look for available targets
         cnt = 0
         while not TK.mission_is_over():
-            # 1/ initialize arrays
+            # 1. initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             intTimes = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
-            # 2/ find spacecraft orbital START positions (if occulter, positions 
+            # 2. find spacecraft orbital START positions (if occulter, positions 
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
@@ -468,30 +468,7 @@ class SurveySimulation(object):
             kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
             
-            # 3/ calculate integration times for ALL preselected targets, 
-            # and filter out totTimes > integration cutoff
-            if len(sInds) > 0:
-                # assumed values for detection
-                fZ = ZL.fZ(Obs, TL, sInds, startTimes[sInds], mode)
-                fEZ = ZL.fEZ0
-                dMag = self.dMagint[sInds]
-                WA = self.WAint[sInds]
-                intTimes[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
-                totTimes = intTimes*mode['timeMultiplier']
-                # end times
-                endTimes = startTimes + totTimes
-                endTimesNorm = startTimesNorm + totTimes
-                # indices of observable stars
-                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
-                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
-            
-            # 4/ find spacecraft orbital END positions (for each candidate target), 
-            # and filter out unavailable targets
-            if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], mode)
-                sInds = sInds[np.where(kogoodEnd)[0]]
-            
-            # 5/ filter out all previously (more-)visited targets, unless in 
+            # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if len(sInds) > 0:
                 tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
@@ -503,8 +480,27 @@ class SurveySimulation(object):
                             if x in sInds]
                     tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
                 sInds = np.where(tovisit)[0]
+
+            # 4. calculate integration times for ALL preselected targets, 
+            # and filter out totTimes > integration cutoff
+            if len(sInds) > 0:  
+                intTimes[sInds] = self.calc_targ_intTime(sInds,startTimes[sInds],mode)
+
+                totTimes = intTimes*mode['timeMultiplier']
+                # end times
+                endTimes = startTimes + totTimes
+                endTimesNorm = startTimesNorm + totTimes
+                # indices of observable stars
+                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
             
-            # 6/ choose best target from remaining
+            # 5. find spacecraft orbital END positions (for each candidate target), 
+            # and filter out unavailable targets
+            if len(sInds) > 0 and Obs.checkKeepoutEnd:
+                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], mode)
+                sInds = sInds[np.where(kogoodEnd)[0]]
+            
+            # 6. choose best target from remaining
             if len(sInds) > 0:
                 # choose sInd of next target
                 sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
@@ -541,6 +537,41 @@ class SurveySimulation(object):
                 return DRM, None, None
         
         return DRM, sInd, intTime
+
+    def calc_targ_intTime(self, sInds, startTimes, mode):
+        """Helper method for next_target to aid in overloading for alternative implementations.
+
+        Given a subset of targets, calculate their integration times given the
+        start of observation time.
+
+        Prototype just calculates integration times for fixed contrast depth.  
+
+        Note: next_target filter will discard targets with zero integration times.
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            startTimes (astropy quantity array):
+                absolute start times of observations.  
+                must be of the same size as sInds 
+            mode (dict):
+                Selected observing mode for detection
+
+        Returns:
+            intTimes (astropy Quantity array):
+                Integration times for detection 
+                same dimension as sInds
+        """
+ 
+        # assumed values for detection
+        fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
+        fEZ = self.ZodiacalLight.fEZ0
+        dMag = self.dMagint[sInds]
+        WA = self.WAint[sInds]
+        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
+        
+        return intTimes
+
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Helper method for method next_target to simplify alternative implementations.

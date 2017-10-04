@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
 import random as py_random
@@ -273,6 +274,33 @@ class MissionSim(object):
         
         return out
 
+    def checkScript(self, scriptfile, prettyprint=False, tofile=None):
+        """Calls CheckScript and checks the script file against the mission outspec.
+        
+        Args:
+            scriptfile (string):
+                The path to the scriptfile being used by the sim
+            prettyprint (boolean):
+                Outputs the results of Checkscript in a readable format.
+            tofile (string):
+                Name of the file containing all output specifications (outspecs).
+                Default to None.
+                
+        Returns:
+            out (String):
+                Output string containing the results of the check.
+
+        """
+        if scriptfile is not None:
+            cs = CheckScript(scriptfile, self.genOutSpec())
+            out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
+            if tofile is not None:
+                cs.write_file(tofile)
+        else:
+            out = None
+
+        return out
+
     def DRM2array(self, key, DRM=None):
         """Creates an array corresponding to one element of the DRM dictionary. 
         
@@ -301,8 +329,11 @@ class MissionSim(object):
                       'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
         keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR', 
                   'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
-        
-        assert key in (keysStar + keysPlans + keysParams + keysFA), \
+        keysOcculter = ['slew_time','slew_dV','det_dF_lateral','scMass',
+                        'char_dF_axial','det_mass_used','slew_mass_used',
+                        'det_dF_axial','det_dV','slew_angle','char_dF_lateral']
+
+        assert key in (keysStar + keysPlans + keysParams + keysFA + keysOcculter), \
                 "'%s' is not a relevant DRM keyword."
         
         # extract arrays for each relevant keyword in the DRM

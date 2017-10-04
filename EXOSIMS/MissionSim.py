@@ -276,20 +276,20 @@ class MissionSim(object):
         return out
 
     def genWaypoint(self, duration=365, tofile=None):
-        """Calls CheckScript and checks the script file against the mission outspec.
+        """generates a ballpark estimate of the expected number of star visits and
+        the total completeness of these visits for a given mission duration
         
         Args:
-            scriptfile (string):
-                The path to the scriptfile being used by the sim
-            prettyprint (boolean):
-                Outputs the results of Checkscript in a readable format.
+            duration (int):
+                The length of time allowed for the waypoint calculation, defaults to 365
             tofile (string):
-                Name of the file containing all output specifications (outspecs).
-                Default to None.
+                Name of the file containing a plot of total completeness over mission time,
+                by default genWaypoint does not create this plot
 
         Returns:
-            out (String):
-                Output string containing the results of the check.
+            out (dictionary):
+                Output dictionary containing the number of stars visited, the total completness
+                achieved, and the amount of time spent integrating.
 
         """
         SS = self.SurveySimulation
@@ -300,6 +300,7 @@ class MissionSim(object):
         Obs = SS.Observatory
         TK = SS.TimeKeeping
 
+        # Only considering detections
         allModes = OS.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
 
@@ -311,11 +312,13 @@ class MissionSim(object):
         dMag = SS.dMagint
         WA = SS.WAint
 
+        # sort star indices by completeness diveded by integration time
         intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode)
         comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode)
         CbT = comps/intTimes
         sInds_sorted = np.flip(np.argsort(CbT), 0)
 
+        # run through sorted sInds until end of duration
         intTime_sum = 0*u.d
         comp_sum = 0
         num_stars = 0
@@ -331,6 +334,7 @@ class MissionSim(object):
             comp_sums.append(comp_sum)
             intTime_sums.append(intTime_sum.value)
 
+        # if a filename is specified, create a plot.
         if tofile is not None:
             mpath = os.path.split(inspect.getfile(self.__class__))[0]
             plt.scatter(intTime_sums, comp_sums, s=4, color = '0.25')

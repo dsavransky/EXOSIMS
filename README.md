@@ -5,7 +5,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, and Patrick Lowrance.
+Written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Walker Dula, and Patrick Lowrance.
 
 EXOSIMS optionally uses values from: Mamjek, E. "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence", http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt, Version 2017.09.06
 

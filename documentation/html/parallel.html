@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Survey Ensemble Parallelization &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS package" href="EXOSIMS.html" />
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -93,7 +90,6 @@
 <p>A simple <code class="docutils literal"><span class="pre">run_one</span></code> implementation is provided below:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_one</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
 
-    <span class="n">sim</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
     <span class="n">SS</span><span class="o">.</span><span class="n">run_sim</span><span class="p">()</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">DRM</span><span class="p">[:]</span>
     <span class="n">SS</span><span class="o">.</span><span class="n">reset_sim</span><span class="p">(</span><span class="n">genNewPlanets</span><span class="o">=</span><span class="n">genNewPlanets</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="n">rewindPlanets</span><span class="p">)</span>
@@ -101,8 +97,15 @@
     <span class="k">return</span> <span class="n">res</span>
 </pre></div>
 </div>
-<p>This version of <code class="docutils literal"><span class="pre">run_one</span></code> returns the full <code class="docutils literal"><span class="pre">DRM</span></code> list, meaning that all outputs will need to be collected in the main scope after the ensemble execution, potentially adding considerable overheads.  A better approach for large ensembles is to write each individual set of results to disk and return only a scalar value (or some other small output) to the main scope.</p>
-<p>Once defined, the <code class="docutils literal"><span class="pre">run_one</span></code> method is executed in parallel by running <code class="docutils literal"><span class="pre">res</span> <span class="pre">=</span> <span class="pre">sim.run_ensemble(N,</span> <span class="pre">run_one=run_one,</span> <span class="pre">**kwargs)</span></code>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This version of <code class="docutils literal"><span class="pre">run_one</span></code> returns the full <code class="docutils literal"><span class="pre">DRM</span></code> list, meaning that all outputs will need to be collected in the main scope after the ensemble execution, potentially adding considerable overheads.  A better approach for large ensembles is to write each individual set of results to disk and return only a scalar value (or some other small output) to the main scope.</p>
+</div>
+<p>Once defined, the <code class="docutils literal"><span class="pre">run_one</span></code> method is executed in parallel by running:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">run_ensemble</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">run_one</span><span class="o">=</span><span class="n">run_one</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">kwargs</span></code> are any kewyord arguments, or a dictionary of arguments that are passed to <code class="docutils literal"><span class="pre">run_one</span></code>.</p>
 <div class="section" id="run-ipcluster-ensemble">
 <h3>run_ipcluster_ensemble<a class="headerlink" href="#run-ipcluster-ensemble" title="Permalink to this headline">¶</a></h3>
 <p>To simplify parallel ensemble execution via <code class="docutils literal"><span class="pre">IPClusterEnsemble</span></code>, <code class="docutils literal"><span class="pre">EXOSIMS</span></code> provides a run script called <code class="docutils literal"><span class="pre">run_ipcluster_ensemble.py</span></code> (located in the <code class="docutils literal"><span class="pre">EXOSIMSROOT/EXOSIMS/run/</span></code> directory).  This script is intended to be called from the command line, and is executed as:</p>
@@ -179,7 +182,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

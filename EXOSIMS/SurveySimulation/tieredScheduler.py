@@ -345,7 +345,7 @@ class tieredScheduler(SurveySimulation):
             # find angle between old and new stars, default to pi/2 for first target
             if old_occ_sInd is None:
                 sd = np.zeros(TL.nStars)*u.rad
-                r_old = TL.starprop(np.where(TL.Name == self.occHIPs[0])[0][0], TK.currentTimeAbs)[0]
+                r_old = TL.starprop(np.where(np.in1d(TL.Name, self.occHIPs))[0][0], TK.currentTimeAbs)[0]
             else:
                 # position vector of previous target star
                 r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
@@ -447,7 +447,7 @@ class tieredScheduler(SurveySimulation):
                 WA = self.WAint[sInd]
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                int_time = self.calc_int_inflection(sInd, fEZ, fZ, WA, detmode)
+                int_time = self.calc_int_inflection(sInd, fZ, WA, detmode)
 
                 if int_time < t_det:
                     t_det = int_time
@@ -593,7 +593,7 @@ class tieredScheduler(SurveySimulation):
 
         return sInd
 
-    def calc_int_inflection(self, sInd, fEZ, fZ, WA, mode, ischar=False):
+    def calc_int_inflection(self, sInd, fZ, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
         
         Args:
@@ -620,7 +620,7 @@ class tieredScheduler(SurveySimulation):
         ZL = self.ZodiacalLight
         Obs = self.Observatory
 
-        Cpath = os.path.join(Comp.classpath, Comp.filename+'_curves.comp')
+        Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
         intTimes = np.logspace(-5, 2, num_points)*u.d
 
         if os.path.exists(Cpath):
@@ -654,33 +654,33 @@ class tieredScheduler(SurveySimulation):
 
         #=========================================================
 
-        dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
-                  Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        dMagmax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
-                  Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2))
-        # dMagmax = OS.dMagLim
-        num_points = 250
+        # dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
+        #           Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
+        # dMagmax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
+        #           Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2))
+        # # dMagmax = OS.dMagLim
+        # num_points = 250
 
-        dMags = np.linspace(dMagmin, dMagmax, num_points)
+        # dMags = np.linspace(dMagmin, dMagmax, num_points)
 
-        # calculate t_det as a function of dMag
-        t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
+        # # calculate t_det as a function of dMag
+        # t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
 
-        # calculate comp as a function of dMag
-        smin = TL.dist[sInd] * np.tan(mode['IWA'])
-        if np.isinf(mode['OWA']):
-            smax = Comp.PlanetPopulation.rrange[1].to('AU').value
-        else:
-            smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
+        # # calculate comp as a function of dMag
+        # smin = TL.dist[sInd] * np.tan(mode['IWA'])
+        # if np.isinf(mode['OWA']):
+        #     smax = Comp.PlanetPopulation.rrange[1].to('AU').value
+        # else:
+        #     smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
 
-        if self.EVPOC is None:
-            self.calc_EVPOC()
+        # if self.EVPOC is None:
+        #     self.calc_EVPOC()
 
-        comps = self.EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
+        # comps = self.EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
 
         # find the inflection point of the completeness graph
         if ischar is False:
-            int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]][0]
+            int_time = intTimes[np.where(dcdt == max(dcdt))[0]][0]
             int_time = int_time*self.starVisits[sInd]
 
             # update star completeness
@@ -688,11 +688,11 @@ class tieredScheduler(SurveySimulation):
             comp = comps[idx]
             TL.comp[sInd] = comp
         else:
-            idt = np.abs(t_dets - max(t_dets)).argmin()
-            idx = np.abs(comps - comps[idt]*.9).argmin()
+            idt = np.abs(intTimes - max(intTimes)).argmin()
+            idx = np.abs(c_v_t - c_v_t[idt]*.9).argmin()
 
             # idx = np.abs(comps - max(comps)*.9).argmin()
-            int_time = t_dets[idx]
+            int_time = intTimes[idx]
             comp = comps[idx]
 
         return int_time

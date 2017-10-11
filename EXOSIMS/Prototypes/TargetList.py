@@ -327,7 +327,7 @@ class TargetList(object):
         """
         
         # filter out binary stars
-        self.binary_filter()
+        #self.binary_filter()
         
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()

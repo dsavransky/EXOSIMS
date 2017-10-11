@@ -475,7 +475,7 @@ class tieredScheduler(SurveySimulation):
             print 'Mission complete: no more time available'
             return DRM, None, None, None, None, None, None
 
-        return DRM, sInd, occ_sInd, t_dets[sInd], slewTime, sd, occ_sInds
+        return DRM, sInd, occ_sInd, t_det, slewTime, sd, occ_sInds
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
         """Choose next target for the occulter based on truncated 
@@ -621,7 +621,6 @@ class tieredScheduler(SurveySimulation):
         Obs = self.Observatory
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
-        intTimes = np.logspace(-5, 2, num_points)*u.d
 
         if os.path.exists(Cpath):
             print 'Loading cached completeness file from "%s".' % Cpath
@@ -630,18 +629,18 @@ class tieredScheduler(SurveySimulation):
         else:
             sInds = np.arange(TL.nStars)
             num_points = 500
+            intTimes = np.logspace(-5, 2, num_points)*u.d
             fZ = np.ones(intTimes.shape) * fZ
             fEZ = np.ones(intTimes.shape) * ZL.fEZ0
             WA = np.ones(intTimes.shape) * WA
-
-            curves = np.zeros([2, sInds.shape, intTime.shape])
+            curves = np.zeros([2, sInds.size, intTimes.size])
 
             # calculate completeness curves for all sInds
             print 'Cached completeness file not found at "%s".' % Cpath
             print 'Beginning completeness curve calculations.'
 
             for i_sInd in sInds:
-                sInd_array = np.ones(intTimes.shape) * i_sInd
+                sInd_array = (np.ones(intTimes.shape) * i_sInd).astype('int')
                 curves[0,i_sInd,:] = OS.calc_dMag_per_intTime(intTimes, TL, sInd_array, fZ, fEZ, WA, mode)[:,0]
                 curves[1,i_sInd,:] = Comp.comp_per_intTime(intTimes, TL, i_sInd, fZ, fEZ, WA[0], mode)
 
@@ -680,7 +679,9 @@ class tieredScheduler(SurveySimulation):
 
         # find the inflection point of the completeness graph
         if ischar is False:
-            int_time = intTimes[np.where(dcdt == max(dcdt))[0]][0]
+            target_point =  max(dcdt) + 2*np.var(dcdt)
+            idc = np.abs(dcdt - target_point).argmin()
+            int_time = intTimes[idc]
             int_time = int_time*self.starVisits[sInd]
 
             # update star completeness

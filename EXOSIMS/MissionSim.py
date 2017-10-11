@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.waypoint import waypoint
 from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
@@ -7,7 +8,6 @@ import random as py_random
 import numpy as np
 import astropy.units as u
 import copy, re, inspect, subprocess
-import matplotlib.pyplot as plt
 
 class MissionSim(object):
     """Mission Simulation (backbone) class
@@ -303,6 +303,7 @@ class MissionSim(object):
         # Only considering detections
         allModes = OS.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
         startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
         sInds = np.arange(TL.nStars)
@@ -315,36 +316,9 @@ class MissionSim(object):
         # sort star indices by completeness diveded by integration time
         intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode)
         comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode)
-        CbT = comps/intTimes
-        sInds_sorted = np.flip(np.argsort(CbT), 0)
+        wp = waypoint(comps, intTimes, duration, mpath, tofile)
 
-        # run through sorted sInds until end of duration
-        intTime_sum = 0*u.d
-        comp_sum = 0
-        num_stars = 0
-        comp_sums = []
-        intTime_sums = []
-        for sInd in sInds_sorted:
-            if intTime_sum + intTimes[sInd] > duration*u.d:
-                break
-
-            intTime_sum += intTimes[sInd]
-            comp_sum += comps[sInd]
-            num_stars +=1
-            comp_sums.append(comp_sum)
-            intTime_sums.append(intTime_sum.value)
-
-        # if a filename is specified, create a plot.
-        if tofile is not None:
-            mpath = os.path.split(inspect.getfile(self.__class__))[0]
-            plt.scatter(intTime_sums, comp_sums, s=4, color = '0.25')
-            plt.ylabel('Total Completeness')
-            plt.xlabel('Time (d)')
-            plt.title('Total Completeness Over {} Star Visits'.format(num_stars))
-            plt.grid(True)
-            plt.savefig(os.path.join(mpath, tofile))
-
-        return {"numStars":num_stars, "Total Completeness":comp_sum, "Total intTime":intTime_sum}
+        return wp
 
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.

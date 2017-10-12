@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>EXOSIMS.Completeness package &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.Observatory package" href="EXOSIMS.Observatory.html" />
@@ -34,7 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -59,51 +56,106 @@ Completeness Module calculations in exoplanet mission simulation.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets">
 <code class="descname">Nplanets</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.Nplanets" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer</em> &#8211; Number of planets for initial completeness Monte Carlo simulation</p>
+<dd><p><em>integer</em> – Number of planets for initial completeness Monte Carlo simulation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath">
 <code class="descname">classpath</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.classpath" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Path on disk to Brown Completeness</p>
+<dd><p><em>string</em> – Path on disk to Brown Completeness</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename">
 <code class="descname">filename</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.filename" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>string</em> &#8211; Name of file where completeness interpolant is stored</p>
+<dd><p><em>string</em> – Name of file where completeness interpolant is stored</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates">
 <code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.updates" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float nx5 ndarray</em> &#8211; Completeness values of successive observations of each star in the
+<dd><p><em>float nx5 ndarray</em> – Completeness values of successive observations of each star in the
 target list (initialized in gen_update)</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.calc_fdmag">
+<code class="descname">calc_fdmag</code><span class="sig-paren">(</span><em>dMag</em>, <em>smin</em>, <em>smax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.calc_fdmag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.calc_fdmag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates probability density of dMag by integrating over projected
+separation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dMag</strong> (<em>float ndarray</em>) – Planet delta magnitude(s)</li>
+<li><strong>smin</strong> (<em>float ndarray</em>) – Value of minimum projected separation (AU) from instrument</li>
+<li><strong>smax</strong> (<em>float ndarray</em>) – Value of maximum projected separation (AU) from instrument</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of probability density</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comp_calc">
+<code class="descname">comp_calc</code><span class="sig-paren">(</span><em>smin</em>, <em>smax</em>, <em>dMag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.comp_calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comp_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates completeness for given minimum and maximum separations
+and dMag</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>smin</strong> (<em>float ndarray</em>) – Minimum separation(s) in AU</li>
+<li><strong>smax</strong> (<em>float ndarray</em>) – Maximum separation(s) in AU</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) – Difference in brightness magnitude</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Completeness value(s)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comp_per_intTime">
-<code class="descname">comp_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.comp_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comp_per_intTime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">comp_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em>, <em>C_b=None</em>, <em>C_sp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.comp_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comp_per_intTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates completeness for integration time</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) – Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>C_b</strong> (<em>astropy Quantity array</em>) – Background noise electron count rate in units of 1/s (optional)</li>
+<li><strong>C_sp</strong> (<em>astropy Quantity array</em>) – Residual speckle spatial structure (systematic error) in units of 1/s
+(optional)</li>
 </ul>
 </td>
 </tr>
@@ -127,10 +179,10 @@ the appropriate value from the updates array</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer array</em>) &#8211; Indices of stars to update</li>
-<li><strong>visits</strong> (<em>integer array</em>) &#8211; Number of visits for each star</li>
-<li><strong>dt</strong> (<em>astropy Quantity array</em>) &#8211; Time since previous observation</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of stars to update</li>
+<li><strong>visits</strong> (<em>integer array</em>) – Number of visits for each star</li>
+<li><strong>dt</strong> (<em>astropy Quantity array</em>) – Time since previous observation</li>
 </ul>
 </td>
 </tr>
@@ -145,28 +197,88 @@ the appropriate value from the updates array</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comps_input_reshape">
+<code class="descname">comps_input_reshape</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em>, <em>C_b=None</em>, <em>C_sp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.comps_input_reshape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.comps_input_reshape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reshapes inputs for comp_per_intTime and dcomp_dt if necessary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) – Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>C_b</strong> (<em>astropy Quantity array</em>) – Background noise electron count rate in units of 1/s (optional)</li>
+<li><strong>C_sp</strong> (<em>astropy Quantity array</em>) – Residual speckle spatial structure (systematic error) in units of 1/s
+(optional)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Integration times
+sInds (integer ndarray):</p>
+<blockquote>
+<div><p>Integer indices of the stars of interest</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>fZ (astropy Quantity array):</dt>
+<dd><p class="first last">Surface brightness of local zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>fEZ (astropy Quantity array):</dt>
+<dd><p class="first last">Surface brightness of exo-zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>WA (astropy Quantity):</dt>
+<dd><p class="first last">Working angle of the planet of interest in units of arcsec</p>
+</dd>
+<dt>smin (ndarray):</dt>
+<dd><p class="first last">Minimum projected separations in AU</p>
+</dd>
+<dt>smax (ndarray):</dt>
+<dd><p class="first last">Maximum projected separations in AU</p>
+</dd>
+<dt>dMag (ndarray):</dt>
+<dd><p class="first last">Difference in brightness magnitude</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTimes (astropy Quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.dcomp_dt">
-<code class="descname">dcomp_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.dcomp_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.dcomp_dt" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dcomp_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em>, <em>C_b=None</em>, <em>C_sp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/BrownCompleteness.html#BrownCompleteness.dcomp_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.BrownCompleteness.BrownCompleteness.dcomp_dt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates derivative of completeness with respect to integration time</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) – Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>C_b</strong> (<em>astropy Quantity array</em>) – Background noise electron count rate in units of 1/s (optional)</li>
+<li><strong>C_sp</strong> (<em>astropy Quantity array</em>) – Residual speckle spatial structure (systematic error) in units of 1/s
+(optional)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of completeness with respect to integration time</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of completeness with respect to integration time (units 1/time)</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dcomp (array)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dcomp (astropy Quantity array)</p>
 </td>
 </tr>
 </tbody>
@@ -185,11 +297,11 @@ the 2D completeness values needed for interpolation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Cpath</strong> (<em>string</em>) &#8211; path to 2D completeness value array</li>
-<li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used in each simulation</li>
-<li><strong>xedges</strong> (<em>float ndarray</em>) &#8211; x edge of 2d histogram (separation)</li>
-<li><strong>yedges</strong> (<em>float ndarray</em>) &#8211; y edge of 2d histogram (dMag)</li>
-<li><strong>steps</strong> (<em>integer</em>) &#8211; number of simulations to perform</li>
+<li><strong>Cpath</strong> (<em>string</em>) – path to 2D completeness value array</li>
+<li><strong>nplan</strong> (<em>float</em>) – number of planets used in each simulation</li>
+<li><strong>xedges</strong> (<em>float ndarray</em>) – x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>float ndarray</em>) – y edge of 2d histogram (dMag)</li>
+<li><strong>steps</strong> (<em>integer</em>) – number of simulations to perform</li>
 </ul>
 </td>
 </tr>
@@ -212,7 +324,7 @@ star in the target list</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</td>
 </tr>
 </tbody>
 </table>
@@ -226,7 +338,7 @@ star in the target list</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>integer</em>) &#8211; Number of planets</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>integer</em>) – Number of planets</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet apparent separations in units of AU
 dMag (ndarray):<blockquote>
@@ -249,9 +361,9 @@ dMag (ndarray):<blockquote>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>nplan</strong> (<em>float</em>) &#8211; number of planets used</li>
-<li><strong>xedges</strong> (<em>float ndarray</em>) &#8211; x edge of 2d histogram (separation)</li>
-<li><strong>yedges</strong> (<em>float ndarray</em>) &#8211; y edge of 2d histogram (dMag)</li>
+<li><strong>nplan</strong> (<em>float</em>) – number of planets used</li>
+<li><strong>xedges</strong> (<em>float ndarray</em>) – x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>float ndarray</em>) – y edge of 2d histogram (dMag)</li>
 </ul>
 </td>
 </tr>
@@ -274,7 +386,7 @@ dMag (ndarray):<blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Completeness values for each target star</td>
 </tr>
@@ -305,14 +417,14 @@ probability density function.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.updates">
 <code class="descname">updates</code><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.updates" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>nx5 ndarray</em> &#8211; Completeness values of successive observations of each star in the
+<dd><p><em>nx5 ndarray</em> – Completeness values of successive observations of each star in the
 target list (initialized in gen_update)</p>
 </dd></dl>
 
@@ -325,7 +437,7 @@ the joint probability density of dMag and s</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> (<em>ndarray</em>) &#8211; Phase angles</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> (<em>ndarray</em>) – Phase angles</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Determinant of Jacobian transformation matrix</td>
 </tr>
@@ -345,8 +457,8 @@ times planetary radius squared</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>R</strong> (<em>ndarray</em>) &#8211; Values of planetary radius</li>
-<li><strong>z</strong> (<em>float</em>) &#8211; Value of albedo times planetary radius squared</li>
+<li><strong>R</strong> (<em>ndarray</em>) – Values of planetary radius</li>
+<li><strong>z</strong> (<em>float</em>) – Value of albedo times planetary radius squared</li>
 </ul>
 </td>
 </tr>
@@ -354,6 +466,58 @@ times planetary radius squared</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.calc_fdmag">
+<code class="descname">calc_fdmag</code><span class="sig-paren">(</span><em>dMag</em>, <em>smin</em>, <em>smax</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.calc_fdmag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.calc_fdmag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates probability density of dMag by integrating over projected
+separation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dMag</strong> (<em>float ndarray</em>) – Planet delta magnitude(s)</li>
+<li><strong>smin</strong> (<em>float ndarray</em>) – Value of minimum projected separation (AU) from instrument</li>
+<li><strong>smax</strong> (<em>float ndarray</em>) – Value of maximum projected separation (AU) from instrument</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Value of probability density</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">f (float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_calc">
+<code class="descname">comp_calc</code><span class="sig-paren">(</span><em>smin</em>, <em>smax</em>, <em>dMag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.comp_calc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates completeness for given minimum and maximum separations
+and dMag</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>smin</strong> (<em>float ndarray</em>) – Minimum separation(s) in AU</li>
+<li><strong>smax</strong> (<em>float ndarray</em>) – Maximum separation(s) in AU</li>
+<li><strong>dMag</strong> (<em>float ndarray</em>) – Difference in brightness magnitude</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Completeness value(s)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (float ndarray)</p>
 </td>
 </tr>
 </tbody>
@@ -370,9 +534,9 @@ separation and then dMag.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>smin</strong> (<em>ndarray</em>) &#8211; Values of minimum projected separation (AU) from instrument</li>
-<li><strong>smax</strong> (<em>ndarray</em>) &#8211; Value of maximum projected separation (AU) from instrument</li>
-<li><strong>dMagMax</strong> (<em>float ndarray</em>) &#8211; Maximum planet delta magnitude</li>
+<li><strong>smin</strong> (<em>ndarray</em>) – Values of minimum projected separation (AU) from instrument</li>
+<li><strong>smax</strong> (<em>ndarray</em>) – Value of maximum projected separation (AU) from instrument</li>
+<li><strong>dMagMax</strong> (<em>float ndarray</em>) – Maximum planet delta magnitude</li>
 </ul>
 </td>
 </tr>
@@ -380,35 +544,6 @@ separation and then dMag.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_per_intTime">
-<code class="descname">comp_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.comp_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_per_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates completeness for integration time</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Completeness values</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (array)</p>
 </td>
 </tr>
 </tbody>
@@ -425,9 +560,9 @@ projected separation.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>smin</strong> (<em>ndarray</em>) &#8211; Values of minimum projected separation (AU) from instrument</li>
-<li><strong>smax</strong> (<em>ndarray</em>) &#8211; Value of maximum projected separation (AU) from instrument</li>
-<li><strong>dMag</strong> (<em>ndarray</em>) &#8211; Planet delta magnitude</li>
+<li><strong>smin</strong> (<em>ndarray</em>) – Values of minimum projected separation (AU) from instrument</li>
+<li><strong>smax</strong> (<em>ndarray</em>) – Value of maximum projected separation (AU) from instrument</li>
+<li><strong>dMag</strong> (<em>ndarray</em>) – Planet delta magnitude</li>
 </ul>
 </td>
 </tr>
@@ -435,35 +570,6 @@ projected separation.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">comp (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.dcomp_dt">
-<code class="descname">dcomp_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Completeness/GarrettCompleteness.html#GarrettCompleteness.dcomp_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.dcomp_dt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates derivative of completeness with respect to integration time</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) &#8211; Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) &#8211; Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity</em>) &#8211; Working angle of the planet of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of completeness with respect to integration time</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dcomp (array)</p>
 </td>
 </tr>
 </tbody>
@@ -490,9 +596,9 @@ radius squared, dMag, and projected separation</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>z</strong> (<em>ndarray</em>) &#8211; Values of albedo times planetary radius squared</li>
-<li><strong>dmag</strong> (<em>float</em>) &#8211; Planet delta magnitude</li>
-<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation</li>
+<li><strong>z</strong> (<em>ndarray</em>) – Values of albedo times planetary radius squared</li>
+<li><strong>dmag</strong> (<em>float</em>) – Planet delta magnitude</li>
+<li><strong>s</strong> (<em>float</em>) – Value of projected separation</li>
 </ul>
 </td>
 </tr>
@@ -514,7 +620,7 @@ radius squared, dMag, and projected separation</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>r</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>r</strong> (<em>float</em>) – Value of semi-major axis in AU</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Value of probability density</td>
 </tr>
@@ -539,8 +645,8 @@ dMag by flipping the order of f_dmags</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>s</strong> (<em>float</em>) &#8211; Value of projected separation (AU)</li>
-<li><strong>dmag</strong> (<em>float</em>) &#8211; Planet delta magnitude</li>
+<li><strong>s</strong> (<em>float</em>) – Value of projected separation (AU)</li>
+<li><strong>dmag</strong> (<em>float</em>) – Planet delta magnitude</li>
 </ul>
 </td>
 </tr>
@@ -563,7 +669,7 @@ squared</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>z</strong> (<em>float</em>) &#8211; Value of albedo times planetary radius squared</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>z</strong> (<em>float</em>) – Value of albedo times planetary radius squared</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Probability density</td>
 </tr>
@@ -582,8 +688,8 @@ squared</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Cpath</strong> (<em>str</em>) &#8211; Path to pickled dictionary containing interpolant function</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>Cpath</strong> (<em>str</em>) – Path to pickled dictionary containing interpolant function</li>
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
 </ul>
 </td>
 </tr>
@@ -606,7 +712,7 @@ projected separation</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>float</em>) &#8211; Projected separation (AU)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>float</em>) – Projected separation (AU)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Maximum planet delta magnitude</td>
 </tr>
@@ -624,7 +730,7 @@ projected separation</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>float</em>) &#8211; Projected separations (AU)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> (<em>float</em>) – Projected separations (AU)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Minimum planet delta magnitude</td>
 </tr>
@@ -644,8 +750,8 @@ times planetary radius squared</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>p</strong> (<em>ndarray</em>) &#8211; Values of albedo</li>
-<li><strong>z</strong> (<em>float</em>) &#8211; Value of albedo times planetary radius squared</li>
+<li><strong>p</strong> (<em>ndarray</em>) – Values of albedo</li>
+<li><strong>z</strong> (<em>float</em>) – Value of albedo times planetary radius squared</li>
 </ul>
 </td>
 </tr>
@@ -669,9 +775,9 @@ orbital radius</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>e</strong> (<em>ndarray</em>) &#8211; Values of eccentricity</li>
-<li><strong>a</strong> (<em>float</em>) &#8211; Values of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Values of orbital radius in AU</li>
+<li><strong>e</strong> (<em>ndarray</em>) – Values of eccentricity</li>
+<li><strong>a</strong> (<em>float</em>) – Values of semi-major axis in AU</li>
+<li><strong>r</strong> (<em>float</em>) – Values of orbital radius in AU</li>
 </ul>
 </td>
 </tr>
@@ -695,8 +801,8 @@ orbital radius</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
+<li><strong>a</strong> (<em>float</em>) – Value of semi-major axis in AU</li>
+<li><strong>r</strong> (<em>float</em>) – Value of orbital radius in AU</li>
 </ul>
 </td>
 </tr>
@@ -720,9 +826,9 @@ radius when semi-major axis is constant</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>e</strong> (<em>ndarray</em>) &#8211; Values of eccentricity</li>
-<li><strong>a</strong> (<em>float</em>) &#8211; Value of semi-major axis in AU</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
+<li><strong>e</strong> (<em>ndarray</em>) – Values of eccentricity</li>
+<li><strong>a</strong> (<em>float</em>) – Value of semi-major axis in AU</li>
+<li><strong>r</strong> (<em>float</em>) – Value of orbital radius in AU</li>
 </ul>
 </td>
 </tr>
@@ -746,9 +852,9 @@ radius when eccentricity is constant</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> (<em>ndarray</em>) &#8211; Values of semi-major axis in AU</li>
-<li><strong>e</strong> (<em>float</em>) &#8211; Value of eccentricity</li>
-<li><strong>r</strong> (<em>float</em>) &#8211; Value of orbital radius in AU</li>
+<li><strong>a</strong> (<em>ndarray</em>) – Values of semi-major axis in AU</li>
+<li><strong>e</strong> (<em>float</em>) – Value of eccentricity</li>
+<li><strong>r</strong> (<em>float</em>) – Value of orbital radius in AU</li>
 </ul>
 </td>
 </tr>
@@ -771,8 +877,8 @@ radius when eccentricity is constant</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>dmag</strong> (<em>float</em>) &#8211; Planet delta magnitude</li>
-<li><strong>smax</strong> (<em>float</em>) &#8211; maximum projected separation (AU)</li>
+<li><strong>dmag</strong> (<em>float</em>) – Planet delta magnitude</li>
+<li><strong>smax</strong> (<em>float</em>) – maximum projected separation (AU)</li>
 </ul>
 </td>
 </tr>
@@ -795,7 +901,7 @@ radius when eccentricity is constant</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D numpy array of completeness values for each target star</td>
 </tr>
@@ -865,7 +971,7 @@ radius when eccentricity is constant</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

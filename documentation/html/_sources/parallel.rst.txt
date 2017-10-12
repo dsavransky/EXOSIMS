@@ -72,16 +72,23 @@ A simple ``run_one`` implementation is provided below:
     
     def run_one(genNewPlanets=True, rewindPlanets=True):
 
-        sim.run_sim()
         SS.run_sim()
         res = SS.DRM[:]
         SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
 
         return res
 
-This version of ``run_one`` returns the full ``DRM`` list, meaning that all outputs will need to be collected in the main scope after the ensemble execution, potentially adding considerable overheads.  A better approach for large ensembles is to write each individual set of results to disk and return only a scalar value (or some other small output) to the main scope.
+.. warning::
 
-Once defined, the ``run_one`` method is executed in parallel by running ``res = sim.run_ensemble(N, run_one=run_one, **kwargs)``.  
+    This version of ``run_one`` returns the full ``DRM`` list, meaning that all outputs will need to be collected in the main scope after the ensemble execution, potentially adding considerable overheads.  A better approach for large ensembles is to write each individual set of results to disk and return only a scalar value (or some other small output) to the main scope.
+
+Once defined, the ``run_one`` method is executed in parallel by running:
+
+.. code-block:: python
+
+    res = sim.run_ensemble(N, run_one=run_one, **kwargs)
+
+where ``kwargs`` are any kewyord arguments, or a dictionary of arguments that are passed to ``run_one``.
 
 run_ipcluster_ensemble
 -------------------------

@@ -2,6 +2,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import numpy as np
+import astropy.units as u
 
 class Completeness(object):
     """Completeness class template
@@ -188,9 +189,9 @@ class Completeness(object):
                 Selected observing mode
                 
         Returns:
-            dcomp (float ndarray):
-                Derivative of completeness with respect to integration time
-        
+            dcomp (astropy Quantity array):
+                Derivative of completeness with respect to integration time (units 1/time)
+ 
         """
         
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
@@ -203,4 +204,4 @@ class Completeness(object):
         assert len(fEZ) in [1, len(sInds)], "fEZ must be constant or have same length as sInds"
         assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
         
-        return np.array([0.02]*len(sInds))
+        return np.array([0.02]*len(sInds))/u.d

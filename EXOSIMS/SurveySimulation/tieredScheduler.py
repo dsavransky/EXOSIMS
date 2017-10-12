@@ -62,7 +62,7 @@ class tieredScheduler(SurveySimulation):
         self.GA_percentage = .25
         self.GAtime = 0.*u.d
         self.goal_GAtime = None
-        self.EVPOC = None
+        self.curves = None
         self.ao = None
 
         self.ready_to_update = False
@@ -433,7 +433,7 @@ class tieredScheduler(SurveySimulation):
                 sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
 
             # 6/ Filter off previously visited occ_sInds
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
+            #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
 
             # 7/ Choose best target from remaining
             if np.any(sInds):
@@ -447,7 +447,7 @@ class tieredScheduler(SurveySimulation):
                 WA = self.WAint[sInd]
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                int_time = self.calc_int_inflection(sInd, fZ, WA, detmode)
+                int_time = self.calc_int_inflection(sInd, fEZ, startTime, WA, detmode)
 
                 if int_time < t_det:
                     t_det = int_time
@@ -593,7 +593,7 @@ class tieredScheduler(SurveySimulation):
 
         return sInd
 
-    def calc_int_inflection(self, sInd, fZ, WA, mode, ischar=False):
+    def calc_int_inflection(self, sInd, fEZ, startTime, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
         
         Args:
@@ -601,7 +601,7 @@ class tieredScheduler(SurveySimulation):
                 Index of the target star
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            fZ (astropy Quantity):
+            startTime (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
@@ -620,73 +620,49 @@ class tieredScheduler(SurveySimulation):
         ZL = self.ZodiacalLight
         Obs = self.Observatory
 
+        num_points = 500
+        intTimes = np.logspace(-5, 2, num_points)*u.d
+
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
 
-        if os.path.exists(Cpath):
-            print 'Loading cached completeness file from "%s".' % Cpath
-            curves = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness curves loaded from cache.'
-        else:
-            sInds = np.arange(TL.nStars)
-            num_points = 500
-            intTimes = np.logspace(-5, 2, num_points)*u.d
-            fZ = np.ones(intTimes.shape) * fZ
-            fEZ = np.ones(intTimes.shape) * ZL.fEZ0
-            WA = np.ones(intTimes.shape) * WA
-            curves = np.zeros([2, sInds.size, intTimes.size])
+        if self.curves is None:
+            if os.path.exists(Cpath):
+                print 'Loading cached completeness file from "%s".' % Cpath
+                curves = pickle.load(open(Cpath, 'rb'))
+                print 'Completeness curves loaded from cache.'
+            else:
+                sInds = np.arange(TL.nStars)
+                WA = self.WAint[0]
+                curves = np.zeros([1, sInds.size, intTimes.size])
 
-            # calculate completeness curves for all sInds
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Beginning completeness curve calculations.'
+                # calculate completeness curves for all sInds
+                print 'Cached completeness file not found at "%s".' % Cpath
+                print 'Beginning completeness curve calculations.'
 
-            for i_sInd in sInds:
-                sInd_array = (np.ones(intTimes.shape) * i_sInd).astype('int')
-                curves[0,i_sInd,:] = OS.calc_dMag_per_intTime(intTimes, TL, sInd_array, fZ, fEZ, WA, mode)[:,0]
-                curves[1,i_sInd,:] = Comp.comp_per_intTime(intTimes, TL, i_sInd, fZ, fEZ, WA[0], mode)
+                for t_i, t in enumerate(intTimes):
+                    fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
 
-            pickle.dump(curves, open(Cpath, 'wb'))
-            print 'completeness curves stored in %r' % Cpath
+                    # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
+                    curves[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
-        dm_v_t = curves[0,sInd,:]
-        c_v_t = curves[1,sInd,:]
+                pickle.dump(curves, open(Cpath, 'wb'))
+                print 'completeness curves stored in %r' % Cpath
+            self.curves = curves
+
+        #dm_v_t = curves[0,sInd,:]
+        c_v_t = self.curves[0,sInd,:]
         dcdt = np.diff(c_v_t)/np.diff(intTimes)
-
-        #=========================================================
-
-        # dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
-        #           Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        # dMagmax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
-        #           Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2))
-        # # dMagmax = OS.dMagLim
-        # num_points = 250
-
-        # dMags = np.linspace(dMagmin, dMagmax, num_points)
-
-        # # calculate t_det as a function of dMag
-        # t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
-
-        # # calculate comp as a function of dMag
-        # smin = TL.dist[sInd] * np.tan(mode['IWA'])
-        # if np.isinf(mode['OWA']):
-        #     smax = Comp.PlanetPopulation.rrange[1].to('AU').value
-        # else:
-        #     smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
-
-        # if self.EVPOC is None:
-        #     self.calc_EVPOC()
-
-        # comps = self.EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
 
         # find the inflection point of the completeness graph
         if ischar is False:
-            target_point =  max(dcdt) + 2*np.var(dcdt)
-            idc = np.abs(dcdt - target_point).argmin()
+            target_point = max(dcdt).value + 2*np.var(dcdt).value
+            idc = np.abs(dcdt - target_point/(1*u.d)).argmin()
             int_time = intTimes[idc]
             int_time = int_time*self.starVisits[sInd]
 
             # update star completeness
-            idx = (np.abs(t_dets-int_time)).argmin()
-            comp = comps[idx]
+            idx = (np.abs(intTimes-int_time)).argmin()
+            comp = c_v_t[idx]
             TL.comp[sInd] = comp
         else:
             idt = np.abs(intTimes - max(intTimes)).argmin()
@@ -694,164 +670,9 @@ class tieredScheduler(SurveySimulation):
 
             # idx = np.abs(comps - max(comps)*.9).argmin()
             int_time = intTimes[idx]
-            comp = comps[idx]
+            comp = c_v_t[idx]
 
         return int_time
-
-    def calc_EVPOC(self):
-        Comp = self.Completeness
-
-        bins = 1000
-        # xedges is array of separation values for interpolant
-        xedges = np.linspace(0., Comp.PlanetPopulation.rrange[1].value, bins)*\
-                Comp.PlanetPopulation.arange.unit
-        xedges = xedges.to('AU').value
-
-        # yedges is array of delta magnitude values for interpolant
-        ymin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
-                Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        ymax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
-                Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2*1e-11))
-        yedges = np.linspace(ymin, ymax, bins)
-
-        # number of planets for each Monte Carlo simulation
-        nplan = int(np.min([1e6,Comp.Nplanets]))
-        # number of simulations to perform (must be integer)
-        steps = int(Comp.Nplanets/nplan)
-        
-        Cpath = os.path.join(Comp.classpath, Comp.filename+'.comp')
-        H, xedges, yedges = self.genC(Cpath, nplan, xedges, yedges, steps)
-        EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, H.T)
-        EVPOC = np.vectorize(EVPOCpdf.integral)
-
-        self.EVPOC = EVPOC
-
-    def genC(self, Cpath, nplan, xedges, yedges, steps):
-        """Gets completeness interpolant for initial completeness
-        
-        This function either loads a completeness .comp file based on specified
-        Planet Population module or performs Monte Carlo simulations to get
-        the 2D completeness values needed for interpolation.
-        
-        Args:
-            Cpath (string):
-                path to 2D completeness value array
-            nplan (float):
-                number of planets used in each simulation
-            xedges (float ndarray):
-                x edge of 2d histogram (separation)
-            yedges (float ndarray):
-                y edge of 2d histogram (dMag)
-            steps (integer):
-                number of simulations to perform
-                
-        Returns:
-            H (float ndarray):
-                2D numpy ndarray containing completeness probability density values
-        
-        """
-        
-        # if the 2D completeness pdf array exists as a .comp file load it
-        if os.path.exists(Cpath):
-            print 'Loading cached completeness file from "%s".' % Cpath
-            H = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness loaded from cache.'
-        else:
-            # run Monte Carlo simulation and pickle the resulting array
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Beginning Monte Carlo completeness calculations.'
-            
-            t0, t1 = None, None # keep track of per-iteration time
-            for i in xrange(steps):
-                t0, t1 = t1, time.time()
-                if t0 is None:
-                    delta_t_msg = '' # no message
-                else:
-                    delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                print 'Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg)
-                # get completeness histogram
-                h, xedges, yedges = self.hist(nplan, xedges, yedges)
-                if i == 0:
-                    H = h
-                else:
-                    H += h
-            
-            H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
-                        
-            # store 2D completeness pdf array as .comp file
-            pickle.dump(H, open(Cpath, 'wb'))
-            print 'Monte Carlo completeness calculations finished'
-            print '2D completeness array stored in %r' % Cpath
-        
-        return H, xedges, yedges
-
-    def hist(self, nplan, xedges, yedges):
-        """Returns completeness histogram for Monte Carlo simulation
-        
-        This function uses the inherited Planet Population module.
-        
-        Args:
-            nplan (float):
-                number of planets used
-            xedges (float ndarray):
-                x edge of 2d histogram (separation)
-            yedges (float ndarray):
-                y edge of 2d histogram (dMag)
-        
-        Returns:
-            h (ndarray):
-                2D numpy ndarray containing completeness histogram
-        
-        """
-        
-        s, dMag = self.genplans(nplan)
-        # get histogram
-        h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
-        
-        return h, xedges, yedges
-
-    def genplans(self, nplan):
-        """Generates planet data needed for Monte Carlo simulation
-        
-        Args:
-            nplan (integer):
-                Number of planets
-                
-        Returns:
-            s (astropy Quantity array):
-                Planet apparent separations in units of AU
-            dMag (ndarray):
-                Difference in brightness
-        
-        """
-        
-        PPop = self.PlanetPopulation
-        
-        nplan = int(nplan)
-        
-        # sample uniform distribution of mean anomaly
-        M = np.random.uniform(high=2.0*np.pi,size=nplan)
-        # sample quantities
-        a, e, p, Rp = PPop.gen_plan_params(nplan)
-        # check if circular orbits
-        if np.sum(PPop.erange) == 0:
-            r = a
-            e = 0.0
-            E = M
-        else:
-            E = eccanom(M,e)
-            # orbital radius
-            r = a*(1.0-e*np.cos(E))
-
-        beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
-        s = r*np.sin(beta)
-        # phase function
-        Phi = self.PlanetPhysicalModel.calc_Phi(beta)
-        # calculate dMag
-        dMag = deltaMag(p,Rp,r,Phi)
-        
-        return s, dMag
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -950,7 +771,7 @@ class tieredScheduler(SurveySimulation):
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             for i,j in enumerate(WAp):
                 if tochar[i]:
-                    intTimes[i] = self.calc_int_inflection(sInd, fEZ[i], fZ, j, mode, ischar=True)
+                    intTimes[i] = self.calc_int_inflection(sInd, fEZ[i], startTime, j, mode, ischar=True)
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

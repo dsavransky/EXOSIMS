@@ -517,8 +517,8 @@ class BrownCompleteness(Completeness):
                 (optional)                
                 
         Returns:
-            dcomp (array):
-                Derivative of completeness with respect to integration time
+            dcomp (astropy Quantity array):
+                Derivative of completeness with respect to integration time (units 1/time)
         
         """
         intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)

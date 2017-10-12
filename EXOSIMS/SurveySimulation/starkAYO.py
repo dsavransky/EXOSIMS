@@ -23,6 +23,7 @@ class starkAYO(SurveySimulation):
         TL = SU.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+
         
         self.starVisits = np.zeros(TL.nStars,dtype=int)
         self.starRevisit = np.array([])
@@ -45,10 +46,25 @@ class starkAYO(SurveySimulation):
 
         tovisit = np.zeros(sInds.shape[0], dtype=bool)
 
+        #Generate fZ
+        self.fZ_startSaved = self.generate_fZ(sInds)#Sept 21, 2017 execution time 0.725 sec
+
+        #Estimate Yearly fZmin###########################################
+        tmpfZ = np.asarray(self.fZ_startSaved)
+        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        #Find minimum fZ of each star
+        fZmin = np.zeros(sInds.shape[0])
+        fZminInds = np.zeros(sInds.shape[0])
+        for i in xrange(len(sInds)):
+            fZmin[i] = min(fZ_matrix[i,:])
+            fZminInds[i] = np.argmin(fZ_matrix[i,:])
+        #################################################################
+
         #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
         #fZ = np.zeros(sInds.shape[0]) + 0./u.arcsec**2
         #fEZ = 0./u.arcsec**2#
-        fZ = np.zeros(sInds.shape[0]) + ZL.fZ0
+        #fZ = np.zeros(sInds.shape[0]) + ZL.fZ0
+        fZ = fZmin/u.arcsec**2#
         fEZ = ZL.fEZ0
         mode = self.mode#resolve this mode is passed into next_target
         allModes = self.OpticalSystem.observingModes
@@ -63,9 +79,6 @@ class starkAYO(SurveySimulation):
         self.Csp = Csp[:]/u.s#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
         ################################################################
-
-        #Generate fZ
-        self.fZ_startSaved = self.generate_fZ(sInds)#Sept 21, 2017 execution time 0.725 sec
 
         #Solve Initial Integration Times###############################################
         def CbyTfunc(t_dets, self, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp):
@@ -126,7 +139,7 @@ class starkAYO(SurveySimulation):
         #############################################################################
 
         #Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
-        missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value*1.5#TK.missionLife.to(u.day).value#mission length in days
+        missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value*12/12#TK.missionLife.to(u.day).value#mission length in days
         overheadTime = self.Observatory.settlingTime.value + self.OpticalSystem.observingModes[0]['syst']['ohTime'].value#OH time in days
         while((sum(t_dets) + sInds.shape[0]*overheadTime) > missionLength):#the sum of star observation times is still larger than the mission length
             sInds, t_dets, sacrificedStarTime, fZ = self.sacrificeStarCbyT(sInds, t_dets, fZ, fEZ, WA, overheadTime)
@@ -137,6 +150,7 @@ class starkAYO(SurveySimulation):
         ###############################################################################
 
         #STARK AYO LOOP################################################################
+        savedSumComp00 = np.zeros(sInds.shape[0])
         firstIteration = 1#checks if this is the first iteration.
         numits = 0#ensure an infinite loop does not occur. Should be depricated
         lastIterationSumComp  = -10000000 #this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
@@ -157,7 +171,7 @@ class starkAYO(SurveySimulation):
                 #print('sInds maximally sorted (This probably indicates an error)')
                 #print(saltyburrito)
                 break
-
+            savedSumComp00[numits-1] = sum(Comp00)
             # # #If the total sum of completeness at this moment is less than the last sum, then exit
             if(sum(Comp00) < lastIterationSumComp):#If sacrificing the additional target reduced performance, then Define Output of AYO Process
                 CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)/t_dets#takes 5 seconds to do 1 time for all stars
@@ -167,12 +181,45 @@ class starkAYO(SurveySimulation):
                 self.schedule = sInds[sortIndex]
                 self.t_dets = t_dets[sortIndex]
                 self.CbyT = CbyT[sortIndex]
+                self.fZ = fZ[sortIndex]
+                self.Comp00 = Comp00[sortIndex]
+
                 break
             else:#else set lastIterationSumComp to current sum Comp00
                 lastIterationSumComp = sum(Comp00)
                 print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)))# + ' Avg C/T ' + str(np.average(CbyT)))
         #End While Loop
 
+        #Save Schedule Attributes to File######################################
+        # print(self.schedule.shape)
+        # print(self.t_dets.shape)
+        # print(self.CbyT.shape)
+        # print(self.fZ.shape)
+        # print(TL.Name[self.schedule].shape)
+        # print(TL.coords.ra[self.schedule].shape)
+        # print(TL.coords.dec[self.schedule].shape)
+        # #Calculate fZminTimes
+        # print(fZminInds[self.schedule].shape)
+        # fZminTimes = np.interp(fZminInds[self.schedule],[0,1000],[0,365.25])#BackCalculate Times fZmin occur at
+        # print(fZminTimes.shape)
+        # #completeness
+        # print(Comp00[sortIndex].shape)
+
+        # fname = '/starkAYO24mo.csv'
+        # with open(dir_path+fname, "wb") as fo:
+        #     wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+        #     wr.writerow(self.schedule)#1
+        #     wr.writerow(self.t_dets)#2#in days
+        #     wr.writerow(self.CbyT)#3#in Completeness/days
+        #     wr.writerow(self.fZ.value)#fZmin#4 #in 1/arcsec^2
+        #     wr.writerow(TL.Name[self.schedule])#4
+        #     wr.writerow(TL.coords.ra[self.schedule].value)#4#in  deg
+        #     wr.writerow(TL.coords.dec[self.schedule].value)#5#in deg
+        #     wr.writerow(fZminTimes)#6
+        #     wr.writerow(Comp00[sortIndex])#7 Completeness
+        #     #wr.writerow(fZminInds[self.schedule])
+        #     fo.close()
+        #
         #END INIT##################################################################
 
     def next_target(self, sInds, mode):
@@ -244,7 +291,7 @@ class starkAYO(SurveySimulation):
             
             
             sInds1 = sInds
-            #Check if star is within 95% of minimum fZ###########################################
+            #Estimate Yearly fZmin###########################################
             tmpfZ = np.asarray(self.fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             #Find minimum fZ of each star
@@ -259,9 +306,9 @@ class starkAYO(SurveySimulation):
             fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
             #Filter Indicies by fZ
-            # fZ_ind_rev = [int(sInds[i]) for i in range(sInds.shape[0]) if fZ[i] < 1.1*fZmin[i]]#tmpsInds is now a list :(
-            # fZtovisit[fZ_ind_rev] = True
-            # sInds = np.where(fZtovisit)[0]
+            #fZ_ind_rev = [int(sInds[i]) for i in range(sInds.shape[0]) if fZ[i] < 1.1*fZmin[i]]#tmpsInds is now a list :(
+            #fZtovisit[fZ_ind_rev] = True
+            #sInds = np.where(fZtovisit)[0]
             ##############################################################################################
             #print('fZ filters ' + str(sInds1.shape[0] - sInds.shape[0]))
 
@@ -270,13 +317,17 @@ class starkAYO(SurveySimulation):
             CbyT = np.zeros(sInds.shape[0])
             t_dets = np.zeros(sInds.shape[0])
             dec = np.zeros(sInds.shape[0])
+            cond = np.zeros((self.schedule.shape[0],), dtype=bool)
+            cond2 = np.zeros((self.schedule_startSaved.shape[0],), dtype=bool)
             index = 0#a temporary value
             for i in range(sInds.shape[0]):
                 cond = (self.schedule-sInds[i]) == 0
                 CbyT[i] = self.CbyT[cond]
                 t_dets[i] = self.t_dets[cond]
-                dec[i] = self.TargetList.coords.dec[cond].value
-            assert CbyT != None
+
+                cond2 = (self.schedule_startSaved-sInds[i]) == 0
+                dec[i] = self.TargetList.coords.dec[cond2].value
+            #assert CbyT[0] != None
 
             #sInd = sInds[np.argmax(CbyT)]#finds index of star to sacrifice
             #t_det = self.t_dets[np.argmax(CbyT)]*u.d

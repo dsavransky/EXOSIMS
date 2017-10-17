@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.waypoint import waypoint
 from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
@@ -274,6 +275,51 @@ class MissionSim(object):
         
         return out
 
+    def genWaypoint(self, duration=365, tofile=None):
+        """generates a ballpark estimate of the expected number of star visits and
+        the total completeness of these visits for a given mission duration
+        
+        Args:
+            duration (int):
+                The length of time allowed for the waypoint calculation, defaults to 365
+            tofile (string):
+                Name of the file containing a plot of total completeness over mission time,
+                by default genWaypoint does not create this plot
+
+        Returns:
+            out (dictionary):
+                Output dictionary containing the number of stars visited, the total completness
+                achieved, and the amount of time spent integrating.
+
+        """
+        SS = self.SurveySimulation
+        OS = SS.OpticalSystem
+        ZL = SS.ZodiacalLight
+        Comp = SS.Completeness
+        TL = SS.TargetList
+        Obs = SS.Observatory
+        TK = SS.TimeKeeping
+
+        # Only considering detections
+        allModes = OS.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mpath = os.path.split(inspect.getfile(self.__class__))[0]
+
+        startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
+        sInds = np.arange(TL.nStars)
+        fZ = ZL.fZ(Obs, TL, sInds, startTimes, det_mode)
+        fEZ = ZL.fEZ0
+        fEZ = np.ones(sInds.shape) * fEZ
+        dMag = SS.dMagint
+        WA = SS.WAint
+
+        # sort star indices by completeness diveded by integration time
+        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode)
+        wp = waypoint(comps, intTimes, duration, mpath, tofile)
+
+        return wp
+
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.
         
@@ -295,7 +341,8 @@ class MissionSim(object):
             cs = CheckScript(scriptfile, self.genOutSpec())
             out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
             if tofile is not None:
-                cs.write_file(tofile)
+                mpath = os.path.split(inspect.getfile(self.__class__))[0]
+                cs.write_file(os.path.join(mpath, tofile))
         else:
             out = None
 

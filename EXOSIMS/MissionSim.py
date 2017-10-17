@@ -121,6 +121,14 @@ class MissionSim(object):
         specs['verbose'] = self.verbose
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        #overwirte any ensemble setting if nopar is set
+        if nopar:
+            specs['modules']['SurveyEnsemble'] = ' '
+
+        #save a copy of specs up to this point to use with the survey ensemble later
+        specs0 = copy.deepcopy(specs)
+
         # set up numpy random number and add seed to specs
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         specs['seed'] = self.seed
@@ -137,12 +145,7 @@ class MissionSim(object):
             if att not in ['vprint']:
                 self._outspec[att] = self.__dict__[att]
         
-        # initialize top level, import modules
-        if nopar:
-            specs['modules']['SurveyEnsemble'] = ' '
-            
-        self.SurveyEnsemble = get_module(specs['modules']['SurveyEnsemble'],
-                'SurveyEnsemble')(**specs)
+        #create a surveysimulation object (triggering init of everything else)
         self.SurveySimulation = get_module(specs['modules']['SurveySimulation'],
                 'SurveySimulation')(**specs)
         
@@ -161,6 +164,10 @@ class MissionSim(object):
         self.Observatory = SS.Observatory
         self.TimeKeeping = SS.TimeKeeping
         
+        #now that everything has successfully built, you can create the ensemble
+        self.SurveyEnsemble = get_module(specs['modules']['SurveyEnsemble'],
+                'SurveyEnsemble')(**specs0)
+
         # create a dictionary of all modules, except StarCatalog
         self.modules = SS.modules
         self.modules['SurveySimulation'] = SS

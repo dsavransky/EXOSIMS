@@ -104,9 +104,16 @@ class TargetList(object):
                 'Completeness')(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
-        self.PlanetPopulation = self.Completeness.PlanetPopulation
-        self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
         self.BackgroundSources = self.PostProcessing.BackgroundSources
+
+        #if specs contains a completeness_spec then we are going to generate separate instances
+        #of planet population and planet physical model for completeness and for the rest of the sim
+        if specs.has_key('completeness_specs'):
+            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+            self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
+        else:
+            self.PlanetPopulation = self.Completeness.PlanetPopulation
+            self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
         
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
@@ -477,7 +484,7 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.comp0 > self.Completeness.minComp)[0]
+        i = np.where(self.comp0 >= self.Completeness.minComp)[0]
         self.revise_lists(i)
 
     def revise_lists(self, sInds):

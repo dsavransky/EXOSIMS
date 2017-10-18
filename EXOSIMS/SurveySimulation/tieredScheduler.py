@@ -83,7 +83,7 @@ class tieredScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        self.phase1_end = TK.missionStart + 365*u.d
+        self.phase1_end = TK.missionStart + 365*5*u.d
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
@@ -335,7 +335,8 @@ class tieredScheduler(SurveySimulation):
             # 0/ initialize arrays
             slewTime = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
-            t_dets = np.zeros(TL.nStars)*u.d
+            intTimes = np.zeros(TL.nStars)*u.d
+            occ_intTimes = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
@@ -358,64 +359,62 @@ class tieredScheduler(SurveySimulation):
             # calculate slew time
             slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
-            occ_startTime = TK.currentTimeAbs + slewTime
-            kogoodStart = Obs.keepout(TL, sInds, occ_startTime, charmode)
+            occ_startTimes = TK.currentTimeAbs + slewTime
+            occ_startTimesNorm = TK.currentTimeNorm + slewTime
+            kogoodStart = Obs.keepout(TL, sInds, occ_startTimes, charmode)
             occ_sInds = sInds[np.where(kogoodStart)[0]]
             HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
             occ_sInds = occ_sInds[np.where(np.in1d(occ_sInds, HIP_sInds))[0]]
 
-            startTime = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
-            kogoodStart = Obs.keepout(TL, sInds, startTime, detmode)
+            startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
+            startTimesNorm = TK.currentTimeNorm
+            kogoodStart = Obs.keepout(TL, sInds, startTimes, detmode)
             sInds = sInds[np.where(kogoodStart)[0]]
-            
-            # 2/ Calculate integration times for the preselected targets, 
-            # and filter out t_tots > integration cutoff
-            fEZ = ZL.fEZ0
-            dMag = self.dMagint[occ_sInds]
-            WAc = OS.starlightSuppressionSystems[1]['IWA']*2
-            if np.any(occ_sInds):
-                fZ = ZL.fZ(Obs, TL, occ_sInds, occ_startTime[occ_sInds], charmode)
-                t_dets[occ_sInds] = OS.calc_intTime(TL, occ_sInds, fZ, fEZ, dMag, WAc, charmode)
-                # include integration time multiplier
-                occ_t_tots = t_dets*charmode['timeMultiplier']
-                # total time must be positive, shorter than integration cut-off,
-                # and it must not exceed the Observing Block end time 
-                startTimeNorm = (occ_startTime - TK.missionStart).jd*u.day
-                occ_sInds = np.where((occ_t_tots > 0) & (occ_t_tots <= OS.intCutoff) & \
-                            (startTimeNorm + occ_t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
 
-            dMag = self.dMagint[sInds]
-            WA = self.WAint[sInds]
-            if np.any(sInds):
-                fZ = ZL.fZ(Obs, TL, sInds, startTime[sInds], detmode)
-                t_dets[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, detmode)
-                # include integration time multiplier
-                t_tots = t_dets*detmode['timeMultiplier']
-                # total time must be positive, shorter than integration cut-off,
-                # and it must not exceed the Observing Block end time 
-                startTimeNorm = (startTime - TK.missionStart).jd*u.day
-                sInds = np.where((t_tots > 0) & (t_tots <= OS.intCutoff) & \
-                            (startTimeNorm + t_tots <= TK.OBendTimes[TK.OBnumber]))[0]
-            
-            # 3/ Find spacecraft orbital END positions (for each candidate target), 
-            # and filter out unavailable targets
-            if np.any(occ_sInds):
-                endTime = occ_startTime[occ_sInds] + occ_t_tots[occ_sInds]
-                kogoodEnd = Obs.keepout(TL, occ_sInds, endTime, charmode)
-                occ_sInds = occ_sInds[np.where(kogoodEnd)[0]]
-
-            if np.any(sInds):
-                endTime = startTime[sInds] + t_tots[sInds]
-                kogoodEnd = Obs.keepout(TL, sInds, endTime, detmode)
-                sInds = sInds[np.where(kogoodEnd)[0]]
-
-            # 3a/ If we are in detection phase two, start adding new targets to occulter target list
+            # 2a/ If we are in detection phase two, start adding new targets to occulter target list
             if TK.currentTimeAbs > self.phase1_end:
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
                     self.is_phase1 = False
                 occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] > 5) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
+
+            fEZ = ZL.fEZ0
+            WA = self.WAint[0]
+            # 2/ calculate integration times for ALL preselected targets, 
+            # and filter out totTimes > integration cutoff
+            if len(occ_sInds) > 0:  
+                occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, 
+                                                                   WA, charmode, ischar=True)
+
+                totTimes = occ_intTimes*charmode['timeMultiplier']
+                # end times
+                occ_endTimes = occ_startTimes + totTimes
+                occ_endTimesNorm = occ_startTimesNorm + totTimes
+                # indices of observable stars
+                occ_sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                            (occ_endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+
+            if len(sInds) > 0:  
+                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], detmode)
+
+                totTimes = intTimes*detmode['timeMultiplier']
+                # end times
+                endTimes = startTimes + totTimes
+                endTimesNorm = startTimesNorm + totTimes
+                # indices of observable stars
+                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+            
+            # 3/ Find spacecraft orbital END positions (for each candidate target), 
+            # and filter out unavailable targets
+            if len(occ_sInds) > 0 and Obs.checkKeepoutEnd:
+                kogoodEnd = Obs.keepout(TL, occ_sInds, occ_endTimes[occ_sInds], charmode)
+                occ_sInds = occ_sInds[np.where(kogoodEnd)[0]]
+
+            if len(sInds) > 0 and Obs.checkKeepoutEnd:
+                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], detmode)
+                sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
@@ -431,23 +430,24 @@ class tieredScheduler(SurveySimulation):
             # 5/ Filter off current occulter target star from detection list
             if old_occ_sInd is not None:
                 sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
+                occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
             # 6/ Filter off previously visited occ_sInds
             #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
 
+            #6a/ Filter off any stars visited by the occulter 8 or more times
+            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 8)[0]]
+
             # 7/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_telescope_target(old_sInd, sInds, slewTime, t_dets[sInds])
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, slewTime, intTimes[sInds])
                 occ_sInd = old_occ_sInd
-                # if it is the first target or if there is not enough time to make another detection
                 # store relevant values
-                t_det = t_dets[sInd]
-                fZ = ZL.fZ(Obs, TL, sInd, startTime[sInd], detmode)
-                WA = self.WAint[sInd]
+                t_det = intTimes[sInd]
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                int_time = self.calc_int_inflection(sInd, fEZ, startTime, WA, detmode)
+                int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
 
                 if int_time < t_det:
                     t_det = int_time
@@ -455,8 +455,8 @@ class tieredScheduler(SurveySimulation):
                 # if the starshade has arrived at its destination, or it is the first observation
                 if np.any(occ_sInds) or old_occ_sInd is None:
                     if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update): 
-                        occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, t_dets)
-                        self.occ_arrives = occ_startTime[occ_sInd]
+                        occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
+                        self.occ_arrives = occ_startTimes[occ_sInd]
                         self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
                 break
@@ -519,7 +519,8 @@ class tieredScheduler(SurveySimulation):
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)
         if (old_occ_sInd is None) or (nStars == 1):
-            occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
+            occ_sInd = occ_sInds[0]
+            #occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
             #occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
             return occ_sInd
         
@@ -535,6 +536,12 @@ class tieredScheduler(SurveySimulation):
 
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
+
+        # add factor for unvisited ramp
+        f_uv = np.zeros(nStars)
+        unvisited = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[occ_sInds])
+        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+        A = A - 2*f_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -593,12 +600,12 @@ class tieredScheduler(SurveySimulation):
 
         return sInd
 
-    def calc_int_inflection(self, sInd, fEZ, startTime, WA, mode, ischar=False):
+    def calc_int_inflection(self, t_sInds, fEZ, startTime, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
         
         Args:
-            sInd (integer):
-                Index of the target star
+            t_sInds (integer array):
+                Indices of the target stars
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             startTime (astropy Quantity array):
@@ -609,7 +616,7 @@ class tieredScheduler(SurveySimulation):
                 Selected observing mode
 
         Returns:
-            int_time (float):
+            int_times (astropy quantity array):
                 The suggested integration time
         
         """
@@ -622,57 +629,70 @@ class tieredScheduler(SurveySimulation):
 
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
+        sInds = np.arange(TL.nStars)
+        WA = self.WAint[0]
+        curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
 
+        # if no preexisting curves exist, either load from file or calculate
         if self.curves is None:
             if os.path.exists(Cpath):
                 print 'Loading cached completeness file from "%s".' % Cpath
                 curves = pickle.load(open(Cpath, 'rb'))
                 print 'Completeness curves loaded from cache.'
             else:
-                sInds = np.arange(TL.nStars)
-                WA = self.WAint[0]
-                curves = np.zeros([1, sInds.size, intTimes.size])
-
                 # calculate completeness curves for all sInds
                 print 'Cached completeness file not found at "%s".' % Cpath
                 print 'Beginning completeness curve calculations.'
-
+                curves = {}
                 for t_i, t in enumerate(intTimes):
                     fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
-
                     # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
-                    curves[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
-
+                    curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
+                curves[mode['systName']] = curve
                 pickle.dump(curves, open(Cpath, 'wb'))
                 print 'completeness curves stored in %r' % Cpath
+
             self.curves = curves
 
-        #dm_v_t = curves[0,sInd,:]
-        c_v_t = self.curves[0,sInd,:]
-        dcdt = np.diff(c_v_t)/np.diff(intTimes)
+        # if no curves for current mode
+        if mode['systName'] not in self.curves.keys():
+            for t_i, t in enumerate(intTimes):
+                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
-        # find the inflection point of the completeness graph
-        if ischar is False:
-            target_point = max(dcdt).value + 2*np.var(dcdt).value
-            idc = np.abs(dcdt - target_point/(1*u.d)).argmin()
-            int_time = intTimes[idc]
-            int_time = int_time*self.starVisits[sInd]
+            self.curves[mode['systName']] = curve
+            pickle.dump(self.curves, open(Cpath, 'wb'))
+            print 'recalculated completeness curves stored in %r' % Cpath
 
-            # update star completeness
-            idx = (np.abs(intTimes-int_time)).argmin()
-            comp = c_v_t[idx]
-            TL.comp[sInd] = comp
-        else:
-            idt = np.abs(intTimes - max(intTimes)).argmin()
-            idx = np.abs(c_v_t - c_v_t[idt]*.9).argmin()
+        int_times = np.zeros(len(t_sInds))*u.d
+        for i, sInd in enumerate(t_sInds):
+            c_v_t = self.curves[mode['systName']][0,sInd,:]
+            dcdt = np.diff(c_v_t)/np.diff(intTimes)
 
-            # idx = np.abs(comps - max(comps)*.9).argmin()
-            int_time = intTimes[idx]
-            comp = c_v_t[idx]
+            # find the inflection point of the completeness graph
+            if ischar is False:
+                target_point = max(dcdt).value + 3*np.var(dcdt).value
+                idc = np.abs(dcdt - target_point/(1*u.d)).argmin()
+                int_time = intTimes[idc]
+                int_time = int_time*self.starVisits[sInd]
 
-        return int_time
+                # update star completeness
+                idx = (np.abs(intTimes-int_time)).argmin()
+                comp = c_v_t[idx]
+                TL.comp[sInd] = comp
+            else:
+                idt = np.abs(intTimes - max(intTimes)).argmin()
+                idx = np.abs(c_v_t - c_v_t[idt]*.9).argmin()
+
+                # idx = np.abs(comps - max(comps)*.9).argmin()
+                int_time = intTimes[idx]
+                comp = c_v_t[idx]
+
+            int_times[i] = int_time
+
+        return int_times
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -771,7 +791,7 @@ class tieredScheduler(SurveySimulation):
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             for i,j in enumerate(WAp):
                 if tochar[i]:
-                    intTimes[i] = self.calc_int_inflection(sInd, fEZ[i], startTime, j, mode, ischar=True)
+                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

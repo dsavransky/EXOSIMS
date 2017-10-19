@@ -169,7 +169,6 @@ class starkAYO_staticSchedule(SurveySimulation):
             #change this to an assert
             if 1 >= len(sInds):#if this is the last ement in the list
                 #print('sInds maximally sorted (This probably indicates an error)')
-                #print(saltyburrito)
                 break
             savedSumComp00[numits-1] = sum(Comp00)
             # # #If the total sum of completeness at this moment is less than the last sum, then exit
@@ -225,7 +224,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         """Generate Next Target to Select based off of AYO at this instant in time
         Args:
             sInds - unnecessary
-            mode - 
+            old_sInd - unused
 
         Returns:
             DRM - A blank structure
@@ -243,15 +242,13 @@ class starkAYO_staticSchedule(SurveySimulation):
         # now, start to look for available targets
         cnt = 0
         while not TK.mission_is_over():
-            sInds = self.schedule#_startSaved################################## NEED TO CHANGE THIS
-
-            SU = self.SimulatedUniverse
-            OS = SU.OpticalSystem
-            ZL = SU.ZodiacalLight
-            self.Completeness = SU.Completeness
-            TL = SU.TargetList
-            Obs = self.Observatory
-            TK = self.TimeKeeping
+            #SU = self.SimulatedUniverse
+            #OS = SU.OpticalSystem
+            #ZL = SU.ZodiacalLight
+            #self.Completeness = SU.Completeness
+            #TL = SU.TargetList
+            #Obs = self.Observatory
+            #TK = self.TimeKeeping
             TK.obsStart = TK.currentTimeNorm.to('day')
 
             dmag = self.dmag_startSaved
@@ -263,34 +260,8 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             DRM = {}#Create DRM
 
-            # sInds1 = sInds
-            # #Filter out previously visited stars#######################################Aug 28, 2017 execution time 0.235
-            # if np.any(sInds):
-            #     tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
-            #     if self.starRevisit.size != 0:
-            #         dt_max = 1.*u.week
-            #         dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-            #         ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-            #         tovisit[ind_rev] = True
-            #     sInds = np.where(tovisit)[0]
-            #     #CbyT = CbyT[np.where(tovisit)[0]]
-            #     #t_dets = t_dets[np.where(tovisit)[0]]
-            # #########################################################################
-            # #print('Previously Visited filters ' + str(sInds1.shape[0] - sInds.shape[0]))
-
             startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
 
-            # sInds1 = sInds
-            # #Filter KOGOODSTART########################################################
-            # kogoodStart = Obs.keepout(TL, sInds, startTime, mode)#outputs array where 0 values are good keepout stars
-            # sInds = sInds[np.where(kogoodStart)[0]]
-            # #CbyT = CbyT[np.where(kogoodStart)[0]]
-            # #t_dets = t_dets[np.where(kogoodStart)[0]]
-            # ###########################################################################
-            # #print('KOGOOD filters ' + str(sInds1.shape[0] - sInds.shape[0]))
-            
-            
-            sInds1 = sInds
             #Estimate Yearly fZmin###########################################
             tmpfZ = np.asarray(self.fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
@@ -305,36 +276,35 @@ class starkAYO_staticSchedule(SurveySimulation):
             fZ = np.zeros(sInds.shape[0])
             fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
-            #Filter Indicies by fZ
-            #fZ_ind_rev = [int(sInds[i]) for i in range(sInds.shape[0]) if fZ[i] < 1.1*fZmin[i]]#tmpsInds is now a list :(
-            #fZtovisit[fZ_ind_rev] = True
-            #sInds = np.where(fZtovisit)[0]
-            ##############################################################################################
-            #print('fZ filters ' + str(sInds1.shape[0] - sInds.shape[0]))
-
-
             #Find sInds in common between self.schedule and sInds
             CbyT = np.zeros(sInds.shape[0])
             t_dets = np.zeros(sInds.shape[0])
             dec = np.zeros(sInds.shape[0])
-            cond = np.zeros((self.schedule.shape[0],), dtype=bool)
-            cond2 = np.zeros((self.schedule_startSaved.shape[0],), dtype=bool)
+            Comp00 = np.zeros(sInds.shape[0])
+            cond = np.zeros((self.schedule.shape[0],), dtype=bool)#for schedule inds
+            cond2 = np.zeros((self.schedule_startSaved.shape[0],), dtype=bool)#for start_saved lists
             index = 0#a temporary value
             for i in range(sInds.shape[0]):
                 cond = (self.schedule-sInds[i]) == 0
                 CbyT[i] = self.CbyT[cond]
                 t_dets[i] = self.t_dets[cond]
+                Comp00[i] = self.Comp00[cond]
 
                 cond2 = (self.schedule_startSaved-sInds[i]) == 0
                 dec[i] = self.TargetList.coords.dec[cond2].value
-            #assert CbyT[0] != None
+        
 
             #sInd = sInds[np.argmax(CbyT)]#finds index of star to sacrifice
             #t_det = self.t_dets[np.argmax(CbyT)]*u.d
             if len(sInds) > 0:
                 # store selected star integration time
-                sInd = sInds[np.argmin(abs(fZ-fZmin)*abs(dec))]#finds index of star to sacrifice
-                t_det = self.t_dets[np.argmin(abs(fZ-fZmin)*abs(dec))]*u.d
+
+                sInd = sInds[np.argmin(Comp00*abs(fZ-fZmin)*abs(dec))]#finds index of star to sacrifice
+                t_det = t_dets[np.argmin(Comp00*abs(fZ-fZmin)*abs(dec))]*u.d
+                Comp00_single = Comp00[np.argmin(Comp00*abs(fZ-fZmin)*abs(dec))]
+                print(Comp00_single)
+                #print(saltyburrito)
+                #Comp00 = self.Completeness.comp_per_intTime(t_det*u.d, TL, sInd, fZ[sInd], fEZ, WA, mode, self.Cb[sInd], self.Csp[sInd])
 
                 #Create a check to determine if the mission length would be exceeded.
                 timeLeft = TK.missionFinishNorm - TK.currentTimeNorm#This is how much time we have left in the mission in u.d
@@ -343,10 +313,6 @@ class starkAYO_staticSchedule(SurveySimulation):
                         t_det = t_det
                     else:
                         t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
-                    self.starVisits[sInd] += 1#Update List of Visited stars########
-                    TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
-                    Comp00 = self.Completeness.comp_per_intTime(t_det*u.d, TL, sInd, fZ[sInd], fEZ, WA, mode, self.Cb[sInd], self.Csp[sInd])
-                    #print()
                     break 
                 else:#There is insufficient time to cover overhead time
                     TK.allocate_time(timeLeft*u.d)
@@ -369,10 +335,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             # return DRM, sInd, t_det
 
         else:
-            return DRM, None, None
-        return DRM, sInd, t_det
-        
-        #NEED TO CHANGE OFFICIAL CHOOSE_NEXT_TARGET TO RETURN T_DET
+            return None#DRM, None, None
         return sInd
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
@@ -418,15 +381,9 @@ class starkAYO_staticSchedule(SurveySimulation):
         #intTimes = np.zeros(TL.nStars)*u.d
         #intTimes[commonInds] = self.t_dets[commonInds]
 
-        #iterate through all stars in sInds. If sInds 
-        # assumed values for detection
-        #fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
-        #fEZ = self.ZodiacalLight.fEZ0
-        #dMag = self.dMagint[sInds]
-        #WA = self.WAint[sInds]
-        #intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
-        
-        return intTimes
+        #intTimes has length TL.nStars
+        #intTimes[sInds] has length sInds
+        return intTimes[sInds]
   
     def distributedt(self, sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA):#distributing the sacrificed time
         """Distributes sacrificedStarTime amoung sInds
@@ -474,7 +431,6 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             t_dets[maxdCbydtIndex] = t_dets[maxdCbydtIndex] + dt#Add dt to the most worthy target
             timeToDistribute = timeToDistribute - dt#subtract distributed time dt from the timeToDistribute
-            #print(numItsDist)
             dCbydt[maxdCbydtIndex] = self.Completeness.dcomp_dt(t_dets[maxdCbydtIndex]*u.d, self.TargetList, sInds[maxdCbydtIndex], fZ[maxdCbydtIndex], fEZ, WA, self.mode, self.Cb[maxdCbydtIndex], self.Csp[maxdCbydtIndex])#dCbydT[nStars]#Sept 28, 2017 0.011sec
         #End While Loop
         return t_dets

@@ -299,7 +299,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             if len(sInds) > 0:
                 # store selected star integration time
 
-                sInd = sInds[np.argmin(abs(fZ-fZmin)*abs(dec))/Comp00]#finds index of star to sacrifice
+                sInd = sInds[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]#finds index of star to sacrifice
                 t_det = t_dets[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]*u.d
                 Comp00_single = Comp00[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]
                 print(Comp00_single)

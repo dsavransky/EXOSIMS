@@ -72,7 +72,7 @@ class TargetList(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, staticStars=True, 
-            keepStarCatalog=False, fillPhotometry=False, **specs):
+            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -81,9 +81,11 @@ class TargetList(object):
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
         assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
+        assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
+        self.explainFiltering = bool(explainFiltering)
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -180,12 +182,17 @@ class TargetList(object):
         
         # number of target stars
         self.nStars = len(self.Name)
+        if self.explainFiltering:
+            print("%d targets imported from star catalog."%self.nStars)
     
         if self.fillPhotometry:
             self.fillPhotometryVals()
 
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
+        if self.explainFiltering:
+            print("%d targets remain after nan filtering."%self.nStars)
+
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
@@ -332,15 +339,24 @@ class TargetList(object):
         
         # filter out binary stars
         self.binary_filter()
+        if self.explainFiltering:
+            print("%d targets remain after binary filter."%self.nStars)
         
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
-        
+        if self.explainFiltering:
+            print("%d targets remain after IWA filter."%self.nStars)
+
         # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
+        if self.explainFiltering:
+            print("%d targets remain after integration time cutoff filter."%self.nStars)
         
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
+        if self.explainFiltering:
+            print("%d targets remain after completeness filter."%self.nStars)
+
 
     def nan_filter(self):
         """Populates Target List and filters out values which are nan

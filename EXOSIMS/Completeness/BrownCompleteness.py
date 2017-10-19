@@ -144,7 +144,6 @@ class BrownCompleteness(Completeness):
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
-
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         

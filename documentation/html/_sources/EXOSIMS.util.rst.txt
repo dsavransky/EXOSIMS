@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+EXOSIMS\.util\.CheckScript module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.CheckScript
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.util\.InverseTransformSampler module
 ---------------------------------------------
 
@@ -103,6 +111,14 @@ EXOSIMS\.util\.vprint module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.vprint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.util\.waypoint module
+------------------------------
+
+.. automodule:: EXOSIMS.util.waypoint
     :members:
     :undoc-members:
     :show-inheritance:

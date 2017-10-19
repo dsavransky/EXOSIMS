@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.BackgroundSources package" href="EXOSIMS.BackgroundSources.html" />
-    <link rel="prev" title="Survey Ensemble Parallelization" href="parallel.html" />
+    <link rel="prev" title="Utilities" href="utils.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -183,6 +183,7 @@
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.read_ipcluster_ensemble">EXOSIMS.util.read_ipcluster_ensemble module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.vprint">EXOSIMS.util.vprint module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util.waypoint">EXOSIMS.util.waypoint module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="EXOSIMS.util.html#module-EXOSIMS.util">Module contents</a></li>
 </ul>
 </li>
@@ -434,6 +435,33 @@ desired module names.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.MissionSim.MissionSim.genWaypoint">
+<code class="descname">genWaypoint</code><span class="sig-paren">(</span><em>duration=365</em>, <em>tofile=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.genWaypoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.genWaypoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates a ballpark estimate of the expected number of star visits and
+the total completeness of these visits for a given mission duration</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>duration</strong> (<em>int</em>) – The length of time allowed for the waypoint calculation, defaults to 365</li>
+<li><strong>tofile</strong> (<em>string</em>) – Name of the file containing a plot of total completeness over mission time,
+by default genWaypoint does not create this plot</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Output dictionary containing the number of stars visited, the total completness
+achieved, and the amount of time spent integrating.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">out (dictionary)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.MissionSim.MissionSim.get_logger">
 <code class="descname">get_logger</code><span class="sig-paren">(</span><em>logfile</em>, <em>loglevel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/MissionSim.html#MissionSim.get_logger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.MissionSim.MissionSim.get_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set up logging object so other modules can use logging.info(),
@@ -532,7 +560,7 @@ FAIL - Reset</div></blockquote>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="parallel.html" title="previous chapter">Survey Ensemble Parallelization</a></li>
+      <li>Previous: <a href="utils.html" title="previous chapter">Utilities</a></li>
       <li>Next: <a href="EXOSIMS.BackgroundSources.html" title="next chapter">EXOSIMS.BackgroundSources package</a></li>
   </ul></li>
 </ul>
@@ -562,7 +590,7 @@ FAIL - Reset</div></blockquote>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

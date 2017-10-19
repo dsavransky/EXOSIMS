@@ -115,6 +115,14 @@ EXOSIMS\.util\.vprint module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.util\.waypoint module
+------------------------------
+
+.. automodule:: EXOSIMS.util.waypoint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

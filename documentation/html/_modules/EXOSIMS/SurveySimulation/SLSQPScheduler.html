@@ -285,6 +285,11 @@
             <span class="c1"># assumed values for detection</span>
             <span class="n">fZ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTimes</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
+
+
+            <span class="c1">#### instead of actual time left, try bounding by maxTime - detection time used</span>
+            <span class="c1">#need to update time used in choose_next_target</span>
+            
             <span class="n">timeLeft</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionFinishNorm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span><span class="o">.</span><span class="n">missionPortion</span>
             <span class="n">bounds</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="n">timeLeft</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">))]</span>
 
@@ -367,7 +372,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

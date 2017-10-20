@@ -503,7 +503,7 @@ class SurveySimulation(object):
             # 6. choose best target from remaining
             if len(sInds) > 0:
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes)
+                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break

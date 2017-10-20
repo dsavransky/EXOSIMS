@@ -188,11 +188,13 @@ class starkAYO_staticSchedule(SurveySimulation):
         #End While Loop
         #END INIT##################################################################
         
-    def choose_next_target(self,old_sInd,sInds,slewTime):
+    def choose_next_target(self,old_sInd,sInds,slewTime,intTimes):
         """Generate Next Target to Select based off of AYO at this instant in time
         Args:
             sInds - indicies of stars under consideration
             old_sInd - unused
+            slewTime - unused
+            intTimes - unused
 
         Returns:
             DRM - A blank structure

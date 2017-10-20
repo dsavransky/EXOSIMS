@@ -238,26 +238,16 @@ class starkAYO_staticSchedule(SurveySimulation):
             fZ = np.zeros(sInds.shape[0])
             fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
-            #Find sInds in common between self.schedule and sInds
-            CbyT = np.zeros(sInds.shape[0])
-            t_dets = np.zeros(sInds.shape[0])
-            dec = np.zeros(sInds.shape[0])
-            Comp00 = np.zeros(sInds.shape[0])
-            cond = np.zeros((self.schedule.shape[0],), dtype=bool)#for schedule inds
-            cond2 = np.zeros((self.schedule_startSaved.shape[0],), dtype=bool)#for start_saved lists
-            index = 0#a temporary value
-            for i in range(sInds.shape[0]):
-                cond = (self.schedule-sInds[i]) == 0
-                CbyT[i] = self.CbyT[cond]
-                t_dets[i] = self.t_dets[cond]
-                Comp00[i] = self.Comp00[cond]
-
-                cond2 = (self.schedule_startSaved-sInds[i]) == 0
-                dec[i] = self.TargetList.coords.dec[cond2].value
+            imat = [self.schedule.tolist().index(x) for x in sInds]
+            CbyT = self.CbyT[imat]
+            t_dets = self.t_dets[imat]
+            Comp00 = self.Comp00[imat]
+            imat2 = [self.schedule_startSaved.tolist().index(x) for x in sInds]
+            dec = self.TargetList.coords.dec[imat2].value
         
             if len(sInds) > 0:
                 # store selected star integration time
-                selectInd = np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)
+                selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
                 sInd = sInds[selectInd]#finds index of star to sacrifice
                 t_det = t_dets[selectInd]*u.d
 
@@ -298,9 +288,10 @@ class starkAYO_staticSchedule(SurveySimulation):
                 Integration times for detection 
                 same dimension as sInds
         """
-        commonInds = [self.schedule[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]#find indicies in common between self.schedule and sInds
+        commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
+        imat = [self.schedule.tolist().index(x) for x in commonsInds]#find indicies of occurence of commonsInds in self.schedule
         intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
-        intTimes[commonInds] = [self.t_dets[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]#find intTimes
+        intTimes[commonsInds] = self.t_dets[imat]#
         intTimes = intTimes*u.d#add units of day to intTimes
 
         return intTimes[sInds]

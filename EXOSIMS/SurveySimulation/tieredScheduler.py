@@ -184,9 +184,9 @@ class tieredScheduler(SurveySimulation):
                     DRM['slew_angle'] = sd[sInd].to('deg').value
                     slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
                     DRM['slew_dV'] = (slewTime[sInd]*self.ao*Obs.defburnPortion).to('m/s').value
-                    DRM['slew_mass_used'] = slew_mass_used.to('kg').value
+                    DRM['slew_mass_used'] = slew_mass_used.to('kg')
                     Obs.scMass = Obs.scMass - slew_mass_used
-                    DRM['scMass'] = Obs.scMass.to('kg').value
+                    DRM['scMass'] = Obs.scMass.to('kg')
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     print '  Starshade and telescope aligned at target star'

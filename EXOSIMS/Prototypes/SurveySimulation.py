@@ -503,7 +503,7 @@ class SurveySimulation(object):
             # 6. choose best target from remaining
             if len(sInds) > 0:
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes)
+                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes)
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break
@@ -573,7 +573,7 @@ class SurveySimulation(object):
         return intTimes
 
 
-    def choose_next_target(self, old_sInd, sInds, slewTimes):
+    def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Helper method for method next_target to simplify alternative implementations.
         
         Given a subset of targets (pre-filtered by method next_target or some 

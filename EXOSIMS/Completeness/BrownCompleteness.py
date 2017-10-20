@@ -44,16 +44,17 @@ class BrownCompleteness(Completeness):
         
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-        
+       
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+
         # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = specs['modules']['PlanetPopulation'] + \
-                        specs['modules']['PlanetPhysicalModel'] + \
-                        specs['modules']['OpticalSystem'] + \
-                        specs['modules']['StarCatalog'] + \
-                        specs['modules']['TargetList']
+        self.dfilename = self.PlanetPopulation.__class__.__name__ + \
+                         self.PlanetPhysicalModel.__class__.__name__ +\
+                         specs['modules']['OpticalSystem'] + \
+                         specs['modules']['StarCatalog'] + \
+                         specs['modules']['TargetList']
         atts = self.PlanetPopulation.__dict__.keys()
         self.extstr = ''
         for att in sorted(atts, key=str.lower):

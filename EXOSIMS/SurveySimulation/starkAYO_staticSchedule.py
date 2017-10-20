@@ -9,9 +9,12 @@ import os.path
 import datetime
 
 class starkAYO_staticSchedule(SurveySimulation):
-    """starkAYO 
+    """starkAYO _static Scheduler
     
-    This class implements a Scheduler that selects the current highest Completeness/Integration Time.
+    This class implements a Scheduler that creates a list of stars to observe and integration times to observe them. It also selects the best star to observe at any moment in time
+    Generates cachedfZ.csv and cachedMaxCbyTtime.csv
+    If the above exist but some problem is found, moved_MacCbyTtime.csv and moved_fZAllStars.csv are created
+
     """
     def __init__(self, **specs):
         SurveySimulation.__init__(self, **specs)
@@ -61,15 +64,11 @@ class starkAYO_staticSchedule(SurveySimulation):
         #################################################################
 
         #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
-        #fZ = np.zeros(sInds.shape[0]) + 0./u.arcsec**2
-        #fEZ = 0./u.arcsec**2#
-        #fZ = np.zeros(sInds.shape[0]) + ZL.fZ0
         fZ = fZmin/u.arcsec**2#
         fEZ = ZL.fEZ0
         mode = self.mode#resolve this mode is passed into next_target
         allModes = self.OpticalSystem.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-        #dmag = self.dmag_startSaved
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
@@ -138,7 +137,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         t_dets = maxCbyTtime[0][sInds]
         #############################################################################
 
-        #Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
+        #Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
         missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value*12/12#TK.missionLife.to(u.day).value#mission length in days
         overheadTime = self.Observatory.settlingTime.value + self.OpticalSystem.observingModes[0]['syst']['ohTime'].value#OH time in days
         while((sum(t_dets) + sInds.shape[0]*overheadTime) > missionLength):#the sum of star observation times is still larger than the mission length
@@ -168,10 +167,9 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             #change this to an assert
             if 1 >= len(sInds):#if this is the last ement in the list
-                #print('sInds maximally sorted (This probably indicates an error)')
                 break
             savedSumComp00[numits-1] = sum(Comp00)
-            # # #If the total sum of completeness at this moment is less than the last sum, then exit
+            #If the total sum of completeness at this moment is less than the last sum, then exit
             if(sum(Comp00) < lastIterationSumComp):#If sacrificing the additional target reduced performance, then Define Output of AYO Process
                 CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)/t_dets#takes 5 seconds to do 1 time for all stars
                 sortIndex = np.argsort(CbyT,axis=-1)[::-1]
@@ -187,43 +185,12 @@ class starkAYO_staticSchedule(SurveySimulation):
                 lastIterationSumComp = sum(Comp00)
                 print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)))# + ' Avg C/T ' + str(np.average(CbyT)))
         #End While Loop
-
-        #Save Schedule Attributes to File######################################
-        # print(self.schedule.shape)
-        # print(self.t_dets.shape)
-        # print(self.CbyT.shape)
-        # print(self.fZ.shape)
-        # print(TL.Name[self.schedule].shape)
-        # print(TL.coords.ra[self.schedule].shape)
-        # print(TL.coords.dec[self.schedule].shape)
-        # #Calculate fZminTimes
-        # print(fZminInds[self.schedule].shape)
-        # fZminTimes = np.interp(fZminInds[self.schedule],[0,1000],[0,365.25])#BackCalculate Times fZmin occur at
-        # print(fZminTimes.shape)
-        # #completeness
-        # print(Comp00[sortIndex].shape)
-
-        # fname = '/starkAYO24mo.csv'
-        # with open(dir_path+fname, "wb") as fo:
-        #     wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-        #     wr.writerow(self.schedule)#1
-        #     wr.writerow(self.t_dets)#2#in days
-        #     wr.writerow(self.CbyT)#3#in Completeness/days
-        #     wr.writerow(self.fZ.value)#fZmin#4 #in 1/arcsec^2
-        #     wr.writerow(TL.Name[self.schedule])#4
-        #     wr.writerow(TL.coords.ra[self.schedule].value)#4#in  deg
-        #     wr.writerow(TL.coords.dec[self.schedule].value)#5#in deg
-        #     wr.writerow(fZminTimes)#6
-        #     wr.writerow(Comp00[sortIndex])#7 Completeness
-        #     #wr.writerow(fZminInds[self.schedule])
-        #     fo.close()
-        #
         #END INIT##################################################################
         
     def choose_next_target(self,old_sInd,sInds,slewTime):
         """Generate Next Target to Select based off of AYO at this instant in time
         Args:
-            sInds - unnecessary
+            sInds - indicies of stars under consideration
             old_sInd - unused
 
         Returns:
@@ -242,13 +209,6 @@ class starkAYO_staticSchedule(SurveySimulation):
         # now, start to look for available targets
         cnt = 0
         while not TK.mission_is_over():
-            #SU = self.SimulatedUniverse
-            #OS = SU.OpticalSystem
-            #ZL = SU.ZodiacalLight
-            #self.Completeness = SU.Completeness
-            #TL = SU.TargetList
-            #Obs = self.Observatory
-            #TK = self.TimeKeeping
             TK.obsStart = TK.currentTimeNorm.to('day')
 
             dmag = self.dmag_startSaved
@@ -272,7 +232,6 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             #Find current fZ
             indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])#This is only good for 1 year missions right now
-            #print('indexFrac is ' + str(indexFrac))
             fZ = np.zeros(sInds.shape[0])
             fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
@@ -293,18 +252,11 @@ class starkAYO_staticSchedule(SurveySimulation):
                 cond2 = (self.schedule_startSaved-sInds[i]) == 0
                 dec[i] = self.TargetList.coords.dec[cond2].value
         
-
-            #sInd = sInds[np.argmax(CbyT)]#finds index of star to sacrifice
-            #t_det = self.t_dets[np.argmax(CbyT)]*u.d
             if len(sInds) > 0:
                 # store selected star integration time
-
-                sInd = sInds[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]#finds index of star to sacrifice
-                t_det = t_dets[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]*u.d
-                Comp00_single = Comp00[np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)]
-                print(Comp00_single)
-                #print(saltyburrito)
-                #Comp00 = self.Completeness.comp_per_intTime(t_det*u.d, TL, sInd, fZ[sInd], fEZ, WA, mode, self.Cb[sInd], self.Csp[sInd])
+                selectInd = np.argmin(abs(fZ-fZmin)*abs(dec)/Comp00)
+                sInd = sInds[selectInd]#finds index of star to sacrifice
+                t_det = t_dets[selectInd]*u.d
 
                 #Create a check to determine if the mission length would be exceeded.
                 timeLeft = TK.missionFinishNorm - TK.currentTimeNorm#This is how much time we have left in the mission in u.d
@@ -324,30 +276,12 @@ class starkAYO_staticSchedule(SurveySimulation):
             else:
                 TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 cnt += 1
-
-
-            # sInd = sInds[np.argmin(abs(fZ-fZmin)*abs(dec))]#finds index of star to sacrifice
-            # t_det = self.t_dets[np.argmin(abs(fZ-fZmin)*abs(dec))]*u.d
-
-            # self.starVisits[sInd] += 1#Update List of Visited stars########
-            # TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])# Aluserslocate settling time + overhead time
-
-            # return DRM, sInd, t_det
-
         else:
             return None#DRM, None, None
         return sInd
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
-        """Helper method for next_target to aid in overloading for alternative implementations.
-
-        Given a subset of targets, calculate their integration times given the
-        start of observation time.
-
-        Prototype just calculates integration times for fixed contrast depth.  
-
-        Note: next_target filter will discard targets with zero integration times.
-        
+        """Finds and Returns Precomputed Observation Time
         Args:
             sInds (integer array):
                 Indices of available targets
@@ -356,33 +290,16 @@ class starkAYO_staticSchedule(SurveySimulation):
                 must be of the same size as sInds 
             mode (dict):
                 Selected observing mode for detection
-
         Returns:
             intTimes (astropy Quantity array):
                 Integration times for detection 
                 same dimension as sInds
         """
-        
-        #Trash startTimes, modemysInds
-        #sInds_schedule = self.schedule
-        #I need the indicies of the sInds in common between self.schedule and sInds
-        #indiciesInCommon = [x for x in self.schedule if x in sInds]
-        
-        commonInds = [self.schedule[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]
-        intTimes = np.zeros(self.TargetList.nStars)
-        intTimes[commonInds] = [self.t_dets[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]
-        intTimes = intTimes*u.d
-        
-        #notInCommonInds = [sInds[i] for i in np.arange(len(sInds)) if sInds[i] not in self.schedule]#unnecessary Just default all others to 0
-        
-        #mysInds = [x for x in self.schedule if x in sInds]
-        #indicies = [np.where(self.schedule == x)[0][0] for x in mysInds]
+        commonInds = [self.schedule[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]#find indicies in common between self.schedule and sInds
+        intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
+        intTimes[commonInds] = [self.t_dets[i] for i in np.arange(len(self.schedule)) if self.schedule[i] in sInds]#find intTimes
+        intTimes = intTimes*u.d#add units of day to intTimes
 
-        #intTimes = np.zeros(TL.nStars)*u.d
-        #intTimes[commonInds] = self.t_dets[commonInds]
-
-        #intTimes has length TL.nStars
-        #intTimes[sInds] has length sInds
         return intTimes[sInds]
   
     def distributedt(self, sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA):#distributing the sacrificed time
@@ -400,24 +317,16 @@ class starkAYO_staticSchedule(SurveySimulation):
         dCbydt = self.Completeness.dcomp_dt(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, self.Cb, self.Csp)#dCbydT[nStars]#Sept 28, 2017 0.12sec
 
         if(len(t_dets) <= 1):
-            print('t_dets has one element or less')
             return t_dets
 
         timeToDistribute = sacrificedStarTime
-
-        #Decide Size of dt
-        #if(sacrificedStarTime/50.0 < 0.1):
-        #    dt_static = sacrificedStarTime/50.0#1
-        #else:
         dt_static = 0.1
-        #dt_static = 0.01
         dt = dt_static
 
         #Now decide where to put dt
         numItsDist = 0
         while(timeToDistribute > 0):
             if(numItsDist > 1000000):#this is an infinite loop check
-                print('numItsDist>1000000')
                 break
             else:
                 numItsDist = numItsDist + 1
@@ -464,10 +373,11 @@ class starkAYO_staticSchedule(SurveySimulation):
         return sInds, t_dets, sacrificedStarTime, fZ
 
     def generate_fZ(self, sInds):
-        """
-        This function calculates fZ values for each star over an entire orbit of the sun
-        This function is called in init
-        returns: fZ[resolution, sInds] where fZ is the zodiacal light for each star
+        """Calculates fZ values for each star over an entire orbit of the sun
+        Args:
+            sInds[nStars] - indicies of stars to generate yearly fZ for
+        Returns:
+            fZ[resolution, sInds] where fZ is the zodiacal light for each star
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
         fname = '/cachedfZ.csv'
@@ -481,10 +391,8 @@ class starkAYO_staticSchedule(SurveySimulation):
                 f.close()
         except:
             fileLength = 0
-        #print('fileLength is ' + str(fileLength))
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         if (not os.path.isfile(dir_path+fname) or (fileLength != sInds.shape[0])):#If this file does not exist or the length of the file is not appropriate 
-            print('Calculating fZ for Each Star over 1 Yr')
             OS = self.OpticalSystem
             WA = OS.WA0
             ZL = self.ZodiacalLight
@@ -500,24 +408,20 @@ class starkAYO_staticSchedule(SurveySimulation):
             #This section of Code takes 68 seconds
             #Save fZ to File######################################
             try:#Here we delete the previous fZ file
-                print('Trying to save fZ vs Time for Each Star to File')
                 timeNow = datetime.datetime.now()
                 timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
                 fnameNew = '/' + timeString +  'moved_fZAllStars.csv'
                 os.rename(dir_path+fname,dir_path+fnameNew)
             except OSError:
-                print('There was an error writing the moved_fZAllStars file')
                 pass
             with open(dir_path+fname, "wb") as fo:
                 wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 for i in range(sInds.shape[0]):#iterate through all stars
                     wr.writerow(fZ[:,i])#Write the fZ to file
                 fo.close()
-                print('Finished Saving fZ vs ToY for Each Star to File')
         
         #Load fZ dMag for Each Star From File######################################
         #Sept 20, 2017 execution time 1.747 sec
-        print('Load fZ for Each Star from File')
         fZ = list()
         with open(dir_path+fname, 'rb') as f:
             reader = csv.reader(f)

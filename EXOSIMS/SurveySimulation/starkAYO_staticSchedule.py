@@ -15,6 +15,7 @@ class starkAYO_staticSchedule(SurveySimulation):
     Generates cachedfZ.csv and cachedMaxCbyTtime.csv
     If the above exist but some problem is found, moved_MacCbyTtime.csv and moved_fZAllStars.csv are created
 
+    2nd execution time 2 min 30 sec
     """
     def __init__(self, **specs):
         SurveySimulation.__init__(self, **specs)
@@ -183,7 +184,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                 break
             else:#else set lastIterationSumComp to current sum Comp00
                 lastIterationSumComp = sum(Comp00)
-                print(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)))# + ' Avg C/T ' + str(np.average(CbyT)))
+                self.vprint(str(numits) + ' SumComp ' + str(sum(Comp00)) + ' Sum(t_dets) ' + str(sum(t_dets)) + ' sInds ' + str(sInds.shape[0]*float(1)) + ' TimeConservation ' + str(sum(t_dets)+sInds.shape[0]*float(1)))# + ' Avg C/T ' + str(np.average(CbyT)))
         #End While Loop
         #END INIT##################################################################
         

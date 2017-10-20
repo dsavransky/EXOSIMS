@@ -227,27 +227,29 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             #Estimate Yearly fZmin###########################################
             tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            fZ_matrix = tmpfZ[self.schedule,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             #Find minimum fZ of each star
-            fZmin = np.zeros(sInds.shape[0])
-            for i in xrange(len(sInds)):
-                fZmin[i] = min(fZ_matrix[i,:])
+            fZmintmp = np.zeros(self.schedule.shape[0])
+            for i in xrange(self.schedule.shape[0]):
+                fZmintmp[i] = min(fZ_matrix[i,:])
 
             #Find current fZ
-            indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value,[0,365.25],[0,1000])#This is only good for 1 year missions right now
-            fZ = np.zeros(sInds.shape[0])
-            fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
+            indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value%365.25,[0,365.25],[0,1000])#This is only good for 1 year missions right now
+            fZinterp = np.zeros(self.schedule.shape[0])
+            fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
             commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule
             imat = [self.schedule.tolist().index(x) for x in commonsInds]
             CbyT = self.CbyT[imat]
             t_dets = self.t_dets[imat]
             Comp00 = self.Comp00[imat]
+            fZ = fZinterp[imat]
+            fZmin = fZmintmp[imat]
 
             commonsInds2 = [x for x in self.schedule_startSaved if x in sInds]#finds indicies in common between sInds and self.schedule
             imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
             dec = self.TargetList.coords.dec[imat2].value
-        
+            
             if len(sInds) > 0:
                 # store selected star integration time
                 selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))

@@ -238,7 +238,8 @@ class starkAYO_staticSchedule(SurveySimulation):
             fZ = np.zeros(sInds.shape[0])
             fZ[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
 
-            imat = [self.schedule.tolist().index(x) for x in sInds]
+            commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
+            imat = [self.schedule.tolist().index(x) for x in commonsInds]
             CbyT = self.CbyT[imat]
             t_dets = self.t_dets[imat]
             Comp00 = self.Comp00[imat]

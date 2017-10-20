@@ -41,9 +41,7 @@ class GarrettCompleteness(BrownCompleteness):
     def __init__(self, **specs):
         # bring in inherited Completeness prototype __init__ values
         BrownCompleteness.__init__(self, **specs)
-        # get path to completeness interpolant stored in a pickled .comp file
-        self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
+
         # get unitless values of population parameters
         self.amin = float(self.PlanetPopulation.arange.min().value)
         self.amax = float(self.PlanetPopulation.arange.max().value)

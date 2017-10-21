@@ -246,7 +246,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             fZ = fZinterp[imat]
             fZmin = fZmintmp[imat]
 
-            commonsInds2 = [x for x in self.schedule_startSaved if x in sInds]#finds indicies in common between sInds and self.schedule
+            commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
             imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
             dec = self.TargetList.coords.dec[imat2].value
             

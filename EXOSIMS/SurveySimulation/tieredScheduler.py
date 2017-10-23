@@ -19,7 +19,7 @@ class tieredScheduler(SurveySimulation):
     while the starshade slews to its next target.
     
         Args:
-        as (iterable 2x1):
+        as (iterable 4x1):
             Cost function coefficients: slew distance, completeness
         as (iterable nx1)
             List of star HIP numbers to initialize occulter target list.
@@ -28,13 +28,13 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1], occHIPs=[], **specs):
+    def __init__(self, coeffs=[2,1,4,1], occHIPs=[], **specs):
         
         SurveySimulation.__init__(self, **specs)
         
-        #verify that coefficients input is iterable 2x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 2):
-            raise TypeError("coeffs must be a 3 element iterable")
+        #verify that coefficients input is iterable 4x1
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
+            raise TypeError("coeffs must be a 4 element iterable")
 
         #Add to outspec
         self._outspec['coeffs'] = coeffs
@@ -83,7 +83,7 @@ class tieredScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        self.phase1_end = TK.missionStart + 365*5*u.d
+        self.phase1_end = TK.missionStart + 365*u.d
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
@@ -456,7 +456,10 @@ class tieredScheduler(SurveySimulation):
                 if np.any(occ_sInds) or old_occ_sInd is None:
                     if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update): 
                         occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
-                        self.occ_arrives = occ_startTimes[occ_sInd]
+                        if old_occ_sInd is None:
+                            self.occ_arrives = TK.currentTimeAbs
+                        else:
+                            self.occ_arrives = occ_startTimes[occ_sInd]
                         self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
                 break
@@ -504,10 +507,10 @@ class tieredScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        nStars = len(occ_sInds)
-
-        # reshape sInds
+        # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds,ndmin=1)
+        top9_HIPs = self.occHIPs[0:9]
+        top9_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top9_HIPs))[0], occ_sInds)
 
         # current stars have to be in the adjmat
         if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):
@@ -537,11 +540,19 @@ class tieredScheduler(SurveySimulation):
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
 
-        # add factor for unvisited ramp
-        f_uv = np.zeros(nStars)
-        unvisited = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[occ_sInds])
-        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
-        A = A - 2*f_uv
+        # add factor for unvisited ramp for top9 stars
+        if np.any(top9_sInds):
+            f_uv = np.zeros(nStars)
+            u1 = np.in1d(occ_sInds, top9_sInds)
+            u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top9_sInds])
+            unvisited = np.logical_and(u1, u2)
+            f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+            A = A - self.coeffs[2]*f_uv
+
+            # add factor for top9 stars
+            # is_top9 = np.zeros(nStars)
+            # is_top9[top9_sInds] = 1
+            # A = A - self.coeffs[3]*is_top9
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -673,7 +684,7 @@ class tieredScheduler(SurveySimulation):
 
             # find the inflection point of the completeness graph
             if ischar is False:
-                target_point = max(dcdt).value + 3*np.var(dcdt).value
+                target_point = max(dcdt).value + 5*np.var(dcdt).value
                 idc = np.abs(dcdt - target_point/(1*u.d)).argmin()
                 int_time = intTimes[idc]
                 int_time = int_time*self.starVisits[sInd]

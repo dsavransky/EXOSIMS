@@ -10,6 +10,7 @@ try:
 except:
     import pickle
 from scipy.io import loadmat
+import time
 
 class WFIRSTObservatoryL2(Observatory):
     """ WFIRST Observatory at L2 implementation. 
@@ -31,24 +32,36 @@ class WFIRSTObservatoryL2(Observatory):
         self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
                 format='mjd', scale='tai')
         
+        keysHalo = ['te','t','state','x_lpoint','mu']
+        
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            print classpath
             filename = 'L2_halo_orbit_six_month.p'
             orbit_datapath = os.path.join(classpath, filename)
+            
+        if os.path.exists(orbit_datapath):
+            halo = pickle.load(open(orbit_datapath, 'rb'))
+            try:
+                for x in keysHalo:
+                    halo[x]
+            except:
+                print "Relevant keys not found, updating pickle file."
+                orbit_datapath = os.path.join(classpath,'###.p')
+            
         if not os.path.exists(orbit_datapath):
+            orbit_datapath = os.path.join(classpath, filename)
             matname = 'L2_halo_orbit_six_month.mat'
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):
+                print mat_datapath
                 raise Exception("Orbit data file not found.")
             else:
                 halo = loadmat(mat_datapath)
                 pickle.dump(halo, open(orbit_datapath, 'wb'))
-        else:
-            halo = pickle.load(open(orbit_datapath, 'rb'))
         
         # unpack orbit properties in heliocentric ecliptic frame 
+        self.mu = halo['mu'][0][0]
         self.period_halo = halo['te'][0,0]/(2*np.pi)
         self.t_halo = halo['t'][:,0]/(2*np.pi)*u.year # 2\pi = 1 sideral year
         self.r_halo = halo['state'][:,0:3]*u.AU

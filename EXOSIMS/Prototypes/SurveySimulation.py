@@ -492,7 +492,6 @@ class SurveySimulation(object):
             
             # if no observable target, call the TimeKeeping.wait() method
             else:
-                print "wait"
                 TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 cnt += 1
             

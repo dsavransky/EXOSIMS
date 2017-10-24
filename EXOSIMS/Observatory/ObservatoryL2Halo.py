@@ -61,6 +61,8 @@ class ObservatoryL2Halo(Observatory):
         
         # unpack orbit properties in heliocentric ecliptic frame 
         self.mu = halo['mu'][0][0]
+        self.m1 = float(1-self.mu)
+        self.m2 = self.mu
         self.period_halo = halo['te'][0,0]/(2*np.pi)
         self.t_halo = halo['t'][:,0]/(2*np.pi)*u.year # 2\pi = 1 sideral year
         self.r_halo = halo['state'][:,0:3]*u.AU
@@ -132,3 +134,130 @@ class ObservatoryL2Halo(Observatory):
             r_obs = self.eclip2equat(r_obs, currentTime)
         
         return r_obs
+    
+    def haloPosition(self,currentTime):
+        """ This method returns the position vector of the WFIRST observatory 
+        in the rotating frame of the Earth-Sun system centered at L2.
+        """
+        # Find the time between Earth equinox and current time(s)
+        
+        dt = (currentTime - self.equinox).to('yr').value
+        t_halo = dt % self.period_halo
+        
+        # Interpolate to find correct observatory position(s)
+        r_halo = self.r_halo_interp_L2(t_halo).T*u.AU
+        
+        return r_halo
+
+    def haloVelocity(self,currentTime):
+        """ Finds observatory velocity within its halo orbit about L2
+        """
+        # Find the time between Earth equinox and current time(s)
+        
+        dt = (currentTime - self.equinox).to('yr').value
+        t_halo = dt % self.period_halo
+        
+        # Interpolate to find correct observatory velocity(-ies)
+        v_halo = self.v_halo_interp(t_halo).T
+        v_halo = v_halo*u.au/u.year
+        
+        return v_halo
+    
+    def equations_of_motion(self,t,s):
+        """ Equations of motion for the Circular Restricted Three Body 
+        Problem (CRTBP). First order form of the equations for integration, 
+        returns 3 velocities and 3 accelerations in (x,y,z) rotating frame
+            
+        All parameters are normalized so that time = 2*pi sidereal year
+        Distances normalized to 1AU
+            
+        Coordinates are taken in a rotating frame centered at the center of mass
+        of the two primary bodies
+            
+        """
+        
+        #occulter distance from each of the two other bodies
+        r1 = np.sqrt( (self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
+        r2 = np.sqrt( (1 - self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
+            
+        #equations of motion
+        ds1 = s[0] + 2*s[4] + self.m1*(-self.mu-s[0])/r1**3 + self.m2*(1-self.mu-s[0])/r2**3
+        ds2 = s[1] - 2*s[3] - self.m1*s[1]/r1**3 - self.m2*s[1]/r2**3
+        ds3 = -self.m1*s[2]/r1**3 - self.m2*s[2]/r2**3
+        
+        ds = np.vstack((s[3],s[4],s[5],ds1,ds2,ds3))
+        
+        return ds
+    
+    def star_angularSep(self,TL,N1,N2,tA,tB):
+        
+        t = np.linspace(tA.value,tB.value,2)    #discretizing time
+        t = Time(t,format='mjd')                #converting time to modified julian date
+        
+        #position of WFIRST at the given times in rotating frame
+        r_halo = self.haloPosition(t).to('au')
+        r_WFIRST = (r_halo + np.array([1,0,0])*self.L2_dist).value
+        
+        #position of stars wrt to WFIRST
+        star1 = self.eclip2rot(TL,N1,tA).value
+        star2 = self.eclip2rot(TL,N2,tB).value
+        
+        star1_wfirst = star1 - r_WFIRST[ 0]
+        star2_wfirst = star2 - r_WFIRST[-1]
+        
+        #corresponding unit vectors pointing WFIRST -> Target Star
+        u1 = star1_wfirst / np.linalg.norm(star1_wfirst)
+        u2 = star2_wfirst / np.linalg.norm(star2_wfirst)
+        
+        angle = (np.arccos(np.dot(u1[0],u2[0].T))*u.rad).to('deg')
+        
+        return angle.value
+    
+    
+    def eclip2rot(self,TL,sInd,currentTime):
+        
+        star_pos = TL.starprop(sInd,currentTime)[0].to('au')
+        theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2*np.pi)
+        
+        star_rot = np.array([np.dot(self.rot(theta.value, 3),star_pos.to('AU').value)])*u.AU
+
+        return star_rot[0]
+    
+    def integrate(self,s0,t):
+        """ Setting up integration using scipy odeint
+        Tolerances are lowered and output info from integration is defined
+        as an attribute.        
+        """
+        
+        def EoM(y,t):
+            """ Equations of motion for the Circular Restricted Three Body 
+            Problem (CRTBP). First order form of the equations for integration, 
+            returns 3 velocities and 3 accelerations in (x,y,z) rotating frame
+            
+            All parameters are normalized so that time = 2*pi sidereal year
+            Distances normalized to 1AU
+            
+            Coordinates are taken in a rotating frame centered at the center of mass
+            of the two primary bodies
+            
+            """
+            #setting up state vector
+            s1,s2,s3,s4,s5,s6 = y
+        
+            #occulter distance from each of the two other bodies
+            r1 = np.sqrt( (self.mu - s1)**2 + s2**2 + s3**2 )
+            r2 = np.sqrt( (1 - self.mu - s1)**2 + s2**2 + s3**2 )
+            
+            #equations of motion
+            ds1 = s1 + 2*s5 + self.m1*(-self.mu-s1)/r1**3 + self.m2*(1-self.mu-s1)/r2**3
+            ds2 = s2 - 2*s4 - self.m1*s2/r1**3 - self.m2*s2/r2**3
+            ds3 = -self.m1*s3/r1**3 - self.m2*s3/r2**3
+        
+            ds = [s4,s5,s6,ds1,ds2,ds3]
+        
+            return ds
+        
+        sol,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
+        self.info = info
+        
+        return sol

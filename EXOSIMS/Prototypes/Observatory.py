@@ -831,6 +831,51 @@ class Observatory(object):
         deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
         
         return intMdot, mass_used, deltaV
+    
+    def mass_dec_sk(self, TL, sInd, currentTime, t_int):
+        
+        dF_lateral, dF_axial = self.distForces(TL, sInd, currentTime)
+        intMdot, mass_used, deltaV = self.mass_dec(dF_lateral, t_int)
+        
+        return dF_lateral, dF_axial, intMdot, mass_used, deltaV
+        
+    
+    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+    
+        self.ao = self.thrust/self.scMass
+        slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. - 
+            self.defburnPortion**2/4.)).decompose().to('d2')
+        
+        dV = np.zeros(TL.nStars)
+
+        if old_sInd is None:
+            sd = np.array([np.radians(90)]*TL.nStars)*u.rad
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+        # calculate slew time
+        slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+        
+        return sInds,sd,slewTimes,dV
+    
+    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+        
+        DRM['slew_time'] = slewTimes[sInd].to('day')
+        DRM['slew_angle'] = sd[sInd].to('deg')
+        
+        slew_mass_used = slewTimes[sInd]*self.defburnPortion*self.flowRate
+        DRM['slew_dV'] = (slewTimes[sInd]*self.ao*self.defburnPortion).to('m/s')
+        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        self.scMass = self.scMass - slew_mass_used
+        DRM['scMass'] = self.scMass.to('kg')
+        
+        return DRM
 
     class SolarEph:
         """Solar system ephemerides class 

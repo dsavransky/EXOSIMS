@@ -426,13 +426,6 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         
-        # in case of an occulter, initialize slew time factor
-        # (add transit time and reduce starshade mass)
-        if OS.haveOcculter == True:
-            ao = Obs.thrust/Obs.scMass
-            slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. - 
-                    Obs.defburnPortion**2/4.)).decompose().to('d2')
-        
         # now, start to look for available targets
         cnt = 0
         while not TK.mission_is_over():
@@ -447,20 +440,9 @@ class SurveySimulation(object):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                # find angle between old and new stars, defaults to pi/2 for first target
-                if old_sInd is None:
-                    sd = np.array([np.radians(90)]*TL.nStars)*u.rad
-                else:
-                    # position vector of previous target star
-                    r_old = TL.starprop(old_sInd, TK.currentTimeAbs)[0]
-                    u_old = r_old.value/np.linalg.norm(r_old)
-                    # position vector of new target stars
-                    r_new = TL.starprop(sInds, TK.currentTimeAbs)
-                    u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-                    # angle between old and new stars
-                    sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
-                # calculate slew time
-                slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+                sInds,sd,slewTimes,dV = Obs.calculate_slewTimes(TL,old_sInd,sInds,\
+                    TK.currentTimeAbs)                
+                
             # start times, including slew times
             startTimes = TK.currentTimeAbs + slewTimes
             startTimesNorm = TK.currentTimeNorm + slewTimes
@@ -510,6 +492,7 @@ class SurveySimulation(object):
             
             # if no observable target, call the TimeKeeping.wait() method
             else:
+                print "wait"
                 TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 cnt += 1
             
@@ -523,14 +506,7 @@ class SurveySimulation(object):
         
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
-            # find values related to slew time
-            DRM['slew_time'] = slewTimes[sInd].to('day')
-            DRM['slew_angle'] = sd[sInd].to('deg')
-            slew_mass_used = slewTimes[sInd]*Obs.defburnPortion*Obs.flowRate
-            DRM['slew_dV'] = (slewTimes[sInd]*ao*Obs.defburnPortion).to('m/s')
-            DRM['slew_mass_used'] = slew_mass_used.to('kg')
-            Obs.scMass = Obs.scMass - slew_mass_used
-            DRM['scMass'] = Obs.scMass.to('kg')
+            DRM = Obs.log_occulterResults(DRM,slewTimes,sInd,sd,dV)
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():
@@ -1062,10 +1038,14 @@ class SurveySimulation(object):
         
         assert skMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
         
-        # find disturbance forces on occulter
-        dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)
-        # decrement mass for station-keeping
-        intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
+        #decrement mass for station-keeping
+        dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(TL, \
+                sInd, TK.currentTimeAbs, t_int)
+        
+#        # find disturbance forces on occulter
+#        dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)
+#        # decrement mass for station-keeping
+#        intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
         DRM[skMode + '_dV'] = deltaV.to('m/s')
         DRM[skMode + '_mass_used'] = mass_used.to('kg')
         DRM[skMode + '_dF_lateral'] = dF_lateral.to('N')

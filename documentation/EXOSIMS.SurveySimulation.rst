@@ -44,6 +44,14 @@ EXOSIMS\.SurveySimulation\.randomWalkScheduler module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.SurveySimulation\.starkAYO\_staticSchedule module
+----------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.starkAYO_staticSchedule
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

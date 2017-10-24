@@ -1,10 +1,10 @@
 from EXOSIMS.Prototypes.Observatory import Observatory
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
 import numpy as np
 import os, inspect
 import scipy.interpolate as interpolate
+import scipy.integrate as itg
 try:
     import cPickle as pickle
 except:

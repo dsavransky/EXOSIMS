@@ -32,3 +32,4 @@ EXOSIMS optionally uses values from: Mamjek, E. "A Modern Mean Dwarf Stellar Col
 
 EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 
+

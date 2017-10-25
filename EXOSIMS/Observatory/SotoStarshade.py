@@ -25,8 +25,25 @@ class SotoStarshade(ObservatoryL2Halo):
         self.dV_tot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
         self.dVmax  = self.dV_tot * maxdVpcnt
     
-    
     def boundary_conditions(self,rA,rB):
+        """Creates boundary conditions for solving a boundary value problem
+        
+        This method returns the boundary conditions for the starshade transfer
+        trajectory between the lines of sight of two different stars. Point A
+        corresponds to the starshade alignment with star A; Point B, with star B.
+        
+        
+        Args:
+            rA (float 1x3 ndarray):
+                Starshade position vector aligned with current star of interest
+            rB (float 1x3 ndarray):
+                Starshade position vector aligned with next star of interest
+                
+        Returns:
+            BC (float 1x6 ndarray):
+                Star position vector in rotating frame in units of AU
+        
+        """
     
         BC1 = rA[0] - self.rA[0]
         BC2 = rA[1] - self.rA[1]
@@ -36,14 +53,32 @@ class SotoStarshade(ObservatoryL2Halo):
         BC5 = rB[1] - self.rB[1]
         BC6 = rB[2] - self.rB[2]
         
-        return np.array([BC1,BC2,BC3,BC4,BC5,BC6])
-    
+        BC = np.array([BC1,BC2,BC3,BC4,BC5,BC6])
+        
+        return BC
     
     def send_it(self,TL,nA,nB,tA,tB):
-        """ Taking Occulter from One Target to Another
-        Given a target list and indeces of two target stars in it.
-        Given initial time tA and final time tB (could be tA + dt)
-        Runs shooting algorithm within and returns the desired occulter trajectory.
+        """Solves boundary value problem between starshade star alignments
+        
+        This method solves the boundary value problem for starshade star alignments
+        with two given stars at times tA and tB. It uses scipy's solve_bvp method.
+        
+        Args:
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            nB (integer):
+                Integer index of the next star of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+            tB (astropy Time array):
+                Absolute mission time for next star alignment in MJD
+                
+        Returns:
+            s (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
@@ -79,25 +114,51 @@ class SotoStarshade(ObservatoryL2Halo):
                        np.full_like(t,guess[0]),np.full_like(t,guess[1]),np.full_like(t,guess[2])])               
             
         sol = solve_bvp(self.equations_of_motion,self.boundary_conditions,t,sG,tol=1e-8)
+        
+        s = sol.y.T
 
-        return sol.y.T
+        return s
     
-
-    def calculate_dV(self,dt,TL,N1,N2,tA):
+    def calculate_dV(self,dt,TL,nA,nB,tA):
+        """Finds the change in velocity needed to transfer to a new star line of sight
+        
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            nB (integer):
+                Integer index of the next star of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            dV (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        
+        """
         
         if dt.shape:
             dt = dt[0]
         
         tB = tA + dt*u.d
       
-        sol = self.send_it(TL,N1,N2,tA,tB)
+        sol = self.send_it(TL,nA,nB,tA,tB)
         
         v_occulter_A = sol[ 0,3:6]*u.AU/u.year*(2*np.pi) #velocity after leaving star A
         v_occulter_B = sol[-1,3:6]*u.AU/u.year*(2*np.pi) #velocity arriving at star B
         
         #portions of the station-keeping trajectories required for stars A and B respectively
-        s0 = self.send_it(TL,N1,N1,tA - 15*u.min,tA) 
-        sF = self.send_it(TL,N2,N2,tB,tB + 15*u.min)
+        s0 = self.send_it(TL,nA,nA,tA - 15*u.min,tA) 
+        sF = self.send_it(TL,nB,nB,tB,tB + 15*u.min)
         
         v0 = s0[-1,3:6]*u.AU/u.year*(2*np.pi) #velocity needed to maintain constant distance with star A
         vF = sF[ 0,3:6]*u.AU/u.year*(2*np.pi) #velocity needed to maintain constant distance with star B
@@ -109,8 +170,31 @@ class SotoStarshade(ObservatoryL2Halo):
         
         return dv
     
-    
-    def minimize_slewTimes(self,TL,N1,N2,tA):
+    def minimize_slewTimes(self,TL,nA,nB,tA):
+        """Minimizes the slew time for a starshade transferring to a new star line of sight
+        
+        This method uses scipy's optimization module to minimize the slew time for
+        a starshade transferring between one star's line of sight to another's under 
+        the constraint that the total change in velocity cannot exceed more than a 
+        certain percentage of the total fuel on board the starshade. 
+        
+        Args:
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            nB (integer):
+                Integer index of the next star of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            opt_slewTime (float):
+                Optimal slew time in days for starshade transfer to a new line of sight
+            opt_dV (float):
+                Optimal total change in velocity in m/s for starshade line of sight transfer
+        
+        """
         
         def slewTime_objFun(self,dt):
             if dt.shape:
@@ -118,9 +202,8 @@ class SotoStarshade(ObservatoryL2Halo):
             
             return dt
         
-        def slewTime_constraints(self,dt,TL,N1,N2,tA,percent):
-        
-            dV = self.calculate_dV(dt,TL,N1,N2,tA)
+        def slewTime_constraints(self,dt,TL,nA,nB,tA,percent):
+            dV = self.calculate_dV(dt,TL,nA,nB,tA)
             dV_max = self.DV_tot * percent 
         
             return dV_max.value - dV
@@ -132,19 +215,40 @@ class SotoStarshade(ObservatoryL2Halo):
         t0 = [dt_guess]
         
         res = optimize.minimize(self.slewTime_objFun,t0,method='COBYLA',
-                        constraints={'type': 'ineq', 'fun': self.slewTime_constraints,'args':([TL,N1,N2,tA,percent])},
+                        constraints={'type': 'ineq', 'fun': self.slewTime_constraints,'args':([TL,nA,nB,tA,percent])},
                         tol=Tol,options={'disp': False})
                         
         opt_slewTime = res.x
-        opt_dV       = self.calculate_dV(opt_slewTime,TL,N1,N2,tA)
+        opt_dV       = self.calculate_dV(opt_slewTime,TL,nA,nB,tA)
         
         return opt_slewTime,opt_dV
     
-    
-    def minimize_fuelUsage(self,TL,N1,N2,tA):
+    def minimize_fuelUsage(self,TL,nA,nB,tA):
+        """Minimizes the fuel usage of a starshade transferring to a new star line of sight
+        
+        This method uses scipy's optimization module to minimize the fuel usage for
+        a starshade transferring between one star's line of sight to another's. The 
+        total slew time for the transfer is bounded with some dt_min and dt_max.
+        
+        Args:
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            nB (integer):
+                Integer index of the next star of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            opt_slewTime (float):
+                Optimal slew time in days for starshade transfer to a new line of sight
+            opt_dV (float):
+                Optimal total change in velocity in m/s for starshade line of sight transfer
+        
+        """
         
         def fuelUsage_constraints(self,dt,dt_min,dt_max):
-        
             return dt_max - dt, dt - dt_min
         
         dt_guess=20
@@ -156,16 +260,41 @@ class SotoStarshade(ObservatoryL2Halo):
 
         res = optimize.minimize(self.calculate_dV,t0,method='COBYLA',
                         constraints={'type': 'ineq', 'fun': self.fuelUsage_constraints,'args':([dt_min,dt_max])},
-                        tol=Tol,args=(TL,N1,N2,tA),options={'disp': False})
+                        tol=Tol,args=(TL,nA,nB,tA),options={'disp': False})
         opt_slewTime = res.x
         opt_dV   = res.fun
         
         return opt_slewTime,opt_dV
-    
-    
-        
-    
+
     def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+        """Finds slew times and separation angles between target stars
+        
+        This method determines the slew times of an occulter spacecraft needed
+        to transfer from one star's line of sight to all others in a given 
+        target list.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the most recently observed star
+            sInd (integer):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+                
+        Returns:
+            sInd (integer):
+                Integer index of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+        
+        """
+    
         
         sInds = np.arange(TL.nStars)
         dV = np.zeros(TL.nStars)  
@@ -184,12 +313,32 @@ class SotoStarshade(ObservatoryL2Halo):
                 
         slewTimes = np.full_like(sd,self.setTOF[0])*u.d
             
-        sInds = sInds[np.where(dV < self.dVmax)]
+        sInds = sInds[np.where(dV < self.dVmax.value)]
             
         return sd,slewTimes,sInds,dV
         
-    
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+        """Updates the given DRM to include occulter values and results
+        
+        Args:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+            sInd (integer):
+                Integer index of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+                
+        Returns:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+        
+        """
         
         DRM['slew_time'] = slewTimes[sInd].to('day')
         DRM['slew_angle'] = sd[sInd].to('deg')

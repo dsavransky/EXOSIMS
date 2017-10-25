@@ -833,20 +833,74 @@ class Observatory(object):
         return intMdot, mass_used, deltaV
     
     def mass_dec_sk(self, TL, sInd, currentTime, t_int):
+        """Returns mass_used, deltaV and disturbance forces
+        
+        This method calculates all values needed to decrement spacecraft mass
+        for station-keeping.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            t_int (astropy Quantity):
+                Integration time in units of day
+                
+        Returns:
+            dF_lateral (astropy Quantity):
+                Lateral disturbance force in units of N
+            dF_axial (astropy Quantity):
+                Axial disturbance force in units of N
+            intMdot (astropy Quantity):
+                Mass flow rate in units of kg/s
+            mass_used (astropy Quantity):
+                Mass used in station-keeping units of kg
+            deltaV (astropy Quantity):
+                Change in velocity required for station-keeping in units of km/s
+        
+        """
         
         dF_lateral, dF_axial = self.distForces(TL, sInd, currentTime)
         intMdot, mass_used, deltaV = self.mass_dec(dF_lateral, t_int)
         
         return dF_lateral, dF_axial, intMdot, mass_used, deltaV
         
-    
-    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+    def calculate_slewTimes(self,TL,old_sInd,sInd,currentTime):
+        """Finds slew times and separation angles between target stars
+        
+        This method determines the slew times of an occulter spacecraft needed
+        to transfer from one star's line of sight to all others in a given 
+        target list.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the most recently observed star
+            sInd (integer):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+                
+        Returns:
+            sInd (integer):
+                Integer index of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+        
+        """
     
         self.ao = self.thrust/self.scMass
         slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. - 
             self.defburnPortion**2/4.)).decompose().to('d2')
         
-        dV = np.zeros(TL.nStars)
+        dV = np.zeros(TL.nStars)*u.m/u.s
 
         if old_sInd is None:
             sd = np.array([np.radians(90)]*TL.nStars)*u.rad
@@ -855,16 +909,37 @@ class Observatory(object):
             r_old = TL.starprop(old_sInd, currentTime)[0]
             u_old = r_old.value/np.linalg.norm(r_old)
             # position vector of new target stars
-            r_new = TL.starprop(sInds, currentTime)
+            r_new = TL.starprop(sInd, currentTime)
             u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
         # calculate slew time
         slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
         
-        return sInds,sd,slewTimes,dV
+        return sInd,sd,slewTimes,dV
     
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+        """Updates the given DRM to include occulter values and results
+        
+        Args:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+            sInd (integer):
+                Integer index of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+                
+        Returns:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+        
+        """
         
         DRM['slew_time'] = slewTimes[sInd].to('day')
         DRM['slew_angle'] = sd[sInd].to('deg')

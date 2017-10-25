@@ -136,11 +136,24 @@ class ObservatoryL2Halo(Observatory):
         return r_obs
     
     def haloPosition(self,currentTime):
-        """ This method returns the position vector of the WFIRST observatory 
-        in the rotating frame of the Earth-Sun system centered at L2.
-        """
-        # Find the time between Earth equinox and current time(s)
+        """Finds orbit positions of spacecraft in a halo orbit in rotating frame
         
+        This method returns the WFIRST L2 Halo orbit position vector in an ecliptic, 
+        rotating frame as dictated by the Circular Restricted Three Body-Problem. 
+        The origin of this frame is the centroid of the Sun and Earth-Moon system.
+        
+        Args:
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+
+        Returns:
+            r_halo (astropy Quantity nx3 array):
+                Observatory orbit positions vector in an ecliptic, rotating frame 
+                in units of AU
+        
+        """
+        
+        # Find the time between Earth equinox and current time(s)
         dt = (currentTime - self.equinox).to('yr').value
         t_halo = dt % self.period_halo
         
@@ -150,8 +163,22 @@ class ObservatoryL2Halo(Observatory):
         return r_halo
 
     def haloVelocity(self,currentTime):
-        """ Finds observatory velocity within its halo orbit about L2
+        """Finds orbit velocity of spacecraft in a halo orbit in rotating frame
+        
+        This method returns the WFIRST L2 Halo orbit velocity vector in an ecliptic, 
+        rotating frame as dictated by the Circular Restricted Three Body-Problem. 
+        
+        Args:
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+
+        Returns:
+            v_halo (astropy Quantity nx3 array):
+                Observatory orbit velocity vector in an ecliptic, rotating frame 
+                in units of AU/year
+        
         """
+        
         # Find the time between Earth equinox and current time(s)
         
         dt = (currentTime - self.equinox).to('yr').value
@@ -164,17 +191,29 @@ class ObservatoryL2Halo(Observatory):
         return v_halo
     
     def equations_of_motion(self,t,s):
-        """ Equations of motion for the Circular Restricted Three Body 
+        """Equations of motion of the CRTBP
+        
+        Equations of motion for the Circular Restricted Three Body 
         Problem (CRTBP). First order form of the equations for integration, 
-        returns 3 velocities and 3 accelerations in (x,y,z) rotating frame
-            
-        All parameters are normalized so that time = 2*pi sidereal year
-        Distances normalized to 1AU
-            
-        Coordinates are taken in a rotating frame centered at the center of mass
-        of the two primary bodies
-            
+        returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
+        All parameters are normalized so that time = 2*pi sidereal year.
+        Distances are normalized to 1AU. Coordinates are taken in a rotating 
+        frame centered at the center of mass of the two primary bodies
+        
+        Args:
+            t (integer):
+                Times in normalized units
+            s (integer nx6 array):
+                State vector consisting of stacked position and velocity vectors
+                in normalized units
+
+        Returns:
+            ds (integer Quantity nx6 array):
+                First derivative of the state vector consisting of stacked 
+                velocity and acceleration vectors in normalized units
+        
         """
+
         
         #occulter distance from each of the two other bodies
         r1 = np.sqrt( (self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
@@ -190,6 +229,28 @@ class ObservatoryL2Halo(Observatory):
         return ds
     
     def star_angularSep(self,TL,N1,N2,tA,tB):
+        """Finds star angular separations relative to the halo orbit positions 
+        
+        This method returns the angular separation relative to WFIRST on its
+        halo orbit in the rotating frame of the CRTBP problem. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            N1 (integer):
+                Integer index of the most recently observed star
+            N2 (integer):
+                Integer index of the next star of interest
+            tA (astropy Time):
+                Current absolute mission time in MJD
+            tB (astropy Time array):
+                Time at which next star observation begins in MJD
+
+        Returns:
+            angle (integer):
+                Angular separation between two target stars 
+        
+        """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
         t = Time(t,format='mjd')                #converting time to modified julian date
@@ -213,8 +274,25 @@ class ObservatoryL2Halo(Observatory):
         
         return angle.value
     
-    
     def eclip2rot(self,TL,sInd,currentTime):
+        """Rotates star position vectors from ecliptic to rotating frame in CRTBP
+        
+        This method returns a star's position vector in the rotating frame of 
+        the Circular Restricted Three Body Problem.  
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+
+        Returns:
+            star_rot (astropy Quantity nx3 array):
+                Star position vector in rotating frame in units of AU
+        
+        """
         
         star_pos = TL.starprop(sInd,currentTime)[0].to('au')
         theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2*np.pi)
@@ -224,22 +302,28 @@ class ObservatoryL2Halo(Observatory):
         return star_rot[0]
     
     def integrate(self,s0,t):
-        """ Setting up integration using scipy odeint
-        Tolerances are lowered and output info from integration is defined
-        as an attribute.        
+        """Integrates motion in the CRTBP given initial conditions
+        
+        This method returns a star's position vector in the rotating frame of 
+        the Circular Restricted Three Body Problem.  
+        
+        Args:
+            s0 (integer 1x6 array):
+                Initial state vector consisting of stacked position and velocity vectors
+                in normalized units
+            t (integer):
+                Times in normalized units
+            
+
+        Returns:
+            s (integer nx6 array):
+                State vector consisting of stacked position and velocity vectors
+                in normalized units
+        
         """
         
         def EoM(y,t):
-            """ Equations of motion for the Circular Restricted Three Body 
-            Problem (CRTBP). First order form of the equations for integration, 
-            returns 3 velocities and 3 accelerations in (x,y,z) rotating frame
-            
-            All parameters are normalized so that time = 2*pi sidereal year
-            Distances normalized to 1AU
-            
-            Coordinates are taken in a rotating frame centered at the center of mass
-            of the two primary bodies
-            
+            """ Modified version of the CRTBP equations used for integration.
             """
             #setting up state vector
             s1,s2,s3,s4,s5,s6 = y
@@ -257,7 +341,7 @@ class ObservatoryL2Halo(Observatory):
         
             return ds
         
-        sol,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
+        s,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
         self.info = info
         
-        return sol
+        return s

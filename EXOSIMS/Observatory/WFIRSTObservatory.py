@@ -157,6 +157,6 @@ class WFIRSTObservatory(Observatory):
         assert all(trues), "An element of kogood is not Boolean"
         
         if returnExtra:
-            return kogood, r_body, r_targ, culprit
+            return kogood, r_body, r_targ, culprit, koangles
         else:
             return kogood

@@ -1,5 +1,5 @@
 numpy
-scipy
+scipy>=0.19,<1.0
 astropy
 jplephem
 coveralls

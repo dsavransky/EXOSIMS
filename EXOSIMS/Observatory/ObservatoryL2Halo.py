@@ -201,9 +201,9 @@ class ObservatoryL2Halo(Observatory):
         frame centered at the center of mass of the two primary bodies
         
         Args:
-            t (integer):
+            t (float):
                 Times in normalized units
-            s (integer nx6 array):
+            s (float nx6 array):
                 State vector consisting of stacked position and velocity vectors
                 in normalized units
 
@@ -289,7 +289,7 @@ class ObservatoryL2Halo(Observatory):
                 Current absolute mission time in MJD
 
         Returns:
-            star_rot (astropy Quantity nx3 array):
+            star_rot (astropy Quantity 1x3 array):
                 Star position vector in rotating frame in units of AU
         
         """

@@ -266,7 +266,7 @@ class SotoStarshade(ObservatoryL2Halo):
         
         return opt_slewTime,opt_dV
 
-    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+    def calculate_slewTimes(self,TL,old_sInd,sInd,currentTime):
         """Finds slew times and separation angles between target stars
         
         This method determines the slew times of an occulter spacecraft needed
@@ -295,27 +295,27 @@ class SotoStarshade(ObservatoryL2Halo):
         
         """
     
-        
-        sInds = np.arange(TL.nStars)
-        dV = np.zeros(TL.nStars)  
-        
-        sd = np.arange(TL.nStars)
+        dV = np.zeros(TL.nStars)*u.m/u.s  
+        sd = np.zeros(TL.nStars)*u.deg
         
         finalTime = currentTime + self.setTOF[0]*u.d
             
         if old_sInd is None:
             old_sInd = np.random.randint(0,TL.nStars)
 
-        for x in sInds:
-            sd[x] = self.star_angularSep(TL,old_sInd,x,currentTime,finalTime)
-            dV[x] = self.calculate_dV(self.setTOF,TL,old_sInd,x,currentTime)
+        for x in sInd:
+            sd[x] = self.star_angularSep(TL,old_sInd,x,currentTime,finalTime)*u.deg
+            dV[x] = self.calculate_dV(self.setTOF,TL,old_sInd,x,currentTime)*u.m/u.s
             
-                
-        slewTimes = np.full_like(sd,self.setTOF[0])*u.d
+            if (x % 100) == 0:
+                print '  Calculation ',x,' yields '
+                print '   ',sd[x]
+                print '   ',dV[x]
             
-        sInds = sInds[np.where(dV < self.dVmax.value)]
+        slewTimes = self.setTOF[0]*np.ones(TL.nStars)*u.d
+        sInd = sInd[np.where(dV.value < self.dVmax.value)]
             
-        return sd,slewTimes,sInds,dV
+        return sInd,sd,slewTimes,dV
         
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results
@@ -343,8 +343,8 @@ class SotoStarshade(ObservatoryL2Halo):
         DRM['slew_time'] = slewTimes[sInd].to('day')
         DRM['slew_angle'] = sd[sInd].to('deg')
         
-        dV = dV[sInd]*u.m/u.s
-        slew_mass_used = self.scMass * ( np.exp(-dV/(self.Isp*const.g0)) - 1)
+        dV = dV[sInd].to('m/s')
+        slew_mass_used = self.scMass * ( np.exp(-dV.value/(self.slewIsp.value*const.g0.value)) - 1)
         DRM['slew_dV'] = dV
         DRM['slew_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used

@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,4,1], occHIPs=[], **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -66,6 +66,7 @@ class tieredScheduler(SurveySimulation):
         self.ao = None
 
         self.ready_to_update = False
+        self.occ_slewTime = 0.*u.d
 
 
     def run_sim(self):
@@ -112,7 +113,7 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             TK.obsStart = TK.currentTimeNorm.to('day')
             prev_occ_sInd = occ_sInd
-            DRM, sInd, occ_sInd, t_det, slewTime, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
+            DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
             assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
@@ -180,10 +181,10 @@ class tieredScheduler(SurveySimulation):
                     if time2arrive > 0*u.d:
                         self.GAtime = self.GAtime + time2arrive.to('day')
 
-                    DRM['slew_time'] = slewTime[sInd].to('day').value
+                    DRM['slew_time'] = self.occ_slewTime.to('day').value
                     DRM['slew_angle'] = sd[sInd].to('deg').value
-                    slew_mass_used = slewTime[sInd]*Obs.defburnPortion*Obs.flowRate
-                    DRM['slew_dV'] = (slewTime[sInd]*self.ao*Obs.defburnPortion).to('m/s').value
+                    slew_mass_used = self.occ_slewTime*Obs.defburnPortion*Obs.flowRate
+                    DRM['slew_dV'] = (self.occ_slewTime*self.ao*Obs.defburnPortion).to('m/s').value
                     DRM['slew_mass_used'] = slew_mass_used.to('kg')
                     Obs.scMass = Obs.scMass - slew_mass_used
                     DRM['scMass'] = Obs.scMass.to('kg')
@@ -441,7 +442,7 @@ class tieredScheduler(SurveySimulation):
             # 7/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
-                sInd = self.choose_next_telescope_target(old_sInd, sInds, slewTime, intTimes[sInds])
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
                 occ_sInd = old_occ_sInd
                 # store relevant values
                 t_det = intTimes[sInd]
@@ -460,6 +461,7 @@ class tieredScheduler(SurveySimulation):
                             self.occ_arrives = TK.currentTimeAbs
                         else:
                             self.occ_arrives = occ_startTimes[occ_sInd]
+                            self.occ_slewTime = slewTime[occ_sInd]
                         self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
                 break
@@ -471,14 +473,14 @@ class tieredScheduler(SurveySimulation):
         else:
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None, None
+            return DRM, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None, None
+            return DRM, None, None, None, None, None
 
-        return DRM, sInd, occ_sInd, t_det, slewTime, sd, occ_sInds
+        return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
         """Choose next target for the occulter based on truncated 
@@ -511,6 +513,7 @@ class tieredScheduler(SurveySimulation):
         occ_sInds = np.array(occ_sInds,ndmin=1)
         top9_HIPs = self.occHIPs[0:9]
         top9_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top9_HIPs))[0], occ_sInds)
+        print(top9_sInds)
 
         # current stars have to be in the adjmat
         if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):
@@ -549,10 +552,13 @@ class tieredScheduler(SurveySimulation):
             f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
             A = A - self.coeffs[2]*f_uv
 
-            # add factor for top9 stars
-            # is_top9 = np.zeros(nStars)
-            # is_top9[top9_sInds] = 1
-            # A = A - self.coeffs[3]*is_top9
+            # add factor for unvisited top9 stars
+            no_visits = np.zeros(nStars)
+            no_visits[u1] = np.ones(len(top9_sInds))
+            u2 = self.occ_starVisits[occ_sInds]==0
+            unvisited = np.logical_and(u1, u2)
+            no_visits[unvisited] = 1.
+            A = A - self.coeffs[3]*no_visits
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -565,7 +571,7 @@ class tieredScheduler(SurveySimulation):
 
         return occ_sInd
 
-    def choose_next_telescope_target(self, old_sInd, sInds, slewTime, t_dets):
+    def choose_next_telescope_target(self, old_sInd, sInds, t_dets):
         """Choose next telescope target based on star completeness and integration time.
         
         Args:
@@ -573,8 +579,6 @@ class tieredScheduler(SurveySimulation):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (float array):
-                slew times to all stars (must be indexed by sInds)
             t_dets (astropy Quantity array):
                 Integration times for detection in units of day
                 

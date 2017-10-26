@@ -7,6 +7,12 @@ import timeit
 import csv
 import os.path
 import datetime
+import hashlib
+import inspect
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
@@ -17,8 +23,31 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     2nd execution time 2 min 30 sec
     """
-    def __init__(self, **specs):
+    def __init__(self, cacheOptTimes=False, **specs):
         SurveySimulation.__init__(self, **specs)
+
+        assert isinstance(cacheOptTimes, bool), 'cacheOptTimes must be boolean.'
+        self._outspec['cacheOptTimes'] = cacheOptTimes
+
+        #Load cached Observation Times
+        self.starkt0 = None
+        if cacheOptTimes:#Checks if flag exists
+            cachefname = ''#declares cachefname
+            mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
+            for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+            cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+            cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkt0')#'t0')#join into filepath and fname
+
+            if os.path.isfile(cachefname):#check if file exists
+                self.vprint("Loading cached t0 from %s"%cachefname)
+                with open(cachefname, 'rb') as f:#load from cache
+                    self.starkt0 = pickle.load(f)
+                sInds = np.arange(self.TargetList.nStars)
+                #fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+                #self.scomp0 = -self.objfun(self.t0.to(u.d).value,sInds,fZ)
+
+
+
         # bring inherited class objects to top level of Survey Simulation
         SU = self.SimulatedUniverse
         OS = SU.OpticalSystem
@@ -378,20 +407,24 @@ class starkAYO_staticSchedule(SurveySimulation):
         Returns:
             fZ[resolution, sInds] where fZ is the zodiacal light for each star
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/cachedfZ.csv'
-        #Check File Length
-        fileLength = 0
-        try: 
-            with open(dir_path+fname, 'rb') as f:
-                reader = csv.reader(f)
-                your_list = list(reader)
-                fileLength = len(your_list)
-                f.close()
-        except:
-            fileLength = 0
+        #Generate cache Name########################################################################
+        cachefname = ''#declares cachefname
+        mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkfZ')#'t0')#join into filepath and fname
+        #The above generates the name of the star cache
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZ from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                tmpfZ = pickle.load(f)
+            print(saltyburrito)
+            return tmpfZ
+
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if (not os.path.isfile(dir_path+fname) or (fileLength != sInds.shape[0])):#If this file does not exist or the length of the file is not appropriate 
+        else:
             OS = self.OpticalSystem
             WA = OS.WA0
             ZL = self.ZodiacalLight
@@ -399,36 +432,14 @@ class starkAYO_staticSchedule(SurveySimulation):
             Obs = self.Observatory
             startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
             resolution = [j for j in range(1000)]
-            fZ = np.zeros([len(resolution),sInds.shape[0]])
+            fZ = np.zeros([sInds.shape[0], len(resolution)])
             dt = 365.25/len(resolution)*u.d
             for i in xrange(len(resolution)):#iterate through all times of year
                 time = startTime + dt*resolution[i]
-                fZ[i,:] = ZL.fZ(Obs, TL, sInds, time, self.mode)
-            #This section of Code takes 68 seconds
-            #Save fZ to File######################################
-            try:#Here we delete the previous fZ file
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_fZAllStars.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                pass
-            with open(dir_path+fname, "wb") as fo:
+                fZ[:,i] = ZL.fZ(Obs, TL, sInds, time, self.mode)
+            
+            with open(cachefname, "wb") as fo:
                 wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                for i in range(sInds.shape[0]):#iterate through all stars
-                    wr.writerow(fZ[:,i])#Write the fZ to file
-                fo.close()
-        
-        #Load fZ dMag for Each Star From File######################################
-        #Sept 20, 2017 execution time 1.747 sec
-        fZ = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            fZ.append(tmp)
-        return fZ
-
-
+                pickle.dump(fZ,fo)
+                self.vprint("Saved cached 1st year fZ to %s"%cachefname)
+            return fZ

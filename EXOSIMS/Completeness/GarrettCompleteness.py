@@ -118,7 +118,9 @@ class GarrettCompleteness(BrownCompleteness):
         b2val = np.sin(b2)**2*self.Phi(b2)
         # b > bstar
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
-        if not all([self.aconst,self.econst]) and self.emax != 0:
+        if all([self.aconst,self.econst]) and self.emax == 0:
+            pass
+        else:
             # get pdf of r
             print 'Generating pdf of orbital radius'
             r = np.linspace(self.rmin, self.rmax, 1000)

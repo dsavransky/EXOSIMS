@@ -341,10 +341,10 @@ class SotoStarshade(ObservatoryL2Halo):
         
         """
         
-        DRM['slew_time'] = slewTimes[sInd].to('day')
-        DRM['slew_angle'] = sd[sInd].to('deg')
+        DRM['slew_time'] = slewTimes.to('day')
+        DRM['slew_angle'] = sd.to('deg')
         
-        dV = dV[sInd].to('m/s')
+        dV = dV.to('m/s')
         slew_mass_used = self.scMass * ( 1 - np.exp(-dV.value/(self.slewIsp.value*const.g0.value)))
         DRM['slew_dV'] = dV
         DRM['slew_mass_used'] = slew_mass_used.to('kg')

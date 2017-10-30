@@ -505,7 +505,7 @@ class SurveySimulation(object):
         
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
-            DRM = Obs.log_occulterResults(DRM,slewTimes,sInd,sd,dV)
+            DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():

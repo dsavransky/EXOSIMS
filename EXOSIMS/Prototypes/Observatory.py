@@ -941,11 +941,11 @@ class Observatory(object):
         
         """
         
-        DRM['slew_time'] = slewTimes[sInd].to('day')
-        DRM['slew_angle'] = sd[sInd].to('deg')
+        DRM['slew_time'] = slewTimes.to('day')
+        DRM['slew_angle'] = sd.to('deg')
         
-        slew_mass_used = slewTimes[sInd]*self.defburnPortion*self.flowRate
-        DRM['slew_dV'] = (slewTimes[sInd]*self.ao*self.defburnPortion).to('m/s')
+        slew_mass_used = slewTimes*self.defburnPortion*self.flowRate
+        DRM['slew_dV'] = (slewTimes*self.ao*self.defburnPortion).to('m/s')
         DRM['slew_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')

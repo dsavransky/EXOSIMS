@@ -3,7 +3,7 @@
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 
 import numpy as np
-import os, inspect
+import os
 import hashlib
 import scipy.optimize as optimize
 import scipy.interpolate as interpolate
@@ -72,6 +72,9 @@ class GarrettCompleteness(BrownCompleteness):
         self.econst = self.emin == self.emax
         self.pconst = self.pmin == self.pmax
         self.Rconst = self.Rmin == self.Rmax
+        # degenerate case where aconst, econst and e = 0
+        assert not (all([self.aconst,self.econst,self.pconst,self.Rconst]) and self.emax == 0), \
+            "At least one parameter (out of semi-major axis, albedo, and radius) must vary when eccentricity is constant and zero."
         # solve for bstar
         beta = np.linspace(0.0,np.pi,1000)*u.rad
         Phis = self.PlanetPhysicalModel.calc_Phi(beta)
@@ -115,23 +118,26 @@ class GarrettCompleteness(BrownCompleteness):
         b2val = np.sin(b2)**2*self.Phi(b2)
         # b > bstar
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
-        # get pdf of r
-        print 'Generating pdf of orbital radius'
-        r = np.linspace(self.rmin, self.rmax, 1000)
-        fr = np.zeros(r.shape)
-        for i in xrange(len(r)):
-            fr[i] = self.f_r(r[i])
-        self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
-        print 'Finished pdf of orbital radius'
-
-        # get pdf of p*R**2
-        print 'Generating pdf of albedo times planetary radius squared'
-        z = np.linspace(self.zmin, self.zmax, 1000)
-        fz = np.zeros(z.shape)
-        for i in xrange(len(z)):
-            fz[i] = self.f_z(z[i])
-        self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
-        print 'Finished pdf of albedo times planetary radius squared'
+        if all([self.aconst,self.econst]) and self.emax == 0:
+            pass
+        else:
+            # get pdf of r
+            print 'Generating pdf of orbital radius'
+            r = np.linspace(self.rmin, self.rmax, 1000)
+            fr = np.zeros(r.shape)
+            for i in xrange(len(r)):
+                fr[i] = self.f_r(r[i])
+            self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
+            print 'Finished pdf of orbital radius'
+        if not all([self.pconst,self.Rconst]):
+            # get pdf of p*R**2
+            print 'Generating pdf of albedo times planetary radius squared'
+            z = np.linspace(self.zmin, self.zmax, 1000)
+            fz = np.zeros(z.shape)
+            for i in xrange(len(z)):
+                fz[i] = self.f_z(z[i])
+            self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
+            print 'Finished pdf of albedo times planetary radius squared'
                 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -320,16 +326,27 @@ class GarrettCompleteness(BrownCompleteness):
         if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)) or (s == 0.0):
             f = 0.0
         else:
-            ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
-            if ztest >= self.zmax:
+            if self.aconst and self.econst:
+                b1 = np.arcsin(s/self.amax)
+                b2 = np.pi-b1
+                z1 = 10.0**(-0.4*dmag)*(self.amax/self.x)**2/self.Phi(b1)
+                z2 = 10.0**(-0.4*dmag)*(self.amax/self.x)**2/self.Phi(b2)
                 f = 0.0
-            elif (self.pconst & self.Rconst):
-                f = self.f_dmagsz(self.zmin,dmag,s)
+                if (z1 > self.zmin) and (z1 < self.zmax):
+                    f += np.sin(b1)/2.0*self.dist_z(z1)*z1*np.log(10.0)/(2.5*self.amax*np.cos(b1))
+                if (z2 > self.zmin) and (z2 < self.zmax):
+                    f += np.sin(b2)/2.0*self.dist_z(z2)*z2*np.log(10.0)/(-2.5*self.amax*np.cos(b2))
             else:
-                if ztest < self.zmin:
-                    f = integrate.fixed_quad(self.f_dmagsz, self.zmin, self.zmax, args=(dmag, s), n=200)[0]
+                ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
+                if ztest >= self.zmax:
+                    f = 0.0
+                elif (self.pconst & self.Rconst):
+                    f = self.f_dmagsz(self.zmin,dmag,s)
                 else:
-                    f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=200)[0]
+                    if ztest < self.zmin:
+                        f = integrate.fixed_quad(self.f_dmagsz, self.zmin, self.zmax, args=(dmag, s), n=200)[0]
+                    else:
+                        f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=200)[0]
         return f
     
     def f_dmagsz(self, z, dmag, s):

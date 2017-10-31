@@ -440,8 +440,8 @@ class SurveySimulation(object):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                sInds,sd,slewTimes,dV = Obs.calculate_slewTimes(TL,old_sInd,sInds,\
-                    TK.currentTimeAbs)                
+                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)    
+                sInds,dV = Obs.filter_dV(TL,old_sInd,sInds,TK.currentTimeAbs)
                 
             # start times, including slew times
             startTimes = TK.currentTimeAbs + slewTimes

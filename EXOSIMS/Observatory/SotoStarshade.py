@@ -266,7 +266,7 @@ class SotoStarshade(ObservatoryL2Halo):
         
         return opt_slewTime,opt_dV
 
-    def calculate_slewTimes(self,TL,old_sInd,sInd,currentTime):
+    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
         """Finds slew times and separation angles between target stars
         
         This method determines the slew times of an occulter spacecraft needed
@@ -278,45 +278,74 @@ class SotoStarshade(ObservatoryL2Halo):
                 TargetList class object
             old_sInd (integer):
                 Integer index of the most recently observed star
-            sInd (integer):
-                Integer index of the star of interest
+            sInds (integer):
+                Integer indeces of the star of interest
             currentTime (astropy Time):
                 Current absolute mission time in MJD
                 
         Returns:
-            sInd (integer):
-                Integer index of the star of interest
+            sInds (integer):
+                Integer indeces of the star of interest
             sd (astropy Quantity):
                 Angular separation between stars in rad
             slewTimes (astropy Quantity):
                 Time to transfer to new star line of sight in units of days
             dV (astropy Quantity):
                 Delta-V used to transfer to new star line of sight in units of m/s
-        
         """
-    
-        dV = np.zeros(TL.nStars)*u.m/u.s  
+        
         sd = np.zeros(TL.nStars)*u.deg
             
         if old_sInd is None:
-            old_sInd = np.random.randint(0,TL.nStars)
+            sd = np.array([np.radians(0)]*TL.nStars)*u.rad
+            slewTimes = np.zeros(TL.nStars)*u.d
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+    
+            slewTimes = self.setTOF[0]*np.ones(TL.nStars)*u.d
             
-        # position vector of previous target star
-        r_old = TL.starprop(old_sInd, currentTime)[0]
-        u_old = r_old.value/np.linalg.norm(r_old)
-        # position vector of new target stars
-        r_new = TL.starprop(sInd, currentTime)
-        u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-        # angle between old and new stars
-        sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+        return sd,slewTimes
+    
+    def filter_dV(self,TL,old_sInd,sInds,currentTime):
+        """Calculates and filters dV needed to reach line of sight of every star in sInds
         
-        for x in sInd:
-            dV[x] = self.calculate_dV(self.setTOF,TL,old_sInd,x,currentTime)*u.m/u.s
-            
-        slewTimes = self.setTOF[0]*np.ones(TL.nStars)*u.d
-        sInd = sInd[np.where(dV.value < self.dVmax.value)]
-            
-        return sInd,sd,slewTimes,dV
+        This method determines the changes in velocity an occulter spacecraft needs
+        to make to transfer from one star's line of sight to all others in a given 
+        target list. Trajectories with too large of a delta-V are filtered out. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the most recently observed star
+            sInds (integer):
+                Integer indeces of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+                
+        Returns:
+            sInds (integer):
+                Integer indeces of the star of interest
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+        """
+
+        dV = np.zeros(TL.nStars)*u.m/u.s
+        
+        if old_sInd is not None:
+            for x in sInds:
+                dV[x] = self.calculate_dV(self.setTOF,TL,old_sInd,x,currentTime)*u.m/u.s
+                
+            sInds = sInds[np.where(dV.value < self.dVmax.value)]
+        
+        return sInds,dV
         
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results
@@ -338,7 +367,6 @@ class SotoStarshade(ObservatoryL2Halo):
             DRM (dict):
                 Design Reference Mission, contains the results of one complete
                 observation (detection and characterization)
-        
         """
         
         DRM['slew_time'] = slewTimes.to('day')

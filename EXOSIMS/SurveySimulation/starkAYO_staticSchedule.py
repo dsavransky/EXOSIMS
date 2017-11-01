@@ -7,6 +7,12 @@ import timeit
 import csv
 import os.path
 import datetime
+import hashlib
+import inspect
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
@@ -17,8 +23,27 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     2nd execution time 2 min 30 sec
     """
-    def __init__(self, **specs):
+    def __init__(self, cacheOptTimes=False, **specs):
         SurveySimulation.__init__(self, **specs)
+
+        assert isinstance(cacheOptTimes, bool), 'cacheOptTimes must be boolean.'
+        self._outspec['cacheOptTimes'] = cacheOptTimes
+
+        #Load cached Observation Times
+        self.starkt0 = None
+        if cacheOptTimes:#Checks if flag exists
+            cachefname = ''#declares cachefname
+            mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
+            for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+            cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+            cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkt0')#'t0')#join into filepath and fname
+
+            if os.path.isfile(cachefname):#check if file exists
+                self.vprint("Loading cached t0 from %s"%cachefname)
+                with open(cachefname, 'rb') as f:#load from cache
+                    self.starkt0 = pickle.load(f)
+                sInds = np.arange(self.TargetList.nStars)
+
         # bring inherited class objects to top level of Survey Simulation
         SU = self.SimulatedUniverse
         OS = SU.OpticalSystem
@@ -51,17 +76,19 @@ class starkAYO_staticSchedule(SurveySimulation):
         tovisit = np.zeros(sInds.shape[0], dtype=bool)
 
         #Generate fZ
-        self.fZ_startSaved = self.generate_fZ(sInds)#Sept 21, 2017 execution time 0.725 sec
+        self.fZ_startSaved = self.generate_fZ(sInds)#
 
         #Estimate Yearly fZmin###########################################
-        tmpfZ = np.asarray(self.fZ_startSaved)
-        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-        #Find minimum fZ of each star
-        fZmin = np.zeros(sInds.shape[0])
-        fZminInds = np.zeros(sInds.shape[0])
-        for i in xrange(len(sInds)):
-            fZmin[i] = min(fZ_matrix[i,:])
-            fZminInds[i] = np.argmin(fZ_matrix[i,:])
+        fZmin, fZminInds = self.calcfZmin(sInds,self.fZ_startSaved)
+        #Estimate Yearly fZmin###########################################
+        # tmpfZ = np.asarray(self.fZ_startSaved)
+        # fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        # #Find minimum fZ of each star
+        # fZmin = np.zeros(sInds.shape[0])
+        # fZminInds = np.zeros(sInds.shape[0])
+        # for i in xrange(len(sInds)):
+        #     fZmin[i] = min(fZ_matrix[i,:])
+        #     fZminInds[i] = np.argmin(fZ_matrix[i,:])
         #################################################################
 
         #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
@@ -80,66 +107,13 @@ class starkAYO_staticSchedule(SurveySimulation):
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
         ################################################################
 
-        #Solve Initial Integration Times###############################################
-        def CbyTfunc(t_dets, self, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp):
-            CbyT = -self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp)/t_dets*u.d
-            return CbyT.value
+        #Calculate Initial Integration Times###########################################
+        maxCbyTtime = self.calcTinit(sInds, TL, fZ, fEZ, WA, mode, self.Cb, self.Csp)
+        t_dets = maxCbyTtime[sInds]
 
-        maxCbyTtime = np.zeros(sInds.shape[0])#This contains the time maxCbyT occurs at
-        maxCbyT = np.zeros(sInds.shape[0])#this contains the value of maxCbyT
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/cachedMaxCbyTtime.csv'
-        #Check File Length
-        fileLength = 0
-        numcommas = 0
-        try: 
-            with open(dir_path+fname, 'rb') as f:
-                reader = csv.reader(f)
-                your_list = list(reader)
-                fileLength = len(your_list)
-                numcommas = len(your_list[0])
-                f.close()
-        except:
-            fileLength = 0
-            numcommas = 0
-
-        if(not os.path.isfile(dir_path+fname) or not (fileLength != sInds.shape[0] or numcommas != sInds.shape[0])):#If the file does not exist or is not the proper size, Recalculate
-            
-            for i in xrange(sInds.shape[0]):
-                x0 = 0.01
-                maxCbyTtime[i] = fmin(CbyTfunc, x0, xtol=1e-8, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), disp=False)
-            t_dets = maxCbyTtime
-            #Sept 27, Execution time 101 seconds for 651 stars
-
-            #Save maxCbyT to File######################################
-            try:#Here we delete the previous fZ file
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_maxCbyTtime.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                pass
-            with open(dir_path+fname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                wr.writerow(maxCbyTtime)#Write the fZ to file
-                fo.close()
-
-        #Load maxCbyTtime for Each Star From File###### Sept 28, 2017 execution time is 0.00057 sec
-        maxCbyTtimeList = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            maxCbyTtimeList.append(tmp)
-        maxCbyTtime = np.asarray(maxCbyTtimeList, dtype=np.float64)
-        t_dets = maxCbyTtime[0][sInds]
-        #############################################################################
 
         #Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
-        missionLength = (TK.missionFinishAbs-TK.currentTimeAbs).value*12/12#TK.missionLife.to(u.day).value#mission length in days
+        missionLength = (TK.missionLife.to(u.d)*TK.missionPortion).value*12/12#TK.missionLife.to(u.day).value#mission length in days
         overheadTime = self.Observatory.settlingTime.value + self.OpticalSystem.observingModes[0]['syst']['ohTime'].value#OH time in days
         while((sum(t_dets) + sInds.shape[0]*overheadTime) > missionLength):#the sum of star observation times is still larger than the mission length
             sInds, t_dets, sacrificedStarTime, fZ = self.sacrificeStarCbyT(sInds, t_dets, fZ, fEZ, WA, overheadTime)
@@ -236,7 +210,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             #Find current fZ
             indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value%365.25,[0,365.25],[0,1000])#This is only good for 1 year missions right now
             fZinterp = np.zeros(self.schedule.shape[0])
-            fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac+1)]#this is the current fZ
+            fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac%1+1)]#this is the current fZ
 
             commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule
             imat = [self.schedule.tolist().index(x) for x in commonsInds]
@@ -378,20 +352,23 @@ class starkAYO_staticSchedule(SurveySimulation):
         Returns:
             fZ[resolution, sInds] where fZ is the zodiacal light for each star
         """
-        dir_path = os.path.dirname(os.path.realpath(__file__))#find current directory of survey Simualtion
-        fname = '/cachedfZ.csv'
-        #Check File Length
-        fileLength = 0
-        try: 
-            with open(dir_path+fname, 'rb') as f:
-                reader = csv.reader(f)
-                your_list = list(reader)
-                fileLength = len(your_list)
-                f.close()
-        except:
-            fileLength = 0
+        #Generate cache Name########################################################################
+        cachefname = ''#declares cachefname
+        mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkfZ')#'t0')#join into filepath and fname
+        ############################################################################################
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZ from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                tmpfZ = pickle.load(f)
+            return tmpfZ
+
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        if (not os.path.isfile(dir_path+fname) or (fileLength != sInds.shape[0])):#If this file does not exist or the length of the file is not appropriate 
+        else:
             OS = self.OpticalSystem
             WA = OS.WA0
             ZL = self.ZodiacalLight
@@ -399,36 +376,62 @@ class starkAYO_staticSchedule(SurveySimulation):
             Obs = self.Observatory
             startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
             resolution = [j for j in range(1000)]
-            fZ = np.zeros([len(resolution),sInds.shape[0]])
+            fZ = np.zeros([sInds.shape[0], len(resolution)])
             dt = 365.25/len(resolution)*u.d
             for i in xrange(len(resolution)):#iterate through all times of year
                 time = startTime + dt*resolution[i]
-                fZ[i,:] = ZL.fZ(Obs, TL, sInds, time, self.mode)
-            #This section of Code takes 68 seconds
-            #Save fZ to File######################################
-            try:#Here we delete the previous fZ file
-                timeNow = datetime.datetime.now()
-                timeString = str(timeNow.year)+'_'+str(timeNow.month)+'_'+str(timeNow.day)+'_'+str(timeNow.hour)+'_'+str(timeNow.minute)+'_'
-                fnameNew = '/' + timeString +  'moved_fZAllStars.csv'
-                os.rename(dir_path+fname,dir_path+fnameNew)
-            except OSError:
-                pass
-            with open(dir_path+fname, "wb") as fo:
+                fZ[:,i] = ZL.fZ(Obs, TL, sInds, time, self.mode)
+            
+            with open(cachefname, "wb") as fo:
                 wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                for i in range(sInds.shape[0]):#iterate through all stars
-                    wr.writerow(fZ[:,i])#Write the fZ to file
-                fo.close()
-        
-        #Load fZ dMag for Each Star From File######################################
-        #Sept 20, 2017 execution time 1.747 sec
-        fZ = list()
-        with open(dir_path+fname, 'rb') as f:
-            reader = csv.reader(f)
-            your_list = list(reader)
-            f.close()
-        for i in range(len(your_list)):
-            tmp = np.asarray(your_list[i]).astype(np.float)
-            fZ.append(tmp)
-        return fZ
+                pickle.dump(fZ,fo)
+                self.vprint("Saved cached 1st year fZ to %s"%cachefname)
+            return fZ
 
+    def calcfZmin(self, sInds, fZ_startSaved):
+        tmpfZ = np.asarray(fZ_startSaved)
+        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        #Find minimum fZ of each star
+        fZmin = np.zeros(sInds.shape[0])
+        fZminInds = np.zeros(sInds.shape[0])
+        for i in xrange(len(sInds)):
+            fZmin[i] = min(fZ_matrix[i,:])
+            fZminInds[i] = np.argmin(fZ_matrix[i,:])
 
+        return fZmin, fZminInds
+
+    def calcTinit(self, sInds, TL, fZ, fEZ, WA, mode, Cb, Csp):
+        #Generate cache Name########################################################################
+        cachefname = ''#declares cachefname
+        mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'maxCbyTt0')#'t0')#join into filepath and fname
+        ############################################################################################
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached maxCbyTt0 from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                maxCbyTtime = pickle.load(f)
+            return maxCbyTtime
+        ###########################################################################################
+        maxCbyTtime = np.zeros(sInds.shape[0])#This contains the time maxCbyT occurs at
+        maxCbyT = np.zeros(sInds.shape[0])#this contains the value of maxCbyT
+        #Solve Initial Integration Times###############################################
+        def CbyTfunc(t_dets, self, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp):
+            CbyT = -self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp)/t_dets*u.d
+            return CbyT.value
+
+        #Calculate Maximum C/T
+        for i in xrange(sInds.shape[0]):
+            x0 = 0.01
+            maxCbyTtime[i] = fmin(CbyTfunc, x0, xtol=1e-8, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), disp=False)
+        t_dets = maxCbyTtime
+        #Sept 27, Execution time 101 seconds for 651 stars
+
+        with open(cachefname, "wb") as fo:
+            wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+            pickle.dump(t_dets,fo)
+            self.vprint("Saved cached 1st year Tinit to %s"%cachefname)
+        return maxCbyTtime

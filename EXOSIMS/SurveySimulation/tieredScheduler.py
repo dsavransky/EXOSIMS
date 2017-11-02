@@ -513,7 +513,6 @@ class tieredScheduler(SurveySimulation):
         occ_sInds = np.array(occ_sInds,ndmin=1)
         top9_HIPs = self.occHIPs[0:9]
         top9_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top9_HIPs))[0], occ_sInds)
-        print(top9_sInds)
 
         # current stars have to be in the adjmat
         if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):

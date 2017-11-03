@@ -31,6 +31,7 @@ class ObservatoryL2Halo(Observatory):
         self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
                 format='mjd', scale='tai')
         
+        needToUpdate = False
         keysHalo = ['te','t','state','x_lpoint','mu']
         
         # find and load halo orbit data in heliocentric ecliptic frame
@@ -42,18 +43,16 @@ class ObservatoryL2Halo(Observatory):
         if os.path.exists(orbit_datapath):
             halo = pickle.load(open(orbit_datapath, 'rb'))
             try:
-                for x in keysHalo:
-                    halo[x]
+                for x in keysHalo: halo[x]
             except:
                 print "Relevant keys not found, updating pickle file."
-                orbit_datapath = os.path.join(classpath,'###.p')
+                needToUpdate = True
             
-        if not os.path.exists(orbit_datapath):
+        if not os.path.exists(orbit_datapath) or needToUpdate:
             orbit_datapath = os.path.join(classpath, filename)
             matname = 'L2_halo_orbit_six_month.mat'
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):
-                print mat_datapath
                 raise Exception("Orbit data file not found.")
             else:
                 halo = loadmat(mat_datapath)

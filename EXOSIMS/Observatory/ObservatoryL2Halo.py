@@ -190,7 +190,7 @@ class ObservatoryL2Halo(Observatory):
         
         return v_halo
     
-    def equations_of_motion(self,t,s):
+    def equations_of_motion_CRTBP(self,t,s):
         """Equations of motion of the CRTBP
         
         Equations of motion for the Circular Restricted Three Body 
@@ -291,15 +291,19 @@ class ObservatoryL2Halo(Observatory):
         Returns:
             star_rot (astropy Quantity 1x3 array):
                 Star position vector in rotating frame in units of AU
-        
         """
         
-        star_pos = TL.starprop(sInd,currentTime)[0].to('au')
-        theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2*np.pi)
+        star_pos = TL.starprop(sInd,currentTime).to('au')
+        theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2*np.pi) * u.rad
         
-        star_rot = np.array([np.dot(self.rot(theta.value, 3),star_pos.to('AU').value)])*u.AU
+        if currentTime.size == 1:
+            star_rot = np.array([np.dot(self.rot(theta, 3), 
+                star_pos[x,:].to('AU').value) for x in range(len(star_pos))])[0]*u.AU
+        else:
+            star_rot = np.array([np.dot(self.rot(theta[x], 3), 
+                star_pos[x,:].to('AU').value) for x in range(len(star_pos))])*u.AU
 
-        return star_rot[0]
+        return star_rot
     
     def integrate(self,s0,t):
         """Integrates motion in the CRTBP given initial conditions

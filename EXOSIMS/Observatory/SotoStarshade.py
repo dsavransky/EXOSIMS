@@ -78,7 +78,6 @@ class SotoStarshade(ObservatoryL2Halo):
         Returns:
             s (float nx6 ndarray):
                 State vectors in rotating frame in normalized units
-        
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
@@ -113,10 +112,10 @@ class SotoStarshade(ObservatoryL2Halo):
         sG = np.array([np.full_like(t,self.rA[0]),np.full_like(t,self.rA[1]),np.full_like(t,self.rA[2]), 
                        np.full_like(t,guess[0]),np.full_like(t,guess[1]),np.full_like(t,guess[2])])               
             
-        sol = solve_bvp(self.equations_of_motion,self.boundary_conditions,t,sG,tol=1e-8)
+        sol = solve_bvp(self.equations_of_motion_CRTBP,self.boundary_conditions,t,sG,tol=1e-8)
         
         s = sol.y.T
-
+        
         return s
     
     def calculate_dV(self,dt,TL,nA,nB,tA):
@@ -143,7 +142,6 @@ class SotoStarshade(ObservatoryL2Halo):
         Returns:
             dV (float nx6 ndarray):
                 State vectors in rotating frame in normalized units
-        
         """
         
         if dt.shape:

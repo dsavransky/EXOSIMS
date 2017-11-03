@@ -313,6 +313,123 @@ for a fixed population of planets in order to validate other schedulers.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule">
+<span id="exosims-surveysimulation-starkayo-staticschedule-module"></span><h2>EXOSIMS.SurveySimulation.starkAYO_staticSchedule module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO_staticSchedule.</code><code class="descname">starkAYO_staticSchedule</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<p>starkAYO _static Scheduler</p>
+<p>This class implements a Scheduler that creates a list of stars to observe and integration times to observe them. It also selects the best star to observe at any moment in time
+Generates cachedfZ.csv and cachedMaxCbyTtime.csv
+If the above exist but some problem is found, moved_MacCbyTtime.csv and moved_fZAllStars.csv are created</p>
+<p>2nd execution time 2 min 30 sec</p>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calc_targ_intTime">
+<code class="descname">calc_targ_intTime</code><span class="sig-paren">(</span><em>sInds</em>, <em>startTimes</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.calc_targ_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calc_targ_intTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds and Returns Precomputed Observation Time
+:param sInds: Indices of available targets
+:type sInds: integer array
+:param startTimes: absolute start times of observations.</p>
+<blockquote>
+<div>must be of the same size as sInds</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<em>dict</em>) – Selected observing mode for detection</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Integration times for detection
+same dimension as sInds</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">intTimes (astropy Quantity array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em>, <em>intTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Next Target to Select based off of AYO at this instant in time
+:param sInds - indicies of stars under consideration:
+:param old_sInd - unused:
+:param slewTime - unused:
+:param intTimes - unused:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">DRM - A blank structure
+sInd - the single index of self.schedule_startSaved to observe
+t_det - the time to observe sInd in days (u.d)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.distributedt">
+<code class="descname">distributedt</code><span class="sig-paren">(</span><em>sInds</em>, <em>t_dets</em>, <em>sacrificedStarTime</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.distributedt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.distributedt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distributes sacrificedStarTime amoung sInds
+:param sInds[nStars] - indicies of stars in the list:
+:param t_dets[nStars] - time to observe each star:
+:type t_dets[nStars] - time to observe each star: in days
+:param sacrificedStarTime - time to distribute in days:
+:param fZ[nStars] - zodiacal light for each target:
+:param fEZ - 0:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">t_dets[nStars] - time to observe each star (in days)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.generate_fZ">
+<code class="descname">generate_fZ</code><span class="sig-paren">(</span><em>sInds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.generate_fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.generate_fZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates fZ values for each star over an entire orbit of the sun
+:param sInds[nStars] - indicies of stars to generate yearly fZ for:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">fZ[resolution, sInds] where fZ is the zodiacal light for each star</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.sacrificeStarCbyT">
+<code class="descname">sacrificeStarCbyT</code><span class="sig-paren">(</span><em>sInds</em>, <em>t_dets</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>overheadTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.sacrificeStarCbyT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.sacrificeStarCbyT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sacrifice the worst performing CbyT star
+:param sInds[nStars] - indicies of stars in the list:
+:param t_dets[nStars] - time to observe each star:
+:type t_dets[nStars] - time to observe each star: in days
+:param fZ[nStars] - zodiacal light for each target:
+:param fEZ - 0:
+:param WA - inner working angle of the instrument:
+:param overheadTime - overheadTime added to each observation:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">sInds[nStars] - indicies of stars in the list
+t_dets[nStars] - time to observe each star (in days)
+sacrificedStarTime - time to distribute in days
+fZ[nStars] - zodiacal light for each target</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.SurveySimulation">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.SurveySimulation" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -333,6 +450,7 @@ for a fixed population of planets in order to validate other schedulers.</p>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.cbytScheduler">EXOSIMS.SurveySimulation.cbytScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.linearJScheduler">EXOSIMS.SurveySimulation.linearJScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.randomWalkScheduler">EXOSIMS.SurveySimulation.randomWalkScheduler module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule">EXOSIMS.SurveySimulation.starkAYO_staticSchedule module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation">Module contents</a></li>
 </ul>
 </li>
@@ -373,7 +491,7 @@ for a fixed population of planets in order to validate other schedulers.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

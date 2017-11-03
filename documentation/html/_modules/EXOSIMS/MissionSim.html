@@ -39,6 +39,7 @@
   <h1>Source code for EXOSIMS.MissionSim</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">EXOSIMS.util.vprint</span> <span class="k">import</span> <span class="n">vprint</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
+<span class="kn">from</span> <span class="nn">EXOSIMS.util.waypoint</span> <span class="k">import</span> <span class="n">waypoint</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.CheckScript</span> <span class="k">import</span> <span class="n">CheckScript</span>
 <span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
@@ -159,6 +160,14 @@
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>
         <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+
+        <span class="c1">#overwirte any ensemble setting if nopar is set</span>
+        <span class="k">if</span> <span class="n">nopar</span><span class="p">:</span>
+            <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+
+        <span class="c1">#save a copy of specs up to this point to use with the survey ensemble later</span>
+        <span class="n">specs0</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+
         <span class="c1"># set up numpy random number and add seed to specs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">py_random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1e9</span><span class="p">)))</span>
         <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seed</span>
@@ -175,12 +184,7 @@
             <span class="k">if</span> <span class="n">att</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;vprint&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="n">att</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">att</span><span class="p">]</span>
         
-        <span class="c1"># initialize top level, import modules</span>
-        <span class="k">if</span> <span class="n">nopar</span><span class="p">:</span>
-            <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
-            
-        <span class="bp">self</span><span class="o">.</span><span class="n">SurveyEnsemble</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">],</span>
-                <span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="c1">#create a surveysimulation object (triggering init of everything else)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SurveySimulation</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveySimulation&#39;</span><span class="p">],</span>
                 <span class="s1">&#39;SurveySimulation&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
@@ -199,6 +203,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">Observatory</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">TimeKeeping</span>
         
+        <span class="c1">#now that everything has successfully built, you can create the ensemble</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SurveyEnsemble</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;SurveyEnsemble&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs0</span><span class="p">)</span>
+
         <span class="c1"># create a dictionary of all modules, except StarCatalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">modules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SurveySimulation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SS</span>
@@ -313,6 +321,51 @@
         
         <span class="k">return</span> <span class="n">out</span></div>
 
+<div class="viewcode-block" id="MissionSim.genWaypoint"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.genWaypoint">[docs]</a>    <span class="k">def</span> <span class="nf">genWaypoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span> <span class="n">tofile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;generates a ballpark estimate of the expected number of star visits and</span>
+<span class="sd">        the total completeness of these visits for a given mission duration</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            duration (int):</span>
+<span class="sd">                The length of time allowed for the waypoint calculation, defaults to 365</span>
+<span class="sd">            tofile (string):</span>
+<span class="sd">                Name of the file containing a plot of total completeness over mission time,</span>
+<span class="sd">                by default genWaypoint does not create this plot</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            out (dictionary):</span>
+<span class="sd">                Output dictionary containing the number of stars visited, the total completness</span>
+<span class="sd">                achieved, and the amount of time spent integrating.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">SS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SurveySimulation</span>
+        <span class="n">OS</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">TimeKeeping</span>
+
+        <span class="c1"># Only considering detections</span>
+        <span class="n">allModes</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span>
+        <span class="n">det_mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">allModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">startTimes</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+        <span class="n">fZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="n">Obs</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTimes</span><span class="p">,</span> <span class="n">det_mode</span><span class="p">)</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ0</span>
+        <span class="n">fEZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sInds</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">fEZ</span>
+        <span class="n">dMag</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">dMagint</span>
+        <span class="n">WA</span> <span class="o">=</span> <span class="n">SS</span><span class="o">.</span><span class="n">WAint</span>
+
+        <span class="c1"># sort star indices by completeness diveded by integration time</span>
+        <span class="n">intTimes</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">det_mode</span><span class="p">)</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">comp_per_intTime</span><span class="p">(</span><span class="n">intTimes</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">WA</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">det_mode</span><span class="p">)</span>
+        <span class="n">wp</span> <span class="o">=</span> <span class="n">waypoint</span><span class="p">(</span><span class="n">comps</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">mpath</span><span class="p">,</span> <span class="n">tofile</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wp</span></div>
+
 <div class="viewcode-block" id="MissionSim.checkScript"><a class="viewcode-back" href="../../EXOSIMS.html#EXOSIMS.MissionSim.MissionSim.checkScript">[docs]</a>    <span class="k">def</span> <span class="nf">checkScript</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scriptfile</span><span class="p">,</span> <span class="n">prettyprint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tofile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calls CheckScript and checks the script file against the mission outspec.</span>
 <span class="sd">        </span>
@@ -334,7 +387,8 @@
             <span class="n">cs</span> <span class="o">=</span> <span class="n">CheckScript</span><span class="p">(</span><span class="n">scriptfile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">genOutSpec</span><span class="p">())</span>
             <span class="n">out</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">recurse</span><span class="p">(</span><span class="n">cs</span><span class="o">.</span><span class="n">specs_from_file</span><span class="p">,</span> <span class="n">cs</span><span class="o">.</span><span class="n">outspec</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="n">prettyprint</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">tofile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">cs</span><span class="o">.</span><span class="n">write_file</span><span class="p">(</span><span class="n">tofile</span><span class="p">)</span>
+                <span class="n">mpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">cs</span><span class="o">.</span><span class="n">write_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mpath</span><span class="p">,</span> <span class="n">tofile</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">out</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -481,7 +535,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

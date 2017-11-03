@@ -29,11 +29,22 @@ class Completeness(object):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
-        # import Planet Population and Physical Model class objects
-        Pop = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
-        self.PlanetPopulation = Pop
-        self.PlanetPhysicalModel = Pop.PlanetPhysicalModel
+       
+        #if specs contains a completeness_spec then we are going to generate separate instances
+        #of planet population and planet physical model for completeness and for the rest of the sim
+        if specs.has_key('completeness_specs'):
+            if not specs['completeness_specs'].has_key('modules'):
+                specs['completeness_specs']['modules'] = {}
+            if not specs['completeness_specs']['modules'].has_key('PlanetPhysicalModel'):
+                specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
+            if not specs['completeness_specs']['modules'].has_key('PlanetPopulation'):
+                specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
+            self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+        else:
+            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+
+        # copy phyiscal model object up to attribute
+        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         
         # loading attributes
         self.dMagLim = float(dMagLim)

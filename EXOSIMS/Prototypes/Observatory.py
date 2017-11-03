@@ -7,6 +7,7 @@ import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 import os,inspect
+import urllib
 
 class Observatory(object):
     """Observatory class template
@@ -140,6 +141,15 @@ class Observatory(object):
                         'Observatory'))
                 filename = 'de432s.bsp'
                 spkpath = os.path.join(classpath, filename)
+                # attempt to fetch ephemeris and cache locally in EXOSIMS/Observatory/
+                if not os.path.exists(spkpath) and os.access(classpath, os.W_OK|os.X_OK):
+                    spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
+                    self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
+                    try:
+                        urllib.urlretrieve(spk_on_web, spkpath)
+                    except:
+                        # Note: the SPK.open() below will fail in this case
+                        self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
             self.kernel = SPK.open(spkpath)
         else:
             """All ephemeride data from Vallado Appendix D.4

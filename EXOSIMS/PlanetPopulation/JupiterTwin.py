@@ -18,18 +18,21 @@ class JupiterTwin(PlanetPopulation):
         #eta is probability of planet occurance in a system. I set this to 1
         specs['erange'] = erange
         specs['constrainOrbits'] = constrainOrbits
-        aJtoE = 5.204
-        RpJtoE = 11.209
-        MpJtoE = 317.83
-        pJ = 0.538
+        aEtoJ = 5.204
+        RpEtoJ = 11.209
+        MpEtoJ = 317.83
+        pJ = 0.538# 0.538 from nssdc.gsfc.nasa.gov
         # specs being modified in JupiterTwin
         specs['eta'] = eta
-        specs['arange'] = [0.7*aJtoE, 1.5*aJtoE]
-        specs['Rprange'] = [1*RpJtoE,1*RpJtoE]
-        specs['Mprange'] = [1*MpJtoE,1*MpJtoE]
+        specs['arange'] = [0.7*aEtoJ, 1.5*aEtoJ]
+        specs['Rprange'] = [1*RpEtoJ,1*RpEtoJ]
+        specs['Mprange'] = [1*MpEtoJ,1*MpEtoJ]
         specs['prange'] = [pJ,pJ]
         specs['scaleOrbits'] = True
-        
+
+        self.RpEtoJ = RpEtoJ
+        self.pJ = pJ
+
         PlanetPopulation.__init__(self, **specs)
         
     def gen_plan_params(self, n):
@@ -77,10 +80,10 @@ class JupiterTwin(PlanetPopulation):
         else:
             a = np.random.uniform(low=ar[0], high=ar[1], size=n)*u.AU
             e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
+
         # generate geometric albedo
-        pJ = 0.538# 0.538 from nssdc.gsfc.nasa.gov
-        p = pJ*np.ones((n,))
+        p = self.pJ*np.ones((n,))
         # generate planetary radius
-        Rp = np.ones((n,))*u.earthRad
+        Rp = np.ones((n,))*u.earthRad*self.RpEtoJ
         
         return a, e, p, Rp

@@ -239,7 +239,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                         t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
                     break 
                 else:#There is insufficient time to cover overhead time
-                    TK.allocate_time(timeLeft*u.d)
+                    TK.allocate_time(timeLeft)#*u.d)
                     sInd = None
                     t_det = None
                     break

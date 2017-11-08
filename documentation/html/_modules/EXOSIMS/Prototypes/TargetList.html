@@ -111,7 +111,7 @@
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mi">60634</span><span class="p">,</span> <span class="n">staticStars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
-            <span class="n">keepStarCatalog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fillPhotometry</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+            <span class="n">keepStarCatalog</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fillPhotometry</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">explainFiltering</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c1"># load the vprint function (same line in all prototype module constructors)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span> <span class="o">=</span> <span class="n">vprint</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
@@ -120,9 +120,11 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">staticStars</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;staticStars must be a boolean.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;keepStarCatalog must be a boolean.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fillPhotometry</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;fillPhotometry must be a boolean.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">explainFiltering</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="s2">&quot;explainFiltering must be a boolean.&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticStars</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">staticStars</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keepStarCatalog</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">keepStarCatalog</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fillPhotometry</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">fillPhotometry</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">explainFiltering</span><span class="p">)</span>
         
         <span class="c1"># populate outspec</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -143,9 +145,16 @@
                 <span class="s1">&#39;Completeness&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
         <span class="c1"># bring inherited class objects to top level of Simulated Universe</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BackgroundSources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PostProcessing</span><span class="o">.</span><span class="n">BackgroundSources</span>
+
+        <span class="c1">#if specs contains a completeness_spec then we are going to generate separate instances</span>
+        <span class="c1">#of planet population and planet physical model for completeness and for the rest of the sim</span>
+        <span class="k">if</span> <span class="n">specs</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;completeness_specs&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="n">get_module</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">][</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">],</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">)(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span>
         
         <span class="c1"># list of possible Star Catalog attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">catalog_atts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Spec&#39;</span><span class="p">,</span> <span class="s1">&#39;parx&#39;</span><span class="p">,</span> <span class="s1">&#39;Umag&#39;</span><span class="p">,</span> <span class="s1">&#39;Bmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Vmag&#39;</span><span class="p">,</span> <span class="s1">&#39;Rmag&#39;</span><span class="p">,</span> 
@@ -212,12 +221,17 @@
         
         <span class="c1"># number of target stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nStars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets imported from star catalog.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
     
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fillPhotometry</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fillPhotometryVals</span><span class="p">()</span>
 
         <span class="c1"># filter out nan attribute values from Star Catalog</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nan_filter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets remain after nan filtering.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+
         <span class="c1"># populate completeness values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="c1"># populate minimum integration time values</span>
@@ -364,15 +378,24 @@
         
         <span class="c1"># filter out binary stars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_filter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets remain after binary filter.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
         
         <span class="c1"># filter out systems with planets within the IWA</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outside_IWA_filter</span><span class="p">()</span>
-        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets remain after IWA filter.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+
         <span class="c1"># filter out systems where minimum integration time is longer than cutoff</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">int_cutoff_filter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets remain after integration time cutoff filter.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
         
         <span class="c1"># filter out systems which do not reach the completeness threshold</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">completeness_filter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explainFiltering</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> targets remain after completeness filter.&quot;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="TargetList.nan_filter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.nan_filter">[docs]</a>    <span class="k">def</span> <span class="nf">nan_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Populates Target List and filters out values which are nan</span>
@@ -516,7 +539,7 @@
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
-        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">minComp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comp0</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">minComp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">revise_lists</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TargetList.revise_lists"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.TargetList.TargetList.revise_lists">[docs]</a>    <span class="k">def</span> <span class="nf">revise_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">):</span>

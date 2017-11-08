@@ -46,6 +46,7 @@
 <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
 <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
 
 <div class="viewcode-block" id="Observatory"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory">[docs]</a><span class="k">class</span> <span class="nc">Observatory</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Observatory class template</span>
@@ -179,6 +180,15 @@
                         <span class="s1">&#39;Observatory&#39;</span><span class="p">))</span>
                 <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;de432s.bsp&#39;</span>
                 <span class="n">spkpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="c1"># attempt to fetch ephemeris and cache locally in EXOSIMS/Observatory/</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">spkpath</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">classpath</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="o">|</span><span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">):</span>
+                    <span class="n">spk_on_web</span> <span class="o">=</span> <span class="s1">&#39;https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp&#39;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Fetching planetary ephemeris from </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">spk_on_web</span><span class="p">,</span> <span class="n">spkpath</span><span class="p">))</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">spk_on_web</span><span class="p">,</span> <span class="n">spkpath</span><span class="p">)</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="c1"># Note: the SPK.open() below will fail in this case</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Error: Remote fetch failed. Fetch manually or see install instructions.&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">SPK</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">spkpath</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="sd">&quot;&quot;&quot;All ephemeride data from Vallado Appendix D.4</span>

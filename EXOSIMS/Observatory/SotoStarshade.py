@@ -15,15 +15,9 @@ class SotoStarshade(ObservatoryL2Halo):
     and integrators to calculate occulter dynamics. 
     """
     
-    def __init__(self, missionStart=60634., maxdVpcnt=0.02,
-            setTOF=14,orbit_datapath=None,**specs): 
+    def __init__(self, missionStart=60634.,orbit_datapath=None,**specs): 
 
         ObservatoryL2Halo.__init__(self,**specs)
-
-        self.setTOF = np.array([setTOF])        
-
-        self.dV_tot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
-        self.dVmax  = self.dV_tot * maxdVpcnt
     
     def boundary_conditions(self,rA,rB):
         """Creates boundary conditions for solving a boundary value problem
@@ -112,7 +106,7 @@ class SotoStarshade(ObservatoryL2Halo):
         sG = np.array([np.full_like(t,self.rA[0]),np.full_like(t,self.rA[1]),np.full_like(t,self.rA[2]), 
                        np.full_like(t,guess[0]),np.full_like(t,guess[1]),np.full_like(t,guess[2])])               
             
-        sol = solve_bvp(self.equations_of_motion_CRTBP,self.boundary_conditions,t,sG,tol=1e-8)
+        sol = solve_bvp(self.equations_of_motion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
         
         s = sol.y.T
         
@@ -307,7 +301,7 @@ class SotoStarshade(ObservatoryL2Halo):
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
     
-            slewTimes = self.setTOF[0]*np.ones(TL.nStars)*u.d
+            slewTimes = self.constTOF[0]*np.ones(TL.nStars)*u.d
             
         return sd,slewTimes
     

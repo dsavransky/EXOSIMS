@@ -57,6 +57,10 @@ class Observatory(object):
             each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
+        constTOF (ndarray):
+            Constant time of flight for single occulter slew in units of day
+        maxdVpct (float):
+            Maximum percentage of total on board fuel used for single starshade slew
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -73,7 +77,7 @@ class Observatory(object):
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
             koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
-            defburnPortion=0.05, spkpath=None, checkKeepoutEnd=True, 
+            defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
             forceStaticEphem=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
@@ -102,6 +106,11 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
+        self.constTOF = np.array([constTOF])        #starshade constant slew time (day)
+        
+        # find amount of fuel on board starshade and an upper bound for single slew dV
+        self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
+        self.dVmax  = self.dVtot * maxdVpct        
         
         # set values derived from quantities above
         # slew flow rate (kg/day)

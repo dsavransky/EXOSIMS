@@ -210,7 +210,6 @@ class ObservatoryL2Halo(Observatory):
             ds (integer Quantity nx6 array):
                 First derivative of the state vector consisting of stacked 
                 velocity and acceleration vectors in normalized units
-        
         """
 
         

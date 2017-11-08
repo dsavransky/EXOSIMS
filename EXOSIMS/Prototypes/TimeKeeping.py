@@ -103,8 +103,11 @@ class TimeKeeping(object):
         self.OBnumber = 0
         self.OBduration = float(OBduration)*u.day
         self.OBstartTimes = [0.]*u.day
-        maxOBduration = self.missionFinishNorm*self.missionPortion
-        self.OBendTimes = [min(self.OBduration, maxOBduration).to('day').value]*u.day
+        if np.isinf(self.OBduration):
+            self.OBendTimes = [self.OBduration]
+        else:
+            maxOBduration = self.missionFinishNorm*self.missionPortion
+            self.OBendTimes = [min(self.OBduration, maxOBduration).to('day').value]*u.day
         
         # initialize single observation START and END times
         self.obsStart = 0.*u.day

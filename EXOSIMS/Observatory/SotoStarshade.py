@@ -96,7 +96,8 @@ class SotoStarshade(ObservatoryL2Halo):
         
         return s
     
-    def calculate_dV(self,dt,TL,nA,nB,tA):
+    
+    def calculate_dV(self,dt,TL,nA,N,tA):  
         """Finds the change in velocity needed to transfer to a new star line of sight
         
         This method sums the total delta-V needed to transfer from one star
@@ -104,6 +105,8 @@ class SotoStarshade(ObservatoryL2Halo):
         one station-keeping orbit to a transfer orbit at the current time, then from
         the transfer orbit to the next station-keeping orbit at currentTime + dt.
         Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
         
         Args:
             dt (float 1x1 ndarray):
@@ -112,8 +115,8 @@ class SotoStarshade(ObservatoryL2Halo):
                 TargetList class object
             nA (integer):
                 Integer index of the current star of interest
-            nB (integer):
-                Integer index of the next star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
             tA (astropy Time array):
                 Current absolute mission time in MJD
                 
@@ -125,28 +128,52 @@ class SotoStarshade(ObservatoryL2Halo):
         if dt.shape:
             dt = dt[0]
             
-        tB = tA + dt*u.d
-        
-        
-        sol = self.send_it(TL,nA,nB,tA,tB)
-        
-        v_occulter_A = sol[ 0,3:6]*u.AU/u.year*(2*np.pi) #velocity after leaving star A
-        v_occulter_B = sol[-1,3:6]*u.AU/u.year*(2*np.pi) #velocity arriving at star B
-        
-        #portions of the station-keeping trajectories required for stars A and B respectively
-        s0 = self.send_it(TL,nA,nA,tA - 15*u.min,tA) 
-        sF = self.send_it(TL,nB,nB,tB,tB + 15*u.min)
-        
-        v0 = s0[-1,3:6]*u.AU/u.year*(2*np.pi) #velocity needed to maintain constant distance with star A
-        vF = sF[ 0,3:6]*u.AU/u.year*(2*np.pi) #velocity needed to maintain constant distance with star B
-        
-        dvA = (v_occulter_A-v0).to('m/s')
-        dvB = (v_occulter_B-vF).to('m/s')
-        
-        dv = np.linalg.norm(dvA) + np.linalg.norm(dvB)
-        
-        return dv
+        if nA is None:
+            dV = np.zeros(len(N))
+        else:
+            # if only calculating one trajectory, this allows loop to run
+            if N.size is 1:
+                N  = np.array([N])
+            
+            # time to reach star B's line of sight
+            tB = tA + dt*u.d
+            
+            # initializing arrays for BVP state solutions
+            sol_slew = np.zeros([2,len(N),6])
+            sol_skA  = np.zeros([len(N),6])
+            sol_skB  = np.zeros([len(N),6])
     
+            # simulating station-keeping trajectory for starting star A at time tA
+            solA = self.send_it(TL,nA,nA,tA - 15*u.min,tA) 
+            sol_skA = solA[-1]
+        
+            for x in range(len(N)):   
+                # simulating slew trajectory from star A at tA to star B at tB
+                sol  = self.send_it(TL,nA,N[x],tA,tB)
+                sol_slew[:,x,:] = np.array([sol[0],sol[-1]])
+                
+                # simulating station-keeping trajectory for final star B at time tB
+                solB = self.send_it(TL,N[x],N[x],tB,tB + 15*u.min)
+                sol_skB[x,:] = solB[0]
+            
+            # starshade velocities at both endpoints of the slew trajectory
+            v_slewA = sol_slew[ 0,:,3:6]*u.AU/u.year*(2*np.pi) 
+            v_slewB = sol_slew[-1,:,3:6]*u.AU/u.year*(2*np.pi) 
+            
+            # station-keeping velocities JUST before and after the slew trajectory
+            v_skA = sol_skA[3:6]*u.AU/u.year*(2*np.pi)
+            v_skB = sol_skB[:,3:6]*u.AU/u.year*(2*np.pi)
+            
+            # delta-Vs at both endpoints of the slew trajectory
+            dvA = (v_slewA-v_skA).to('m/s')
+            dvB = (v_slewB-v_skB).to('m/s')
+            
+            # total delta-V needed to transfer to new star line of sight
+            dV = np.linalg.norm(dvA,axis=1) + np.linalg.norm(dvB,axis=1)
+    
+        return dV*u.m/u.s    
+    
+
     def minimize_slewTimes(self,TL,nA,nB,tA):
         """Minimizes the slew time for a starshade transferring to a new star line of sight
         
@@ -290,39 +317,6 @@ class SotoStarshade(ObservatoryL2Halo):
             
         return sd,slewTimes
     
-    def filter_dV(self,TL,old_sInd,sInds,currentTime):
-        """Calculates and filters dV needed to reach line of sight of every star in sInds
-        
-        This method determines the changes in velocity an occulter spacecraft needs
-        to make to transfer from one star's line of sight to all others in a given 
-        target list. Trajectories with too large of a delta-V are filtered out. 
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            old_sInd (integer):
-                Integer index of the most recently observed star
-            sInds (integer):
-                Integer indeces of the star of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-                
-        Returns:
-            sInds (integer):
-                Integer indeces of the star of interest
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in units of m/s
-        """
-
-        dV = np.zeros(TL.nStars)*u.m/u.s
-        
-        if old_sInd is not None:
-            for x in sInds:
-                dV[x] = self.calculate_dV(self.constTOF.value,TL,old_sInd,x,currentTime)*u.m/u.s
-                
-            sInds = sInds[np.where(dV.value < self.dVmax.value)]
-        
-        return sInds,dV
         
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results

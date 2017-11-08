@@ -440,8 +440,9 @@ class SurveySimulation(object):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)    
-                sInds,dV = Obs.filter_dV(TL,old_sInd,sInds,TK.currentTimeAbs)
+                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)  
+                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs)
+                sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
                 
             # start times, including slew times
             startTimes = TK.currentTimeAbs + slewTimes
@@ -1041,10 +1042,6 @@ class SurveySimulation(object):
         dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(TL, \
                 sInd, TK.currentTimeAbs, t_int)
         
-#        # find disturbance forces on occulter
-#        dF_lateral, dF_axial = Obs.distForces(TL, sInd, TK.currentTimeAbs)
-#        # decrement mass for station-keeping
-#        intMdot, mass_used, deltaV = Obs.mass_dec(dF_lateral, t_int)
         DRM[skMode + '_dV'] = deltaV.to('m/s')
         DRM[skMode + '_mass_used'] = mass_used.to('kg')
         DRM[skMode + '_dF_lateral'] = dF_lateral.to('N')

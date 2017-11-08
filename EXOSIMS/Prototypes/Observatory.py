@@ -885,6 +885,38 @@ class Observatory(object):
         intMdot, mass_used, deltaV = self.mass_dec(dF_lateral, t_int)
         
         return dF_lateral, dF_axial, intMdot, mass_used, deltaV
+    
+    def calculate_dV(self,dt,TL,nA,N,tA):  
+        """Finds the change in velocity needed to transfer to a new star line of sight
+        
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
+        
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            dV (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        """
+
+        dV = np.zeros(len(N))
+        
+        return dV*u.m/u.s    
         
     def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
         """Finds slew times and separation angles between target stars
@@ -930,34 +962,6 @@ class Observatory(object):
             slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
         
         return sd,slewTimes
-    
-    def filter_dV(self,TL,old_sInd,sInds,currentTime):
-        """Helper method for next_target to aid in overloading for alternative implementations.
-        
-        This method determines the changes in velocity an occulter spacecraft needs
-        to make to transfer from one star's line of sight to all others in a given 
-        target list. Trajectories with too large of a delta-V are filtered out. 
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            old_sInd (integer):
-                Integer index of the most recently observed star
-            sInds (integer):
-                Integer indeces of the star of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-                
-        Returns:
-            sInds (integer):
-                Integer indeces of the star of interest
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in units of m/s
-        """
-       
-        dV = np.zeros(TL.nStars)*u.m/u.s
-         
-        return sInds,dV
     
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results

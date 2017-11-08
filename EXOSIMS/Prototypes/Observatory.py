@@ -57,7 +57,7 @@ class Observatory(object):
             each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
-        constTOF (ndarray):
+        constTOF (astropy Quantity 1x1 ndarray):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):
             Maximum percentage of total on board fuel used for single starshade slew
@@ -106,7 +106,7 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array([constTOF])        #starshade constant slew time (day)
+        self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
         
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -322,7 +322,7 @@ class Observatory(object):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
         
-        This method returns the WFIRST geosynchronous circular orbit position vector.
+        This method returns the telescope geosynchronous circular orbit position vector.
         
         Args:
             currentTime (astropy Time array):

@@ -74,27 +74,11 @@ class SotoStarshade(ObservatoryL2Halo):
                 State vectors in rotating frame in normalized units
         """
         
-        t = np.linspace(tA.value,tB.value,2)    #discretizing time
-        t = Time(t,format='mjd')                #converting time to modified julian date
-        
-        #position of WFIRST at the given times in rotating frame
-        r_halo = self.haloPosition(t).to('au')
-        r_WFIRST = (r_halo + np.array([1,0,0])*self.L2_dist).value
-        
-        #position of stars wrt to WFIRST
-        starA = self.eclip2rot(TL,nA,tA).value
-        starB = self.eclip2rot(TL,nB,tB).value
-        
-        starA_wfirst = starA - r_WFIRST[ 0]
-        starB_wfirst = starB - r_WFIRST[-1]
-        
-        #corresponding unit vectors pointing WFIRST -> Target Star
-        uA = starA_wfirst / np.linalg.norm(starA_wfirst)
-        uB = starB_wfirst / np.linalg.norm(starB_wfirst)
+        angle,uA,uB,r_tscp = self.star_angularSep(TL,nA,nB,tA,tB)
         
         #position vector of occulter in heliocentric frame
-        self.rA = uA*self.occulterSep.to('au').value + r_WFIRST[ 0]
-        self.rB = uB*self.occulterSep.to('au').value + r_WFIRST[-1]
+        self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
+        self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
         a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
         b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
@@ -106,7 +90,7 @@ class SotoStarshade(ObservatoryL2Halo):
         sG = np.array([np.full_like(t,self.rA[0]),np.full_like(t,self.rA[1]),np.full_like(t,self.rA[2]), 
                        np.full_like(t,guess[0]),np.full_like(t,guess[1]),np.full_like(t,guess[2])])               
             
-        sol = solve_bvp(self.equations_of_motion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
+        sol = solve_bvp(self.equationsOfMotion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
         
         s = sol.y.T
         
@@ -140,9 +124,10 @@ class SotoStarshade(ObservatoryL2Halo):
         
         if dt.shape:
             dt = dt[0]
-        
+            
         tB = tA + dt*u.d
-      
+        
+        
         sol = self.send_it(TL,nA,nB,tA,tB)
         
         v_occulter_A = sol[ 0,3:6]*u.AU/u.year*(2*np.pi) #velocity after leaving star A
@@ -301,7 +286,7 @@ class SotoStarshade(ObservatoryL2Halo):
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
     
-            slewTimes = self.constTOF[0]*np.ones(TL.nStars)*u.d
+            slewTimes = self.constTOF[0].value*np.ones(TL.nStars)*u.d
             
         return sd,slewTimes
     
@@ -333,7 +318,7 @@ class SotoStarshade(ObservatoryL2Halo):
         
         if old_sInd is not None:
             for x in sInds:
-                dV[x] = self.calculate_dV(self.setTOF,TL,old_sInd,x,currentTime)*u.m/u.s
+                dV[x] = self.calculate_dV(self.constTOF.value,TL,old_sInd,x,currentTime)*u.m/u.s
                 
             sInds = sInds[np.where(dV.value < self.dVmax.value)]
         

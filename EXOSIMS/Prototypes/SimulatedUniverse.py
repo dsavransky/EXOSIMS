@@ -6,6 +6,7 @@ from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+import scipy.optimize
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -297,6 +298,75 @@ class SimulatedUniverse(object):
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+
+    def set_fixed_planet_phase(self, beta = np.pi/2):
+        """Modifies the simulated universe so that all planets are
+           positioned at a specified planet-star-observer phase angle (beta), 
+           to faciliate exposure time calculations at the best-case
+           observing epochs.
+
+           Args:
+               beta (float):
+                   planet-star-observer phase angle in radians.
+
+        """
+        PPMod = self.PlanetPhysicalModel
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+
+        a = self.a.to('AU').value               # semi-major axis
+        e = self.e                              # eccentricity
+        I = self.I.to('rad').value              # inclinations
+        O = self.O.to('rad').value              # right ascension of the ascending node
+        w = self.w.to('rad').value              # argument of perigee
+        #M0 = self.M0.to('rad').value            # initial mean anomany
+        #E = eccanom(M0, e)                      # eccentric anomaly
+        Mp = self.Mp                            # planet masses
+        
+        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
+        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
+        a3 = np.sin(I)*np.sin(w)
+        A = a*np.vstack((a1, a2, a3))*u.AU
+        b1 = -np.sqrt(1 - e**2)*(np.cos(O)*np.sin(w) + np.sin(O)*np.cos(I)*np.cos(w))
+        b2 = np.sqrt(1 - e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
+        b3 = np.sqrt(1 - e**2)*np.sin(I)*np.cos(w)
+        B = a*np.vstack((b1, b2, b3))*u.AU
+
+        def solve_anomaly_from_phase(E, A, B, e, beta):
+            # given phase angle beta, minimize function to solve for eccentric anomaly E
+            r1 = np.cos(E) - e
+            r2 = np.sin(E)
+            r = (A*r1 + B*r2).value
+            return np.sum( (np.ones_like(e)*np.cos(beta) -\
+                            r[2,:]/np.linalg.norm(r, axis=0))**2 )
+
+        E0 = np.ones_like(e)*np.pi
+#        sol_bounds = [(0, 2*np.pi)]*e.shape[0]
+        sol_bounds = [(-np.pi, 5*np.pi)]*e.shape[0]
+
+        E, fmin, info = \
+                scipy.optimize.fmin_l_bfgs_b(solve_anomaly_from_phase,
+                                             x0=E0, args=(A, B, e, beta),
+                                             approx_grad=True, bounds=sol_bounds,
+                                             factr=1e2, pgtol=1e-8,
+                                             epsilon=1e-10, maxfun=1e6)
+
+        r1 = np.cos(E) - e
+        r2 = np.sin(E)
+
+        mu = const.G*(Mp + TL.MsTrue[self.plan2star])
+        v1 = np.sqrt(mu/self.a**3)/(1 - e*np.cos(E))
+        v2 = np.cos(E)
+        
+        self.r = (A*r1 + B*r2).T.to('AU')                           # position
+        self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
+        self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
+        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
+        self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
+        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
+
 
     def dump_systems(self):
         """Create a dictionary of planetary properties for archiving use.

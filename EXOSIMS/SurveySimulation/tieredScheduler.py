@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -67,6 +67,8 @@ class tieredScheduler(SurveySimulation):
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
+
+        self.topstars = topstars  # Allow preferential treatment of top n stars in occ_sInds target list
 
 
     def run_sim(self):
@@ -511,7 +513,7 @@ class tieredScheduler(SurveySimulation):
 
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds,ndmin=1)
-        top9_HIPs = self.occHIPs[0:9]
+        top9_HIPs = self.occHIPs[:self.topstars]
         top9_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top9_HIPs))[0], occ_sInds)
 
         # current stars have to be in the adjmat

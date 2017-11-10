@@ -93,21 +93,28 @@ class TestObservatoryMethods(unittest.TestCase):
             # Current contents:
             #   [0]: Arcturus
             #   [1]: Dummy
+
             Name = ['Arcturus', 'Dummy_Star']
-            coords = SkyCoord(ra=np.array([213.91530029, 0.0]),
-                              dec=np.array([19.18240916, 0.0]),
-                              unit='deg')
+    
+            coords = SkyCoord(ra=np.array([213.91530029, 0.0])*u.deg,
+                              dec=np.array([19.18240916, 0.0])*u.deg, 
+                              distance=np.array([11.26,10])*u.pc)
             pmra = np.array([-1093.39, 0.0]) # mas/yr
             pmdec = np.array([-2000.06, 0.0]) # mas/yr
             rv = np.array([-5.19, 0.0]) # km/s
             parx = np.array([88.83, 1.0]) # mas
             nStars = 2
+ 
+            def starprop(x,y,z): return np.array([[-8.82544227, -5.93387264,  3.69977354],\
+                                   [10, 0, 0]])*u.pc
 
         star_catalog = MockStarCatalog()
-        t_ref = Time(2000.0, format='jyear')
+        t_ref = Time(2000.5, format='jyear')
         obs = self.fixture
         # the routine under test
-        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref, {})
+        syst = {'occulter':False}
+        mode = {'syst':syst}
+        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref, mode)
         # return value should be True
         self.assertTrue(np.all(kogood))
         self.assertEqual(len(kogood), star_catalog.nStars)

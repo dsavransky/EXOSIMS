@@ -436,7 +436,7 @@ class tieredScheduler(SurveySimulation):
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
             # 6/ Filter off previously visited occ_sInds
-            #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
+            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
 
             #6a/ Filter off any stars visited by the occulter 8 or more times
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 8)[0]]
@@ -453,7 +453,8 @@ class tieredScheduler(SurveySimulation):
                 int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
 
                 if int_time < t_det:
-                    t_det = int_time
+                    # t_det = int_time #XXX test
+                    pass
 
                 # if the starshade has arrived at its destination, or it is the first observation
                 if np.any(occ_sInds) or old_occ_sInd is None:
@@ -689,7 +690,7 @@ class tieredScheduler(SurveySimulation):
 
             # find the inflection point of the completeness graph
             if ischar is False:
-                target_point = max(dcdt).value + 5*np.var(dcdt).value
+                target_point = max(dcdt).value + 10*np.var(dcdt).value
                 idc = np.abs(dcdt - target_point/(1*u.d)).argmin()
                 int_time = intTimes[idc]
                 int_time = int_time*self.starVisits[sInd]

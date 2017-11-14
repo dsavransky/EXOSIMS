@@ -1179,6 +1179,7 @@ def array_encoder(obj):
     """
     
     from astropy.time import Time
+    from astropy.coordinates import SkyCoord
     if isinstance(obj, Time):
         # astropy Time -> time string
         return obj.fits # isot also makes sense here
@@ -1186,6 +1187,10 @@ def array_encoder(obj):
         # note: it is possible to have a numpy ndarray wrapped in a Quantity.
         # NB: alternatively, can return (obj.value, obj.unit.name)
         return obj.value
+    if isinstance(obj, SkyCoord):
+        return dict(lon=obj.heliocentrictrueecliptic.lon.value,
+                    lat=obj.heliocentrictrueecliptic.lat.value,
+                    distance=obj.heliocentrictrueecliptic.distance.value)
     if isinstance(obj, (np.ndarray, np.number)):
         # ndarray -> list of numbers
         return obj.tolist()
@@ -1206,7 +1211,10 @@ def array_encoder(obj):
         return list(obj)
     if isinstance(obj, bytes):
         return obj.decode()
-    # nothing worked, bail out
-    
-    return json.JSONEncoder.default(obj)
+    # an EXOSIMS object
+    if hasattr(obj, '_modtype'):
+        return obj.__dict__
+    # an object for which no encoding is defined yet
+    #   as noted above, ordinary types (lists, ints, floats) do not take this path
+    raise ValueError('Could not JSON-encode an object of type %s' % type(obj))
 

@@ -341,6 +341,7 @@ class tieredScheduler(SurveySimulation):
             intTimes = np.zeros(TL.nStars)*u.d
             occ_intTimes = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
+            occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
             # 1/ Find spacecraft orbital START positions and filter out unavailable 
@@ -430,13 +431,22 @@ class tieredScheduler(SurveySimulation):
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
 
+            if np.any(occ_sInds):
+                occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
+                if self.starRevisit.size != 0:
+                    dt_max = 1.*u.week
+                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in occ_sInds]
+                    occ_tovisit[ind_rev] = True
+                occ_sInds = np.where(occ_tovisit)[0]
+
             # 5/ Filter off current occulter target star from detection list
             if old_occ_sInd is not None:
                 sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
             # 6/ Filter off previously visited occ_sInds
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
+            #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
 
             #6a/ Filter off any stars visited by the occulter 8 or more times
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 8)[0]]
@@ -916,6 +926,39 @@ class tieredScheduler(SurveySimulation):
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
+
+        # in both cases (detection or false alarm), schedule a revisit 
+        # based on minimum separation
+        smin = np.min(SU.s[pInds[det]])
+        Ms = TL.MsTrue[sInd]
+        if smin is not None:
+            sp = smin
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + T/2.
+        # otherwise, revisit based on average of population semi-major axis and mass
+        else:
+            sp = SU.s.mean()
+            Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + 0.75*T
+
+        # finally, populate the revisit list (NOTE: sInd becomes a float)
+        revisit = np.array([sInd, t_rev.to('day').value])
+        if self.starRevisit.size == 0:
+            self.starRevisit = np.array([revisit])
+        else:
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

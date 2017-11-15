@@ -57,6 +57,10 @@ class Observatory(object):
             each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
+        constTOF (astropy Quantity 1x1 ndarray):
+            Constant time of flight for single occulter slew in units of day
+        maxdVpct (float):
+            Maximum percentage of total on board fuel used for single starshade slew
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -73,7 +77,7 @@ class Observatory(object):
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
             koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
-            defburnPortion=0.05, spkpath=None, checkKeepoutEnd=True, 
+            defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
             forceStaticEphem=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
@@ -102,6 +106,11 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
+        self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
+        
+        # find amount of fuel on board starshade and an upper bound for single slew dV
+        self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
+        self.dVmax  = self.dVtot * maxdVpct        
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
@@ -313,8 +322,7 @@ class Observatory(object):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
         
-        This method defines the data type expected, orbits are determined by specific
-        instances of Observatory classes.
+        This method returns the telescope geosynchronous circular orbit position vector.
         
         Args:
             currentTime (astropy Time array):
@@ -332,8 +340,24 @@ class Observatory(object):
         
         """
         
+        mjdtime = np.array(currentTime.mjd, ndmin=1) # modified julian day time
+        t = mjdtime % 1                     # gives percent of day
+        f = 2.*np.pi                        # orbital frequency (2*pi/sideral day)
+        r = (42164.*u.km).to('AU').value    # orbital height (convert from km to AU)
+        I = np.radians(28.5)                # orbital inclination in degrees
+        O = np.radians(228.)                # right ascension of the ascending node
+        
+        # observatory positions vector wrt Earth in orbital plane
+        r_orb = r*np.array([np.cos(f*t), np.sin(f*t), np.zeros(t.size)])
+        # observatory positions vector wrt Earth in equatorial frame
+        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T*u.AU
+        # Earth positions vector in heliocentric equatorial frame
+        r_earth = self.solarSystem_body_position(currentTime, 'Earth')
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = np.ones((currentTime.size, 3))*u.AU
+        r_obs = (r_obs_earth + r_earth).to('AU')
+        
+        assert np.all(np.isfinite(r_obs)), \
+                "Observatory positions vector r_obs has infinite value."
         
         if eclip:
             # observatory positions vector in heliocentric ecliptic frame
@@ -341,10 +365,11 @@ class Observatory(object):
         
         return r_obs
 
-    def keepout(self, TL, sInds, currentTime, mode):
+    def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
-        This method defines the data type expected, all values are True.
+        This method returns the keepout Boolean values for stars of interest, where
+        True is an observable star.
         
         Args:
             TL (TargetList module):
@@ -355,6 +380,9 @@ class Observatory(object):
                 Current absolute mission time in MJD
             mode (dict):
                 Selected observing mode
+            returnExtra (boolean):
+                Optional flag, default False, set True to return additional rates 
+                for validation
                 
         Returns:
             kogood (boolean ndarray):
@@ -365,20 +393,79 @@ class Observatory(object):
         
         """
         
+        # if multiple time values, check they are different otherwise reduce to scalar
+        if currentTime.size > 1:
+            if np.all(currentTime == currentTime[0]):
+                currentTime = currentTime[0]
+        
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
+        nBodies = 11
         assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
                 "If multiple times and targets, currentTime and sInds sizes must match"
         
-        # build "keepout good" array, check if all elements are Boolean
-        kogood = np.ones(np.maximum(nStars, nTimes), dtype=bool)
+        # observatory positions vector in heliocentric equatorial frame
+        r_obs = self.orbit(currentTime)
+        # traget star positions vector in heliocentric equatorial frame
+        r_targ = TL.starprop(sInds, currentTime)
+        # body positions vector in heliocentric equatorial frame
+        r_body = np.array([
+            self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
+            self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
+        # position vectors wrt spacecraft
+        r_targ = (r_targ - r_obs).to('pc')
+        r_body = (r_body - r_obs).to('AU')
+        # unit vectors wrt spacecraft
+        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
+        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
+        
+        # create koangles for all bodies, set by telescope minimum keepout angle for 
+        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
+        koangles = np.ones(nBodies)*self.koAngleMin
+        # allow Moon, Earth to be set individually (default to koAngleMin)
+        koangles[1] = self.koAngleMinMoon 
+        koangles[2] = self.koAngleMinEarth
+        # keepout angle for small bodies (other planets)
+        koangles[3:] = self.koAngleSmall
+        
+        # find angles and make angle comparisons to build kogood array:
+        # if bright objects have an angle with the target vector less than koangle 
+        # (e.g. pi/4) they are in the field of view and the target star may not be
+        # observed, thus ko associated with this target becomes False
+        nkogood = np.maximum(nStars, nTimes)
+        kogood = np.array([True]*nkogood)
+        culprit = np.zeros([nkogood, nBodies])
+        for i in xrange(nkogood):
+            u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
+            u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
+            angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
+            culprit[i,:] = (angles < koangles)
+            # if this mode has an occulter, check maximum keepout angle for the Sun
+            if mode['syst']['occulter']:
+                culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
+            if np.any(culprit[i,:]):
+                kogood[i] = False
+        
+        # check to make sure all elements in kogood are Boolean
         trues = [isinstance(element, np.bool_) for element in kogood]
         assert all(trues), "An element of kogood is not Boolean"
         
-        return kogood
+        if returnExtra:
+            return kogood, r_body, r_targ, culprit, koangles
+        else:
+            return kogood
 
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
@@ -763,6 +850,152 @@ class Observatory(object):
         deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
         
         return intMdot, mass_used, deltaV
+    
+    def mass_dec_sk(self, TL, sInd, currentTime, t_int):
+        """Returns mass_used, deltaV and disturbance forces
+        
+        This method calculates all values needed to decrement spacecraft mass
+        for station-keeping.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            t_int (astropy Quantity):
+                Integration time in units of day
+                
+        Returns:
+            dF_lateral (astropy Quantity):
+                Lateral disturbance force in units of N
+            dF_axial (astropy Quantity):
+                Axial disturbance force in units of N
+            intMdot (astropy Quantity):
+                Mass flow rate in units of kg/s
+            mass_used (astropy Quantity):
+                Mass used in station-keeping units of kg
+            deltaV (astropy Quantity):
+                Change in velocity required for station-keeping in units of km/s
+        
+        """
+        
+        dF_lateral, dF_axial = self.distForces(TL, sInd, currentTime)
+        intMdot, mass_used, deltaV = self.mass_dec(dF_lateral, t_int)
+        
+        return dF_lateral, dF_axial, intMdot, mass_used, deltaV
+    
+    def calculate_dV(self,dt,TL,nA,N,tA):  
+        """Finds the change in velocity needed to transfer to a new star line of sight
+        
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
+        
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            dV (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        """
+
+        dV = np.zeros(len(N))
+        
+        return dV*u.m/u.s    
+        
+    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+        """Finds slew times and separation angles between target stars
+        
+        This method determines the slew times of an occulter spacecraft needed
+        to transfer from one star's line of sight to all others in a given 
+        target list.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the most recently observed star
+            sInds (integer):
+                Integer indeces of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+                
+        Returns:
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+        """
+    
+        self.ao = self.thrust/self.scMass
+        slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. - 
+            self.defburnPortion**2/4.)).decompose().to('d2')
+
+        if old_sInd is None:
+            sd = np.array([np.radians(0)]*TL.nStars)*u.rad
+            slewTimes = np.zeros(TL.nStars)*u.d
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+            # calculate slew time
+            slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+        
+        return sd,slewTimes
+    
+    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+        """Updates the given DRM to include occulter values and results
+        
+        Args:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+            slewTimes (astropy Quantity):
+                Time to transfer to new star line of sight in units of days
+            sInd (integer):
+                Integer index of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in units of m/s
+                
+        Returns:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+        
+        """
+        
+        DRM['slew_time'] = slewTimes.to('day')
+        DRM['slew_angle'] = sd.to('deg')
+        
+        slew_mass_used = slewTimes*self.defburnPortion*self.flowRate
+        DRM['slew_dV'] = (slewTimes*self.ao*self.defburnPortion).to('m/s')
+        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        self.scMass = self.scMass - slew_mass_used
+        DRM['scMass'] = self.scMass.to('kg')
+        
+        return DRM
 
     class SolarEph:
         """Solar system ephemerides class 

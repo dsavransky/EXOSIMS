@@ -122,8 +122,9 @@ class MissionSim(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
 
-        #overwirte any ensemble setting if nopar is set
+        # overwrite any ensemble setting if nopar is set
         if nopar:
+            self.vprint('No-parallel: resetting SurveyEnsemble to Prototype')
             specs['modules']['SurveyEnsemble'] = ' '
 
         #save a copy of specs up to this point to use with the survey ensemble later
@@ -144,7 +145,7 @@ class MissionSim(object):
         for att in self.__dict__.keys():
             if att not in ['vprint']:
                 self._outspec[att] = self.__dict__[att]
-        
+
         #create a surveysimulation object (triggering init of everything else)
         self.SurveySimulation = get_module(specs['modules']['SurveySimulation'],
                 'SurveySimulation')(**specs)

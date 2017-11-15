@@ -41,7 +41,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating sma samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2', 'JupiterTwin']
         exclude_checkrange = ['KeplerLike1']
 
         arangein = np.sort(np.random.rand(2)*10.0)

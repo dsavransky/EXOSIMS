@@ -431,12 +431,13 @@ class tieredScheduler(SurveySimulation):
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
 
+            # revisit list, with time after start
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in occ_sInds]
+                    dt_rev = TK.currentTimeNorm - self.starRevisit[:,1]*u.day
+                    ind_rev = [int(x) for x in self.starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True
                 occ_sInds = np.where(occ_tovisit)[0]
 

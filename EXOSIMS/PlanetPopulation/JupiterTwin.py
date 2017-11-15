@@ -24,10 +24,10 @@ class JupiterTwin(PlanetPopulation):
         pJ = 0.538# 0.538 from nssdc.gsfc.nasa.gov
         # specs being modified in JupiterTwin
         specs['eta'] = eta
-        specs['arange'] = [1*aEtoJ,1*aEtoJ]#0.7*aEtoJ, 1.5*aEtoJ]
-        specs['Rprange'] = [1*RpEtoJ,1*RpEtoJ]
-        specs['Mprange'] = [1*MpEtoJ,1*MpEtoJ]
-        specs['prange'] = [pJ,pJ]
+        specs['arange'] = [1*aEtoJ]#0.7*aEtoJ, 1.5*aEtoJ]
+        specs['Rprange'] = [1*RpEtoJ]
+        specs['Mprange'] = [1*MpEtoJ]
+        specs['prange'] = [pJ]
         specs['scaleOrbits'] = True
 
         self.RpEtoJ = RpEtoJ

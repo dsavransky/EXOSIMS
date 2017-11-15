@@ -223,10 +223,19 @@ class starkAYO_staticSchedule(SurveySimulation):
             commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
             imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
             dec = self.TargetList.coords.dec[imat2].value
+
+            currentTime = TK.currentTimeAbs
+            r_targ = TL.starprop(imat2,currentTime,False)
+            #dec = np.zeros(len(imat2))
+            #for i in np.arange(len(imat2)):
+            c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
+            c.representation = 'spherical'
+            dec = c.dec
+
             
             if len(sInds) > 0:
                 # store selected star integration time
-                selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
+                selectInd = np.argmin(abs(fZ-fZmin))
                 sInd = sInds[selectInd]#finds index of star to sacrifice
                 t_det = t_dets[selectInd]*u.d
 

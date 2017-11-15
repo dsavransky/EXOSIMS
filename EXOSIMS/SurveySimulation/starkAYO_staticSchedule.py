@@ -9,6 +9,7 @@ import os.path
 import datetime
 import hashlib
 import inspect
+from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
@@ -219,7 +220,8 @@ class starkAYO_staticSchedule(SurveySimulation):
             Comp00 = self.Comp00[imat]
             fZ = fZinterp[imat]
             fZmin = fZmintmp[imat]
-
+            
+            
             commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
             imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
             dec = self.TargetList.coords.dec[imat2].value
@@ -248,7 +250,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                         t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
                     break 
                 else:#There is insufficient time to cover overhead time
-                    TK.allocate_time(timeLeft*u.d)
+                    TK.allocate_time(timeLeft)#*u.d)
                     sInd = None
                     t_det = None
                     break

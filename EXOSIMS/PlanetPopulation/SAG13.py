@@ -211,8 +211,8 @@ class SAG13(KeplerLike2):
         R = np.array(R, ndmin=1, copy=False)
         aa, RR = np.meshgrid(a,R)
 
-        mu = self.mu.to('AU3/year2')
-        
+        mu = self.mu.to('AU3/year2').value
+
         f = np.zeros(aa.shape)
         mask1 = RR < self.Rplim[1]
         mask2 = RR > self.Rplim[1]

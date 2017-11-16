@@ -260,7 +260,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                 TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 cnt += 1
         else:
-            return None#DRM, None, None
+            return None
         return sInd
 
     def calc_targ_intTime(self, sInds, startTimes, mode):

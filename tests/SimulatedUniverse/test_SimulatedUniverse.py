@@ -144,7 +144,9 @@ class TestSimulatedUniverse(unittest.TestCase):
         """
         Test that fixed PlanPerStar flag passes through integers and None
         """
-
+        script = open(SimpleScript).read()
+        specs = json.loads(script)
+        
         SU = SimulatedUniverse(fixedPlanPerStar = 0,**spec)
         self.assertTrue(SU.fixedPlanPerStar==0)
 

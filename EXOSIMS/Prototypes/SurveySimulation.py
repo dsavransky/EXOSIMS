@@ -290,7 +290,7 @@ class SurveySimulation(object):
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
             assert det_intTime != 0, "Integration time can't be 0."
-            
+
             if sInd is not None:
                 cnt += 1
                 # get the index of the selected target for the extended list
@@ -487,6 +487,12 @@ class SurveySimulation(object):
             if len(sInds) > 0:
                 # choose sInd of next target
                 sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                if sInd == None:
+                    TK.allocate_time(TK.waitTime)
+                    intTime = None
+                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                    continue
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break
@@ -547,7 +553,6 @@ class SurveySimulation(object):
         intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
         
         return intTimes
-
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Helper method for method next_target to simplify alternative implementations.

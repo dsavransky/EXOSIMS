@@ -80,6 +80,8 @@ class SimulatedUniverse(object):
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
+
+        fixedPlanPerStar can be used to specify a fixed number of planets per star
     
     """
 
@@ -141,8 +143,17 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
         TL = self.TargetList
         
-        # treat eta as the rate parameter of a Poisson distribution
-        targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
+        try:
+            #Check of ppStar is assigned
+            ppStar = specs['fixedPlanPerStar']
+            #Ensure it is an integer
+            assert (ppStar % 1) == 0#ppStar must be an integer
+            #Create array of length TL.nStars each w/ value ppStar
+            targetSystems = np.ones(TL.nStars).astype(int)*ppStar
+        except:
+            # treat eta as the rate parameter of a Poisson distribution
+            targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
+        
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))

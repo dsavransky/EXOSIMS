@@ -96,6 +96,7 @@ class SimulatedUniverse(object):
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
+        self._outspec['fixedPlanPerStar'] = self.fixedPlanPerStar
        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],

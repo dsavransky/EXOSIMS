@@ -140,3 +140,13 @@ class TestSimulatedUniverse(unittest.TestCase):
             self.assertTrue(np.all(aeff <= obj.PlanetPopulation.arange[1]),"scaled sma out of bounds in %s"%mod.__name__)
             self.assertTrue(np.all(aeff >= obj.PlanetPopulation.arange[0]),"scaled sma out of bounds in %s"%mod.__name__)
 
+    def test_Honor_fixedPlanPerStar(self):
+    """
+    Test that fixed PlanPerStar flag passes through integers and None
+    """
+
+        SU = SimulatedUniverse(fixedPlanPerStar = 0,**spec)
+        self.assertTrue(SU.fixedPlanPerStar==0)
+
+        SU = SimulatedUniverse(fixedPlanPerStar = None,**spec)
+        self.assertTrue(SU.fixedPlanPerStar==None)

@@ -76,8 +76,8 @@ class SimulatedUniverse(object):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
-        fixedPlanPerStar (int):
-            fixed number of planets to generate per star
+        fixedPlanPerStar (int or None):
+            Fixed number of planets to generate for each star
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -89,10 +89,13 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, fixedPlanPerStar=None, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        # save fixed number of planets to generate
+        self.fixedPlanPerStar = fixedPlanPerStar
        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
@@ -144,16 +147,13 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
         TL = self.TargetList
         
-        try:
-            #Check of ppStar is assigned
-            self.fixedPlanPerStar = specs['fixedPlanPerStar']
-            #Ensure it is an integer
-            assert (self.fixedPlanPerStar % 1) == 0#ppStar must be an integer
+        if(type(self.fixedPlanPerStar) == int):#Must be an integer for fixedPlanPerStar
             #Create array of length TL.nStars each w/ value ppStar
-            targetSystems = np.ones(TL.nStars).astype(int)*ppStar
-        except:
+            targetSystems = np.ones(TL.nStars).astype(int)*self.fixedPlanPerStar
+        else:
             # treat eta as the rate parameter of a Poisson distribution
             targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
+
         
         plan2star = []
         for j,n in enumerate(targetSystems):

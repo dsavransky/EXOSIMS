@@ -76,13 +76,14 @@ class SimulatedUniverse(object):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
+        fixedPlanPerStar (int):
+            fixed number of planets to generate per star
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
 
-        fixedPlanPerStar can be used to specify a fixed number of planets per star
-    
+
     """
 
     _modtype = 'SimulatedUniverse'
@@ -145,9 +146,9 @@ class SimulatedUniverse(object):
         
         try:
             #Check of ppStar is assigned
-            ppStar = specs['fixedPlanPerStar']
+            self.fixedPlanPerStar = specs['fixedPlanPerStar']
             #Ensure it is an integer
-            assert (ppStar % 1) == 0#ppStar must be an integer
+            assert (self.fixedPlanPerStar % 1) == 0#ppStar must be an integer
             #Create array of length TL.nStars each w/ value ppStar
             targetSystems = np.ones(TL.nStars).astype(int)*ppStar
         except:

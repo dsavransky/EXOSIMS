@@ -150,14 +150,14 @@ class TestSimulatedUniverse(unittest.TestCase):
         SU = SimulatedUniverse(**spec)
         self.assertTrue(SU.fixedPlanPerStar==None)
 
-
         del SU
         script = resource_path('test-scripts/template_minimal.json')
         spec = json.loads(open(self.script).read())
         #If fixedPlanPerStar is defined
         spec['fixedPlanPerStar'] = 1
         SU = SimulatedUniverse(**spec)
-        self.assertTrue(SU.fixedPlanPerStar==1)
+        self.assertTrue(SU.fixedPlanPerStar==1)     
+        self.assertTrue(SU.nPlans == 1)
 
 
 

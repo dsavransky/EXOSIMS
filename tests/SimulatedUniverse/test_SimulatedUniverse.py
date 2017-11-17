@@ -145,9 +145,19 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that fixed PlanPerStar flag passes through integers and None
         """
 
-        spec = self.spec
-        SU = SimulatedUniverse(fixedPlanPerStar = 0,**spec)
-        self.assertTrue(SU.fixedPlanPerStar==0)
-
-        SU = SimulatedUniverse(fixedPlanPerStar = None,**spec)
+        spec = json.loads(open(self.script).read())
+        #If fixedPlanPerStar is not Defined
+        SU = SimulatedUniverse(**spec)
         self.assertTrue(SU.fixedPlanPerStar==None)
+
+
+        del SU
+        script = resource_path('test-scripts/template_minimal.json')
+        spec = json.loads(open(self.script).read())
+        #If fixedPlanPerStar is defined
+        spec['fixedPlanPerStar'] = 1
+        SU = SimulatedUniverse(**spec)
+        self.assertTrue(SU.fixedPlanPerStar==1)
+
+
+

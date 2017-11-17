@@ -156,8 +156,11 @@ class TestSimulatedUniverse(unittest.TestCase):
         #If fixedPlanPerStar is defined
         spec['fixedPlanPerStar'] = 1
         SU = SimulatedUniverse(**spec)
-        self.assertTrue(SU.fixedPlanPerStar==1)     
-        self.assertTrue(SU.nPlans == 1)
+        self.assertTrue(SU.fixedPlanPerStar==1)
+        print(SU.plan2star-np.unique(SU.plan2star))
+        self.assertTrue(SU.plan2star == np.unique(SU.plan2star))
+        self.assertTrue(SU.TargetList.nStars*SU.fixedPlanPerStar == SU.nPlans)  
+        self.assertTrue(SU.nPlans == 1)#for this specific test instance
 
 
 

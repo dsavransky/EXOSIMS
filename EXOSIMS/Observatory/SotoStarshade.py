@@ -76,6 +76,9 @@ class SotoStarshade(ObservatoryL2Halo):
         
         angle,uA,uB,r_tscp = self.star_angularSep(TL,nA,nB,tA,tB)
         
+        vA = self.haloVelocity(tA)[0].value/(2*np.pi)
+        vB = self.haloVelocity(tB)[0].value/(2*np.pi)
+        
         #position vector of occulter in heliocentric frame
         self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
@@ -86,13 +89,19 @@ class SotoStarshade(ObservatoryL2Halo):
         #running shooting algorithm
         t = np.linspace(a,b,2)
         
-        guess = (self.rB-self.rA)/(b-a)
-        sG = np.array([np.full_like(t,self.rA[0]),np.full_like(t,self.rA[1]),np.full_like(t,self.rA[2]), 
-                       np.full_like(t,guess[0]),np.full_like(t,guess[1]),np.full_like(t,guess[2])])               
+        sG = np.array([  [ self.rA[0],self.rB[0] ], \
+                         [ self.rA[1],self.rB[1] ], \
+                         [ self.rA[2],self.rB[2] ], \
+                         [      vA[0],     vB[0] ], \
+                         [      vA[1],     vB[1] ], \
+                         [      vA[2],     vB[2] ] ])            
             
         sol = solve_bvp(self.equationsOfMotion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
         
         s = sol.y.T
+        
+        assert sol.success,"BVP solver failed."
+            
         
         return s
     

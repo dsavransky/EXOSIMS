@@ -8,6 +8,7 @@ import astropy.constants as const
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
+import hashlib
 
 Logger = logging.getLogger(__name__)
 
@@ -234,6 +235,34 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+
+        #Generate Completeness Hashname###########################
+        #if specs contains a completeness_spec then completeness dependent cached files must use completeness_specs
+        tmp1 = []
+        tmp2 = []
+        if specs.has_key('completeness_specs'):
+            #if not specs['completeness_specs'].has_key('modules'):
+            #    specs['completeness_specs']['modules'] = {}
+            if specs['completeness_specs']['modules'].has_key('PlanetPhysicalModel'):
+                tmp1 = specs['completeness_specs']['modules']['PlanetPhysicalModel']
+            if specs['completeness_specs']['modules'].has_key('PlanetPopulation'):
+                tmp2 = specs['completeness_specs']['modules']['PlanetPopulation']
+        else:
+            tmp1 = specs['modules']['PlanetPhysicalModel']
+            tmp2 = specs['modules']['PlanetPopulation']
+            #self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+
+        import os.path #I have no idea why but the code refuses to run if this import is not here despite being imported in the header
+        self.cachefname = ''#declares cachefname
+        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
+        self.cachefname += str(tmp2)#Planet Pop
+        self.cachefname += str(tmp1)#Planet Physical Model
+        for mod in mods: self.cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        self.cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        self.cachefname = os.path.join(fileloc,self.cachefname+os.extsep)#join into filepath and fname
+        #Needs file terminator (.starkt0, etc) appended done by each individual use case.
+        ##########################################################
 
     def __str__(self):
         """String representation of the Survey Simulation object

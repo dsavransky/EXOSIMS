@@ -16,6 +16,7 @@
   "arange":[0.1,30],
   "erange":[0,0.35],
   "smaknee":10,
+  "scaleOrbits":true,
   "scienceInstruments": [
     { "name": "imager",
       "QE": "$HOME/Documents/AFTA-coronagraph/WFIRST_Nemati/QE/Basic_Multi2_std_Si.fits",

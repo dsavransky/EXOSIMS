@@ -77,20 +77,27 @@ class SimulatedUniverse(object):
             Differences in magnitude between planets and their host star
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
+        fixedPlanPerStar (int or None):
+            Fixed number of planets to generate for each star
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
-    
+
+
     """
 
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, **specs):
+    def __init__(self, fixedPlanPerStar=None, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        # save fixed number of planets to generate
+        self.fixedPlanPerStar = fixedPlanPerStar
+        self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
        
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
@@ -142,8 +149,14 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
         TL = self.TargetList
         
-        # treat eta as the rate parameter of a Poisson distribution
-        targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
+        if(type(self.fixedPlanPerStar) == int):#Must be an integer for fixedPlanPerStar
+            #Create array of length TL.nStars each w/ value ppStar
+            targetSystems = np.ones(TL.nStars).astype(int)*self.fixedPlanPerStar
+        else:
+            # treat eta as the rate parameter of a Poisson distribution
+            targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
+
+        
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))

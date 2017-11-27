@@ -41,7 +41,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating sma samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2', 'JupiterTwin']
         exclude_checkrange = ['KeplerLike1']
 
         arangein = np.sort(np.random.rand(2)*10.0)
@@ -128,7 +128,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating p samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
         exclude_checkrange = ['KeplerLike1','SAG13']
 
         tmp = np.random.rand(1)*0.5
@@ -160,7 +160,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating radius samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
         exclude_checkrange = ['KeplerLike1']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
@@ -190,7 +190,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating mass samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)

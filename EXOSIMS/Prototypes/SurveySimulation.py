@@ -290,7 +290,7 @@ class SurveySimulation(object):
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
             assert det_intTime != 0, "Integration time can't be 0."
-            
+
             if sInd is not None:
                 cnt += 1
                 # get the index of the selected target for the extended list
@@ -487,6 +487,12 @@ class SurveySimulation(object):
             if len(sInds) > 0:
                 # choose sInd of next target
                 sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                if sInd == None:
+                    TK.allocate_time(TK.waitTime)
+                    intTime = None
+                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                    continue
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break
@@ -547,7 +553,6 @@ class SurveySimulation(object):
         intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
         
         return intTimes
-
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Helper method for method next_target to simplify alternative implementations.
@@ -1179,6 +1184,7 @@ def array_encoder(obj):
     """
     
     from astropy.time import Time
+    from astropy.coordinates import SkyCoord
     if isinstance(obj, Time):
         # astropy Time -> time string
         return obj.fits # isot also makes sense here
@@ -1186,6 +1192,10 @@ def array_encoder(obj):
         # note: it is possible to have a numpy ndarray wrapped in a Quantity.
         # NB: alternatively, can return (obj.value, obj.unit.name)
         return obj.value
+    if isinstance(obj, SkyCoord):
+        return dict(lon=obj.heliocentrictrueecliptic.lon.value,
+                    lat=obj.heliocentrictrueecliptic.lat.value,
+                    distance=obj.heliocentrictrueecliptic.distance.value)
     if isinstance(obj, (np.ndarray, np.number)):
         # ndarray -> list of numbers
         return obj.tolist()
@@ -1206,7 +1216,10 @@ def array_encoder(obj):
         return list(obj)
     if isinstance(obj, bytes):
         return obj.decode()
-    # nothing worked, bail out
-    
-    return json.JSONEncoder.default(obj)
+    # an EXOSIMS object
+    if hasattr(obj, '_modtype'):
+        return obj.__dict__
+    # an object for which no encoding is defined yet
+    #   as noted above, ordinary types (lists, ints, floats) do not take this path
+    raise ValueError('Could not JSON-encode an object of type %s' % type(obj))
 

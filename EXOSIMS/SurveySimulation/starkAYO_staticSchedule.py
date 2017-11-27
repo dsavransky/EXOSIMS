@@ -9,6 +9,7 @@ import os.path
 import datetime
 import hashlib
 import inspect
+from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
@@ -219,14 +220,24 @@ class starkAYO_staticSchedule(SurveySimulation):
             Comp00 = self.Comp00[imat]
             fZ = fZinterp[imat]
             fZmin = fZmintmp[imat]
-
+            
+            
             commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
             imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
             dec = self.TargetList.coords.dec[imat2].value
+
+            currentTime = TK.currentTimeAbs
+            r_targ = TL.starprop(imat2,currentTime,False)
+            #dec = np.zeros(len(imat2))
+            #for i in np.arange(len(imat2)):
+            c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
+            c.representation = 'spherical'
+            dec = c.dec
+
             
             if len(sInds) > 0:
                 # store selected star integration time
-                selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
+                selectInd = np.argmin(abs(fZ-fZmin))
                 sInd = sInds[selectInd]#finds index of star to sacrifice
                 t_det = t_dets[selectInd]*u.d
 
@@ -239,7 +250,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                         t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
                     break 
                 else:#There is insufficient time to cover overhead time
-                    TK.allocate_time(timeLeft*u.d)
+                    TK.allocate_time(timeLeft)#*u.d)
                     sInd = None
                     t_det = None
                     break
@@ -249,7 +260,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                 TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 cnt += 1
         else:
-            return None#DRM, None, None
+            return None
         return sInd
 
     def calc_targ_intTime(self, sInds, startTimes, mode):

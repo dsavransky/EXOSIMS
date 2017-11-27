@@ -1,6 +1,7 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
+from numpy import nan
 import scipy
 import csv
 import os.path

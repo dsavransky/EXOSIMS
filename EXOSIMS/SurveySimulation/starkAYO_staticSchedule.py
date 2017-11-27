@@ -35,12 +35,8 @@ class starkAYO_staticSchedule(SurveySimulation):
         #Load cached Observation Times
         self.starkt0 = None
         if cacheOptTimes:#Checks if flag exists
-            cachefname = ''#declares cachefname
-            mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
-            for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-            cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-            cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkt0')#'t0')#join into filepath and fname
-
+            #Generate cache Name########################################################################
+            cachefname = self.cachefname + 'starkt0'
             if os.path.isfile(cachefname):#check if file exists
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:#load from cache
@@ -357,14 +353,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         Returns:
             fZ[resolution, sInds] where fZ is the zodiacal light for each star
         """
-        # #Generate cache Name########################################################################
-        # cachefname = ''#declares cachefname
-        # mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
-        # for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        # cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        # cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'starkfZ')#'t0')#join into filepath and fname
-        # ############################################################################################
-
+        #Generate cache Name########################################################################
         cachefname = self.cachefname+'starkfZ'
 
         #Check if file exists#######################################################################
@@ -409,12 +398,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     def calcTinit(self, sInds, TL, fZ, fEZ, WA, mode, Cb, Csp):
         #Generate cache Name########################################################################
-        cachefname = ''#declares cachefname
-        mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
-        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'maxCbyTt0')#'t0')#join into filepath and fname
-        ############################################################################################
+        cachefname = self.cachefname + 'maxCbyTt0'
 
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
@@ -446,12 +430,7 @@ class starkAYO_staticSchedule(SurveySimulation):
     def calcfZmax(self,Obs,TL,TK,sInds,mode,fZ_startSaved):
 
         #Generate cache Name########################################################################
-        cachefname = ''#declares cachefname
-        mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']#modules to look at
-        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'fZmax')#'t0')#join into filepath and fname
-        ############################################################################################
+        cachefname = self.cachefname + 'fZmax'
 
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists

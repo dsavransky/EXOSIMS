@@ -55,12 +55,9 @@ class SLSQPScheduler(SurveySimulation):
 
         self.t0 = None
         if cacheOptTimes:
-            cachefname = ''
-            mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']
-            for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]
-            cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()
-            cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'t0')
-
+            #Generate cache Name########################################################################
+            cachefname = self.cachefname + 't0'
+            
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:

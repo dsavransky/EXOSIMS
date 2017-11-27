@@ -2,7 +2,6 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 import scipy
-from scipy.optimize import fmin
 import timeit
 import csv
 import os.path
@@ -365,6 +364,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
+            self.vprint("Calculating fZ")
             #OS = self.OpticalSystem#Testing to be sure I can remove this
             #WA = OS.WA0#Testing to be sure I can remove this
             ZL = self.ZodiacalLight
@@ -407,6 +407,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                 maxCbyTtime = pickle.load(f)
             return maxCbyTtime
         ###########################################################################################
+        self.vprint("Calculating maxCbyTt0")
         maxCbyTtime = np.zeros(sInds.shape[0])#This contains the time maxCbyT occurs at
         maxCbyT = np.zeros(sInds.shape[0])#this contains the value of maxCbyT
         #Solve Initial Integration Times###############################################
@@ -416,8 +417,9 @@ class starkAYO_staticSchedule(SurveySimulation):
 
         #Calculate Maximum C/T
         for i in xrange(sInds.shape[0]):
-            x0 = 0.01
-            maxCbyTtime[i] = fmin(CbyTfunc, x0, xtol=1e-8, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), disp=False)
+            x0 = 0.00001
+            maxCbyTtime[i] = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-15 , disp=False)
+            print(maxCbyTtime[i])
         t_dets = maxCbyTtime
         #Sept 27, Execution time 101 seconds for 651 stars
 
@@ -443,6 +445,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
+            self.vprint("Calculating fZmax")
             tmpfZ = np.asarray(fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             

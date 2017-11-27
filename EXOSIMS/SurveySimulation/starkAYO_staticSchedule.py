@@ -2,19 +2,13 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 import scipy
-import timeit
 import csv
 import os.path
-import datetime
-import hashlib
-import inspect
 from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
     import pickle
-import csv
-from pylab import *
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler

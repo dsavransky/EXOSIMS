@@ -312,15 +312,31 @@ class SimulatedUniverse(object):
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
-    def set_fixed_planet_phase(self, beta = np.pi/2):
+    def set_planet_phase(self, beta = np.pi/2, maxfun = 1e4):
         """Modifies the simulated universe so that all planets are
-           positioned at a specified planet-star-observer phase angle (beta), 
-           to faciliate exposure time calculations at the best-case
-           observing epochs.
+           positioned at a specified star-planet-observer phase angle (beta), 
+           to faciliate exposure time calculations at a favorable
+           observing epoch.
+           
+           For systems where the specified star-planet-observer angle (beta) is
+           less than |90 deg - inclination|, the phase angle setting is 
+           replaced with |90 deg - inclination|.
+           
+           Over a given orbit, two position states can satisfy a phase angle 
+           (one that is closer to the ascending node, and the other one closer 
+           to the descending node). The least-squares algorithm used by this 
+           function will tend to converge on the solution that is closer to an 
+           eccentric anomaly of pi radians.
 
            Args:
                beta (float):
-                   planet-star-observer phase angle in radians.
+                   star-planet-observer phase angle in radians.
+                   
+               maxfun (integer):
+                   Maximium number of function iterations used by the BFGS 
+                   least-squares solver. For large planet populations (> 1000), 
+                   the accuracy of the phase angle determination is limited by 
+                   this parameter.
 
         """
         PPMod = self.PlanetPhysicalModel
@@ -344,6 +360,10 @@ class SimulatedUniverse(object):
         b2 = np.sqrt(1 - e**2)*(-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
         b3 = np.sqrt(1 - e**2)*np.sin(I)*np.cos(w)
         B = a*np.vstack((b1, b2, b3))*u.AU
+        
+        # phase angle beta must be >= |90 - I|
+        beta_goal = np.max([np.abs(np.pi/2 - I),
+                            np.ones_like(I)*beta], axis=0)
 
         def solve_anomaly_from_phase(E, A, B, e, beta):
             # given phase angle beta, minimize function to solve for eccentric anomaly E
@@ -354,15 +374,13 @@ class SimulatedUniverse(object):
                             r[2,:]/np.linalg.norm(r, axis=0))**2 )
 
         E0 = np.ones_like(e)*np.pi
-#        sol_bounds = [(0, 2*np.pi)]*e.shape[0]
-        sol_bounds = [(-np.pi, 5*np.pi)]*e.shape[0]
+        sol_bounds = [(-np.pi, 3*np.pi)]*e.shape[0]
 
         E, fmin, info = \
                 scipy.optimize.fmin_l_bfgs_b(solve_anomaly_from_phase,
-                                             x0=E0, args=(A, B, e, beta),
+                                             x0=E0, args=(A, B, e, beta_goal),
                                              approx_grad=True, bounds=sol_bounds,
-                                             factr=1e2, pgtol=1e-8,
-                                             epsilon=1e-10, maxfun=1e6)
+                                             maxfun=maxfun)
 
         r1 = np.cos(E) - e
         r2 = np.sin(E)

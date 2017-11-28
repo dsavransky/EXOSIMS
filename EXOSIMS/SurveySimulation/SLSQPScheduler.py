@@ -6,9 +6,9 @@ from scipy.optimize import minimize,minimize_scalar
 import hashlib
 import inspect,os
 try:
-    import cPickle as pickle
+   import cPickle as pickle
 except:
-    import pickle
+   import pickle
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler

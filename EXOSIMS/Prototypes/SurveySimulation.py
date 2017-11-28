@@ -1188,23 +1188,9 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
-        #Generate Completeness Hashname###########################
-        #if specs contains a completeness_spec then completeness dependent cached files must use completeness_specs
-        tmp1 = []
-        tmp2 = []
-        if specs.has_key('completeness_specs'):
-            #if not specs['completeness_specs'].has_key('modules'):
-            #    specs['completeness_specs']['modules'] = {}
-            if specs['completeness_specs']['modules'].has_key('PlanetPhysicalModel'):
-                tmp1 = specs['completeness_specs']['modules']['PlanetPhysicalModel']
-            if specs['completeness_specs']['modules'].has_key('PlanetPopulation'):
-                tmp2 = specs['completeness_specs']['modules']['PlanetPopulation']
-        else:
-            tmp1 = specs['modules']['PlanetPhysicalModel']
-            tmp2 = specs['modules']['PlanetPopulation']
-            #self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
+        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
 
-        import os.path #I have no idea why but the code refuses to run if this import is not here despite being imported in the header
         cachefname = ''#declares cachefname
         mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
         cachefname += str(tmp2)#Planet Pop

@@ -8,6 +8,7 @@ import astropy.constants as const
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
+import hashlib
 
 Logger = logging.getLogger(__name__)
 
@@ -234,6 +235,9 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+
+        #Generate File Hashnames and loction
+        self.cachefname = self.generateHashfName(specs)
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -1172,6 +1176,33 @@ class SurveySimulation(object):
         
         return out
 
+    def generateHashfName(self, specs):
+        """Generate cached file Hashname
+
+        Args:
+            specs
+                The json script elements of the simulation to be run
+
+        Returns:
+            cachefname (string)
+                a string containing the file location, hashnumber of the cache name based off
+                of the completeness to be computed (completeness specs if available else standard module)
+        """
+        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
+        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
+
+        cachefname = ''#declares cachefname
+        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
+        cachefname += str(tmp2)#Planet Pop
+        cachefname += str(tmp1)#Planet Physical Model
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
+        ##########################################################
+        return cachefname
+
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     
@@ -1222,4 +1253,3 @@ def array_encoder(obj):
     # an object for which no encoding is defined yet
     #   as noted above, ordinary types (lists, ints, floats) do not take this path
     raise ValueError('Could not JSON-encode an object of type %s' % type(obj))
-

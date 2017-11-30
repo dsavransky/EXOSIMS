@@ -1,7 +1,6 @@
 import numpy as np
 import sys, os.path
 import astropy.units as u
-import matplotlib.pyplot as plt
 import inspect
 
 def waypoint(comps, intTimes, duration, mpath, tofile):
@@ -45,6 +44,7 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
 
     # if a filename is specified, create a plot.
     if tofile is not None:
+        import matplotlib.pyplot as plt
         plt.scatter(intTime_sums, comp_sums, s=4, color = '0.25')
         plt.ylabel('Total Completeness')
         plt.xlabel('Time (d)')

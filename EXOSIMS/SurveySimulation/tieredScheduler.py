@@ -525,8 +525,8 @@ class tieredScheduler(SurveySimulation):
 
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds,ndmin=1)
-        top9_HIPs = self.occHIPs[:self.topstars]
-        top9_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top9_HIPs))[0], occ_sInds)
+        top_HIPs = self.occHIPs[:self.topstars]
+        top_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top_HIPs))[0], occ_sInds)
 
         # current stars have to be in the adjmat
         if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):
@@ -557,17 +557,17 @@ class tieredScheduler(SurveySimulation):
         A = A + self.coeffs[1]*(1-comps)
 
         # add factor for unvisited ramp for top9 stars
-        if np.any(top9_sInds):
+        if np.any(top_sInds):
             f_uv = np.zeros(nStars)
-            u1 = np.in1d(occ_sInds, top9_sInds)
-            u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top9_sInds])
+            u1 = np.in1d(occ_sInds, top_sInds)
+            u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
             f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
             A = A - self.coeffs[2]*f_uv
 
             # add factor for unvisited top9 stars
             no_visits = np.zeros(nStars)
-            no_visits[u1] = np.ones(len(top9_sInds))
+            no_visits[u1] = np.ones(len(top_sInds))
             u2 = self.occ_starVisits[occ_sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
@@ -796,6 +796,7 @@ class tieredScheduler(SurveySimulation):
             tochar[det] = np.array([True])
         
         # 1/ find spacecraft orbital START position and check keepout angle
+        print(tochar)
         if np.any(tochar):
             # start times
             startTime = TK.currentTimeAbs
@@ -804,6 +805,7 @@ class tieredScheduler(SurveySimulation):
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
 
         # 2/ if any planet to characterize, find the characterization times
+        print(tochar)
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
@@ -833,10 +835,12 @@ class tieredScheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         
         # 3/ is target still observable at the end of any char time?
+        print(tochar)
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
         
         # 4/ if yes, perform the characterization for the maximum char time
+        print(tochar)
         if np.any(tochar):
             intTime = np.max(intTimes[tochar])
             pIndsChar = pIndsDet[tochar]

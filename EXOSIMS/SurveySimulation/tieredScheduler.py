@@ -68,6 +68,8 @@ class tieredScheduler(SurveySimulation):
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
 
+        self.sInd_charcounts = {}
+
         self.topstars = topstars  # Allow preferential treatment of top n stars in occ_sInds target list
 
 
@@ -179,9 +181,11 @@ class tieredScheduler(SurveySimulation):
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
 
-                    # update GAtime
+                    # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
-                        self.GAtime = self.GAtime + time2arrive.to('day')
+                        TK.allocate_time(time2arrive.to('day'))
+                        if time2arrive > 1*u.d:
+                            self.GAtime = self.GAtime + time2arrive.to('day')
 
                     DRM['slew_time'] = self.occ_slewTime.to('day').value
                     DRM['slew_angle'] = sd[sInd].to('deg').value
@@ -247,7 +251,7 @@ class tieredScheduler(SurveySimulation):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d and goal_GAdiff < time2arrive:
+                if goal_GAdiff > 1*u.d:
                     print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)
@@ -319,7 +323,7 @@ class tieredScheduler(SurveySimulation):
         
         # Create DRM
         DRM = {}
-        
+
         # Allocate settling time + overhead time
         if old_sInd == old_occ_sInd and old_occ_sInd is not None:
             TK.allocate_time(Obs.settlingTime + charmode['syst']['ohTime'])
@@ -354,14 +358,14 @@ class tieredScheduler(SurveySimulation):
             else:
                 # position vector of previous target star
                 r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
-            # position vector of new target stars
-            r_new = TL.starprop(sInds, TK.currentTimeAbs)
-            u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-            # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
-            # calculate slew time
-            slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
+                u_old = r_old.value/np.linalg.norm(r_old)
+                # position vector of new target stars
+                r_new = TL.starprop(sInds, TK.currentTimeAbs)
+                u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
+                # angle between old and new stars
+                sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
+                # calculate slew time
+                slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
             occ_startTimes = TK.currentTimeAbs + slewTime
             occ_startTimesNorm = TK.currentTimeNorm + slewTime
@@ -388,9 +392,9 @@ class tieredScheduler(SurveySimulation):
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:  
-                # occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, 
-                #                                                    WA, charmode, ischar=True)
-                occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
+                occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, 
+                                                                    WA, charmode, ischar=True)
+                #occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times
                 occ_endTimes = occ_startTimes + totTimes
@@ -469,7 +473,7 @@ class tieredScheduler(SurveySimulation):
 
                 # if the starshade has arrived at its destination, or it is the first observation
                 if np.any(occ_sInds) or old_occ_sInd is None:
-                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update): 
+                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
                         occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
                         if old_occ_sInd is None:
                             self.occ_arrives = TK.currentTimeAbs
@@ -658,7 +662,7 @@ class tieredScheduler(SurveySimulation):
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
         sInds = np.arange(TL.nStars)
-        WA = self.WAint[0]
+        WA = self.WAint[0]   # don't use WA input because we don't know planet positions before characterization
         curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
@@ -778,25 +782,15 @@ class tieredScheduler(SurveySimulation):
         intTime = None
         if len(det) == 0: # nothing to characterize
             return characterized, fZ, systemParams, SNR, intTime
-
+        
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
-            tochar = (self.fullSpectra[pIndsDet] == 0)
+            tochar = (self.fullSpectra[pIndsDet] != -2)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
         
-        # look for last detected planets that have not been fully characterized
-        tochar = np.zeros(len(det), dtype=bool)
-        if (FA == False):
-            tochar[det] = (self.fullSpectra[pInds[det]] != 1)
-        elif pInds[det].size > 1:
-            tochar[det] = np.append((self.fullSpectra[pInds[det][:-1]] != 1), True)
-        else:
-            tochar[det] = np.array([True])
-        
         # 1/ find spacecraft orbital START position and check keepout angle
-        print(tochar)
         if np.any(tochar):
             # start times
             startTime = TK.currentTimeAbs
@@ -805,7 +799,6 @@ class tieredScheduler(SurveySimulation):
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
 
         # 2/ if any planet to characterize, find the characterization times
-        print(tochar)
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
@@ -835,12 +828,10 @@ class tieredScheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         
         # 3/ is target still observable at the end of any char time?
-        print(tochar)
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
         
         # 4/ if yes, perform the characterization for the maximum char time
-        print(tochar)
         if np.any(tochar):
             intTime = np.max(intTimes[tochar])
             pIndsChar = pIndsDet[tochar]
@@ -915,6 +906,11 @@ class tieredScheduler(SurveySimulation):
             # now, store characterization status: 1 for full spectrum, 
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])
+            if sInd not in self.sInd_charcounts.keys():
+                self.sInd_charcounts[sInd] = char
+            else:
+                self.sInd_charcounts[sInd] = self.sInd_charcounts[sInd] + char
+
             # initialize with full spectra
             characterized = char.astype(int)
             WAchar = WAs[char]*u.arcsec

@@ -216,6 +216,7 @@ class tieredScheduler(SurveySimulation):
                     FA = False
                     # populate the DRM with characterization results
                     DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                    DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM['char_status'] = characterized[:-1] if FA else characterized
                     DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                     DRM['char_fZ'] = char_fZ.to('1/arcsec2')
@@ -781,6 +782,8 @@ class tieredScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0: # nothing to characterize
+            if sInd not in self.sInd_charcounts.keys():
+                self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime
         
         # look for last detected planets that have not been fully characterized
@@ -906,11 +909,6 @@ class tieredScheduler(SurveySimulation):
             # now, store characterization status: 1 for full spectrum, 
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])
-            if sInd not in self.sInd_charcounts.keys():
-                self.sInd_charcounts[sInd] = char
-            else:
-                self.sInd_charcounts[sInd] = self.sInd_charcounts[sInd] + char
-
             # initialize with full spectra
             characterized = char.astype(int)
             WAchar = WAs[char]*u.arcsec
@@ -923,6 +921,12 @@ class tieredScheduler(SurveySimulation):
             OWA_min = mode['OWA']*(1 - mode['BW']/2.)
             char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
             characterized[char] = -1
+            all_full = np.copy(characterized)
+            all_full[char] = 0
+            if sInd not in self.sInd_charcounts.keys():
+                self.sInd_charcounts[sInd] = all_full
+            else:
+                self.sInd_charcounts[sInd] = self.sInd_charcounts[sInd] + all_full
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1

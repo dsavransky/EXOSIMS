@@ -96,7 +96,8 @@ class SotoStarshade(ObservatoryL2Halo):
                          [      vA[1],     vB[1] ], \
                          [      vA[2],     vB[2] ] ])            
             
-        sol = solve_bvp(self.equationsOfMotion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
+        sol = solve_bvp(self.equationsOfMotion_CRTBP,self.boundary_conditions,t,sG,\
+                        fun_jac=self.jacobian_CRTBP,tol=1e-10)
         
         s = sol.y.T
         
@@ -209,32 +210,31 @@ class SotoStarshade(ObservatoryL2Halo):
         
         """
         
-        def slewTime_objFun(self,dt):
+        def slewTime_objFun(dt):
             if dt.shape:
                 dt = dt[0]
             
             return dt
         
-        def slewTime_constraints(self,dt,TL,nA,nB,tA,percent):
+        def slewTime_constraints(dt,TL,nA,nB,tA):
             dV = self.calculate_dV(dt,TL,nA,nB,tA)
-            dV_max = self.DV_tot * percent 
+            dV_max = self.dVmax
         
-            return dV_max.value - dV
+            return (dV_max - dV).value, dt - 1
         
-        dt_guess=20
-        percent=0.05        
+        dt_guess=20   
         Tol=1e-3
         
         t0 = [dt_guess]
         
-        res = optimize.minimize(self.slewTime_objFun,t0,method='COBYLA',
-                        constraints={'type': 'ineq', 'fun': self.slewTime_constraints,'args':([TL,nA,nB,tA,percent])},
+        res = optimize.minimize(slewTime_objFun,t0,method='COBYLA',
+                        constraints={'type': 'ineq', 'fun': slewTime_constraints,'args':([TL,nA,nB,tA])},
                         tol=Tol,options={'disp': False})
                         
         opt_slewTime = res.x
         opt_dV       = self.calculate_dV(opt_slewTime,TL,nA,nB,tA)
         
-        return opt_slewTime,opt_dV
+        return opt_slewTime,opt_dV.value
     
     def minimize_fuelUsage(self,TL,nA,nB,tA):
         """Minimizes the fuel usage of a starshade transferring to a new star line of sight
@@ -261,19 +261,23 @@ class SotoStarshade(ObservatoryL2Halo):
         
         """
         
-        def fuelUsage_constraints(self,dt,dt_min,dt_max):
+        def fuelUsage_objFun(dt,TL,nA,N,tA):
+            dV = self.calculate_dV(dt,TL,nA,N,tA)
+            return dV.value
+        
+        def fuelUsage_constraints(dt,dt_min,dt_max):
             return dt_max - dt, dt - dt_min
         
         dt_guess=20
         dt_min=1
-        dt_max=40        
-        Tol=1e-3
+        dt_max=45        
+        Tol=1e-5
         
         t0 = [dt_guess]
 
-        res = optimize.minimize(self.calculate_dV,t0,method='COBYLA',
-                        constraints={'type': 'ineq', 'fun': self.fuelUsage_constraints,'args':([dt_min,dt_max])},
-                        tol=Tol,args=(TL,nA,nB,tA),options={'disp': False})
+        res = optimize.minimize(fuelUsage_objFun,t0,method='COBYLA',args=(TL,nA,nB,tA),
+                        constraints={'type': 'ineq', 'fun': fuelUsage_constraints,'args':([dt_min,dt_max])},
+                        tol=Tol,options={'disp': False})
         opt_slewTime = res.x
         opt_dV   = res.fun
         

@@ -67,6 +67,7 @@ class tieredScheduler(SurveySimulation):
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
+        self.occ_sd = 0.*u.rad
 
         self.sInd_charcounts = {}
 
@@ -188,7 +189,7 @@ class tieredScheduler(SurveySimulation):
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
                     DRM['slew_time'] = self.occ_slewTime.to('day').value
-                    DRM['slew_angle'] = sd[sInd].to('deg').value
+                    DRM['slew_angle'] = self.occ_sd.to('deg').value
                     slew_mass_used = self.occ_slewTime*Obs.defburnPortion*Obs.flowRate
                     DRM['slew_dV'] = (self.occ_slewTime*self.ao*Obs.defburnPortion).to('m/s').value
                     DRM['slew_mass_used'] = slew_mass_used.to('kg')
@@ -481,6 +482,7 @@ class tieredScheduler(SurveySimulation):
                         else:
                             self.occ_arrives = occ_startTimes[occ_sInd]
                             self.occ_slewTime = slewTime[occ_sInd]
+                            self.occ_sd = sd[occ_sInd]
                         self.ready_to_update = False
                         self.occ_starVisits[occ_sInd] += 1
                 break

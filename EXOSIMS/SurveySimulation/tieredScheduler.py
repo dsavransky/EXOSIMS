@@ -216,7 +216,7 @@ class tieredScheduler(SurveySimulation):
                     FA = False
                     # populate the DRM with characterization results
                     DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                    DRM['char_counts'] = self.sInd_charcounts[sInd]
+                    #DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM['char_status'] = characterized[:-1] if FA else characterized
                     DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                     DRM['char_fZ'] = char_fZ.to('1/arcsec2')

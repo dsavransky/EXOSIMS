@@ -8,6 +8,7 @@ import astropy.constants as const
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
+import hashlib
 
 Logger = logging.getLogger(__name__)
 
@@ -235,6 +236,9 @@ class SurveySimulation(object):
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
 
+        #Generate File Hashnames and loction
+        self.cachefname = self.generateHashfName(specs)
+
     def __str__(self):
         """String representation of the Survey Simulation object
         
@@ -290,7 +294,7 @@ class SurveySimulation(object):
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
             assert det_intTime != 0, "Integration time can't be 0."
-            
+
             if sInd is not None:
                 cnt += 1
                 # get the index of the selected target for the extended list
@@ -487,6 +491,12 @@ class SurveySimulation(object):
             if len(sInds) > 0:
                 # choose sInd of next target
                 sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                if sInd == None:
+                    TK.allocate_time(TK.waitTime)
+                    intTime = None
+                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                    continue
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break
@@ -547,7 +557,6 @@ class SurveySimulation(object):
         intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
         
         return intTimes
-
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Helper method for method next_target to simplify alternative implementations.
@@ -1167,6 +1176,33 @@ class SurveySimulation(object):
         
         return out
 
+    def generateHashfName(self, specs):
+        """Generate cached file Hashname
+
+        Args:
+            specs
+                The json script elements of the simulation to be run
+
+        Returns:
+            cachefname (string)
+                a string containing the file location, hashnumber of the cache name based off
+                of the completeness to be computed (completeness specs if available else standard module)
+        """
+        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
+        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
+
+        cachefname = ''#declares cachefname
+        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
+        cachefname += str(tmp2)#Planet Pop
+        cachefname += str(tmp1)#Planet Physical Model
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
+        ##########################################################
+        return cachefname
+
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     
@@ -1179,6 +1215,7 @@ def array_encoder(obj):
     """
     
     from astropy.time import Time
+    from astropy.coordinates import SkyCoord
     if isinstance(obj, Time):
         # astropy Time -> time string
         return obj.fits # isot also makes sense here
@@ -1186,6 +1223,10 @@ def array_encoder(obj):
         # note: it is possible to have a numpy ndarray wrapped in a Quantity.
         # NB: alternatively, can return (obj.value, obj.unit.name)
         return obj.value
+    if isinstance(obj, SkyCoord):
+        return dict(lon=obj.heliocentrictrueecliptic.lon.value,
+                    lat=obj.heliocentrictrueecliptic.lat.value,
+                    distance=obj.heliocentrictrueecliptic.distance.value)
     if isinstance(obj, (np.ndarray, np.number)):
         # ndarray -> list of numbers
         return obj.tolist()
@@ -1206,7 +1247,9 @@ def array_encoder(obj):
         return list(obj)
     if isinstance(obj, bytes):
         return obj.decode()
-    # nothing worked, bail out
-    
-    return json.JSONEncoder.default(obj)
-
+    # an EXOSIMS object
+    if hasattr(obj, '_modtype'):
+        return obj.__dict__
+    # an object for which no encoding is defined yet
+    #   as noted above, ordinary types (lists, ints, floats) do not take this path
+    raise ValueError('Could not JSON-encode an object of type %s' % type(obj))

@@ -1085,8 +1085,10 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
         
-        # reset mission time parameters
+        # reset mission time and observatory parameters
         TK.__init__(**TK._outspec)
+        self.Observatory.__init__(**self.Observatory._outspec)
+        
         # generate new planets if requested (default)
         if genNewPlanets:
             SU.gen_physical_properties(**SU._outspec)

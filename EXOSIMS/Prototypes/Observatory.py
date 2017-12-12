@@ -107,10 +107,11 @@ class Observatory(object):
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
-        
+        self.maxdVpct = maxdVpct
+
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
-        self.dVmax  = self.dVtot * maxdVpct        
+        self.dVmax  = self.dVtot * self.maxdVpct        
         
         # set values derived from quantities above
         # slew flow rate (kg/day)

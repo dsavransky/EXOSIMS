@@ -12,10 +12,10 @@ EXOSIMS\.Observatory\.ObservatoryL2Halo module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS\.Observatory\.WFIRSTObservatory module
-----------------------------------------------
+EXOSIMS\.Observatory\.SotoStarshade module
+------------------------------------------
 
-.. automodule:: EXOSIMS.Observatory.WFIRSTObservatory
+.. automodule:: EXOSIMS.Observatory.SotoStarshade
     :members:
     :undoc-members:
     :show-inheritance:

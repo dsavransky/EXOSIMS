@@ -20,6 +20,7 @@ EXOSIMS\.SurveySimulation\.SLSQPScheduler module
     :undoc-members:
     :show-inheritance:
 
+<<<<<<< HEAD
 EXOSIMS\.SurveySimulation\.SS\_char\_only module
 ------------------------------------------------
 
@@ -36,6 +37,8 @@ EXOSIMS\.SurveySimulation\.SS\_det\_only module
     :undoc-members:
     :show-inheritance:
 
+=======
+>>>>>>> upstream/master
 EXOSIMS\.SurveySimulation\.cbytScheduler module
 -----------------------------------------------
 
@@ -68,6 +71,7 @@ EXOSIMS\.SurveySimulation\.starkAYO\_staticSchedule module
     :undoc-members:
     :show-inheritance:
 
+<<<<<<< HEAD
 EXOSIMS\.SurveySimulation\.tieredScheduler module
 -------------------------------------------------
 
@@ -76,6 +80,8 @@ EXOSIMS\.SurveySimulation\.tieredScheduler module
     :undoc-members:
     :show-inheritance:
 
+=======
+>>>>>>> upstream/master
 
 Module contents
 ---------------

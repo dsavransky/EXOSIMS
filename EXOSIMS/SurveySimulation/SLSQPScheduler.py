@@ -6,9 +6,9 @@ from scipy.optimize import minimize,minimize_scalar
 import hashlib
 import inspect,os
 try:
-    import cPickle as pickle
+   import cPickle as pickle
 except:
-    import pickle
+   import pickle
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -243,6 +243,11 @@ class SLSQPScheduler(SurveySimulation):
             # assumed values for detection
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
+
+
+            #### instead of actual time left, try bounding by maxTime - detection time used
+            #need to update time used in choose_next_target
+            
             timeLeft = (self.TimeKeeping.missionFinishNorm - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
             bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
 

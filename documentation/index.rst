@@ -21,6 +21,7 @@ Contents
    userparams
    docs
    parallel
+   utils
    EXOSIMS
 
 Credits

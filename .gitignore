@@ -88,8 +88,7 @@ statsFun_C
 *.p
 *.pkl
 *.t0
-<<<<<<< HEAD
-=======
 *.starkfZ
 *.maxCbyTt0
->>>>>>> v1.34
+*.starkfZ
+*.maxCbyTt0

@@ -28,6 +28,14 @@ EXOSIMS\.PlanetPopulation\.EarthTwinHabZone3 module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.PlanetPopulation\.JupiterTwin module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.JupiterTwin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.PlanetPopulation\.KeplerLike1 module
 ---------------------------------------------
 

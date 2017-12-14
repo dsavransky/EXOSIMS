@@ -55,12 +55,18 @@ class SLSQPScheduler(SurveySimulation):
 
         self.t0 = None
         if cacheOptTimes:
+<<<<<<< HEAD
             cachefname = ''
             mods =  ['PlanetPopulation','PlanetPhysicalModel','Completeness','TargetList','OpticalSystem']
             for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]
             cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()
             cachefname = os.path.join(os.path.split(inspect.getfile(self.__class__))[0],cachefname+os.extsep+'t0')
 
+=======
+            #Generate cache Name########################################################################
+            cachefname = self.cachefname + 't0'
+            
+>>>>>>> master
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:
@@ -246,6 +252,14 @@ class SLSQPScheduler(SurveySimulation):
             # assumed values for detection
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
+<<<<<<< HEAD
+=======
+
+
+            #### instead of actual time left, try bounding by maxTime - detection time used
+            #need to update time used in choose_next_target
+            
+>>>>>>> master
             timeLeft = (self.TimeKeeping.missionFinishNorm - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
             bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
 

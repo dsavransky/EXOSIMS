@@ -44,16 +44,17 @@ class BrownCompleteness(Completeness):
         
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-        
+       
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+
         # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = specs['modules']['PlanetPopulation'] + \
-                        specs['modules']['PlanetPhysicalModel'] + \
-                        specs['modules']['OpticalSystem'] + \
-                        specs['modules']['StarCatalog'] + \
-                        specs['modules']['TargetList']
+        self.dfilename = self.PlanetPopulation.__class__.__name__ + \
+                         self.PlanetPhysicalModel.__class__.__name__ +\
+                         specs['modules']['OpticalSystem'] + \
+                         specs['modules']['StarCatalog'] + \
+                         specs['modules']['TargetList']
         atts = self.PlanetPopulation.__dict__.keys()
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
@@ -515,6 +516,7 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)                
+<<<<<<< HEAD
                 
         Returns:
             dcomp (astropy Quantity array):
@@ -555,6 +557,48 @@ class BrownCompleteness(Completeness):
                 (optional)                
                 
         Returns:
+=======
+                
+        Returns:
+            dcomp (astropy Quantity array):
+                Derivative of completeness with respect to integration time (units 1/time)
+        
+        """
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        
+        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        dcomp = self.calc_fdmag(dMag, smin, smax)
+        mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
+        dcomp[mask] = 0.
+        
+        return dcomp*ddMag
+    
+    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+        """Reshapes inputs for comp_per_intTime and dcomp_dt if necessary
+        
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (astropy Quantity):
+                Working angle of the planet of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)                
+                
+        Returns:
+>>>>>>> master
             intTimes (astropy Quantity array):
                 Integration times
             sInds (integer ndarray):

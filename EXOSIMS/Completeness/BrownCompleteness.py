@@ -145,8 +145,7 @@ class BrownCompleteness(Completeness):
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
-
-        # ensure that completeness is between 0 and 1
+    # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         
         return comp0
@@ -516,7 +515,6 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)                
-<<<<<<< HEAD
                 
         Returns:
             dcomp (astropy Quantity array):
@@ -557,48 +555,6 @@ class BrownCompleteness(Completeness):
                 (optional)                
                 
         Returns:
-=======
-                
-        Returns:
-            dcomp (astropy Quantity array):
-                Derivative of completeness with respect to integration time (units 1/time)
-        
-        """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
-        
-        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
-        dcomp = self.calc_fdmag(dMag, smin, smax)
-        mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
-        dcomp[mask] = 0.
-        
-        return dcomp*ddMag
-    
-    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
-        """Reshapes inputs for comp_per_intTime and dcomp_dt if necessary
-        
-        Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            WA (astropy Quantity):
-                Working angle of the planet of interest in units of arcsec
-            mode (dict):
-                Selected observing mode
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
-                
-        Returns:
->>>>>>> master
             intTimes (astropy Quantity array):
                 Integration times
             sInds (integer ndarray):

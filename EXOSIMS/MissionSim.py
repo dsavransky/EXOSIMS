@@ -1,9 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
-<<<<<<< HEAD
-=======
 from EXOSIMS.util.waypoint import waypoint
->>>>>>> master
 from EXOSIMS.util.CheckScript import CheckScript
 import sys, logging, json, os.path
 import tempfile
@@ -286,8 +283,6 @@ class MissionSim(object):
         
         return out
 
-<<<<<<< HEAD
-=======
     def genWaypoint(self, duration=365, tofile=None):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
@@ -333,7 +328,6 @@ class MissionSim(object):
 
         return wp
 
->>>>>>> master
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.
         
@@ -355,12 +349,8 @@ class MissionSim(object):
             cs = CheckScript(scriptfile, self.genOutSpec())
             out = cs.recurse(cs.specs_from_file, cs.outspec, pretty_print=prettyprint)
             if tofile is not None:
-<<<<<<< HEAD
-                cs.write_file(tofile)
-=======
                 mpath = os.path.split(inspect.getfile(self.__class__))[0]
                 cs.write_file(os.path.join(mpath, tofile))
->>>>>>> master
         else:
             out = None
 

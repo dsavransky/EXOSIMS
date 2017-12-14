@@ -94,12 +94,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cacheOptTimes</span><span class="p">:</span>
-            <span class="n">cachefname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-            <span class="n">mods</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;PlanetPopulation&#39;</span><span class="p">,</span><span class="s1">&#39;PlanetPhysicalModel&#39;</span><span class="p">,</span><span class="s1">&#39;Completeness&#39;</span><span class="p">,</span><span class="s1">&#39;TargetList&#39;</span><span class="p">,</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span> <span class="n">cachefname</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">mod</span><span class="p">]</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">cachefname</span> <span class="o">+=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">tint0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
-            <span class="n">cachefname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span><span class="n">cachefname</span><span class="o">+</span><span class="n">os</span><span class="o">.</span><span class="n">extsep</span><span class="o">+</span><span class="s1">&#39;t0&#39;</span><span class="p">)</span>
-
+            <span class="c1">#Generate cache Name########################################################################</span>
+            <span class="n">cachefname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cachefname</span> <span class="o">+</span> <span class="s1">&#39;t0&#39;</span>
+            
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">cachefname</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Loading cached t0 from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">cachefname</span><span class="p">)</span>
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cachefname</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -367,7 +364,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

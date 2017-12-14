@@ -710,6 +710,35 @@ If False, the function won’t print anything.</td>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.util.waypoint">
+<span id="exosims-util-waypoint-module"></span><h2>EXOSIMS.util.waypoint module<a class="headerlink" href="#module-EXOSIMS.util.waypoint" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="EXOSIMS.util.waypoint.waypoint">
+<code class="descclassname">EXOSIMS.util.waypoint.</code><code class="descname">waypoint</code><span class="sig-paren">(</span><em>comps</em>, <em>intTimes</em>, <em>duration</em>, <em>mpath</em>, <em>tofile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/util/waypoint.html#waypoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.util.waypoint.waypoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>generates waypoint dictionary for MissionSim
+:param comps: An array of completeness values for all stars
+:type comps: array
+:param intTimes: An array of predicted integration times for all stars
+:type intTimes: array
+:param duration: The length of time allowed for the waypoint calculation, defaults to 365
+:type duration: int
+:param tofile: Name of the file containing a plot of total completeness over mission time,</p>
+<blockquote>
+<div>by default genWaypoint does not create this plot</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Output dictionary containing the number of stars visited, the total completness
+achieved, and the amount of time spent integrating.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">out (dictionary)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.util">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.util" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -739,6 +768,7 @@ If False, the function won’t print anything.</td>
 <li><a class="reference internal" href="#module-EXOSIMS.util.read_ipcluster_ensemble">EXOSIMS.util.read_ipcluster_ensemble module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.statsFun">EXOSIMS.util.statsFun module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util.vprint">EXOSIMS.util.vprint module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.util.waypoint">EXOSIMS.util.waypoint module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.util">Module contents</a></li>
 </ul>
 </li>
@@ -779,7 +809,7 @@ If False, the function won’t print anything.</td>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

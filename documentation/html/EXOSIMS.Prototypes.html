@@ -1816,7 +1816,7 @@ to allow an implementation to do this.</p>
 <span id="exosims-prototypes-simulateduniverse-module"></span><h2>EXOSIMS.Prototypes.SimulatedUniverse module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SimulatedUniverse" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SimulatedUniverse.</code><code class="descname">SimulatedUniverse</code><span class="sig-paren">(</span><em>fixedPlanPerStar=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Simulated Universe class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -2003,6 +2003,12 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 <dd><p><em>astropy Quantity array</em> – Working angles of the planets of interest in units of arcsec</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fixedPlanPerStar">
+<code class="descname">fixedPlanPerStar</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.fixedPlanPerStar" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int or None</em> – Fixed number of planets to generate for each star</p>
+</dd></dl>
+
 <p class="rubric">Notes</p>
 <p>PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
 Each target’s number of planets is a Poisson random variable sampled with lambda=eta.</p>
@@ -2110,6 +2116,38 @@ planets list accordingly.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sInds</strong> (<em>integer ndarray</em>) – Star indices to keep</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.set_planet_phase">
+<code class="descname">set_planet_phase</code><span class="sig-paren">(</span><em>beta=1.5707963267948966</em>, <em>maxfun=10000.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SimulatedUniverse.html#SimulatedUniverse.set_planet_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.set_planet_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modifies the simulated universe so that all planets are
+positioned at a specified star-planet-observer phase angle (beta),
+to faciliate exposure time calculations at a favorable
+observing epoch.</p>
+<p>For systems where the specified star-planet-observer angle (beta) is
+less than <a href="#id1"><span class="problematic" id="id2">|90 deg - inclination|</span></a>, the phase angle setting is
+replaced with <a href="#id3"><span class="problematic" id="id4">|90 deg - inclination|</span></a>.</p>
+<p>Over a given orbit, two position states can satisfy a phase angle
+(one that is closer to the ascending node, and the other one closer
+to the descending node). The least-squares algorithm used by this
+function will tend to converge on the solution that is closer to an
+eccentric anomaly of pi radians.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>beta</strong> (<em>float</em>) – star-planet-observer phase angle in radians.</li>
+<li><strong>maxfun</strong> (<em>integer</em>) – Maximium number of function iterations used by the BFGS
+least-squares solver. For large planet populations (&gt; 1000),
+the accuracy of the phase angle determination is limited by
+this parameter.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2602,6 +2640,27 @@ desired module names.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.generateHashfName">
+<code class="descname">generateHashfName</code><span class="sig-paren">(</span><em>specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.generateHashfName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.generateHashfName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate cached file Hashname</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>specs</strong> – The json script elements of the simulation to be run</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>cachefname (string)</dt>
+<dd>a string containing the file location, hashnumber of the cache name based off
+of the completeness to be computed (completeness specs if available else standard module)</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">
 <code class="descname">next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds index of next target star and calculates its integration time.</p>
@@ -2803,7 +2862,7 @@ they unpack recursively into types for which encoding is known.</p>
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>fillPhotometry=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>fillPhotometry=False</em>, <em>explainFiltering=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -3500,7 +3559,7 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -37,10 +37,15 @@
           <div class="body" role="main">
             
   <h1>Source code for EXOSIMS.SurveyEnsemble.IPClusterEnsemble</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">ipyparallel</span> <span class="k">import</span> <span class="n">Client</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+
+<span class="kn">from</span> <span class="nn">ipyparallel</span> <span class="k">import</span> <span class="n">Client</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SurveyEnsemble</span> <span class="k">import</span> <span class="n">SurveyEnsemble</span> 
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.get_module</span> <span class="k">import</span> <span class="n">get_module</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">IPython.core.display</span> <span class="k">import</span> <span class="n">clear_output</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
 
 <div class="viewcode-block" id="IPClusterEnsemble"><a class="viewcode-back" href="../../../EXOSIMS.SurveyEnsemble.html#EXOSIMS.SurveyEnsemble.IPClusterEnsemble.IPClusterEnsemble">[docs]</a><span class="k">class</span> <span class="nc">IPClusterEnsemble</span><span class="p">(</span><span class="n">SurveyEnsemble</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parallelized suvey ensemble based on IPython parallel (ipcluster)</span>
@@ -50,6 +55,8 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="n">SurveyEnsemble</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verb</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
         
         <span class="c1"># access the cluster</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rc</span> <span class="o">=</span> <span class="n">Client</span><span class="p">()</span>
@@ -57,10 +64,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">block</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">sync_imports</span><span class="p">():</span> <span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span> <span class="nn">EXOSIMS.util.get_module</span><span class="o">,</span> \
                 <span class="n">os</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">random</span><span class="p">,</span> <span class="n">cPickle</span><span class="p">,</span> <span class="n">traceback</span>
-        <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;logger&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">specs</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;logger&#39;</span><span class="p">):</span>
+            <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;logger&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">specs</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">):</span>
+            <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">specs</span><span class="o">=</span><span class="n">specs</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SS = EXOSIMS.util.get_module.get_module(specs[&#39;modules&#39;] </span><span class="se">\</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dview</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SS = EXOSIMS.util.get_module.get_module(specs[&#39;modules&#39;] </span><span class="se">\</span>
 <span class="s2">                [&#39;SurveySimulation&#39;], &#39;SurveySimulation&#39;)(**specs)&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Created SurveySimulation objects on </span><span class="si">%d</span><span class="s2"> engines.&quot;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">ids</span><span class="p">))</span>
+        <span class="c1">#for row in res.stdout:</span>
+        <span class="c1">#    self.vprint(row)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">lview</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">load_balanced_view</span><span class="p">()</span>
 
 <div class="viewcode-block" id="IPClusterEnsemble.run_ensemble"><a class="viewcode-back" href="../../../EXOSIMS.SurveyEnsemble.html#EXOSIMS.SurveyEnsemble.IPClusterEnsemble.IPClusterEnsemble.run_ensemble">[docs]</a>    <span class="k">def</span> <span class="nf">run_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">nb_run_sim</span><span class="p">,</span> <span class="n">run_one</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">genNewPlanets</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -73,11 +88,30 @@
                     <span class="n">rewindPlanets</span><span class="o">=</span><span class="n">rewindPlanets</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">async_res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span>
         
-        <span class="nb">print</span> <span class="s2">&quot;Submitted tasks: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Submitted </span><span class="si">%d</span><span class="s2"> tasks.&quot;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">async_res</span><span class="p">))</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
+        <span class="n">ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rc</span><span class="o">.</span><span class="n">_asyncresult_from_jobs</span><span class="p">(</span><span class="n">async_res</span><span class="p">)</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">ar</span><span class="o">.</span><span class="n">ready</span><span class="p">():</span>
+            <span class="n">ar</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mf">10.</span><span class="p">)</span>
+            <span class="n">clear_output</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ar</span><span class="o">.</span><span class="n">progress</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">timeleft</span> <span class="o">=</span> <span class="n">ar</span><span class="o">.</span><span class="n">elapsed</span><span class="o">/</span><span class="n">ar</span><span class="o">.</span><span class="n">progress</span> <span class="o">*</span> <span class="p">(</span><span class="n">nb_run_sim</span> <span class="o">-</span> <span class="n">ar</span><span class="o">.</span><span class="n">progress</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">timeleft</span> <span class="o">&gt;</span> <span class="mf">3600.</span><span class="p">:</span>
+                    <span class="n">timeleftstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%2.2f</span><span class="s2"> hours&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">timeleft</span><span class="o">/</span><span class="mf">3600.</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">timeleft</span> <span class="o">&gt;</span> <span class="mf">60.</span><span class="p">:</span>
+                    <span class="n">timeleftstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%2.2f</span><span class="s2"> minutes&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">timeleft</span><span class="o">/</span><span class="mf">60.</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">timeleftstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%2.2f</span><span class="s2"> seconds&quot;</span><span class="o">%</span><span class="n">timeleft</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">timeleftstr</span> <span class="o">=</span> <span class="s2">&quot;who knows&quot;</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%4i</span><span class="s2">/</span><span class="si">%i</span><span class="s2"> tasks finished after </span><span class="si">%4i</span><span class="s2"> s. About </span><span class="si">%s</span><span class="s2"> to go.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">progress</span><span class="p">,</span> <span class="n">nb_run_sim</span><span class="p">,</span> <span class="n">ar</span><span class="o">.</span><span class="n">elapsed</span><span class="p">,</span> <span class="n">timeleftstr</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="c1">#self.rc.wait(async_res)</span>
+        <span class="c1">#self.rc.wait_interactive(async_res)</span>
         <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="nb">print</span> <span class="s2">&quot;Completed in </span><span class="si">%d</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Completed in </span><span class="si">%d</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">))</span>
         
         <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">ar</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">ar</span> <span class="ow">in</span> <span class="n">async_res</span><span class="p">]</span>
         
@@ -115,7 +149,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

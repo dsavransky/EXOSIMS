@@ -23,7 +23,6 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
     """
 
     CbT = comps/intTimes
-    #sInds_sorted = np.flip(np.argsort(CbT), 0)
     sInds_sorted = np.argsort(CbT)[::-1]
 
     # run through sorted sInds until end of duration

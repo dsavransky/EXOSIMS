@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -34,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -59,7 +59,7 @@
 <p class="first admonition-title">Warning</p>
 <p class="last">The sampleScript_coron.json script uses the prototype Completeness module, which does not actually do any completeness calculations, but simply returns the same value for all stars.  To calculate completeness you must use one of the implementations: <code class="docutils literal"><span class="pre">BrownCompleteness</span></code> or <code class="docutils literal"><span class="pre">GarrettCompleteness</span></code>.</p>
 </div>
-<p>You can also get a full list of all parameters (this includes the ones that weren&#8217;t specified in your input script and were filled in by defaults) via the <code class="docutils literal"><span class="pre">sim.genOutspec()</span></code> method, which returns a dictionary of all simulation parameters.  Setting the <code class="docutils literal"><span class="pre">tofile</span></code> keyword will also write this dictionary out to the specified path.</p>
+<p>You can also get a full list of all parameters (this includes the ones that weren’t specified in your input script and were filled in by defaults) via the <code class="docutils literal"><span class="pre">sim.genOutspec()</span></code> method, which returns a dictionary of all simulation parameters.  Setting the <code class="docutils literal"><span class="pre">tofile</span></code> keyword will also write this dictionary out to the specified path.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The python JSON writer supports reading/writing values (such as infinity and nan) that are not in the JSON specification.  This means that output script files may only be parseable by python, or another parser supporting these extensions to the specification.</p>
@@ -143,7 +143,7 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>You can create a <code class="docutils literal"><span class="pre">MissionSim</span></code> object with this script, but it won&#8217;t be particularly useful, since there are no real stars in the prototype <code class="docutils literal"><span class="pre">StarCatalog</span></code>.  We&#8217;ll do it anyway to sanity check that the code is working.  In a python interpreter running in the same directory as your test script run:</p>
+<p>You can create a <code class="docutils literal"><span class="pre">MissionSim</span></code> object with this script, but it won’t be particularly useful, since there are no real stars in the prototype <code class="docutils literal"><span class="pre">StarCatalog</span></code>.  We’ll do it anyway to sanity check that the code is working.  In a python interpreter running in the same directory as your test script run:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">EXOSIMS.MissionSim</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">EXOSIMS</span><span class="o">.</span><span class="n">MissionSim</span><span class="o">.</span><span class="n">MissionSim</span><span class="p">(</span><span class="s1">&#39;test.json&#39;</span><span class="p">)</span>
 </pre></div>
@@ -170,7 +170,7 @@
 </div>
 <div class="section" id="step-2">
 <h3>Step 2<a class="headerlink" href="#step-2" title="Permalink to this headline">¶</a></h3>
-<p>Now we must decide what kind of universe we will be modeling.  Let&#8217;s select the EXOCAT-1 input catalog (<a class="reference external" href="http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html">http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html</a>), provided by the <code class="docutils literal"><span class="pre">EXOCAT1</span></code> <code class="docutils literal"><span class="pre">StarCatalog</span></code> implementation and only model Earth-twins in the habitable zone.  We have two suitable <code class="docutils literal"><span class="pre">PlanetPopulation</span></code> implementations - <code class="docutils literal"><span class="pre">EarthTwinHabZone1</span></code> and <code class="docutils literal"><span class="pre">EarthTwinHabZone2</span></code>, but we would like to override the defaults and only consider eccentricities between 0 and 0.35 so we will use <code class="docutils literal"><span class="pre">EarthTwinHabZone2</span></code> (<code class="docutils literal"><span class="pre">EarthTwinHabZone1</span></code> does not allow for overriding orbital parameters).  Our JSON script now becomes:</p>
+<p>Now we must decide what kind of universe we will be modeling.  Let’s select the EXOCAT-1 input catalog (<a class="reference external" href="http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html">http://nexsci.caltech.edu/missions/EXEP/EXEPstarlist.html</a>), provided by the <code class="docutils literal"><span class="pre">EXOCAT1</span></code> <code class="docutils literal"><span class="pre">StarCatalog</span></code> implementation and only model Earth-twins in the habitable zone.  We have two suitable <code class="docutils literal"><span class="pre">PlanetPopulation</span></code> implementations - <code class="docutils literal"><span class="pre">EarthTwinHabZone1</span></code> and <code class="docutils literal"><span class="pre">EarthTwinHabZone2</span></code>, but we would like to override the defaults and only consider eccentricities between 0 and 0.35 so we will use <code class="docutils literal"><span class="pre">EarthTwinHabZone2</span></code> (<code class="docutils literal"><span class="pre">EarthTwinHabZone1</span></code> does not allow for overriding orbital parameters).  Our JSON script now becomes:</p>
 <div class="highlight-json"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
  <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
@@ -218,7 +218,7 @@
 </pre></div>
 </div>
 <p>The rate should be very nearly 0.1 (with standard Poisson error).</p>
-<p>At this point, we should have a large number of stars in our target list (verify by printing <code class="docutils literal"><span class="pre">sim.TargetList.nStars</span></code>) because the prototype Completeness isn&#8217;t calculating the true completeness, and the default instrument settings will result in very low integration times for most stars, meaning that they won&#8217;t be filtered out based on your integration time cutoff, encoded in <code class="docutils literal"><span class="pre">sim.OpticalSystem.intCutoff</span></code> with a default value of 50 days, and also settable as <code class="docutils literal"><span class="pre">intCutoff</span></code> in the JSON script.  The filtering works by calculating the minimum necessary integration time (with no zodiacal light contribution) for a planet of <code class="docutils literal"><span class="pre">sim.OpticalSystem.dMag0</span></code> at a working angle of <code class="docutils literal"><span class="pre">sim.OpticalSystem.WA0</span></code> (both of these also settable in the JSON script as <code class="docutils literal"><span class="pre">dMag0</span></code> and <code class="docutils literal"><span class="pre">WA0</span></code>, respectively. The default <code class="docutils literal"><span class="pre">dMag0</span></code> is 15 (<span class="math">\(10^{-6}\)</span> contrast), meaning that the vast majority of targets are retained.</p>
+<p>At this point, we should have a large number of stars in our target list (verify by printing <code class="docutils literal"><span class="pre">sim.TargetList.nStars</span></code>) because the prototype Completeness isn’t calculating the true completeness, and the default instrument settings will result in very low integration times for most stars, meaning that they won’t be filtered out based on your integration time cutoff, encoded in <code class="docutils literal"><span class="pre">sim.OpticalSystem.intCutoff</span></code> with a default value of 50 days, and also settable as <code class="docutils literal"><span class="pre">intCutoff</span></code> in the JSON script.  The filtering works by calculating the minimum necessary integration time (with no zodiacal light contribution) for a planet of <code class="docutils literal"><span class="pre">sim.OpticalSystem.dMag0</span></code> at a working angle of <code class="docutils literal"><span class="pre">sim.OpticalSystem.WA0</span></code> (both of these also settable in the JSON script as <code class="docutils literal"><span class="pre">dMag0</span></code> and <code class="docutils literal"><span class="pre">WA0</span></code>, respectively. The default <code class="docutils literal"><span class="pre">dMag0</span></code> is 15 (<span class="math">\(10^{-6}\)</span> contrast), meaning that the vast majority of targets are retained.</p>
 </div>
 <div class="section" id="step-3">
 <h3>Step 3<a class="headerlink" href="#step-3" title="Permalink to this headline">¶</a></h3>
@@ -266,11 +266,11 @@
 </pre></div>
 </div>
 <p>should return zero, verifying that the aperture is unobscured. <code class="docutils literal"><span class="pre">shapeFac</span></code> is another user-settable parameter, and is defined such that its product with the square of the aperture diameter gives the pupil area (it defaults to the value for circular apertures).</p>
-<p>Looking at <code class="docutils literal"><span class="pre">sim.TargetList.nStars</span></code>, we see that our target list is now significantly smaller than it was before.  This is directly a consequence of setting an inner and outer working angle for our coronagraph (the default values are zero to infinity).  Due to the limited nature of the selected planet population, and finite IWA/OWA instantly filters out the majority of stars, for which the entire planet population would fall outside of this coronagraph&#8217;s operating angular separation range.</p>
+<p>Looking at <code class="docutils literal"><span class="pre">sim.TargetList.nStars</span></code>, we see that our target list is now significantly smaller than it was before.  This is directly a consequence of setting an inner and outer working angle for our coronagraph (the default values are zero to infinity).  Due to the limited nature of the selected planet population, and finite IWA/OWA instantly filters out the majority of stars, for which the entire planet population would fall outside of this coronagraph’s operating angular separation range.</p>
 </div>
 <div class="section" id="step-4">
 <h3>Step 4<a class="headerlink" href="#step-4" title="Permalink to this headline">¶</a></h3>
-<p>We will now replace the remaining prototype modules which don&#8217;t perform the specific calculations and only return dummy values with full implementations.  We will use:</p>
+<p>We will now replace the remaining prototype modules which don’t perform the specific calculations and only return dummy values with full implementations.  We will use:</p>
 <ul class="simple">
 <li>The Nemati <code class="docutils literal"><span class="pre">OpticalSystem</span></code> (integration time calculations are based on the equations found in <a class="reference internal" href="#nemati2014" id="id1">[Nemati2014]</a>)</li>
 <li>The Brown <code class="docutils literal"><span class="pre">Completeness</span></code> (this is the Monte-Carlo version of the calculation, based on <a class="reference internal" href="#brown2005" id="id2">[Brown2005]</a>; alternatively, we have <code class="docutils literal"><span class="pre">GarrettCompletness</span></code> which is a fully analytical implementation based on <a class="reference internal" href="#garrett2016" id="id3">[Garrett2016]</a>)</li>
@@ -443,7 +443,7 @@ Looking at the new TargetList, we see that it has relatively few targets.  This 
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS&#8217;s documentation!</a></li>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS’s documentation!</a></li>
       <li>Next: <a href="install.html" title="next chapter">Installing and Configuring EXOSIMS</a></li>
   </ul></li>
 </ul>
@@ -473,7 +473,7 @@ Looking at the new TargetList, we see that it has relatively few targets.  This 
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

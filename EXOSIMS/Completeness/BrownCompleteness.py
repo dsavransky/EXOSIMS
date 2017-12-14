@@ -44,16 +44,17 @@ class BrownCompleteness(Completeness):
         
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-        
+       
         # get path to completeness interpolant stored in a pickled .comp file
         self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        self.filename = specs['modules']['PlanetPopulation'] + specs['modules']['PlanetPhysicalModel']
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+
         # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = specs['modules']['PlanetPopulation'] + \
-                        specs['modules']['PlanetPhysicalModel'] + \
-                        specs['modules']['OpticalSystem'] + \
-                        specs['modules']['StarCatalog'] + \
-                        specs['modules']['TargetList']
+        self.dfilename = self.PlanetPopulation.__class__.__name__ + \
+                         self.PlanetPhysicalModel.__class__.__name__ +\
+                         specs['modules']['OpticalSystem'] + \
+                         specs['modules']['StarCatalog'] + \
+                         specs['modules']['TargetList']
         atts = self.PlanetPopulation.__dict__.keys()
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
@@ -144,7 +145,7 @@ class BrownCompleteness(Completeness):
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
-        # ensure that completeness is between 0 and 1
+    # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         
         return comp0

@@ -20,6 +20,22 @@ EXOSIMS\.SurveySimulation\.SLSQPScheduler module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.SurveySimulation\.SS\_char\_only module
+------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.SS_char_only
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.SS\_det\_only module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.SS_det_only
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.SurveySimulation\.cbytScheduler module
 -----------------------------------------------
 
@@ -40,6 +56,22 @@ EXOSIMS\.SurveySimulation\.randomWalkScheduler module
 -----------------------------------------------------
 
 .. automodule:: EXOSIMS.SurveySimulation.randomWalkScheduler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.starkAYO\_staticSchedule module
+----------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.starkAYO_staticSchedule
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.SurveySimulation\.tieredScheduler module
+-------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler
     :members:
     :undoc-members:
     :show-inheritance:

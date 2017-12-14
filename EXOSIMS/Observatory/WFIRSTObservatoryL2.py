@@ -28,8 +28,12 @@ class WFIRSTObservatoryL2(WFIRSTObservatory):
         WFIRSTObservatory.__init__(self,**specs)
         
         # set equinox value
-        self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
-                format='mjd', scale='tai')
+        # set equinox value
+        if isinstance(equinox,Time):
+            self.equinox = equinox
+        else:
+            self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
+                    format='mjd', scale='tai')
         
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:

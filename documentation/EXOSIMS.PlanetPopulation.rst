@@ -20,6 +20,14 @@ EXOSIMS\.PlanetPopulation\.EarthTwinHabZone2 module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.PlanetPopulation\.EarthTwinHabZone3 module
+---------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.EarthTwinHabZone3
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.PlanetPopulation\.KeplerLike1 module
 ---------------------------------------------
 

@@ -4,6 +4,14 @@ EXOSIMS\.Observatory package
 Submodules
 ----------
 
+EXOSIMS\.Observatory\.ObservatoryL2Halo module
+----------------------------------------------
+
+.. automodule:: EXOSIMS.Observatory.ObservatoryL2Halo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.Observatory\.WFIRSTObservatory module
 ----------------------------------------------
 

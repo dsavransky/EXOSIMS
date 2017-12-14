@@ -5,9 +5,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>EXOSIMS.Prototypes.SurveySimulation &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -47,6 +50,7 @@
 <span class="kn">import</span> <span class="nn">random</span> <span class="k">as</span> <span class="nn">py_random</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">os.path</span><span class="o">,</span> <span class="nn">copy</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
 
 <span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -274,6 +278,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
 
+        <span class="c1">#Generate File Hashnames and loction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cachefname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generateHashfName</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;String representation of the Survey Simulation object</span>
 <span class="sd">        </span>
@@ -329,7 +336,7 @@
             <span class="c1"># acquire the NEXT TARGET star index and create DRM</span>
             <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">det_intTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">det_mode</span><span class="p">)</span>
             <span class="k">assert</span> <span class="n">det_intTime</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Integration time can&#39;t be 0.&quot;</span>
-            
+
             <span class="k">if</span> <span class="n">sInd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="c1"># get the index of the selected target for the extended list</span>
@@ -543,6 +550,12 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># choose sInd of next target</span>
                 <span class="n">sInd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_next_target</span><span class="p">(</span><span class="n">old_sInd</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">slewTimes</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">[</span><span class="n">sInds</span><span class="p">])</span>
+                <span class="c1">#Should Choose Next Target decide there are no stars it wishes to observe at this time.</span>
+                <span class="k">if</span> <span class="n">sInd</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">waitTime</span><span class="p">)</span>
+                    <span class="n">intTime</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s1">&#39;There are no stars Choose Next Target would like to Observe. Waiting 1d&#39;</span><span class="p">)</span>
+                    <span class="k">continue</span>
                 <span class="c1"># store selected star integration time</span>
                 <span class="n">intTime</span> <span class="o">=</span> <span class="n">intTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
                 <span class="k">break</span>
@@ -1139,8 +1152,10 @@
         <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
         <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
         
-        <span class="c1"># reset mission time parameters</span>
+        <span class="c1"># reset mission time and observatory parameters</span>
         <span class="n">TK</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">TK</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
+        
         <span class="c1"># generate new planets if requested (default)</span>
         <span class="k">if</span> <span class="n">genNewPlanets</span><span class="p">:</span>
             <span class="n">SU</span><span class="o">.</span><span class="n">gen_physical_properties</span><span class="p">(</span><span class="o">**</span><span class="n">SU</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
@@ -1228,7 +1243,34 @@
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                         <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="n">array_encoder</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">out</span></div></div>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+<div class="viewcode-block" id="SurveySimulation.generateHashfName"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.generateHashfName">[docs]</a>    <span class="k">def</span> <span class="nf">generateHashfName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate cached file Hashname</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            specs</span>
+<span class="sd">                The json script elements of the simulation to be run</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            cachefname (string)</span>
+<span class="sd">                a string containing the file location, hashnumber of the cache name based off</span>
+<span class="sd">                of the completeness to be computed (completeness specs if available else standard module)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tmp1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">tmp2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+
+        <span class="n">cachefname</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="c1">#declares cachefname</span>
+        <span class="n">mods</span> <span class="o">=</span>  <span class="p">[</span><span class="s1">&#39;Completeness&#39;</span><span class="p">,</span><span class="s1">&#39;TargetList&#39;</span><span class="p">,</span><span class="s1">&#39;OpticalSystem&#39;</span><span class="p">]</span><span class="c1">#modules to look at</span>
+        <span class="n">cachefname</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tmp2</span><span class="p">)</span><span class="c1">#Planet Pop</span>
+        <span class="n">cachefname</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tmp1</span><span class="p">)</span><span class="c1">#Planet Physical Model</span>
+        <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span> <span class="n">cachefname</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">mod</span><span class="p">]</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="c1">#add module name to end of cachefname?</span>
+        <span class="n">cachefname</span> <span class="o">+=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">tint0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span><span class="c1">#turn cachefname into hashlib</span>
+        <span class="n">fileloc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cachefname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fileloc</span><span class="p">,</span><span class="n">cachefname</span><span class="o">+</span><span class="n">os</span><span class="o">.</span><span class="n">extsep</span><span class="p">)</span><span class="c1">#join into filepath and fname</span>
+        <span class="c1">#Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.</span>
+        <span class="c1">##########################################################</span>
+        <span class="k">return</span> <span class="n">cachefname</span></div></div>
 
 <div class="viewcode-block" id="array_encoder"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.array_encoder">[docs]</a><span class="k">def</span> <span class="nf">array_encoder</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.</span>
@@ -1242,6 +1284,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
+    <span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">SkyCoord</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Time</span><span class="p">):</span>
         <span class="c1"># astropy Time -&gt; time string</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">fits</span> <span class="c1"># isot also makes sense here</span>
@@ -1249,6 +1292,10 @@
         <span class="c1"># note: it is possible to have a numpy ndarray wrapped in a Quantity.</span>
         <span class="c1"># NB: alternatively, can return (obj.value, obj.unit.name)</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">SkyCoord</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">lon</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                    <span class="n">lat</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                    <span class="n">distance</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">heliocentrictrueecliptic</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">)):</span>
         <span class="c1"># ndarray -&gt; list of numbers</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1269,10 +1316,12 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
-    <span class="c1"># nothing worked, bail out</span>
-    
-    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span></div>
-
+    <span class="c1"># an EXOSIMS object</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;_modtype&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__dict__</span>
+    <span class="c1"># an object for which no encoding is defined yet</span>
+    <span class="c1">#   as noted above, ordinary types (lists, ints, floats) do not take this path</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not JSON-encode an object of type </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span></div>
 </pre></div>
 
           </div>
@@ -1306,7 +1355,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

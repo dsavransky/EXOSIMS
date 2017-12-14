@@ -92,6 +92,22 @@ EXOSIMS\.Prototypes\.SurveySimulation module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.Prototypes\.SurveySimulation\_det\_only module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.Prototypes.SurveySimulation_det_only
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.Prototypes\.SurveySimulation\_det\_only2 module
+--------------------------------------------------------
+
+.. automodule:: EXOSIMS.Prototypes.SurveySimulation_det_only2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.Prototypes\.TargetList module
 --------------------------------------
 

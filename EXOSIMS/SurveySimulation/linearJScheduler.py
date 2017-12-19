@@ -22,9 +22,9 @@ class linearJScheduler(SurveySimulation):
         
         SurveySimulation.__init__(self, **specs)
         
-        #verify that coefficients input is iterable 6x1
+        #verify that coefficients input is iterable 4x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
-            raise TypeError("coeffs must be a 3 element iterable")
+            raise TypeError("coeffs must be a 4 element iterable")
         
         # normalize coefficients
         coeffs = np.array(coeffs)

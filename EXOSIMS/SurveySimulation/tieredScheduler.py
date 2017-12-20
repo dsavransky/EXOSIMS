@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -50,6 +50,8 @@ class tieredScheduler(SurveySimulation):
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
             self.occHIPs = HIPsfile.split(',')
+            if len(self.occHIPs) <= 1:
+                self.occHIPs = HIPsfile.split('\n')
         else:
             self.occHIPs = occHIPs
 
@@ -59,7 +61,7 @@ class tieredScheduler(SurveySimulation):
         self.phase1_end = None # The designated end time for the first observing phase
         self.is_phase1 = True
         self.FA_status = np.zeros(TL.nStars,dtype=bool)
-        self.GA_percentage = .25
+        self.GA_percentage = 1 - missionPortion
         self.GAtime = 0.*u.d
         self.goal_GAtime = None
         self.curves = None
@@ -455,8 +457,8 @@ class tieredScheduler(SurveySimulation):
             # 6/ Filter off previously visited occ_sInds
             #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
 
-            #6a/ Filter off any stars visited by the occulter 8 or more times
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 8)[0]]
+            #6a/ Filter off any stars visited by the occulter 3 or more times
+            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
 
             # 7/ Choose best target from remaining
             if np.any(sInds):
@@ -563,7 +565,7 @@ class tieredScheduler(SurveySimulation):
         # add factor due to completeness
         A = A + self.coeffs[1]*(1-comps)
 
-        # add factor for unvisited ramp for top9 stars
+        # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
             f_uv = np.zeros(nStars)
             u1 = np.in1d(occ_sInds, top_sInds)
@@ -572,7 +574,7 @@ class tieredScheduler(SurveySimulation):
             f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
             A = A - self.coeffs[2]*f_uv
 
-            # add factor for unvisited top9 stars
+            # add factor for unvisited deep dive stars
             no_visits = np.zeros(nStars)
             no_visits[u1] = np.ones(len(top_sInds))
             u2 = self.occ_starVisits[occ_sInds]==0

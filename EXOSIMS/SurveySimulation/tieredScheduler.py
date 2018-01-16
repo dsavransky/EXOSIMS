@@ -74,6 +74,9 @@ class tieredScheduler(SurveySimulation):
         self.sInd_charcounts = {}
 
         self.topstars = topstars  # Allow preferential treatment of top n stars in occ_sInds target list
+        self.coeff_data_a3 = []
+        self.coeff_data_a4 = []
+        self.coeff_time = []
 
 
     def run_sim(self):
@@ -567,6 +570,7 @@ class tieredScheduler(SurveySimulation):
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
+             # add factor for least visited deep dive stars
             f_uv = np.zeros(nStars)
             u1 = np.in1d(occ_sInds, top_sInds)
             u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
@@ -574,13 +578,18 @@ class tieredScheduler(SurveySimulation):
             f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
             A = A - self.coeffs[2]*f_uv
 
+            self.coeff_data_a3.append([occ_sInds,f_uv])
+
             # add factor for unvisited deep dive stars
             no_visits = np.zeros(nStars)
-            no_visits[u1] = np.ones(len(top_sInds))
+            #no_visits[u1] = np.ones(len(top_sInds))
             u2 = self.occ_starVisits[occ_sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
             A = A - self.coeffs[3]*no_visits
+
+            self.coeff_data_a4.append([occ_sInds, no_visits])
+            self.coeff_time.append(TK.currentTimeNorm.value)
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)

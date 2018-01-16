@@ -227,7 +227,7 @@ class ObservatoryL2Halo(Observatory):
         ds2 = y - 2*dx - m1*y/r1**3 - m2*y/r2**3
         ds3 = -m1*z/r1**3 - m2*z/r2**3
         
-        ds = np.vstack((dx,dy,dz,ds1,ds2,ds3))
+        ds = [dx,dy,dz,ds1,ds2,ds3]
         
         return ds
     
@@ -414,9 +414,8 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
         """
         
-        EoM = lambda t,s: self.equationsOfMotion_CRTBP(s,t)
+        EoM = lambda s,t: self.equationsOfMotion_CRTBP(t,s)
              
-        s,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
-        self.info = info
+        s = itg.odeint(EoM, s0, t, full_output = 0,rtol=2.5e-14,atol=1e-22)
         
         return s

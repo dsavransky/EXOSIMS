@@ -466,6 +466,47 @@ class Observatory(object):
             return kogood, r_body, r_targ, culprit, koangles
         else:
             return kogood
+    
+    def generate_koMap(self,TL,TK,mode):
+        """Creates keepout map for all targets throughout mission lifetime.
+        
+        This method returns a binary map showing when all stars in the given 
+        target list are in or out of the keepout zone (i.e. when they are not
+        observable) from mission start to mission finish.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            TK (TimeKeeping module):
+                TimeKeeping class object
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            koMap (boolean ndarray):
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+        
+        """
+        stepSize  = 1*u.d #steps of 1 day from mission start to mission end
+        startTime = TK.missionStart
+        endTime   = TK.missionFinishAbs
+        
+        # global times when keepout is checked for all stars
+        koTimes = np.arange(startTime.value, endTime.value, stepSize.value)
+        koTimes = Time(koTimes,format='mjd')
+        koMap = np.zeros([TL.nStars,len(koTimes)])
+        
+        # looping over all stars
+        print '   Starting Keepout Calculations for %s stars.' % TL.nStars
+        for n in range(TL.nStars):
+            koMap[n,:] = self.keepout(TL,n,koTimes,mode,False)
+            if not n % 50:
+                print '   [%s / %s] completed.' % (n,TL.nStars)
+            
+        return koMap,koTimes
 
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)

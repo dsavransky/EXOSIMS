@@ -8,6 +8,10 @@ import astropy.constants as const
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 Logger = logging.getLogger(__name__)
 
@@ -234,6 +238,37 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+        
+        # getting keepout map for entire mission
+        import os.path
+        needToUpdateMap = False
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        classpath = os.path.normpath(os.path.join(classpath, '..','Observatory'))
+        filename  = 'koMap.p'
+        kopath    = os.path.join(classpath, filename) #path to koMap file
+        newStarList = TL.Name.tolist()  #names of stars on current target list
+        # checking to see if file already exists
+        if os.path.exists(kopath):
+            data = pickle.load(open(kopath, 'rb'))
+            koMap   = data['koMap']
+            koTimes = data['koTimes']
+            oldStarList = data['starNames']
+            # checking to see if koMap needs to be updated
+            if (oldStarList != newStarList or 
+                koTimes.value[ 0]  != SU.TimeKeeping.missionStart.value or 
+                koTimes.value[-1]  != SU.TimeKeeping.missionFinishAbs.value): 
+                # star list, start time, and/or end time is different
+                needToUpdateMap = True
+            else:
+                print 'Keepout Map loaded from file.'
+        # generating new map if non-existent or needs update  
+        if not os.path.exists(kopath) or needToUpdateMap:
+            print 'Generating Keepout Map from scratch...'
+            starNames     = TL.Name.tolist()
+            koMap,koTimes = self.Observatory.generate_koMap(TL, self.TimeKeeping,\
+                                OS.observingModes[0])
+            data = {'koMap':koMap, 'koTimes':koTimes, 'starNames':starNames}
+            pickle.dump(data, open(kopath, 'wb'))
 
     def __str__(self):
         """String representation of the Survey Simulation object

@@ -255,20 +255,25 @@ class SurveySimulation(object):
             oldStarList = data['starNames']
             # checking to see if koMap needs to be updated
             if (oldStarList != newStarList or 
-                koTimes.value[ 0]  != SU.TimeKeeping.missionStart.value or 
-                koTimes.value[-1]  != SU.TimeKeeping.missionFinishAbs.value): 
+                koTimes.value[ 0]  != np.floor(self.TimeKeeping.missionStart.value) or 
+                koTimes.value[-1]  != np.floor(self.TimeKeeping.missionFinishAbs.value) ): 
                 # star list, start time, and/or end time is different
                 needToUpdateMap = True
+                print oldStarList != newStarList 
+                print koTimes.value[ 0]  != self.TimeKeeping.missionStart.value 
+                print koTimes.value[-1]  != self.TimeKeeping.missionFinishAbs.value
             else:
-                print 'Keepout Map loaded from file.'
+                print 'Keepout map loaded from file.'
         # generating new map if non-existent or needs update  
         if not os.path.exists(kopath) or needToUpdateMap:
-            print 'Generating Keepout Map from scratch...'
+            print 'Generating keepout map from scratch...'
             starNames     = TL.Name.tolist()
             koMap,koTimes = self.Observatory.generate_koMap(TL, self.TimeKeeping,\
                                 OS.observingModes[0])
             data = {'koMap':koMap, 'koTimes':koTimes, 'starNames':starNames}
             pickle.dump(data, open(kopath, 'wb'))
+        self.koMap   = koMap
+        self.koTimes = koTimes
 
     def __str__(self):
         """String representation of the Survey Simulation object

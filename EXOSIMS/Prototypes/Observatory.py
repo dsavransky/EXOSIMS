@@ -497,16 +497,164 @@ class Observatory(object):
         # global times when keepout is checked for all stars
         koTimes = np.arange(startTime.value, endTime.value, stepSize.value)
         koTimes = Time(koTimes,format='mjd')
-        koMap = np.zeros([TL.nStars,len(koTimes)])
         
-        # looping over all stars
-        print '   Starting Keepout Calculations for %s stars.' % TL.nStars
+        # looping over all stars to generate map of when all stars are observable
+        print '   Starting keepout calculations for %s stars.' % TL.nStars
+        koMap = np.zeros([TL.nStars,len(koTimes)])
         for n in range(TL.nStars):
             koMap[n,:] = self.keepout(TL,n,koTimes,mode,False)
-            if not n % 50:
-                print '   [%s / %s] completed.' % (n,TL.nStars)
+            if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
             
         return koMap,koTimes
+    
+    def calculate_observableTimes(self, TL, sInds, currentTime, koMap, koTimes, mode):
+        """Returns the next window of time during which targets are observable
+        
+        This method returns a nx2 ndarray of times for every star given in the
+        target list. The two entries for every star are the next times (after 
+        current time) when the star exits and enters keepout (i.e. the start 
+        and end times of the next window of observability). 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            koMap (integer ndarray nxm):
+                Keepout values for n stars throughout time range of length m
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+            mode (dict):
+                Selected observing mode            
+                
+        Returns:
+            observableTimes (astropy 2xn Time ndarray):
+                Start and end times of next observability time window in
+                absolute time MJD
+        """
+        # creating time arrays to use in the keepout method (# stars == # times)
+        # minimum of 5 days until occulter aligns with new target
+        if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + 5
+        else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
+        nextObTimes = Time(nextObTimes,format='mjd')  #converting to astropy MJD time array
+        
+        # finding observable times 
+        observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value
+        observableTimesNorm = observableTimes - nextObTimes.value #days since currentTime
+        
+        # in case of an occulter, correct for short windows
+        if mode['syst']['occulter']:
+            # find length of observable range in days
+            observable_range = np.diff(observableTimesNorm,axis=0)[0]
+            # re-do calculations for observable windows that are less than 5 days long
+            reDo = np.where(observable_range < 5)[0]
+            correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
+            correctedObTimes = Time(correctedObTimes,format='mjd')
+            observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
+
+        return Time(observableTimes,format='mjd') 
+    
+    def find_nextObsWindow(self,TL,sInds,currentTimes,koMap,koTimes):
+        """Method used by calculate_observableTimes for calculations
+        
+        This method returns a nx2 ndarray of times for every star given in the
+        target list. The two entries for every star are the next times (after 
+        current time) when the star exits and enters keepout (i.e. the start 
+        and end times of the next window of observability). 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTimes (astropy Time array):
+                Current absolute mission time in MJD same length as sInds
+            koMap (integer ndarray nxm):
+                Keepout values for n stars throughout time range of length m
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+            mode (dict):
+                Selected observing mode            
+                
+        Returns:
+            observableTimes (nx2 ndarray):
+                Start and end times of next observability time window in MJD
+        """
+        # create arrays
+        nLoops = len(sInds)
+        nextExitTime  = np.zeros(nLoops)
+        nextEntryTime = np.zeros(nLoops)
+        
+        #getting saved time closest to currentTime
+        xx     = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
+        xxMin  = np.min(xx,axis=1)
+        T      = np.array([np.where( xx[x] == xxMin[x] )[0][0] for x in range(nLoops)])
+            
+        #checking to see if stars are in keepout at currentTime
+        kogoodStart = [bool(koMap[x,S]) for x,S in zip(sInds,T)]
+        kobadStart  = [bool(not koMap[x,S]) for x,S in zip(sInds,T)]
+        nextExitTime[kogoodStart] = currentTimes[kogoodStart].value
+        
+        #finding next entry into keepout for currently observable stars
+        for n,S in zip(sInds[kogoodStart],T[kogoodStart]):
+            idxG_E = np.where(koMap[n,S:] == False)
+            
+            #enters KO after missionEnd
+            if not idxG_E[0].tolist():
+                nEnd    = np.where(sInds == n)
+                nextEntryTime[nEnd] = koTimes[-1].value
+            else:
+                nextEntry = idxG_E[0][0] + S
+                #enters KO after missionEnd (missed these)
+                if nextEntry > len(koTimes):
+                    nEnd    = np.where(sInds == n)
+                    nextEntryTime[nEnd] = koTimes[-1].value
+                #enters KO before missionEnd 
+                else:
+                    nGood     = np.where(sInds == n)
+                    nextEntryTime[nGood] = koTimes[nextEntry].value
+            
+        #finding next exit and entry of keepout for unobservable stars (in keepout)
+        for n,S in zip(sInds[kobadStart],T[kobadStart]):
+            idx_X = np.where(koMap[n,S:])
+            
+            #exit KO after missionEnd (enter after as well)
+            if not idx_X[0].tolist():
+                nEnd                = np.where(sInds == n)
+                nextExitTime[nEnd]  = koTimes[-1].value
+                nextEntryTime[nEnd] = koTimes[-1].value  
+            else:
+                nextExit = idx_X[0][0] + S
+                #exit KO after missionEnd (missed these)
+                if nextExit > len(koTimes):
+                    nEnd    = np.where(sInds == n)
+                    nextExitTime[nEnd]  = koTimes[-1].value
+                    nextEntryTime[nEnd] = koTimes[-1].value
+                #exit KO before missionEnd
+                else:
+                    nBad     = np.where(sInds == n)
+                    nextExitTime[nBad] = koTimes[nextExit].value
+                     
+                    idx_E = np.where(koMap[n,nextExit:] == False)
+                    #enters KO again after missionEnd
+                    if not idx_E[0].tolist():
+                        nEnd    = np.where(sInds == n)
+                        nextEntryTime[nEnd] = koTimes[-1].value
+                    else:
+                        nextEntry = idx_E[0][0] + nextExit
+                        #enters KO again after missionEnd (missed these)
+                        if nextEntry > len(koTimes):
+                            nEnd    = np.where(sInds == n)
+                            nextEntryTime[nEnd] = koTimes[-1].value
+                        #enters KO before missionEnd
+                        else:
+                            nextEntryTime[nBad] = koTimes[nextEntry].value
+
+        observableTimes = np.vstack([nextExitTime,nextEntryTime])*u.d
+
+        return observableTimes
 
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)

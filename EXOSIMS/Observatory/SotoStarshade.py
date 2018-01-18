@@ -313,15 +313,7 @@ class SotoStarshade(ObservatoryL2Halo):
             sd = np.array([np.radians(0)]*TL.nStars)*u.rad
             slewTimes = np.zeros(TL.nStars)*u.d
         else:
-            # position vector of previous target star
-            r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
-            # position vector of new target stars
-            r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-            # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
-    
+            sd = self.star_angularSep(TL,old_sInd,sInds,currentTime)
             slewTimes = self.constTOF[0].value*np.ones(TL.nStars)*u.d
             
         return sd,slewTimes

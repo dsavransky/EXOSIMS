@@ -656,6 +656,46 @@ class Observatory(object):
 
         return observableTimes
 
+    def star_angularSep(self,TL,old_sInd,sInds,currentTime):
+        """Finds angular separation from old star to given list of stars
+        
+        This method returns the angular separation from the last observed 
+        star to all others on the given list at the currentTime. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the last star of interest
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+
+        Returns:
+            sd (integer):
+                Angular separation between two target stars 
+        """
+        # position vector of previous target star
+        r_old = TL.starprop(old_sInd, currentTime)[0]
+        u_old = r_old.value/np.linalg.norm(r_old)
+        # position vector of new target stars
+        r_new = TL.starprop(sInds, currentTime)
+        u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+        # angle between old and new stars
+        sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+            
+        # A-frame
+        a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
+        a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
+        a3 = np.cross(a1,a2)                #last part of the A basis vectors
+        
+        # finding sign of angle
+        u2_Az = np.dot(a3,u_new.T)
+        sgn = np.sign(u2_Az)
+        
+        return sgn*sd
+        
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
@@ -1139,14 +1179,7 @@ class Observatory(object):
             sd = np.array([np.radians(0)]*TL.nStars)*u.rad
             slewTimes = np.zeros(TL.nStars)*u.d
         else:
-            # position vector of previous target star
-            r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
-            # position vector of new target stars
-            r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-            # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+            sd = self.star_angularSep(TL,old_sInd,sInds,currentTime)
             # calculate slew time
             slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
         

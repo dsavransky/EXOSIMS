@@ -17,7 +17,7 @@ class SotoStarshade(ObservatoryL2Halo):
     
     def __init__(self, missionStart=60634.,orbit_datapath=None,**specs): 
 
-        ObservatoryL2Halo.__init__(self,**specs)
+        ObservatoryL2Halo.__init__(self,**specs)    
     
     def boundary_conditions(self,rA,rB):
         """Creates boundary conditions for solving a boundary value problem
@@ -36,7 +36,6 @@ class SotoStarshade(ObservatoryL2Halo):
         Returns:
             BC (float 1x6 ndarray):
                 Star position vector in rotating frame in units of AU
-        
         """
     
         BC1 = rA[0] - self.rA[0]
@@ -74,7 +73,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 State vectors in rotating frame in normalized units
         """
         
-        angle,uA,uB,r_tscp = self.star_angularSep(TL,nA,nB,tA,tB)
+        angle,uA,uB,r_tscp = self.pointingVectors(TL,nA,nB,tA,tB)
         
         vA = self.haloVelocity(tA)[0].value/(2*np.pi)
         vB = self.haloVelocity(tB)[0].value/(2*np.pi)
@@ -103,9 +102,7 @@ class SotoStarshade(ObservatoryL2Halo):
         
         assert sol.success,"BVP solver failed."
             
-        
         return s
-    
     
     def calculate_dV(self,dt,TL,nA,N,tA):  
         """Finds the change in velocity needed to transfer to a new star line of sight
@@ -181,8 +178,7 @@ class SotoStarshade(ObservatoryL2Halo):
             # total delta-V needed to transfer to new star line of sight
             dV = np.linalg.norm(dvA,axis=1) + np.linalg.norm(dvB,axis=1)
     
-        return dV*u.m/u.s    
-    
+        return dV*u.m/u.s   
 
     def minimize_slewTimes(self,TL,nA,nB,tA):
         """Minimizes the slew time for a starshade transferring to a new star line of sight
@@ -330,7 +326,6 @@ class SotoStarshade(ObservatoryL2Halo):
             
         return sd,slewTimes
     
-        
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results
         
@@ -364,5 +359,3 @@ class SotoStarshade(ObservatoryL2Halo):
         DRM['scMass'] = self.scMass.to('kg')
         
         return DRM
-    
-    

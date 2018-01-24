@@ -384,7 +384,6 @@ class luvoirScheduler(SurveySimulation):
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
                 for m_i, mode in enumerate(modes):
-                    print(mode)
                     Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, pInds, dt, mode, 
                                                                       fZ=fZs[i,m_i])
                 # allocate second half of dt
@@ -433,7 +432,6 @@ class luvoirScheduler(SurveySimulation):
             # if planets are detected, calculate the minimum apparent separation
             smin = None
             det = (detected == 1)
-            print(det)
             if np.any(det):
                 smin = np.min(SU.s[pInds[det]])
                 log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 

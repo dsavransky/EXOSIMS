@@ -271,7 +271,7 @@ class tieredScheduler(SurveySimulation):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d:
+                if goal_GAdiff > 1*u.d and goal_GAdiff < time2arrive.to('day'):
                     print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)

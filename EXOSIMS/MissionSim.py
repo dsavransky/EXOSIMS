@@ -131,8 +131,8 @@ class MissionSim(object):
         specs0 = copy.deepcopy(specs)
 
         # set up numpy random number and add seed to specs
-        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
-        specs['seed'] = self.seed
+        #self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
+        #specs['seed'] = self.seed
         
         # start logging, with log file and logging level (default: INFO)
         self.logfile = specs.get('logfile', None)

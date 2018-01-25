@@ -13,7 +13,7 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class luvoirScheduler(SurveySimulation):
+class luvoirScheduler_det_only(SurveySimulation):
 
     def __init__(self, **specs):
         
@@ -96,21 +96,24 @@ class luvoirScheduler(SurveySimulation):
                 self.vprint(log_obs)
                 
                 # PERFORM DETECTION and populate revisit list attribute
+                DRM['det_info'] = []
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
                         self.observation_detection(sInd, det_intTime, det_modes)
                 for mode_index, det_mode in enumerate(det_modes):
-                    DRM['det_status{}'.format(mode_index)] = detected[mode_index]
-                    DRM['det_SNR{}'.format(mode_index)] = det_SNR[:,mode_index]
-                    DRM['det_fZ{}'.format(mode_index)] = det_fZ[mode_index].to('1/arcsec2')
-                    DRM['det_params{}'.format(mode_index)] = det_systemParams
-                    DRM['det_mode{}'.format(mode_index)] = dict(det_mode)
-                    del DRM['det_mode{}'.format(mode_index)]['inst'], DRM['det_mode{}'.format(mode_index)]['syst']
+                    det_data = {}
+                    det_data['det_status'] = detected[mode_index]
+                    det_data['det_SNR'] = det_SNR[:,mode_index]
+                    det_data['det_fZ'] = det_fZ[mode_index].to('1/arcsec2')
+                    det_data['det_params'] = det_systemParams
+                    det_data['det_mode'] = dict(det_mode)
+                    det_data['det_time'] = det_intTime.to('day')
+                    del det_data['det_mode']['inst'], det_data['det_mode']['syst']
+                    DRM['det_info'].append(det_data)
 
                 # update the occulter wet mass
                 if OS.haveOcculter == True:
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
                 # populate the DRM with detection results
-                DRM['det_time'] = det_intTime.to('day')
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 DRM['char_info'] = []
@@ -430,7 +433,7 @@ class luvoirScheduler(SurveySimulation):
             detecteds.append(detected)
                 
             # if planets are detected, calculate the minimum apparent separation
-            smin = None
+            smin = np.nan
             det = (detected == 1)
             if np.any(det):
                 smin = np.min(SU.s[pInds[det]])
@@ -456,7 +459,7 @@ class luvoirScheduler(SurveySimulation):
                 self.lastDetected[sInd,3,m_i] = np.append(self.lastDetected[sInd,3,m_i], 
                         WA.to('arcsec').value)
                 sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
-                smin = np.minimum(smin, sminFA) if smin is not None else sminFA
+                smin = np.minimum(smin, sminFA) if smin is not np.nan else sminFA
                 log_FA = '   - False Alarm (WA=%s, dMag=%s)'%(np.round(WA, 3), round(dMag, 1))
                 self.logger.info(log_FA)
                 self.vprint(log_FA)
@@ -467,7 +470,7 @@ class luvoirScheduler(SurveySimulation):
             # based on minimum separation
             Ms = TL.MsTrue[sInd]
             if m_i == len(modes) - 1:
-                if None not in smins:
+                if np.nan not in smins:
                     sp = smins[0]
                     if np.any(det):
                         pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
@@ -497,5 +500,4 @@ class luvoirScheduler(SurveySimulation):
                         self.starRevisit[revInd,1] = revisit[1]
         
         return np.array(detecteds).astype(int), fZ, systemParams, SNR, np.array(FAs)
-
 

@@ -367,7 +367,7 @@ class tieredScheduler(SurveySimulation):
             tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
-            
+
             # 1/ Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = None
@@ -409,6 +409,7 @@ class tieredScheduler(SurveySimulation):
 
             fEZ = ZL.fEZ0
             WA = self.WAint[0]
+
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:  
@@ -443,7 +444,7 @@ class tieredScheduler(SurveySimulation):
             if len(sInds) > 0 and Obs.checkKeepoutEnd:
                 kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], detmode[0])
                 sInds = sInds[np.where(kogoodEnd)[0]]
-            
+
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
             if np.any(sInds):
@@ -483,7 +484,7 @@ class tieredScheduler(SurveySimulation):
                 occ_sInd = old_occ_sInd
 
                 # store relevant values
-                intTime_by_mode = np.zeros(len(detmode))
+                intTime_by_mode = np.zeros(len(detmode))*u.d
                 for m_i, mode in enumerate(detmode):
                     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
                 t_det = max(intTime_by_mode)
@@ -844,7 +845,6 @@ class tieredScheduler(SurveySimulation):
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
                 for m_i, mode in enumerate(modes):
-                    print(mode)
                     Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, pInds, dt, mode, 
                                                                       fZ=fZs[i,m_i])
                 # allocate second half of dt
@@ -891,9 +891,8 @@ class tieredScheduler(SurveySimulation):
             detecteds.append(detected)
                 
             # if planets are detected, calculate the minimum apparent separation
-            smin = None
+            smin = np.nan
             det = (detected == 1)
-            print(det)
             if np.any(det):
                 smin = np.min(SU.s[pInds[det]])
                 log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
@@ -918,7 +917,7 @@ class tieredScheduler(SurveySimulation):
                 self.lastDetected[sInd,3,m_i] = np.append(self.lastDetected[sInd,3,m_i], 
                         WA.to('arcsec').value)
                 sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
-                smin = np.minimum(smin, sminFA) if smin is not None else sminFA
+                smin = np.minimum(smin, sminFA) if smin is not np.nan else sminFA
                 log_FA = '   - False Alarm (WA=%s, dMag=%s)'%(np.round(WA, 3), round(dMag, 1))
                 self.logger.info(log_FA)
                 self.vprint(log_FA)
@@ -929,7 +928,7 @@ class tieredScheduler(SurveySimulation):
             # based on minimum separation
             Ms = TL.MsTrue[sInd]
             if m_i == len(modes) - 1:
-                if None not in smins:
+                if np.nan not in smins:
                     sp = smins[0]
                     if np.any(det):
                         pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]

@@ -219,6 +219,11 @@ class SurveySimulation(object):
             WAint = float(WAint)*u.arcsec
         # transform into arrays of length TargetList.nStars
         self.dMagint = np.array([dMagint]*TL.nStars)
+        for i,Lstar in enumerate(TL.L):
+            if Lstar <1.6:
+               self.dMagint[i] = 25.5 + 2.5 * np.log10(Lstar)
+            else:
+                self.dMagint[i]=26.0
         self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
         
         # add scalar values of WAint and dMagint to outspec

@@ -285,10 +285,11 @@ class luvoirScheduler_det_only(SurveySimulation):
                     self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
                 # store selected star integration time
-                intTime_by_mode = np.zeros(len(modes))*u.d
-                for m_i, mode in enumerate(modes):
-                    intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
-                intTime = max(intTime_by_mode)
+                # intTime_by_mode = np.zeros(len(modes))*u.d
+                # for m_i, mode in enumerate(modes):
+                #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
+                # intTime = max(intTime_by_mode)
+                intTime = intTimes[sInd]
                 break
             
             # if no observable target, call the TimeKeeping.wait() method

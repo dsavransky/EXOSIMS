@@ -286,10 +286,11 @@ class luvoirScheduler(SurveySimulation):
                     self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
                 # store selected star integration time
-                intTime_by_mode = np.zeros(len(modes))*u.d
-                for m_i, mode in enumerate(modes):
-                    intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
-                intTime = max(intTime_by_mode)
+                # intTime_by_mode = np.zeros(len(modes))*u.d
+                # for m_i, mode in enumerate(modes):
+                #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
+                # intTime = max(intTime_by_mode)
+                intTime = intTimes[sInd]
                 break
             
             # if no observable target, call the TimeKeeping.wait() method
@@ -615,8 +616,8 @@ class luvoirScheduler(SurveySimulation):
             pIndsChar = []
             TK.allocate_time(modes[0]['syst']['ohTime'])
             for m_i, mode in enumerate(modes):
-                if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
-                    intTime = np.max(intTimes_all[m_i][tochars[m_i]])
+                if intTime is None or np.max(intTimes_all[0][tochars[m_i]]) > intTime:
+                    intTime = np.max(intTimes_all[0][tochars[m_i]])
                 pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
                 log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
                         len(pIndsChar[m_i]), len(pIndsDet[m_i]))

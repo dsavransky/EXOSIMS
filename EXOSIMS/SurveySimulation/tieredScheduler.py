@@ -484,10 +484,11 @@ class tieredScheduler(SurveySimulation):
                 occ_sInd = old_occ_sInd
 
                 # store relevant values
-                intTime_by_mode = np.zeros(len(detmode))*u.d
-                for m_i, mode in enumerate(detmode):
-                    intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
-                t_det = max(intTime_by_mode)
+                # intTime_by_mode = np.zeros(len(detmode))*u.d
+                # for m_i, mode in enumerate(detmode):
+                #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
+                # t_det = max(intTime_by_mode)
+                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], detmode[0])[0]
 
                 # update visited list for current star
                 self.starVisits[sInd] += 1

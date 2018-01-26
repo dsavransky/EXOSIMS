@@ -31,7 +31,7 @@ class AlbedoByRadius(SAG13):
             Constant geometric albedo values.
         Rb (float (n-1)x1 ndarray):
             Planetary radius break points for albedos in earthRad.
-        Rs (float (n+1)x1 ndarray):
+        Rbs (float (n+1)x1 ndarray):
             Planetary radius break points with 0 padded on left and np.inf 
             padded on right
     
@@ -50,7 +50,7 @@ class AlbedoByRadius(SAG13):
         # check to ensure proper inputs
         assert len(self.ps) - len(self.Rb) == 1, \
             'input albedos must have one more element than break radii'
-        self.Rs = np.hstack((0.0,self.Rb,np.inf))
+        self.Rbs = np.hstack((0.0,self.Rb,np.inf))
         
         # populate _outspec with new specific attributes
         self._outspec['ps'] = self.ps
@@ -124,8 +124,8 @@ class AlbedoByRadius(SAG13):
         """
         Rp = np.array(Rp.to('earthRad').value, ndmin=1, copy=False)
         p = np.zeros(Rp.shape)
-        for i in xrange(len(self.Rs)-1):
-            mask = np.where((Rp>=self.Rs[i])&(Rp<self.Rs[i+1]))
+        for i in xrange(len(self.Rbs)-1):
+            mask = np.where((Rp>=self.Rbs[i])&(Rp<self.Rbs[i+1]))
             p[mask] = self.ps[i]
         
         return p

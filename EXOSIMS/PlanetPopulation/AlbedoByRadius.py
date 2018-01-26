@@ -41,7 +41,8 @@ class AlbedoByRadius(SAG13):
             SAG13starMass=1., Rprange=[2/3., 17.0859375],
             arange=[0.09084645, 1.45354324], ps=[0.2,0.5], Rb=[1.4], **specs):
         
-        SAG13.__init__(self, SAG13coeffs=SAG13coeffs, SAG13starMass=SAG13starMass,
+        specs['prange'] = [np.min(ps), np.max(ps)]
+        SAG13.__init__(self, SAG13coeffs=SAG13coeffs, SAG13starMass=SAG13starMass, 
                        Rprange=Rprange, arange=arange, **specs)
         
         # cast inputs to arrays

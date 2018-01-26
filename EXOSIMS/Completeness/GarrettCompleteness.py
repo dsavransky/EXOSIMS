@@ -336,7 +336,54 @@ class GarrettCompleteness(BrownCompleteness):
                     f += np.sin(b2)/2.0*self.dist_z(z2)*z2*np.log(10.0)/(-2.5*self.amax*np.cos(b2))
             else:
                 ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
-                if ztest >= self.zmax:
+                if self.PlanetPopulation.pfromRp:
+#                    f = 0.0
+#                    minR = self.PlanetPopulation.Rbs[:-1]
+#                    maxR = self.PlanetPopulation.Rbs[1:]
+#                    minR = np.hstack((minR,self.Rmin))
+#                    maxR = np.hstack((maxR,self.Rmax))
+#                    minR.sort()
+#                    maxR.sort()
+##                    minR = minR[(minR>=self.Rmin)&(minR<=self.Rmax)]
+##                    maxR = maxR[(maxR>=self.Rmax)&(maxR<=self.Rmax)]
+#                    print('minR: {} maxR: {}'.format(minR,maxR))
+#                    minz = self.PlanetPopulation.get_p_from_Rp(minR*u.earthRad)*minR**2
+#                    maxz = self.PlanetPopulation.get_p_from_Rp(maxR*u.earthRad)*maxR**2
+#                    if ztest > maxz[-1]:
+#                        f = 0.0
+#                    else:
+#                        ptest = self.PlanetPopulation.get_p_from_Rp(minR*u.earthRad)
+#                        minR[ztest>minz] = np.sqrt(ztest/ptest[ztest>minz])
+#                        mask = minR < maxR
+#                        print('minR: {} maxR: {} mask: {}'.format(minR,maxR,mask))
+#                        minR = minR[mask]
+#                        maxR = maxR[mask]
+#                        f = 0.0
+#                        for i in xrange(len(minR)):
+#                            f += integrate.fixed_quad(self.f_dmagsRp, minR[i], maxR[i], args=(dmag,s), n=200)[0]
+                    f = 0.0
+                    minR = self.PlanetPopulation.Rbs[:-1]
+                    maxR = self.PlanetPopulation.Rbs[1:]
+                    for i in xrange(len(minR)):
+                        ptest = self.PlanetPopulation.get_p_from_Rp(minR[i]*u.earthRad)
+                        Rtest = np.sqrt(ztest/ptest)
+                        if Rtest > minR[i]:
+                            if Rtest > self.Rmin:
+                                Rl = Rtest
+                            else:
+                                Rl = self.Rmin
+                        else:
+                            if self.Rmin > minR[i]:
+                                Rl = self.Rmin
+                            else:
+                                Rl = minR[i]
+                        if self.Rmax > maxR[i]:
+                            Ru = maxR[i]
+                        else:
+                            Ru = self.Rmax
+                        if Rl < Ru:
+                            f += integrate.fixed_quad(self.f_dmagsRp, Rl, Ru, args=(dmag,s), n=200)[0]
+                elif ztest >= self.zmax:
                     f = 0.0
                 elif (self.pconst & self.Rconst):
                     f = self.f_dmagsz(self.zmin,dmag,s)
@@ -410,7 +457,7 @@ class GarrettCompleteness(BrownCompleteness):
         if not isinstance(Rp,np.ndarray):
             Rp = np.array(Rp, ndmin=1, copy=False)
 
-        vals = (s/self.x)**2*10.**(-0.4*dmag)/self.PlanetPopulation.get_p_from_Rp(Rp)/Rp**2
+        vals = (s/self.x)**2*10.**(-0.4*dmag)/self.PlanetPopulation.get_p_from_Rp(Rp*u.earthRad)/Rp**2
         
         f = np.zeros(Rp.shape)
         fa = f[vals<self.val]

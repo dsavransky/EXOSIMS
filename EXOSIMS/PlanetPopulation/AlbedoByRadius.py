@@ -52,6 +52,9 @@ class AlbedoByRadius(SAG13):
             'input albedos must have one more element than break radii'
         self.Rbs = np.hstack((0.0,self.Rb,np.inf))
         
+        # albedo is constant for planetary radius range
+        self.pfromRp = True
+        
         # populate _outspec with new specific attributes
         self._outspec['ps'] = self.ps
         self._outspec['Rb'] = self.Rb

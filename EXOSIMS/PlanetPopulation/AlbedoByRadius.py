@@ -111,7 +111,7 @@ class AlbedoByRadius(SAG13):
         return a, e, p, Rp
     
     def get_p_from_Rp(self, Rp):
-        """Generate albedos from radius ranges
+        """Generate constant albedos for radius ranges
         
         Args:
             Rp (astropy Quantity array):

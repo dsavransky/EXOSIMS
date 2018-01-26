@@ -7,7 +7,7 @@ import scipy.integrate as integrate
 class AlbedoByRadius(SAG13):
     """Planet Population module based on SAG13 occurrence rates.
     
-    NOTE: This assigns constant albedo based on radius range.
+    NOTE: This assigns constant albedo based on radius ranges.
     
     Attributes: 
         SAG13coeffs (float 4x2 ndarray):
@@ -31,6 +31,9 @@ class AlbedoByRadius(SAG13):
             Constant geometric albedo values.
         Rb (float (n-1)x1 ndarray):
             Planetary radius break points for albedos in earthRad.
+        Rs (float (n+1)x1 ndarray):
+            Planetary radius break points with 0 padded on left and np.inf 
+            padded on right
     
     """
     
@@ -41,11 +44,13 @@ class AlbedoByRadius(SAG13):
         SAG13.__init__(self, SAG13coeffs=SAG13coeffs, SAG13starMass=SAG13starMass,
                        Rprange=Rprange, arange=arange, **specs)
         
-        self.ps = np.array(ps, copy=False)
-        self.Rb = np.array(Rb, copy=False)
+        # cast inputs to arrays
+        self.ps = np.array(ps, ndmin=1, copy=False)
+        self.Rb = np.array(Rb, ndmin=1, copy=False)
         # check to ensure proper inputs
         assert len(self.ps) - len(self.Rb) == 1, \
             'input albedos must have one more element than break radii'
+        self.Rs = np.hstack((0.0,self.Rb,np.inf))
         
         # populate _outspec with new specific attributes
         self._outspec['ps'] = self.ps
@@ -101,10 +106,26 @@ class AlbedoByRadius(SAG13):
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from planetary radius
-        Rs = np.hstack((0.,self.Rb,np.inf))
-        p = np.zeros((n,))
-        for i in xrange(len(Rs)-1):
-            mask = np.where((Rp.to('earthRad').value>=Rs[i])&(Rp.to('earthRad').value<Rs[i+1]))
-            p[mask] = self.ps[i]
+        p = self.get_p_from_Rp(Rp)
         
         return a, e, p, Rp
+    
+    def get_p_from_Rp(self, Rp):
+        """Generate albedos from radius ranges
+        
+        Args:
+            Rp (astropy Quantity array):
+                Planetary radius with units of earthRad
+        
+        Returns:
+            p (float ndarray):
+                Albedo values
+        
+        """
+        Rp = np.array(Rp.to('earthRad').value, ndmin=1, copy=False)
+        p = np.zeros(Rp.shape)
+        for i in xrange(len(self.Rs)-1):
+            mask = np.where((Rp>=self.Rs[i])&(Rp<self.Rs[i+1]))
+            p[mask] = self.ps[i]
+        
+        return p

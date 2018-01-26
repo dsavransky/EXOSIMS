@@ -390,6 +390,49 @@ class GarrettCompleteness(BrownCompleteness):
         
         return f
     
+    def f_dmagsRp(self, Rp, dmag, s):
+        """Calculates the joint probability density of planetary radius, 
+        dMag, and projected separation
+        
+        Args:
+            Rp (ndarray):
+                Values of planetary radius
+            dmag (float):
+                Planet delta magnitude
+            s (float):
+                Value of projected separation
+        
+        Returns:
+            f (ndarray):
+                Values of joint probability density
+                
+        """
+        if not isinstance(Rp,np.ndarray):
+            Rp = np.array(Rp, ndmin=1, copy=False)
+
+        vals = (s/self.x)**2*10.**(-0.4*dmag)/self.PlanetPopulation.get_p_from_Rp(Rp)/Rp**2
+        
+        f = np.zeros(Rp.shape)
+        fa = f[vals<self.val]
+        Rpa = Rp[vals<self.val]
+        valsa = vals[vals<self.val]
+        b1 = self.binv1(valsa)
+        b2 = self.binv2(valsa)
+        r1 = s/np.sin(b1)
+        r2 = s/np.sin(b2)
+        good1 = ((r1>self.rmin)&(r1<self.rmax))
+        good2 = ((r2>self.rmin)&(r2<self.rmax))
+        if (self.pconst & self.Rconst):
+            fa[good1] = np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
+            fa[good2] += np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
+        else:
+            fa[good1] = self.dist_radius(Rpa[good1])*np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
+            fa[good2] += self.dist_radius(Rpa[good2])*np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
+            
+        f[vals<self.val] = fa
+        
+        return f
+    
     def mindmag(self, s):
         """Calculates the minimum value of dMag for projected separation
         

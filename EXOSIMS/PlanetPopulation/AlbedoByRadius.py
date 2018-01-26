@@ -1,8 +1,6 @@
 from EXOSIMS.PlanetPopulation.SAG13 import SAG13
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
-import scipy.integrate as integrate
 
 class AlbedoByRadius(SAG13):
     """Planet Population module based on SAG13 occurrence rates.

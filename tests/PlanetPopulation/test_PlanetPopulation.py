@@ -128,7 +128,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating p samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','AlbedoByRadius']
         exclude_checkrange = ['KeplerLike1','SAG13']
 
         tmp = np.random.rand(1)*0.5

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
+from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
@@ -13,11 +13,11 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class luvoirScheduler(SurveySimulation):
+class luvoirScheduler(linearJScheduler):
 
     def __init__(self, **specs):
         
-        SurveySimulation.__init__(self, **specs)
+        linearJScheduler.__init__(self, **specs)
 
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
@@ -609,20 +609,23 @@ class luvoirScheduler(SurveySimulation):
 
                 tochars.append(tochar)
                 intTimes_all.append(intTimes)
-        
+
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time
-        if np.any(tochar):
+        if np.any(tochars):
             pIndsChar = []
             TK.allocate_time(modes[0]['syst']['ohTime'])
             for m_i, mode in enumerate(modes):
-                if intTime is None or np.max(intTimes_all[0][tochars[m_i]]) > intTime:
-                    intTime = np.max(intTimes_all[0][tochars[m_i]])
-                pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
-                log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
-                        len(pIndsChar[m_i]), len(pIndsDet[m_i]))
-                self.logger.info(log_char)
-                self.vprint(log_char)
+                if len(pIndsDet[m_i]) > 0:
+                    if intTime is None or np.max(intTimes_all[0][tochars[0]]) > intTime:
+                        intTime = np.max(intTimes_all[0][tochars[0]])
+                    pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
+                    log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
+                            len(pIndsChar[m_i]), len(pIndsDet[m_i]))
+                    self.logger.info(log_char)
+                    self.vprint(log_char)
+                else:
+                    pIndsChar.append([])
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -677,40 +680,41 @@ class luvoirScheduler(SurveySimulation):
             
             # calculate the false alarm SNR (if any)
             for m_i, mode in enumerate(modes):
-                SNRfa = []
-                if pIndsChar[m_i][-1] == -1:
-                    fEZ = self.lastDetected[sInd,1,m_i][-1]/u.arcsec**2
-                    dMag = self.lastDetected[sInd,2,m_i][-1]
-                    WA = self.lastDetected[sInd,3,m_i][-1]*u.arcsec
-                    C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
-                    S = (C_p*intTime).decompose().value
-                    N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
-                    SNRfa = (S/N if N > 0 else 0.)
-            
-                # save all SNRs (planets and FA) to one array
-                SNRinds = np.where(det[m_i])[0][tochars[m_i]]
-                SNR[m_i][SNRinds] = np.append(SNRplans[:,m_i], SNRfa)
-            
-                # now, store characterization status: 1 for full spectrum, 
-                # -1 for partial spectrum, 0 for not characterized
-                char = (SNR[m_i] >= mode['SNR'])
-                # initialize with full spectra
-                characterized = char.astype(int)
-                WAchar = self.lastDetected[sInd,3,m_i][char]*u.arcsec
-                # find the current WAs of characterized planets
-                WAs = systemParams['WA']
-                if FA[m_i]:
-                    WAs = np.append(WAs, self.lastDetected[sInd,3,m_i][-1]*u.arcsec)
-                # check for partial spectra
-                IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-                OWA_min = mode['OWA']*(1 - mode['BW']/2.)
-                char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-                characterized[char] = -1
-                # encode results in spectra lists (only for planets, not FA)
-                charplans = characterized[:-1] if FA[m_i] else characterized
-                self.fullSpectra[m_i][pInds[charplans == 1]] += 1
-                self.partialSpectra[m_i][pInds[charplans == -1]] += 1
-                characterizeds[m_i] = characterized.astype(int)
+                if len(pIndsChar[m_i]) > 0:
+                    SNRfa = []
+                    if pIndsChar[m_i][-1] == -1:
+                        fEZ = self.lastDetected[sInd,1,m_i][-1]/u.arcsec**2
+                        dMag = self.lastDetected[sInd,2,m_i][-1]
+                        WA = self.lastDetected[sInd,3,m_i][-1]*u.arcsec
+                        C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
+                        S = (C_p*intTime).decompose().value
+                        N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
+                        SNRfa = (S/N if N > 0 else 0.)
+                
+                    # save all SNRs (planets and FA) to one array
+                    SNRinds = np.where(det[m_i])[0][tochars[m_i]]
+                    SNR[m_i][SNRinds] = np.append(SNRplans[:,m_i], SNRfa)
+                
+                    # now, store characterization status: 1 for full spectrum, 
+                    # -1 for partial spectrum, 0 for not characterized
+                    char = (SNR[m_i] >= mode['SNR'])
+                    # initialize with full spectra
+                    characterized = char.astype(int)
+                    WAchar = self.lastDetected[sInd,3,m_i][char]*u.arcsec
+                    # find the current WAs of characterized planets
+                    WAs = systemParams['WA']
+                    if FA[m_i]:
+                        WAs = np.append(WAs, self.lastDetected[sInd,3,m_i][-1]*u.arcsec)
+                    # check for partial spectra
+                    IWA_max = mode['IWA']*(1 + mode['BW']/2.)
+                    OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+                    char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
+                    characterized[char] = -1
+                    # encode results in spectra lists (only for planets, not FA)
+                    charplans = characterized[:-1] if FA[m_i] else characterized
+                    self.fullSpectra[m_i][pInds[charplans == 1]] += 1
+                    self.partialSpectra[m_i][pInds[charplans == -1]] += 1
+                    characterizeds[m_i] = characterized.astype(int)
         
         return characterizeds, fZ, systemParams, SNR, intTime
 

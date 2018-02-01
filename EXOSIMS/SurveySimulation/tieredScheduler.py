@@ -81,8 +81,7 @@ class tieredScheduler(SurveySimulation):
         self.coeff_time = []
 
         allModes = OS.observingModes
-        num_det_modes = len(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
-        self.lastDetected = np.empty((TL.nStars, 4, num_det_modes), dtype=object)
+        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
 
 
     def run_sim(self):
@@ -129,7 +128,7 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             TK.obsStart = TK.currentTimeNorm.to('day')
             prev_occ_sInd = occ_sInd
-            DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detModes, charMode)
+            DRM, sInd, occ_sInd, t_det, sd, occ_sInds, dmode = self.next_target(sInd, occ_sInd, detModes, charMode)
             assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
@@ -174,25 +173,24 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                         DRM['det_dMag'] = SU.dMag[pInds].tolist()
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                    detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, detModes)
+                    detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, dmode)
 
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*.07
 
                     DRM['det_time'] = t_det.to('day')
 
-                    for mode_index, det_mode in enumerate(detModes):
-                        if np.any(detected[mode_index]):
-                            print '  Det. results are: %s'%(detected[mode_index])
-                        # populate the DRM with detection results
+                    if np.any(detected):
+                        print '  Det. results are: %s'%(detected)
+                    # populate the DRM with detection results
 
-                        DRM['det_status{}'.format(mode_index)] = detected[mode_index]
-                        DRM['det_SNR{}'.format(mode_index)] = det_SNR[:,mode_index]
-                        DRM['det_fZ{}'.format(mode_index)] = det_fZ[mode_index].to('1/arcsec2')
-                        DRM['det_params{}'.format(mode_index)] = det_systemParams
-                        DRM['det_mode{}'.format(mode_index)] = dict(det_mode)
-                        DRM['FA_det_status{}'.format(mode_index)] = int(FA[mode_index])
-                        del DRM['det_mode{}'.format(mode_index)]['inst'], DRM['det_mode{}'.format(mode_index)]['syst']
+                    DRM['det_status'] = detected
+                    DRM['det_SNR'] = det_SNR
+                    DRM['det_fZ'] = det_fZ.to('1/arcsec2')
+                    DRM['det_params'] = det_systemParams
+                    DRM['det_mode'] = dict(dmode)
+                    DRM['FA_det_status'] = int(FA)
+                    del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
@@ -488,7 +486,14 @@ class tieredScheduler(SurveySimulation):
                 # for m_i, mode in enumerate(detmode):
                 #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
                 # t_det = max(intTime_by_mode)
-                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], detmode[0])[0]
+                dmode = detmode[0]
+                if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
+                    bw = dmode['BW'] + detmode[1]['BW']
+                    optics = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
+                    dmode['BW'] = bw
+                    dmode['syst']['optics'] = optics
+
+                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
                 # update visited list for current star
                 self.starVisits[sInd] += 1
@@ -520,14 +525,14 @@ class tieredScheduler(SurveySimulation):
         else:
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None
+            return DRM, None, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
             print 'Mission complete: no more time available'
-            return DRM, None, None, None, None, None
+            return DRM, None, None, None, None, None, None
 
-        return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
+        return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, dmode
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
         """Choose next target for the occulter based on truncated 
@@ -771,195 +776,6 @@ class tieredScheduler(SurveySimulation):
             int_times[i] = int_time
 
         return int_times
-
-
-    def observation_detection(self, sInd, intTime, modes):
-        """Determines SNR and detection status for a given integration time 
-        for detetion. Also updates the lastDetected and starRevisit lists.
-        
-        Args:
-            sInd (integer):
-                Integer index of the star of interest
-            intTime (astropy Quantity):
-                Selected star integration time for detection in units of day. 
-                Defaults to None.
-            mode (dict):
-                Selected observing mode for detection
-        
-        Returns:
-            detected (integer ndarray):
-                Detection status for each planet orbiting the observed target star:
-                1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
-            fZ (astropy Quantity):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            systemParams (dict):
-                Dictionary of time-dependant planet properties averaged over the 
-                duration of the integration
-            SNR (float ndarray):
-                Detection signal-to-noise ratio of the observable planets
-            FA (boolean):
-                False alarm (false positive) boolean
-        
-        """
-        
-        PPop = self.PlanetPopulation
-        Comp = self.Completeness
-        OS = self.OpticalSystem
-        ZL = self.ZodiacalLight
-        PPro = self.PostProcessing
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        Obs = self.Observatory
-        TK = self.TimeKeeping
-        
-        # find indices of planets around the target
-        pInds = np.where(SU.plan2star == sInd)[0]
-        nmodes = len(modes)
-        
-        # initialize outputs
-        detecteds = []
-        fZ = 0./u.arcsec**2 * np.ones(nmodes)
-        systemParams = SU.dump_system_params(sInd) # write current system params by default
-        SNR = np.zeros((len(pInds), nmodes))
-        FAs = []
-        smins = []
-        
-        # if any planet, calculate SNR
-        if len(pInds) > 0:
-            # initialize arrays for SNR integration
-            fZs = np.zeros((self.ntFlux, nmodes))/u.arcsec**2
-            systemParamss = np.empty(self.ntFlux, dtype='object')
-            Ss = np.zeros((self.ntFlux, len(pInds), nmodes))
-            Ns = np.zeros((self.ntFlux, len(pInds), nmodes))
-            # integrate the signal (planet flux) and noise
-            dt = intTime/self.ntFlux
-            for i in range(self.ntFlux):
-                # allocate first half of dt
-                TK.allocate_time(dt/2.)
-                # calculate current zodiacal light brightness
-                for m_i, mode in enumerate(modes):
-                    fZs[i, m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-                # propagate the system to match up with current time
-                SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                self.propagTimes[sInd] = TK.currentTimeNorm
-                # save planet parameters
-                systemParamss[i] = SU.dump_system_params(sInd)
-                # calculate signal and noise (electron count rates)
-                for m_i, mode in enumerate(modes):
-                    Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, pInds, dt, mode, 
-                                                                      fZ=fZs[i,m_i])
-                # allocate second half of dt
-                TK.allocate_time(dt/2.)
-            
-            # average output parameters
-            for m_i, mode in enumerate(modes):
-                fZ[m_i] = np.mean(fZs[:,m_i])
-            systemParams = {key: sum([systemParamss[x][key]
-                    for x in range(self.ntFlux)])/float(self.ntFlux)
-                    for key in sorted(systemParamss[0])}
-            # calculate SNR
-            S = Ss.sum(0)
-            N = Ns.sum(0)
-            SNR[N > 0] = S[N > 0]/N[N > 0]
-            # allocate extra time for timeMultiplier
-            extraTime = intTime*(mode['timeMultiplier'] - 1)
-            TK.allocate_time(extraTime)
-        
-        # if no planet, just save zodiacal brightness in the middle of the integration
-        else:
-            totTime = intTime*(modes[0]['timeMultiplier'])
-            TK.allocate_time(totTime/2.)
-            for m_i, mode in enumerate(modes):
-                fZ[m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-            TK.allocate_time(totTime/2.)
-        
-        # find out if a false positive (false alarm) or any false negative 
-        # (missed detections) have occurred
-        for m_i, mode in enumerate(modes):
-            FA, MD = PPro.det_occur(SNR[:,m_i], mode, TL, sInd, intTime)
-            FAs.append(FA)
-            detected = np.array([], dtype=int)
-        
-            # populate detection status array 
-            # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA
-            if len(pInds) > 0:
-                detected = (~MD).astype(int)
-                WA = np.array([systemParamss[x]['WA'].to('arcsec').value 
-                        for x in range(len(systemParamss))])*u.arcsec
-                detected[np.all(WA < mode['IWA'], 0)] = -1
-                detected[np.all(WA > mode['OWA'], 0)] = -2
-
-            detecteds.append(detected)
-                
-            # if planets are detected, calculate the minimum apparent separation
-            smin = np.nan
-            det = (detected == 1)
-            if np.any(det):
-                smin = np.min(SU.s[pInds[det]])
-                log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
-                        len(pInds[det]), len(pInds))
-                self.logger.info(log_det)
-                self.vprint(log_det)
-            
-            # populate the lastDetected array by storing det, fEZ, dMag, and WA
-            self.lastDetected[sInd,:,m_i] = [det, systemParams['fEZ'].to('1/arcsec2').value, 
-                        systemParams['dMag'], systemParams['WA'].to('arcsec').value]
-            
-            # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-            # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
-            if FA == True:
-                WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
-                        np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-                dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
-                self.lastDetected[sInd,0,m_i] = np.append(self.lastDetected[sInd,0,m_i], True)
-                self.lastDetected[sInd,1,m_i] = np.append(self.lastDetected[sInd,1,m_i], 
-                        ZL.fEZ0.to('1/arcsec2').value)
-                self.lastDetected[sInd,2,m_i] = np.append(self.lastDetected[sInd,2,m_i], dMag)
-                self.lastDetected[sInd,3,m_i] = np.append(self.lastDetected[sInd,3,m_i], 
-                        WA.to('arcsec').value)
-                sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
-                smin = np.minimum(smin, sminFA) if smin is not np.nan else sminFA
-                log_FA = '   - False Alarm (WA=%s, dMag=%s)'%(np.round(WA, 3), round(dMag, 1))
-                self.logger.info(log_FA)
-                self.vprint(log_FA)
-
-            smins.append(smin)
-            
-            # in both cases (detection or false alarm), schedule a revisit 
-            # based on minimum separation
-            Ms = TL.MsTrue[sInd]
-            if m_i == len(modes) - 1:
-                if np.nan not in smins:
-                    sp = smins[0]
-                    if np.any(det):
-                        pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-                        Mp = SU.Mp[pInd_smin]
-                    else:
-                        Mp = SU.Mp.mean()
-                    mu = const.G*(Mp + Ms)
-                    T = 2.*np.pi*np.sqrt(sp**3/mu)
-                    t_rev = TK.currentTimeNorm + T/2.
-                # otherwise, revisit based on average of population semi-major axis and mass
-                else:
-                    sp = SU.s.mean()
-                    Mp = SU.Mp.mean()
-                    mu = const.G*(Mp + Ms)
-                    T = 2.*np.pi*np.sqrt(sp**3/mu)
-                    t_rev = TK.currentTimeNorm + 0.75*T
-                
-                # finally, populate the revisit list (NOTE: sInd becomes a float)
-                revisit = np.array([sInd, t_rev.to('day').value])
-                if self.starRevisit.size == 0:
-                    self.starRevisit = np.array([revisit])
-                else:
-                    revInd = np.where(self.starRevisit[:,0] == sInd)[0]
-                    if revInd.size == 0:
-                        self.starRevisit = np.vstack((self.starRevisit, revisit))
-                    else:
-                        self.starRevisit[revInd,1] = revisit[1]
-        
-        return np.array(detecteds).astype(int), fZ, systemParams, SNR, np.array(FAs)
-
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
+from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
@@ -13,11 +13,11 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class luvoirScheduler_det_only(SurveySimulation):
+class luvoirScheduler_det_only(linearJScheduler):
 
     def __init__(self, **specs):
         
-        SurveySimulation.__init__(self, **specs)
+        linearJScheduler.__init__(self, **specs)
 
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse

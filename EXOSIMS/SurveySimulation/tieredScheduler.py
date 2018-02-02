@@ -492,6 +492,7 @@ class tieredScheduler(SurveySimulation):
                     optics = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
                     dmode['BW'] = bw
                     dmode['syst']['optics'] = optics
+                    dmode['instName'] = 'combined'
 
                 t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 

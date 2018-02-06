@@ -51,7 +51,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        req_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Rp', 'Mp', 'p',
+        req_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'Min', 'M0', 'Rp', 'Mp', 'p',
                     'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
 
         for mod in self.allmods:
@@ -116,7 +116,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse']
+        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe']
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
@@ -130,6 +130,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='KnownRVPlanets'
                     spec['modules']['TargetList']='KnownRVPlanetsTargetList'
                 elif 'KnownRV' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='SAG13'
+                elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
 
                 obj = mod(scaleOrbits=True,**spec)
@@ -177,6 +179,52 @@ class TestSimulatedUniverse(unittest.TestCase):
         self.assertTrue(SU.fixedPlanPerStar==n)
         self.assertTrue(SU.nPlans == SU.TargetList.nStars*SU.fixedPlanPerStar)
         self.assertTrue(len(SU.plan2star) == SU.TargetList.nStars*SU.fixedPlanPerStar)
+        
+    def test_honor_Min(self):
+        """
+        Test that gen_M0 assigns constant or random value to mean anomaly
+        
+        Because some implementations depend on a specific planet population,
+        there needs to be additional logic in the setup
+        """
+        
+        whitelist = ['KnownRVPlanetsUniverse']
+        # Test Min = None first
+        for mod in self.allmods:
+            if mod.__name__ in whitelist:
+                continue
+            with RedirectStreams(stdout=self.dev_null):
+                spec = copy.deepcopy(self.spec)
+                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
+                spec['modules']['StarCatalog']='EXOCAT1'
+                if 'Kepler' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='KeplerLike1'
+                elif 'SAG13' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='SAG13'
+                    spec['Rprange'] = [1,10]
+                    
+                obj = mod(**spec)
+            
+            self.assertTrue(obj.M0[0] != obj.M0[1],"Initial M0 must be randomly set")
+        
+        # Test Min = 20
+        for mod in self.allmods:
+            if mod.__name__ in whitelist:
+                continue
+            with RedirectStreams(stdout=self.dev_null):
+                spec = copy.deepcopy(self.spec)
+                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
+                spec['modules']['StarCatalog']='EXOCAT1'
+                if 'Kepler' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='KeplerLike1'
+                elif 'SAG13' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='SAG13'
+                    spec['Rprange'] = [1,10]
+                spec['Min'] = 20    
+                obj = mod(**spec)
+
+            self.assertTrue(np.all(obj.M0.to('deg').value == 20),"Initial M0 must be 20")
+        
 
 
 

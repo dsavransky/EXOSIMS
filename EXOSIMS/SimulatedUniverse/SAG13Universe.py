@@ -38,8 +38,8 @@ class SAG13Universe(SimulatedUniverse):
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
-        self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Mp = PPMod.calc_mass_from_radius(self.Rp)           # mass
+        self.gen_M0()                                    # initial mean anomaly
+        self.Mp = PPMod.calc_mass_from_radius(self.Rp)   # mass
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, generate one Jupiter at 5 AU to allow for characterization 

@@ -619,30 +619,41 @@ class tieredScheduler(SurveySimulation):
         
         """
         
+        # Comp = self.Completeness
+        # TL = self.TargetList
+        # TK = self.TimeKeeping
+
+        # nStars = len(sInds)
+
+        # # reshape sInds
+        # sInds = np.array(sInds,ndmin=1)
+
+        # # 1/ Choose next telescope target
+        # comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+
+        # # add weight for star revisits
+        # ind_rev = []
+        # if self.starRevisit.size != 0:
+        #     dt_max = 1.*u.week
+        #     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+        #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+
+        # f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
+        #                   self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+
+        # weights = (comps + f2_uv/6.)/t_dets
+        # sInd = np.random.choice(sInds[weights == max(weights)])
+
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
-
-        nStars = len(sInds)
-
-        # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
-
-        # 1/ Choose next telescope target
+        
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
-
-        # add weight for star revisits
-        ind_rev = []
-        if self.starRevisit.size != 0:
-            dt_max = 1.*u.week
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
-                          self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
-
-        weights = (comps + f2_uv/6.)/t_dets
-        sInd = np.random.choice(sInds[weights == max(weights)])
+        # choose target with maximum completeness
+        sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
 

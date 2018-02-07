@@ -53,6 +53,8 @@ class SimulatedUniverse(object):
             Planet right ascension of the ascending node in units of deg
         w (astropy Quantity array):
             Planet argument of perigee in units of deg
+        Min (float):
+            Constant initial mean anomaly for all planets (optional)
         M0 (astropy Quantity array):
             Initial mean anomaly in units of deg
         p (float ndarray):
@@ -90,7 +92,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, fixedPlanPerStar=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -114,8 +116,15 @@ class SimulatedUniverse(object):
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
         
+        # initial constant mean anomaly
+        assert type(Min) is int or type(Min) is float or Min is None, 'Min may be int, float, or None'
+        if Min is not None:
+            self.Min = float(Min)*u.deg
+        else:
+            self.Min = Min
+        
         # list of possible planet attributes
-        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Rp', 'Mp', 'p',
+        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Min', 'Rp', 'Mp', 'p',
                 'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
         
         # generate orbital elements, albedos, radii, and masses
@@ -169,8 +178,8 @@ class SimulatedUniverse(object):
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
-        self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Mp = PPop.gen_mass(self.nPlans)                     # mass
+        self.gen_M0()                           # initial mean anomaly
+        self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
@@ -185,10 +194,19 @@ class SimulatedUniverse(object):
             self.I = np.array([0.])*u.deg # face-on
             self.O = np.array([0.])*u.deg
             self.w = np.array([0.])*u.deg
-            self.M0 = np.array([0.])*u.deg
+            self.gen_M0()
             self.Rp = np.array([10.])*u.earthRad
             self.Mp = np.array([300.])*u.earthMass
             self.p = np.array([0.6])
+            
+    def gen_M0(self):
+        """Finds initial mean anomaly for each planet
+        
+        """
+        if self.Min is not None:
+            self.M0 = np.ones((self.nPlans,))*self.Min
+        else:
+            self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg
 
     def init_systems(self):
         """Finds initial time-dependant parameters. Assigns each planet an 

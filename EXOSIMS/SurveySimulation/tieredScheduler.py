@@ -488,10 +488,11 @@ class tieredScheduler(SurveySimulation):
                 # t_det = max(intTime_by_mode)
                 dmode = detmode[0]
                 if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
-                    bw = dmode['BW'] + detmode[1]['BW']
-                    optics = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
-                    dmode['BW'] = bw
-                    dmode['syst']['optics'] = optics
+                    dmode['BW'] = dmode['BW'] + detmode[1]['BW']
+                    dmode['inst']['sread'] = dmode['inst']['sread'] + detmode[1]['inst']['sread']
+                    dmode['inst']['idark'] = dmode['inst']['idark'] + detmode[1]['inst']['idark']
+                    dmode['inst']['CIC'] = dmode['inst']['CIC'] + detmode[1]['inst']['CIC']
+                    dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
                     dmode['instName'] = 'combined'
 
                 t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]

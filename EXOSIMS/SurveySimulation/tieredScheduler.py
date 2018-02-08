@@ -126,7 +126,6 @@ class tieredScheduler(SurveySimulation):
         while not TK.mission_is_over():
              
             # Acquire the NEXT TARGET star index and create DRM
-            TK.obsStart = TK.currentTimeNorm.to('day')
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, dmode = self.next_target(sInd, occ_sInd, detModes, charMode)
             assert t_det !=0, "Integration time can't be 0."
@@ -161,6 +160,16 @@ class tieredScheduler(SurveySimulation):
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').value
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
+
+                if sInd == occ_sInd:
+                    # wait until expected arrival time is observed
+                    if time2arrive > 0*u.d:
+                        TK.allocate_time(time2arrive.to('day'))
+                        if time2arrive > 1*u.d:
+                            self.GAtime = self.GAtime + time2arrive.to('day')
+
+                TK.obsStart = TK.currentTimeNorm.to('day')
+
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 print '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
@@ -197,12 +206,6 @@ class tieredScheduler(SurveySimulation):
                     # First store fEZ, dMag, WA, and characterization mode
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
-
-                    # wait until expected arrival time is observed
-                    if time2arrive > 0*u.d:
-                        TK.allocate_time(time2arrive.to('day'))
-                        if time2arrive > 1*u.d:
-                            self.GAtime = self.GAtime + time2arrive.to('day')
 
                     DRM['slew_time'] = self.occ_slewTime.to('day').value
                     DRM['slew_angle'] = self.occ_sd.to('deg').value

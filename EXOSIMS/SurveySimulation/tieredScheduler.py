@@ -10,6 +10,7 @@ try:
 except:
     import pickle
 import time
+import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
 class tieredScheduler(SurveySimulation):
@@ -489,7 +490,7 @@ class tieredScheduler(SurveySimulation):
                 # for m_i, mode in enumerate(detmode):
                 #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
                 # t_det = max(intTime_by_mode)
-                dmode = detmode[0]
+                dmode = copy.deepcopy(detmode[0])
                 if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
                     dmode['BW'] = dmode['BW'] + detmode[1]['BW']
                     dmode['inst']['sread'] = dmode['inst']['sread'] + detmode[1]['inst']['sread']

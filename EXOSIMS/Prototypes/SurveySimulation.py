@@ -222,9 +222,9 @@ class SurveySimulation(object):
         self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
         for i,Lstar in enumerate(TL.L):
             if Lstar <1.6:
-               self.dMagint[i] = 25.5 + 2.5 * np.log10(Lstar)
+               self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
             else:
-                self.dMagint[i]=26.0
+                self.dMagint[i] = Comp.dMagLim
 
             EEID = (np.sqrt(Lstar)/TL.dist[i]).value*u.arcsec
             if EEID < OS.IWA:

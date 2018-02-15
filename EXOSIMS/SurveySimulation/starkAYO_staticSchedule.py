@@ -414,7 +414,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         for i in xrange(sInds.shape[0]):
             x0 = 0.00001
             maxCbyTtime[i] = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-15 , disp=False)
-            print(maxCbyTtime[i])
+            self.vprint("Max C/T calc completion:" + str(i/sInds.shape[0]))
         t_dets = maxCbyTtime
         #Sept 27, Execution time 101 seconds for 651 stars
 

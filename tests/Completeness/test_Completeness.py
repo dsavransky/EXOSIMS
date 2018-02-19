@@ -164,4 +164,47 @@ class TestCompleteness(unittest.TestCase):
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(dcomp),self.TL.nStars)
-
+    
+    def test_GarrettCompleteness_specific(self):
+        whitelist = ['Completeness','BrownCompleteness']
+        for mod in self.allmods:
+            print(mod.__name__)
+            if mod.__name__ in whitelist:
+                continue
+            with RedirectStreams(stdout=self.dev_null):
+                spec = copy.deepcopy(self.spec)
+                spec['modules']['Completeness'] = 'GarrettCompleteness'
+                spec['modules']['PlanetPopulation'] = 'AlbedoByRadius'
+                spec['prange'] = [0.1,0.5]
+                spec['Rprange'] = [1,10]
+                
+                obj = mod(**spec)
+                
+            # test if calc_fdmag returns valid pdf
+            val = obj.calc_fdmag(25.,0.75,1.)
+            self.assertGreaterEqual(val,0,"dmag pdf must be greater than zero for %s"%mod.__name__)
+            
+            # test if comp_calc, comp_dmag, and comp_s agree to within 1e-3
+            val1 = obj.comp_calc(0.75,1.,25.)
+            val2 = obj.comp_dmag(0.75,1.,25.)
+            val3 = obj.comp_s(0.75,1.,25.)
+            # compare comp_calc to comp_dmag
+            self.assertLessEqual(np.abs(val1-val2),1e-3,"comp_calc and comp_dmag must be within 1e-3 for %s"%mod.__name__)
+            # compare comp_calc to comp_s
+            self.assertLessEqual(np.abs(val1-val3),1e-3,"comp_calc and comp_s must be within 1e-3 for %s"%mod.__name__)
+            # compare comp_dmag to comp_s
+            self.assertLessEqual(np.abs(val2-val3),1e-3,"comp_dmag and comp_s must be within 1e-3 for %s"%mod.__name__)
+            
+            # test if f_sdmag and f_dmags give same result
+            val1 = obj.f_dmags(22.,1.)
+            val2 = obj.f_sdmag(1.,22.)
+            self.assertEqual(val1,val2)
+            
+            # test if s_bound reproduces values from mindmag and maxdmag
+            s = 1.
+            mind = obj.mindmag(s)
+            maxd = obj.maxdmag(s)
+            s1 = obj.s_bound(mind,1.5)
+            s2 = obj.s_bound(maxd,1.5)
+            self.assertLessEqual(np.abs(s-s1),1e-3,"s_bound must return s value from mindmag for %s"%mod.__name__)
+            self.assertLessEqual(np.abs(s-s2),1e-3,"s_bound must return s value from maxdmag for %s"%mod.__name__)

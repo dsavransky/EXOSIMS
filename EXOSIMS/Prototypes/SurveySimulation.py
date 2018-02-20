@@ -259,9 +259,6 @@ class SurveySimulation(object):
                 koTimes.value[-1]  != np.floor(self.TimeKeeping.missionFinishAbs.value) ): 
                 # star list, start time, and/or end time is different
                 needToUpdateMap = True
-                print oldStarList != newStarList 
-                print koTimes.value[ 0]  != self.TimeKeeping.missionStart.value 
-                print koTimes.value[-1]  != self.TimeKeeping.missionFinishAbs.value
             else:
                 print 'Keepout map loaded from file.'
         # generating new map if non-existent or needs update  

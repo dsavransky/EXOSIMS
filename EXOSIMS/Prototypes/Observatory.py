@@ -78,7 +78,7 @@ class Observatory(object):
             koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
             defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-            forceStaticEphem=False, **specs):
+            forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, occ_dtStep = 5, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -107,6 +107,9 @@ class Observatory(object):
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
+        self.occ_dtmin  = occ_dtmin*u.d
+        self.occ_dtmax  = occ_dtmax*u.d
+        self.occ_dtStep = occ_dtStep*u.d
         
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -536,7 +539,7 @@ class Observatory(object):
         """
         # creating time arrays to use in the keepout method (# stars == # times)
         # minimum of 5 days until occulter aligns with new target
-        if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + 5
+        if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
         else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
         nextObTimes = Time(nextObTimes,format='mjd')  #converting to astropy MJD time array
         
@@ -549,7 +552,7 @@ class Observatory(object):
             # find length of observable range in days
             observable_range = np.diff(observableTimesNorm,axis=0)[0]
             # re-do calculations for observable windows that are less than 5 days long
-            reDo = np.where(observable_range < 5)[0]
+            reDo = np.where(observable_range < self.occ_dtmin.value)[0]
             correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
             correctedObTimes = Time(correctedObTimes,format='mjd')
             observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value

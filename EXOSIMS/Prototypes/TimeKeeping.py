@@ -157,7 +157,7 @@ class TimeKeeping(object):
         return is_over
 
     def wait(self):
-        """Waits a certain time in case no target can be observed at current time.
+        """DEPRICATEDWaits a certain time in case no target can be observed at current time.
         
         This method is called in the run_sim() method of the SurveySimulation 
         class object. In the prototype version, it simply allocate a temporal block 
@@ -222,7 +222,6 @@ class TimeKeeping(object):
         log_begin = 'OB%s:'%(self.OBnumber + 1)
         #self.logger.info(log_begin)
         self.vprint(log_begin)
-        #print(saltyburrito)
 
         # if dt is not None:
         #     self.OBendTimes[self.OBnumber] = self.currentTimeNorm
@@ -266,3 +265,9 @@ class TimeKeeping(object):
             nwait = (1 - self.missionPortion)/self.missionPortion#(nwait+1)*self.OBduration = OB block period
             tStartNextOB = self.OBendTimes[self.OBnumber-1] + nwait*self.OBduration#d
         return tStartNextOB
+
+    def get_tEndThisOB(self):
+        """
+        """
+        tEndThisOB = self.OBendTimes[-1]
+        return tEndThisOB

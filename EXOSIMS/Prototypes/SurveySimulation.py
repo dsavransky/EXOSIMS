@@ -311,11 +311,11 @@ class SurveySimulation(object):
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
                 DRM['OB_nb'] = TK.OBnumber#TK.ObsNum + 1
-                DRM['ObsNum'] = TK.ObsNum + 1
+                DRM['ObsNum'] = TK.ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time: %s')%(TK.ObsNum, sInd, TL.nStars, len(pInds), 
+                        + 'mission time at Obs start: %s')%(TK.ObsNum, sInd, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
@@ -380,7 +380,7 @@ class SurveySimulation(object):
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
                     obsLength = (TK.obsEnd - TK.obsStart).to('day')
-                    TK.advancetToStartOfNextOB(dt=obsLength)
+                    TK.advancetToStartOfNextOB()
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
@@ -431,7 +431,9 @@ class SurveySimulation(object):
         DRM = {}
         
         # allocate settling time + overhead time
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        tmpCurrentTimeAbs = TK.currentTimeAbs + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime']
+        #TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         # now, start to look for available targets
         #cnt = 0
         while not TK.mission_is_over():
@@ -446,13 +448,13 @@ class SurveySimulation(object):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs)
+                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,tmpCurrentTimeAbs)  
+                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,tmpCurrentTimeAbs)
                 sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
                 
             # start times, including slew times
-            startTimes = TK.currentTimeAbs + slewTimes
-            startTimesNorm = TK.currentTimeNorm + slewTimes
+            startTimes = tmpCurrentTimeAbs + slewTimes
+            startTimesNorm = tmpCurrentTimeNorm + slewTimes
             # indices of observable stars
             kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
             sInds = sInds[np.where(kogoodStart)[0]]
@@ -464,7 +466,7 @@ class SurveySimulation(object):
                         & (self.starVisits[sInds] < self.nVisitsMax))
                 if self.starRevisit.size != 0:
                     dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
                     ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
                             if x in sInds]
                     tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
@@ -507,7 +509,7 @@ class SurveySimulation(object):
             else:
                 #THIS WILL BE REPLACED WITH GABE'S FUNCTION SO WE CAN ADVANCE TIME TO WHEN THE NEXT STAR COMES OUT OF KEEPOUT
                 TK.allocate_time(TK.waitTime)
-                self.vprint(TK.currentTimeNorm)
+                self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(TK.waitTime))
                 #TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
                 #cnt += 1
             
@@ -526,7 +528,14 @@ class SurveySimulation(object):
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():
                 return DRM, None, None
-        
+
+        if(TK.currentTimeNorm + intTime + Obs.settlingTime + mode['syst']['ohTime'] > TK.get_tEndThisOB()):
+            self.vprint('The Obs would exceed the OB block')
+            self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.get_tEndThisOB()))
+            TK.advancetToStartOfNextOB()
+        else:
+            TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+
         return DRM, sInd, intTime
 
     def calc_targ_intTime(self, sInds, startTimes, mode):

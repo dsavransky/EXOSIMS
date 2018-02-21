@@ -286,7 +286,7 @@ class SurveySimulation(object):
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
-        cnt = 0
+        #cnt = 0
         while not TK.mission_is_over():
             
             # save the start time of this observation (BEFORE any OH/settling/slew time)
@@ -297,7 +297,8 @@ class SurveySimulation(object):
             assert det_intTime != 0, "Integration time can't be 0."
 
             if sInd is not None:
-                cnt += 1
+                #cnt += 1
+                TK.ObsNum += 1#we're making an observation
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
                     for i in range(len(self.DRM)):
@@ -309,11 +310,12 @@ class SurveySimulation(object):
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
-                DRM['OB_nb'] = TK.OBnumber + 1
+                DRM['OB_nb'] = TK.OBnumber#TK.ObsNum + 1
+                DRM['ObsNum'] = TK.ObsNum + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time: %s')%(cnt, sInd, TL.nStars, len(pInds), 
+                        + 'mission time: %s')%(TK.ObsNum, sInd, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
@@ -378,7 +380,7 @@ class SurveySimulation(object):
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
                     obsLength = (TK.obsEnd - TK.obsStart).to('day')
-                    TK.next_observing_block(dt=obsLength)
+                    TK.advancetToStartOfNextOB(dt=obsLength)
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
@@ -430,9 +432,8 @@ class SurveySimulation(object):
         
         # allocate settling time + overhead time
         TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
-        
         # now, start to look for available targets
-        cnt = 0
+        #cnt = 0
         while not TK.mission_is_over():
             # 1. initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -504,8 +505,11 @@ class SurveySimulation(object):
             
             # if no observable target, call the TimeKeeping.wait() method
             else:
-                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                cnt += 1
+                #THIS WILL BE REPLACED WITH GABE'S FUNCTION SO WE CAN ADVANCE TIME TO WHEN THE NEXT STAR COMES OUT OF KEEPOUT
+                TK.allocate_time(TK.waitTime)
+                self.vprint(TK.currentTimeNorm)
+                #TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
+                #cnt += 1
             
         else:
             return DRM, None, None

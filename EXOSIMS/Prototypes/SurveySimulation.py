@@ -302,7 +302,7 @@ class SurveySimulation(object):
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
                     for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
+                        if np.any([x == 1 for x in self.DRM[i]['det_status']]):
                             self.starExtended = np.unique(np.append(self.starExtended,
                                     self.DRM[i]['star_ind']))
                 

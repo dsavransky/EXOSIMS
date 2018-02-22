@@ -75,7 +75,7 @@ class Observatory(object):
     _outspec = {}
 
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
-            koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
+            koAngleMax=None, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
             defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
             forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, occ_dtStep = 5, **specs):
@@ -368,7 +368,7 @@ class Observatory(object):
         
         return r_obs
 
-    def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -381,8 +381,6 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            mode (dict):
-                Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates 
                 for validation
@@ -456,7 +454,7 @@ class Observatory(object):
             angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
             culprit[i,:] = (angles < koangles)
             # if this mode has an occulter, check maximum keepout angle for the Sun
-            if mode['syst']['occulter']:
+            if self.koAngleMax is not None:
                 culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
             if np.any(culprit[i,:]):
                 kogood[i] = False
@@ -470,7 +468,7 @@ class Observatory(object):
         else:
             return kogood
     
-    def generate_koMap(self,TL,TK,mode):
+    def generate_koMap(self,TL,TK):
         """Creates keepout map for all targets throughout mission lifetime.
         
         This method returns a binary map showing when all stars in the given 
@@ -505,7 +503,7 @@ class Observatory(object):
         print '   Starting keepout calculations for %s stars.' % TL.nStars
         koMap = np.zeros([TL.nStars,len(koTimes)])
         for n in range(TL.nStars):
-            koMap[n,:] = self.keepout(TL,n,koTimes,mode,False)
+            koMap[n,:] = self.keepout(TL,n,koTimes,False)
             if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
             
         return koMap,koTimes

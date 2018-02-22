@@ -106,7 +106,7 @@ class TimeKeeping(object):
         self.OBstartTimes.append(0.*u.day)
         maxOBduration = self.missionFinishNorm*self.missionPortion#the maximum Observation Block duration limited by mission portion
         self.OBendTimes = list()
-        self.OBendTimes.append([min(self.OBduration, maxOBduration).to('day').value]*u.day)
+        self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
         
 
         # initialize single observation time arrays. #these are the detection observations
@@ -209,9 +209,12 @@ class TimeKeeping(object):
         self.OBnumber += 1#increase the observation block number
         
         #create times for next observation block
-        nwait = (1 - self.missionPortion)/self.missionPortion#(nwait+1)*self.OBduration = OB block period
-        self.OBstartTimes.append(self.OBendTimes[self.OBnumber-1] + nwait*self.OBduration)#declares next OB start Time
-        self.OBendTimes.append(self.OBstartTimes[self.OBnumber] + self.OBduration)#sets the end time of the observation block
+        self.OBstartTimes.append((self.OBnumber-1)*self.OBduration/self.missionPortion)#declares next OB start Time
+        #print('OBstartTimes ' + str(self.OBstartTimes[self.OBnumber]))
+        #print('OBduration ' + str(self.OBduration))
+        #print('missionPortion ' + str(self.missionPortion))
+        self.OBendTimes.append(self.OBduration + (self.OBnumber-1)*self.OBduration/self.missionPortion)#sets the end time of the observation block
+        #print('OBendTimes ' + str(self.OBendTimes[self.OBnumber]))
         # For the default case called in SurveySimulation, OBendTime is current time
         # Note: the next OB must not happen after mission finish
         
@@ -219,7 +222,7 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.OBstartTimes[self.OBnumber] + self.missionStart#update currentTimeAbs
 
         # begin Survey, and loop until mission is finished
-        log_begin = 'OB%s:'%(self.OBnumber + 1)
+        log_begin = 'OB%s:'%(self.OBnumber+1)#prints because this is the beginning of the nesxt observation block
         #self.logger.info(log_begin)
         self.vprint(log_begin)
 

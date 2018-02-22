@@ -40,7 +40,7 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['KnownRVSurvey']
+        exclude_mods=['KnownRVSurvey', 'tieredScheduler']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
@@ -95,8 +95,11 @@ class TestSurveySimulation(unittest.TestCase):
                      'star_ind',
                      'FA_char_WA']
 
+        exclude_mods = ['SS_char_only', 'SS_der_only']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'run_sim' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):

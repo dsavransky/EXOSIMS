@@ -750,7 +750,6 @@ class tieredScheduler(SurveySimulation):
                 # update star completeness
                 idx = (np.abs(intTimes-int_time)).argmin()
                 comp = c_v_t[idx]
-                TL.comp[sInd] = comp
             else:
                 idt = np.abs(intTimes - max(intTimes)).argmin()
                 idx = np.abs(c_v_t - c_v_t[idt]*.9).argmin()

@@ -93,7 +93,7 @@ class Observatory(object):
         self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
         koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
         self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (occulter)
+        self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
         self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
@@ -118,6 +118,9 @@ class Observatory(object):
         # set values derived from quantities above
         # slew flow rate (kg/day)
         self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
+        
+        import pdb
+        pdb.set_trace()
         
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides

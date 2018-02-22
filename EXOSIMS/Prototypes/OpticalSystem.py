@@ -249,7 +249,7 @@ class OpticalSystem(object):
             inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
             inst['pixelNumber'] = int(inst.get('pixelNumber', pixelNumber)) # array format
             inst['pixelSize'] = float(inst.get('pixelSize', pixelSize))*u.m # pixel pitch
-            inst['pixelScale'] = inst.get('pixelScale', 2*inst['FoV']/inst['pixelNumber']) # pixel pitch
+            inst['pixelScale'] = inst.get('pixelScale', 2*inst['FoV'].value/inst['pixelNumber'])*u.arcsec # pixel pitch
             inst['idark'] = float(inst.get('idark', idark))/u.s # dark-current rate
             inst['CIC'] = float(inst.get('CIC', CIC))           # clock-induced-charge
             inst['sread'] = float(inst.get('sread', sread))     # effective readout noise

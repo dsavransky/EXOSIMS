@@ -45,7 +45,7 @@ class tieredScheduler(SurveySimulation):
         coeffs = coeffs/np.linalg.norm(coeffs)
         
         self.coeffs = coeffs
-        if occHIPs is not []:
+        if occHIPs != []:
             occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
@@ -53,6 +53,7 @@ class tieredScheduler(SurveySimulation):
             if len(self.occHIPs) <= 1:
                 self.occHIPs = HIPsfile.split('\n')
         else:
+            assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
         TL = self.TargetList
@@ -466,7 +467,12 @@ class tieredScheduler(SurveySimulation):
             #6a/ Filter off any stars visited by the occulter 3 or more times
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
 
-            # 7/ Choose best target from remaining
+            # 7a/ Filter off stars with too-long inttimes
+            if self.occ_arrives > TK.currentTimeAbs:
+                available_time = self.occ_arrives - TK.currentTimeAbs
+                sInds = sInds[intTimes[sInds] < available_time]
+
+            # 7b/ Choose best target from remaining
             if np.any(sInds):
                 # choose sInd of next target
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
@@ -475,29 +481,32 @@ class tieredScheduler(SurveySimulation):
                 t_det = intTimes[sInd]
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
+                # int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
 
-                if int_time < t_det:
-                    # t_det = int_time #XXX test
-                    pass
+                # if int_time < t_det:
+                #     # t_det = int_time #XXX test
+                #     pass
 
-                # if the starshade has arrived at its destination, or it is the first observation
-                if np.any(occ_sInds) or old_occ_sInd is None:
-                    if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
-                        occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
-                        if old_occ_sInd is None:
-                            self.occ_arrives = TK.currentTimeAbs
-                        else:
-                            self.occ_arrives = occ_startTimes[occ_sInd]
-                            self.occ_slewTime = slewTime[occ_sInd]
-                            self.occ_sd = sd[occ_sInd]
-                        self.ready_to_update = False
-                        self.occ_starVisits[occ_sInd] += 1
-                break
+            # if the starshade has arrived at its destination, or it is the first observation
+            if np.any(occ_sInds) or old_occ_sInd is None:
+                if old_occ_sInd is None or not np.any(sInds) or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
+                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
+                    if not np.any(sInds):
+                        sInd = occ_sInd
+                        t_det = (self.occ_arrives - TK.currentTimeAbs) + 1*u.d
+                    if old_occ_sInd is None:
+                        self.occ_arrives = TK.currentTimeAbs
+                    else:
+                        self.occ_arrives = occ_startTimes[occ_sInd]
+                        self.occ_slewTime = slewTime[occ_sInd]
+                        self.occ_sd = sd[occ_sInd]
+                    self.ready_to_update = False
+                    self.occ_starVisits[occ_sInd] += 1
+            break
 
-            # if no observable target, call the TimeKeeping.wait() method
-            else:
-                TK.wait()
+            # # if no observable target, call the TimeKeeping.wait() method
+            # else:
+            #     TK.wait()
 
         else:
             self.logger.info('Mission complete: no more time available')
@@ -622,41 +631,41 @@ class tieredScheduler(SurveySimulation):
         
         """
         
-        # Comp = self.Completeness
-        # TL = self.TargetList
-        # TK = self.TimeKeeping
-
-        # nStars = len(sInds)
-
-        # # reshape sInds
-        # sInds = np.array(sInds,ndmin=1)
-
-        # # 1/ Choose next telescope target
-        # comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
-
-        # # add weight for star revisits
-        # ind_rev = []
-        # if self.starRevisit.size != 0:
-        #     dt_max = 1.*u.week
-        #     dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-        #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-
-        # f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
-        #                   self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
-
-        # weights = (comps + f2_uv/6.)/t_dets
-        # sInd = np.random.choice(sInds[weights == max(weights)])
-
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
-        
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # get dynamic completeness values
+
+        nStars = len(sInds)
+
+        # reshape sInds
+        sInds = np.array(sInds,ndmin=1)
+
+        # 1/ Choose next telescope target
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
-        # choose target with maximum completeness
-        sInd = np.random.choice(sInds[comps == max(comps)])
+
+        # add weight for star revisits
+        ind_rev = []
+        if self.starRevisit.size != 0:
+            dt_max = 1.*u.week
+            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
+                          self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+
+        weights = (comps + f2_uv/6.)/t_dets
+        sInd = np.random.choice(sInds[weights == max(weights)])
+
+        # Comp = self.Completeness
+        # TL = self.TargetList
+        # TK = self.TimeKeeping
+        
+        # # cast sInds to array
+        # sInds = np.array(sInds, ndmin=1, copy=False)
+        # # get dynamic completeness values
+        # comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        # # choose target with maximum completeness
+        # sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
 

@@ -172,17 +172,21 @@ class TimeKeeping(object):
             return
 
         #Check if additional time would exceed CURRENT OBendTime
-self.exoplanetObsTime
         if (self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):#the allocationtime would exceed the current allowed OB
+            tSkipped = self.get_tEndThisOB-self.currentTimeNorm#We add the time at the end of the OB skipped
             self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
             self.currentTimeNorm += dt#adds desired dt to start of next OB
             self.currentTimeAbs += dt#adds desired dt to start of next OB
+
+            if(flag == 1):
+                self.exoplanetObsTime += dt#increments allocated time 
         else:#Operation as normal
             self.currentTimeNorm += dt
             self.currentTimeAbs += dt
+            if(flag == 1):
+                self.exoplanetObsTime += dt + tSkipped#increments allocated time 
 
-        if(flag == 1):
-            self.exoplanetObsTime += dt#increments allocated time 
+        
 
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block
@@ -211,7 +215,7 @@ self.exoplanetObsTime
     def get_tStartNextOB(self):
         """Returns start time of next Observation Block (OB)
         Returns:
-            nextObStartTime (float astropy Quantity) - the next time the observatory is available for observing
+            nextObStartTime (float astropy Quantity) - the next time the observatory is available for observing ABSOLUTE
         """
         try:#If a OBstartTimes exists after the current time
             tStartNextOB = min(self.OBstartTimes[self.OBstartTimes>self.currentTimeAbs])#assumes OBstartTimes are absolute

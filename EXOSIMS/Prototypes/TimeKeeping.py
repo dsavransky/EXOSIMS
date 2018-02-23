@@ -24,8 +24,6 @@ class TimeKeeping(object):
             Mission start time in MJD
         missionLife (astropy Quantity):
             Mission life time in units of year
-        extendedLife (astropy Quantity):
-            Extended mission time in units of year
         missionPortion (float):
             Portion of mission devoted to planet-finding
         missionFinishNorm (astropy Quantity):
@@ -78,7 +76,6 @@ class TimeKeeping(object):
         
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
-        assert extendedLife >= 0, "Need extendedLife >= 0, got %f"%extendedLife
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
                 "Require missionPortion in the interval ]0,1], got %f"%missionPortion
@@ -88,12 +85,11 @@ class TimeKeeping(object):
         # seconds, causing warnings from astropy.time when time-deltas are added
         self.missionStart = Time(float(missionStart), format='mjd', scale='tai')#the absolute date of mission start
         self.missionLife = float(missionLife)*u.year#the total amount of time since mission start that can elapse
-        self.extendedLife = float(extendedLife)*u.year#the total amount of time past missionLife that can elapse
         self.missionPortion = float(missionPortion)#the portion of missionLife the instrument can observe for
         
         # set values derived from quantities above
-        self.missionFinishNorm = self.missionLife.to('day') + self.extendedLife.to('day')#the total amount of time since mission start that can possibly elapse
-        self.missionFinishAbs = self.missionStart + self.missionLife + self.extendedLife#the absolute time the mission can possibly end
+        self.missionFinishNorm = self.missionLife.to('day')#the total amount of time since mission start that can possibly elapse
+        self.missionFinishAbs = self.missionStart + self.missionLife#the absolute time the mission can possibly end
         
         # initialize values updated by functions
         self.currentTimeNorm = 0.*u.day#the current amount of time since mission start that has elapsed
@@ -113,6 +109,7 @@ class TimeKeeping(object):
         self.ObsNum = 0 #this is the number of detection observations that have occured
         self.ObsStartTimes = []*u.day
         self.ObsEndTimes = []*u.day
+        self.exoplanetObsTime = 0*u.day
 
         # initialize single observation START and END times
         self.obsStart = 0.*u.day#an array containing the observation Start times
@@ -152,11 +149,13 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = (self.currentTimeNorm >= self.missionFinishNorm)
+        is_over = ((self.currentTimeNorm >= self.missionFinishNorm) or (self.exoplanetObsTime >= self.missionLife*self.missionPortion.to('day')))
         
+
+
         return is_over
 
-    def allocate_time(self, dt):
+    def allocate_time(self, dt, flag=0):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
         
         Advance the mission time by dt units. If this requires moving into the next OB,
@@ -165,18 +164,25 @@ class TimeKeeping(object):
         Args:
             dt (astropy Quantity):
                 Temporal block allocated in units of day
+            flag (integer):
+                Indicates the allocated time is for the primary instrument (1) or some other instrument (0)
         
         """
         if dt == 0:
             return
 
+        #Check if additional time would exceed CURRENT OBendTime
+self.exoplanetObsTime
         if (self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):#the allocationtime would exceed the current allowed OB
             self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
             self.currentTimeNorm += dt#adds desired dt to start of next OB
             self.currentTimeAbs += dt#adds desired dt to start of next OB
-        else:
+        else:#Operation as normal
             self.currentTimeNorm += dt
             self.currentTimeAbs += dt
+
+        if(flag == 1):
+            self.exoplanetObsTime += dt#increments allocated time 
 
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block

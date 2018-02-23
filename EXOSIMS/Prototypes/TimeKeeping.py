@@ -69,7 +69,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, missionLife=0.1, 
-            missionPortion=1, OBduration=14, waitTime=1 **specs):
+            missionPortion=1, OBduration=14, waitTime=1, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

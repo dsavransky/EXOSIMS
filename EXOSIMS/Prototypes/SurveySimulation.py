@@ -67,9 +67,6 @@ class SurveySimulation(object):
         starRevisit (float nx2 ndarray):
             Contains indices of targets to revisit and revisit times 
             of these targets in units of day
-        starExtended (integer ndarray):
-            Contains indices of targets with detected planets, updated throughout 
-            the mission
         lastDetected (float nx4 ndarray):
             For each target, contains 4 lists with planets' detected status (boolean),
             exozodi brightness (in units of 1/arcsec2), delta magnitude, 
@@ -234,7 +231,6 @@ class SurveySimulation(object):
         self.lastObsTimes = np.zeros(TL.nStars)*u.d
         self.starVisits = np.zeros(TL.nStars, dtype=int)
         self.starRevisit = np.array([])
-        self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
 
         #Generate File Hashnames and loction
@@ -286,7 +282,6 @@ class SurveySimulation(object):
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
-        #cnt = 0
         while not TK.mission_is_over():
             
             # save the start time of this observation (BEFORE any OH/settling/slew time)
@@ -297,14 +292,7 @@ class SurveySimulation(object):
             assert det_intTime != 0, "Integration time can't be 0."
 
             if sInd is not None:
-                #cnt += 1
                 TK.ObsNum += 1#we're making an observation
-                # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
-                    for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['det_status']]):
-                            self.starExtended = np.unique(np.append(self.starExtended,
-                                    self.DRM[i]['star_ind']))
                 
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
@@ -435,7 +423,6 @@ class SurveySimulation(object):
         tmpCurrentTimeNorm = TK.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime']
         #TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
         # now, start to look for available targets
-        #cnt = 0
         while not TK.mission_is_over():
             # 1. initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -510,8 +497,6 @@ class SurveySimulation(object):
                 #THIS WILL BE REPLACED WITH GABE'S FUNCTION SO WE CAN ADVANCE TIME TO WHEN THE NEXT STAR COMES OUT OF KEEPOUT
                 TK.allocate_time(TK.waitTime)
                 self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(TK.waitTime))
-                #TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                #cnt += 1
             
         else:
             return DRM, None, None
@@ -1262,7 +1247,7 @@ class SurveySimulation(object):
     def calcfZmax(self,sInds):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
-            sInds - the star indicies we would like fZmax and fZmaxInds returned for
+            sInds[sInds] - the star indicies we would like fZmax and fZmaxInds returned for
         Returns:
             fZmax[sInds] - the maximum fZ where maxfZ occurs
             fZmaxInds[sInds] - the indicies as a part of 1000 where the fZmaxInd occurs

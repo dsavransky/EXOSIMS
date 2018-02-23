@@ -70,8 +70,8 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
 
-    def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
-            missionPortion=1, OBduration=14, waitTime=1, waitMultiple=2, **specs):
+    def __init__(self, missionStart=60634, missionLife=0.1, 
+            missionPortion=1, OBduration=14, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -156,16 +156,6 @@ class TimeKeeping(object):
         
         return is_over
 
-    def wait(self):
-        """DEPRICATEDWaits a certain time in case no target can be observed at current time.
-        
-        This method is called in the run_sim() method of the SurveySimulation 
-        class object. In the prototype version, it simply allocate a temporal block 
-        of 1 day.
-        
-        """
-        self.allocate_time(self.waitTime)
-
     def allocate_time(self, dt):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
         
@@ -177,7 +167,6 @@ class TimeKeeping(object):
                 Temporal block allocated in units of day
         
         """
-        
         if dt == 0:
             return
 
@@ -188,15 +177,6 @@ class TimeKeeping(object):
         else:
             self.currentTimeNorm += dt
             self.currentTimeAbs += dt
-        
-        # #Check if additional time exceeded the current observation block
-        # try:#Ensure OBendTimes is not []
-        #     self.OBendTimes[self.OBnumber]
-        # except:#create OBendTimes
-        #     self.advancetToStartOfNextOB()
-        # if not (self.mission_is_over() and (self.currentTimeNorm >= self.OBendTimes[self.OBnumber])):
-        #     self.advancetToStartOfNextOB()
-
 
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block
@@ -212,12 +192,7 @@ class TimeKeeping(object):
         
         #create times for next observation block
         self.OBstartTimes.append((self.OBnumber-1)*self.OBduration/self.missionPortion)#declares next OB start Time
-        #print('OBstartTimes ' + str(self.OBstartTimes[self.OBnumber]))
-        #print('OBduration ' + str(self.OBduration))
-        #print('missionPortion ' + str(self.missionPortion))
         self.OBendTimes.append(self.OBduration + (self.OBnumber-1)*self.OBduration/self.missionPortion)#sets the end time of the observation block
-        #print('OBendTimes ' + str(self.OBendTimes[self.OBnumber]))
-        # For the default case called in SurveySimulation, OBendTime is current time
         # Note: the next OB must not happen after mission finish
         
         self.currentTimeNorm = self.OBstartTimes[self.OBnumber]#update currentTimeNorm
@@ -225,44 +200,12 @@ class TimeKeeping(object):
 
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s:'%(self.OBnumber+1)#prints because this is the beginning of the nesxt observation block
-        #self.logger.info(log_begin)
         self.vprint(log_begin)
-
-        # if dt is not None:
-        #     self.OBendTimes[self.OBnumber] = self.currentTimeNorm
-        #     nextStart = min(self.OBendTimes[self.OBnumber] + nwait*dt, 
-        #             self.missionFinishNorm)
-        #     nextEnd = self.missionFinishNorm
-        # # else, the OB duration is a fixed value
-        # else:
-        #     dt = self.OBduration
-        #     nextStart = min(self.OBendTimes[self.OBnumber] + nwait*dt, 
-        #             self.missionFinishNorm)
-        #     maxOBduration = (self.missionFinishNorm - nextStart)*self.missionPortion
-        #     nextEnd = nextStart + min(dt, maxOBduration)
-        
-        # # update OB arrays
-        # self.OBstartTimes = np.append(self.OBstartTimes.to('day').value, 
-        #         nextStart.to('day').value)*u.day
-        # self.OBendTimes = np.append(self.OBendTimes.to('day').value, 
-        #         nextEnd.to('day').value)*u.day
-        # #self.OBnumber += 1#moved up
-        
-        # # If mission is not over, move to the next OB, and update observation start time
-        # self.allocate_time(nextStart - self.currentTimeNorm)
-        # if self.mission_is_over():
-        #     self.OBstartTimes = self.OBstartTimes[:-1]
-        #     self.OBendTimes = self.OBendTimes[:-1]
-        #     self.OBnumber -= 1
-        # else:
-        #     self.obsStart = nextStart
-        #     self.vprint('OB%s: previous block was %s long, advancing %s.'%(self.OBnumber+1, 
-        #             dt.round(2), (nwait*dt).round(2)))
 
     def get_tStartNextOB(self):
         """Returns start time of next Observation Block (OB)
         Returns:
-            nextObStartTime - the next time the observatory is available for observing
+            nextObStartTime (float astropy Quantity) - the next time the observatory is available for observing
         """
         try:#If a OBstartTimes exists after the current time
             tStartNextOB = min(self.OBstartTimes[self.OBstartTimes>self.currentTimeAbs])#assumes OBstartTimes are absolute
@@ -272,7 +215,10 @@ class TimeKeeping(object):
         return tStartNextOB
 
     def get_tEndThisOB(self):
-        """
+        """Retrieves the End Time of this OB
+
+        Returns:
+            tEndThisOB (float astropy Quantity) - the end time of the current observation block
         """
         tEndThisOB = self.OBendTimes[-1]
         return tEndThisOB

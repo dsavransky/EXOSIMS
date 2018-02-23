@@ -183,6 +183,8 @@ class TimeKeeping(object):
 
         if (self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):#the allocationtime would exceed the current allowed OB
             self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
+            self.currentTimeNorm += dt#adds desired dt to start of next OB
+            self.currentTimeAbs += dt#adds desired dt to start of next OB
         else:
             self.currentTimeNorm += dt
             self.currentTimeAbs += dt

@@ -57,11 +57,6 @@ class TimeKeeping(object):
         waitTime (astropy Quantity):
             Default allocated duration to wait in units of day, when the
             Survey Simulation does not find any observable target
-        waitMultiple (float):
-            Multiplier applied to the wait time in case of repeated empty lists of 
-            observable targets, which makes the wait time grow exponentially. 
-            As soon as an observable target is found, the wait time is reinitialized 
-            to the default waitTime value.
         
     """
 
@@ -117,7 +112,6 @@ class TimeKeeping(object):
         
         # initialize wait parameters
         self.waitTime = float(waitTime)*u.day#the default amount of time to wait in wait function
-        self.waitMultiple = float(waitMultiple)#
         
         # populate outspec
         for att in self.__dict__.keys():

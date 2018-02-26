@@ -583,7 +583,20 @@ class SurveySimulation(object):
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
+
+        #Choose Revisit Target
+        sInd = self.choose_revisit_target(sInd)
         
+        return sInd
+
+    def choose_revisit_target(self,sInd):
+        """A Helper function for selecting revisit targets instead of the nominal detection targets
+        Args:
+            sInd - indicie of target currently scheduled for visiting
+        Returns:
+            sInd - indicie of target now scheduled for visiting
+        """
+        #Do Stuff
         return sInd
 
     def observation_detection(self, sInd, intTime, mode):

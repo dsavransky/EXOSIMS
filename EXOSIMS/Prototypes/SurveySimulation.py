@@ -592,9 +592,9 @@ class SurveySimulation(object):
     def choose_revisit_target(self,sInd):
         """A Helper function for selecting revisit targets instead of the nominal detection targets
         Args:
-            sInd - indicie of target currently scheduled for visiting
+            sInd - index of target currently scheduled for visiting
         Returns:
-            sInd - indicie of target now scheduled for visiting
+            sInd - index of target now scheduled for visiting
         """
         #Do Stuff
         return sInd
@@ -743,12 +743,12 @@ class SurveySimulation(object):
         return detected.astype(int), fZ, systemParams, SNR, FA
 
     def scheduleRevisit(self,TL,sInd,smin,det,pInds,SU):
-        """A Helper Function overloading revisitScheduling
+        """A Helper Method for scheduling revisits after observation detection
         Args:
             TL - TargetList
             sInd - sInd of the star just detected
-            smin - minimum separation of the star just detected
-            pInds - Indicies of planets around target star
+            smin - minimum separation of the planet to star of planet just detected
+            pInds - Indices of planets around target star
             SU - SimulatedUniverse
         Return:
             updates self.starRevisit attribute
@@ -1343,13 +1343,14 @@ class SurveySimulation(object):
         return fZmin, fZminInds
 
     def revisitFilter(self,sInds,tovisit,tmpCurrentTimeNorm):
-        """Helper Function for Overloading Revisit Filtering
+        """Helper method for Overloading Revisit Filtering
 
         Args:
-            sInds - indicies of stars still in observation list
+            sInds - indices of stars still in observation list
             tovisit[nStars] - a boolean array containing number of revisits to stars
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
         Returns:
-            sInds - indicies of stars still in observation list
+            sInds - indices of stars still in observation list
         """
         if len(sInds) > 0:
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \

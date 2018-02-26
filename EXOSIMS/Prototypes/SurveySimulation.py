@@ -738,7 +738,7 @@ class SurveySimulation(object):
             self.vprint(log_FA)
         
         #Schedule Target Revisit
-        self.scheduleRevisit(TL,sInd,smin,det,pInds,SU)
+        self.scheduleRevisit(sInd,smin,det,pInds)
 
         return detected.astype(int), fZ, systemParams, SNR, FA
 

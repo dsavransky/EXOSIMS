@@ -742,17 +742,18 @@ class SurveySimulation(object):
 
         return detected.astype(int), fZ, systemParams, SNR, FA
 
-    def scheduleRevisit(self,TL,sInd,smin,det,pInds,SU):
+    def scheduleRevisit(self,sInd,smin,det,pInds):
         """A Helper Method for scheduling revisits after observation detection
         Args:
-            TL - TargetList
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
             pInds - Indices of planets around target star
-            SU - SimulatedUniverse
         Return:
             updates self.starRevisit attribute
         """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]

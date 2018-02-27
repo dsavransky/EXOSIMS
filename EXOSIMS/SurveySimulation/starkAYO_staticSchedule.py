@@ -452,7 +452,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             #When are stars in KO regions
             kogoodStart = np.zeros([len(time),self.schedule.shape[0]])
             for i in np.arange(len(time)):
-                kogoodStart[i,:] = Obs.keepout(TL, self.schedule, TK.currentTimeAbs+time[i]*u.d, mode)
+                kogoodStart[i,:] = Obs.keepout(TL, self.schedule, TK.currentTimeAbs+time[i]*u.d)
                 kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
             kogoodStart[kogoodStart==0] = nan
 

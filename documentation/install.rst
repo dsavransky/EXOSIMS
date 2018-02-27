@@ -33,8 +33,7 @@ Optional Packages
     pip install h5py
 * The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the PlanetPhysicalModel. 
 * Several methods have been implemented in both python and Cython (http://cython.org/).  To get the speed benefits of the Cython versions, you will need to install Cython (from source or pip) and compile the Cythonized EXOSIMS modules on your system (see: :ref:`cythonized`).
-
-
+* The SLSQP module requires ortools which can be installed by following instructions at the following link (https://developers.google.com/optimization/introduction/installing/binary). This specific set of instructions was successfully used to get SLSQP running in exosims(https://github.com/dsavransky/EXOSIMS/blob/master/documentation/installortools.txt).
 
 Installation and Path Setup
 =============================

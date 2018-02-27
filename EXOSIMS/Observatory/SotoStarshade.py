@@ -1,10 +1,18 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
+import EXOSIMS
 import numpy as np
 import astropy.units as u
+from EXOSIMS.util.get_module import get_module
 from astropy.time import Time
 from scipy.integrate import solve_bvp
 import astropy.constants as const
 import scipy.optimize as optimize
+import time
+import os, inspect
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 EPS = np.finfo(float).eps
 
@@ -15,17 +23,24 @@ class SotoStarshade(ObservatoryL2Halo):
     and integrators to calculate occulter dynamics. 
     """
     
-    def __init__(self, missionStart=60634.,orbit_datapath=None,**specs): 
+    def __init__(self,orbit_datapath=None,**specs): 
 
-        ObservatoryL2Halo.__init__(self,**specs)    
-    
+        ObservatoryL2Halo.__init__(self,**specs)  
+        
+        fTL = EXOSIMS.Prototypes.TargetList.TargetList(**{'modules':{"StarCatalog": "FakeCatalog", \
+                    "OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
+                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
+                    "PlanetPopulation": " "}, "scienceInstruments": [{ "name": "imager"}],  \
+                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
+        
+        
+
     def boundary_conditions(self,rA,rB):
         """Creates boundary conditions for solving a boundary value problem
         
         This method returns the boundary conditions for the starshade transfer
         trajectory between the lines of sight of two different stars. Point A
         corresponds to the starshade alignment with star A; Point B, with star B.
-        
         
         Args:
             rA (float 1x3 ndarray):
@@ -100,7 +115,7 @@ class SotoStarshade(ObservatoryL2Halo):
         
         s = sol.y.T
         
-        assert sol.success,"BVP solver failed."
+#        assert sol.success,"BVP solver failed."
             
         return s
     
@@ -180,6 +195,100 @@ class SotoStarshade(ObservatoryL2Halo):
     
         return dV*u.m/u.s   
 
+    def generate_dVMap(self,TL,old_sInd,sInds,currentTime):
+        """Finds the change in velocity needed to transfer to a new star line of sight
+        
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
+        
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            dV (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        """
+        
+        # slew Times
+        dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,self.occ_dtStep.value)
+        
+        sd =  self.star_angularSep(TL,old_sInd,sInds,currentTime) 
+        sInd_sorted = np.argsort(sd)
+        sd_sorted   = sd[sInd_sorted].to('deg').value
+        
+        dV_sorted   = np.zeros([len(dt),len(sInds)])
+        tic = time.clock()
+        for i in range(len(dt)):
+            dV_sorted[i,:] = self.calculate_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
+            if not i % 5: print '   [%s / %s] completed.' % (i,len(dt))
+        toc = time.clock()
+        print '   dV map computation completed in %s seconds.' % (toc-tic)
+        
+        return dV_sorted,sd_sorted,dt
+    
+    def interpolate_dV(self,obsTimeRange,sd,currentTime,dV_interp):
+        """Finds the change in velocity needed to transfer to a new star line of sight
+        
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
+        
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+                
+        Returns:
+            dV (float nx6 ndarray):
+                State vectors in rotating frame in normalized units
+        """
+        
+        obsTimeRangeNorm = (obsTimeRange - currentTime).value
+        
+        #2. correct windows ending in more than 80 days
+        obsTimeRangeNorm[1,np.where(obsTimeRangeNorm[1,:] > \
+                self.occ_dtmax.value)] = self.occ_dtmax.value
+        
+        #3. correct windows starting in more than 80 days
+        obsTimeRangeNorm[:,np.where(obsTimeRangeNorm[0,:] > \
+                self.occ_dtmax.value)] = self.occ_dtmax.value - 5
+        
+        nStars  = len(sd)
+        nDT     = 1000
+        dV      = np.zeros([nStars,nDT])
+        obs_dt  = np.zeros([nStars,nDT])
+        
+        for n in range(nStars):
+            obs_dt[n,:] = np.linspace(obsTimeRangeNorm[0,n],obsTimeRangeNorm[1,n],nDT)
+            dV[n,:] = dV_interp(obs_dt[n,:],sd[n])
+        
+        return obs_dt,dV
+        
     def minimize_slewTimes(self,TL,nA,nB,tA):
         """Minimizes the slew time for a starshade transferring to a new star line of sight
         

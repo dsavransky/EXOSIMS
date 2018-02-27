@@ -88,7 +88,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 State vectors in rotating frame in normalized units
         """
         
-        angle,uA,uB,r_tscp = self.pointingVectors(TL,nA,nB,tA,tB)
+        angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
         
         vA = self.haloVelocity(tA)[0].value/(2*np.pi)
         vB = self.haloVelocity(tB)[0].value/(2*np.pi)

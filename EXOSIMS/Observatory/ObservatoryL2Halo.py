@@ -317,7 +317,7 @@ class ObservatoryL2Halo(Observatory):
         return jacobian
     
     
-    def pointingVectors(self,TL,N1,N2,tA,tB):
+    def lookVectors(self,TL,N1,N2,tA,tB):
         """Finds star angular separations relative to the halo orbit positions 
         
         This method returns the angular separation relative to the telescope on its

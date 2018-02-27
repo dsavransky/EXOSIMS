@@ -211,11 +211,11 @@ class SAG13(KeplerLike2):
         R = np.array(R, ndmin=1, copy=False)
         aa, RR = np.meshgrid(a,R)
 
-        mu = self.mu.to('AU3/year2')
-        
+        mu = self.mu.to('AU3/year2').value
+
         f = np.zeros(aa.shape)
-        mask1 = RR < self.Rplim[1]
-        mask2 = RR > self.Rplim[1]
+        mask1 = (RR < self.Rplim[1]) & (RR > self.Rprange[0].value) & (RR < self.Rprange[1].value) & (aa > self.arange[0].value) & (aa < self.arange[1].value)
+        mask2 = (RR > self.Rplim[1]) & (RR > self.Rprange[0].value) & (RR < self.Rprange[1].value) & (aa > self.arange[0].value) & (aa < self.arange[1].value)
         
         # for R < boundary radius
         f[mask1] = self.Gamma[0]*RR[mask1]**(self.alpha[0]-1.)

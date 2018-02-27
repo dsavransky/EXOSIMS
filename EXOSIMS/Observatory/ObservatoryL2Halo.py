@@ -28,8 +28,11 @@ class ObservatoryL2Halo(Observatory):
         Observatory.__init__(self,**specs)
         
         # set equinox value
-        self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
-                format='mjd', scale='tai')
+        if isinstance(equinox,Time):
+            self.equinox = equinox
+        else:
+            self.equinox = Time(np.array(equinox, ndmin=1, dtype=float),
+                    format='mjd', scale='tai')
         
         needToUpdate = False
         keysHalo = ['te','t','state','x_lpoint','mu']

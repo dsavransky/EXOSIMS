@@ -52,6 +52,8 @@ class SimulatedUniverse(object):
             Planet right ascension of the ascending node in units of deg
         w (astropy Quantity array):
             Planet argument of perigee in units of deg
+        Min (float):
+            Constant initial mean anomaly for all planets (optional)
         M0 (astropy Quantity array):
             Initial mean anomaly in units of deg
         p (float ndarray):
@@ -89,7 +91,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     _outspec = {}
     
-    def __init__(self, fixedPlanPerStar=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -113,8 +115,15 @@ class SimulatedUniverse(object):
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
         
+        # initial constant mean anomaly
+        assert type(Min) is int or type(Min) is float or Min is None, 'Min may be int, float, or None'
+        if Min is not None:
+            self.Min = float(Min)*u.deg
+        else:
+            self.Min = Min
+        
         # list of possible planet attributes
-        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Rp', 'Mp', 'p',
+        self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Min', 'Rp', 'Mp', 'p',
                 'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
         
         # generate orbital elements, albedos, radii, and masses
@@ -168,8 +177,8 @@ class SimulatedUniverse(object):
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
-        self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg # initial mean anomaly
-        self.Mp = PPop.gen_mass(self.nPlans)                     # mass
+        self.gen_M0()                           # initial mean anomaly
+        self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
@@ -184,10 +193,19 @@ class SimulatedUniverse(object):
             self.I = np.array([0.])*u.deg # face-on
             self.O = np.array([0.])*u.deg
             self.w = np.array([0.])*u.deg
-            self.M0 = np.array([0.])*u.deg
+            self.gen_M0()
             self.Rp = np.array([10.])*u.earthRad
             self.Mp = np.array([300.])*u.earthMass
             self.p = np.array([0.6])
+            
+    def gen_M0(self):
+        """Finds initial mean anomaly for each planet
+        
+        """
+        if self.Min is not None:
+            self.M0 = np.ones((self.nPlans,))*self.Min
+        else:
+            self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg
 
     def init_systems(self):
         """Finds initial time-dependant parameters. Assigns each planet an 
@@ -310,6 +328,72 @@ class SimulatedUniverse(object):
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+
+    def set_planet_phase(self, beta = np.pi/2):
+        """Positions all planets at input star-planet-observer phase angle
+        where possible. For systems where the input phase angle is not achieved,
+        planets are positioned at quadrature (phase angle of 90 deg).
+        
+        The position found here is not unique. The desired phase angle will be
+        achieved at two points on the planet's orbit (for non-face on orbits).
+        
+        Args:
+            beta (float):
+                star-planet-observer phase angle in radians.
+        
+        """
+        
+        PPMod = self.PlanetPhysicalModel
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        
+        a = self.a.to('AU').value               # semi-major axis
+        e = self.e                              # eccentricity
+        I = self.I.to('rad').value              # inclinations
+        O = self.O.to('rad').value              # right ascension of the ascending node
+        w = self.w.to('rad').value              # argument of perigee
+        Mp = self.Mp                            # planet masses
+        
+        # make list of betas
+        betas = beta*np.ones(w.shape)
+        mask = np.cos(betas)/np.sin(I) > 1.
+        num = len(np.where(mask == True)[0])
+        betas[mask] = np.pi/2.
+        mask = np.cos(betas)/np.sin(I) < -1.
+        num += len(np.where(mask == True)[0])
+        betas[mask] = np.pi/2.
+        if num > 0:
+            print('***Warning***')
+            print('{} planets out of {} could not be set to phase angle {} radians.'.format(num,self.nPlans,beta))
+            print('These planets are set to quadrature (phase angle pi/2)')
+        
+        # solve for true anomaly
+        nu = np.arcsin(np.cos(betas)/np.sin(I)) - w
+        
+        # setup for position and velocity
+        a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
+        a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
+        a3 = np.sin(I)*np.sin(w)
+        A = np.vstack((a1, a2, a3))
+        
+        b1 = -(np.cos(O)*np.sin(w) + np.sin(O)*np.cos(I)*np.cos(w))
+        b2 = (-np.sin(O)*np.sin(w) + np.cos(O)*np.cos(I)*np.cos(w))
+        b3 = np.sin(I)*np.cos(w)
+        B = np.vstack((b1, b2, b3))
+        
+        r = a*(1.-e**2)/(1.-e*np.cos(nu))
+        mu = const.G*(Mp + TL.MsTrue[self.plan2star])
+        v1 = -np.sqrt(mu/(self.a*(1.-self.e**2)))*np.sin(nu)
+        v2 = np.sqrt(mu/(self.a*(1.-self.e**2)))*(self.e + np.cos(nu))
+        
+        self.r = (A*r*np.cos(nu) + B*r*np.sin(nu)).T*u.AU           # position
+        self.v = (A*v1 + B*v2).T.to('AU/day')                       # velocity
+        self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
+        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
+        self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
+        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
 
     def dump_systems(self):
         """Create a dictionary of planetary properties for archiving use.

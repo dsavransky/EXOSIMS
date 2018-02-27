@@ -164,4 +164,3 @@ class TestCompleteness(unittest.TestCase):
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(dcomp),self.TL.nStars)
-

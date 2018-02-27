@@ -336,7 +336,30 @@ class GarrettCompleteness(BrownCompleteness):
                     f += np.sin(b2)/2.0*self.dist_z(z2)*z2*np.log(10.0)/(-2.5*self.amax*np.cos(b2))
             else:
                 ztest = (s/self.x)**2*10.**(-0.4*dmag)/self.val
-                if ztest >= self.zmax:
+                if self.PlanetPopulation.pfromRp:
+                    f = 0.0
+                    minR = self.PlanetPopulation.Rbs[:-1]
+                    maxR = self.PlanetPopulation.Rbs[1:]
+                    for i in xrange(len(minR)):
+                        ptest = self.PlanetPopulation.get_p_from_Rp(minR[i]*u.earthRad)
+                        Rtest = np.sqrt(ztest/ptest)
+                        if Rtest > minR[i]:
+                            if Rtest > self.Rmin:
+                                Rl = Rtest
+                            else:
+                                Rl = self.Rmin
+                        else:
+                            if self.Rmin > minR[i]:
+                                Rl = self.Rmin
+                            else:
+                                Rl = minR[i]
+                        if self.Rmax > maxR[i]:
+                            Ru = maxR[i]
+                        else:
+                            Ru = self.Rmax
+                        if Rl < Ru:
+                            f += integrate.fixed_quad(self.f_dmagsRp, Rl, Ru, args=(dmag,s), n=200)[0]
+                elif ztest >= self.zmax:
                     f = 0.0
                 elif (self.pconst & self.Rconst):
                     f = self.f_dmagsz(self.zmin,dmag,s)
@@ -385,6 +408,49 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             fa[good1] = self.dist_z(za[good1])*np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
             fa[good2] += self.dist_z(za[good2])*np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
+            
+        f[vals<self.val] = fa
+        
+        return f
+    
+    def f_dmagsRp(self, Rp, dmag, s):
+        """Calculates the joint probability density of planetary radius, 
+        dMag, and projected separation
+        
+        Args:
+            Rp (ndarray):
+                Values of planetary radius
+            dmag (float):
+                Planet delta magnitude
+            s (float):
+                Value of projected separation
+        
+        Returns:
+            f (ndarray):
+                Values of joint probability density
+                
+        """
+        if not isinstance(Rp,np.ndarray):
+            Rp = np.array(Rp, ndmin=1, copy=False)
+
+        vals = (s/self.x)**2*10.**(-0.4*dmag)/self.PlanetPopulation.get_p_from_Rp(Rp*u.earthRad)/Rp**2
+        
+        f = np.zeros(Rp.shape)
+        fa = f[vals<self.val]
+        Rpa = Rp[vals<self.val]
+        valsa = vals[vals<self.val]
+        b1 = self.binv1(valsa)
+        b2 = self.binv2(valsa)
+        r1 = s/np.sin(b1)
+        r2 = s/np.sin(b2)
+        good1 = ((r1>self.rmin)&(r1<self.rmax))
+        good2 = ((r2>self.rmin)&(r2<self.rmax))
+        if (self.pconst & self.Rconst):
+            fa[good1] = np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
+            fa[good2] += np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
+        else:
+            fa[good1] = self.dist_radius(Rpa[good1])*np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
+            fa[good2] += self.dist_radius(Rpa[good2])*np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
             
         f[vals<self.val] = fa
         

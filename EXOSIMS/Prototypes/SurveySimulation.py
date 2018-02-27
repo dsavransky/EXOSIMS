@@ -12,6 +12,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import hashlib
 
 Logger = logging.getLogger(__name__)
 
@@ -127,7 +128,12 @@ class SurveySimulation(object):
         
         # mission simulation logger
         self.logger = specs.get('logger', logging.getLogger(__name__))
-        
+       
+        # set up numpy random number (generate it if not in specs)
+        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
+        self.vprint('Numpy random seed is: %s'%self.seed)
+        np.random.seed(self.seed)
+
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
         if isinstance(specs['modules'].itervalues().next(), basestring):
@@ -197,10 +203,6 @@ class SurveySimulation(object):
         self.nVisitsMax = int(nVisitsMax)
         # integration time margin for characterization
         self.charMargin = float(charMargin)
-        # set up numpy random number (generate it if not in specs)
-        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
-        self.vprint('Numpy random seed is: %s'%self.seed)
-        np.random.seed(self.seed)
         
         # populate outspec with all SurveySimulation scalar attributes
         for att in self.__dict__.keys():
@@ -244,6 +246,9 @@ class SurveySimulation(object):
         endTime   = self.TimeKeeping.missionFinishAbs
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
        
+
+        #Generate File Hashnames and loction
+        self.cachefname = self.generateHashfName(specs)
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -1090,9 +1095,18 @@ class SurveySimulation(object):
         
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-        
-        # reset mission time parameters
+       
+        # re-initialize SurveySimulation arrays
+        specs = self._outspec
+        specs['modules'] = self.modules
+        if 'seed' in specs:
+            specs.pop('seed')
+        self.__init__(**specs)
+
+        # reset mission time and observatory parameters
         TK.__init__(**TK._outspec)
+        self.Observatory.__init__(**self.Observatory._outspec)
+        
         # generate new planets if requested (default)
         if genNewPlanets:
             SU.gen_physical_properties(**SU._outspec)
@@ -1100,13 +1114,7 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-        # re-initialize SurveySimulation arrays
-        specs = self._outspec
-        specs['modules'] = self.modules
-        if 'seed' in specs:
-            specs.pop('seed')
-        self.__init__(**specs)
-        
+
         self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):
@@ -1182,6 +1190,33 @@ class SurveySimulation(object):
         
         return out
 
+    def generateHashfName(self, specs):
+        """Generate cached file Hashname
+
+        Args:
+            specs
+                The json script elements of the simulation to be run
+
+        Returns:
+            cachefname (string)
+                a string containing the file location, hashnumber of the cache name based off
+                of the completeness to be computed (completeness specs if available else standard module)
+        """
+        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
+        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
+
+        cachefname = ''#declares cachefname
+        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
+        cachefname += str(tmp2)#Planet Pop
+        cachefname += str(tmp1)#Planet Physical Model
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
+        ##########################################################
+        return cachefname
+
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     
@@ -1232,4 +1267,3 @@ def array_encoder(obj):
     # an object for which no encoding is defined yet
     #   as noted above, ordinary types (lists, ints, floats) do not take this path
     raise ValueError('Could not JSON-encode an object of type %s' % type(obj))
-

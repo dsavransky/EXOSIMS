@@ -116,10 +116,11 @@ class Observatory(object):
         self.occ_dtmin  = occ_dtmin*u.d
         self.occ_dtmax  = occ_dtmax*u.d
         self.occ_dtStep = occ_dtStep*u.d
-        
+        self.maxdVpct = maxdVpct
+
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
-        self.dVmax  = self.dVtot * maxdVpct        
+        self.dVmax  = self.dVtot * self.maxdVpct        
         
         # set values derived from quantities above
         # slew flow rate (kg/day)

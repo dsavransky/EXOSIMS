@@ -64,8 +64,9 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'KnownRV' in mod.__name__:
                     spec['modules']['PlanetPopulation']='KnownRVPlanets'
                     spec['modules']['TargetList']='KnownRVPlanetsTargetList'
-                elif 'KnownRV' in mod.__name__:
+                elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
+                    spec['Rprange'] = [1,10]
 
                 obj = mod(**spec)
 
@@ -225,6 +226,37 @@ class TestSimulatedUniverse(unittest.TestCase):
 
             self.assertTrue(np.all(obj.M0.to('deg').value == 20),"Initial M0 must be 20")
         
-
-
-
+    def test_set_planet_phase(self):
+        """
+        Test that set_planet_phase places planets at the correct phase angle
+        
+        Because some implementations depend on a specific planet population,
+        there needs to be additional logic in the setup
+        """
+        whitelist = ['KnownRVPlanetsUniverse']
+        
+        for mod in self.allmods:
+            if mod.__name__ in whitelist:
+                continue
+            with RedirectStreams(stdout=self.dev_null):
+                spec = copy.deepcopy(self.spec)
+                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
+                spec['modules']['StarCatalog']='EXOCAT1'
+                if 'Kepler' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='KeplerLike1'
+                elif 'SAG13' in mod.__name__:
+                    spec['modules']['PlanetPopulation']='SAG13'
+                    spec['Rprange'] = [1,10]
+                    
+                obj = mod(**spec)
+                
+            # attempt to set planet phase to pi/4
+            obj.set_planet_phase(np.pi/4.)
+            betas = np.arccos(obj.r[:,2]/obj.d)
+            val1 = np.abs(betas.to('rad').value - np.pi/4.)
+            val2 = np.abs(betas.to('rad').value - np.pi/2.)
+            inds1 = np.where(val1 < 1e-4)[0]
+            inds2 = np.where(val2 < 1e-4)[0]
+            num = len(inds1) + len(inds2)
+                        
+            self.assertTrue(num == obj.nPlans,"Phase angles not set correctly")

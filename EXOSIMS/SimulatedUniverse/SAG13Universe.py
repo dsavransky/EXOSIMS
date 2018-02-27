@@ -1,7 +1,5 @@
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
-import astropy.units as u
-import astropy.constants as const
 
 class SAG13Universe(SimulatedUniverse):
     """Simulated Universe module based on SAG13 Planet Population module.
@@ -40,20 +38,3 @@ class SAG13Universe(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                                    # initial mean anomaly
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)   # mass
-        
-        # The prototype StarCatalog module is made of one single G star at 1pc. 
-        # In that case, generate one Jupiter at 5 AU to allow for characterization 
-        # testing. Also generates at least one Jupiter if no planet was generated.
-        if TL.Name[0] == 'Prototype' or self.nPlans == 0:
-            self.plan2star = np.array([0], dtype=int)
-            self.sInds = np.unique(self.plan2star)
-            self.nPlans = len(self.plan2star)
-            self.a = np.array([5.])*u.AU
-            self.e = np.array([0.])
-            self.I = np.array([0.])*u.deg # face-on
-            self.O = np.array([0.])*u.deg
-            self.w = np.array([0.])*u.deg
-            self.M0 = np.array([0.])*u.deg
-            self.Rp = np.array([10.])*u.earthRad
-            self.Mp = np.array([300.])*u.earthMass
-            self.p = np.array([0.6])

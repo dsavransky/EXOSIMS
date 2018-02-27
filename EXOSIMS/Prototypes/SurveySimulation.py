@@ -240,37 +240,10 @@ class SurveySimulation(object):
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
         
         # getting keepout map for entire mission
-        import os.path
-        needToUpdateMap = False
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        classpath = os.path.normpath(os.path.join(classpath, '..','Observatory'))
-        filename  = 'koMap.p'
-        kopath    = os.path.join(classpath, filename) #path to koMap file
-        newStarList = TL.Name.tolist()  #names of stars on current target list
-        # checking to see if file already exists
-        if os.path.exists(kopath):
-            data = pickle.load(open(kopath, 'rb'))
-            koMap   = data['koMap']
-            koTimes = data['koTimes']
-            oldStarList = data['starNames']
-            # checking to see if koMap needs to be updated
-            if (oldStarList != newStarList or 
-                koTimes.value[ 0]  != np.floor(self.TimeKeeping.missionStart.value) or 
-                koTimes.value[-1]  != np.floor(self.TimeKeeping.missionFinishAbs.value) ): 
-                # star list, start time, and/or end time is different
-                needToUpdateMap = True
-            else:
-                print 'Keepout map loaded from file.'
-        # generating new map if non-existent or needs update  
-        if not os.path.exists(kopath) or needToUpdateMap:
-            print 'Generating keepout map from scratch...'
-            starNames     = TL.Name.tolist()
-            koMap,koTimes = self.Observatory.generate_koMap(TL, self.TimeKeeping,\
-                                OS.observingModes[0])
-            data = {'koMap':koMap, 'koTimes':koTimes, 'starNames':starNames}
-            pickle.dump(data, open(kopath, 'wb'))
-        self.koMap   = koMap
-        self.koTimes = koTimes
+        startTime = self.TimeKeeping.missionStart
+        endTime   = self.TimeKeeping.missionFinishAbs
+        self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
+       
 
     def __str__(self):
         """String representation of the Survey Simulation object

@@ -6,6 +6,11 @@ import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+try:
+    import cPickle as pickle
+except:
+    import pickle
+import hashlib
 import os,inspect
 import urllib
 
@@ -75,8 +80,8 @@ class Observatory(object):
     _outspec = {}
 
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
-            koAngleMax=None, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
-            scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+            koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
+            slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
             defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
             forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, occ_dtStep = 5, **specs):
         
@@ -95,6 +100,7 @@ class Observatory(object):
         self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
         self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
+        self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
@@ -118,9 +124,6 @@ class Observatory(object):
         # set values derived from quantities above
         # slew flow rate (kg/day)
         self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
-        
-        import pdb
-        pdb.set_trace()
         
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides
@@ -471,7 +474,7 @@ class Observatory(object):
         else:
             return kogood
     
-    def generate_koMap(self,TL,TK):
+    def generate_koMap(self,TL,missionStart,missionFinishAbs):
         """Creates keepout map for all targets throughout mission lifetime.
         
         This method returns a binary map showing when all stars in the given 
@@ -481,8 +484,10 @@ class Observatory(object):
         Args:
             TL (TargetList module):
                 TargetList class object
-            TK (TimeKeeping module):
-                TimeKeeping class object
+            missionStart (astropy Time array):
+                Absolute start of mission time in MJD
+            missionFinishAbs (astropy Time array):
+                Absolute end of mission time in MJD
             mode (dict):
                 Selected observing mode
                 
@@ -494,20 +499,43 @@ class Observatory(object):
                 Absolute MJD mission times from start to end in steps of 1 d
         
         """
-        stepSize  = 1*u.d #steps of 1 day from mission start to mission end
-        startTime = TK.missionStart
-        endTime   = TK.missionFinishAbs
+        # generating hash name
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        filename  = 'koMap_'
+        atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
+        extstr = ''
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self, att)):
+                extstr += '%s: ' % att + str(getattr(self, att)) + ' '
+        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
+        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        ext = hashlib.md5(extstr).hexdigest()
+        filename += ext
+        koPath = os.path.join(classpath, filename+'.comp')
         
         # global times when keepout is checked for all stars
-        koTimes = np.arange(startTime.value, endTime.value, stepSize.value)
+        koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
         koTimes = Time(koTimes,format='mjd')
-        
-        # looping over all stars to generate map of when all stars are observable
-        print '   Starting keepout calculations for %s stars.' % TL.nStars
-        koMap = np.zeros([TL.nStars,len(koTimes)])
-        for n in range(TL.nStars):
-            koMap[n,:] = self.keepout(TL,n,koTimes,False)
-            if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+
+        if os.path.exists(koPath):
+            # keepout map already exists for parameters
+            print 'Loading cached keepout map file from %s' % koPath
+            A = pickle.load(open(koPath, 'rb'))
+            print 'Keepout Map loaded from cache.'
+            koMap = A['koMap']
+        else:
+            print 'Cached keepout map file not found at "%s".' % koPath
+            # looping over all stars to generate map of when all stars are observable
+            print 'Starting keepout calculations for %s stars.' % TL.nStars
+            koMap = np.zeros([TL.nStars,len(koTimes)])
+            for n in range(TL.nStars):
+                koMap[n,:] = self.keepout(TL,n,koTimes,False)
+                if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+            A = {'koMap':koMap}
+            pickle.dump(A, open(koPath, 'wb'))
+            print 'Keepout Map calculations finished'
+            print 'Keepout Map array stored in %r' % koPath
             
         return koMap,koTimes
     
@@ -539,7 +567,7 @@ class Observatory(object):
                 absolute time MJD
         """
         # creating time arrays to use in the keepout method (# stars == # times)
-        # minimum of 5 days until occulter aligns with new target
+        # minimum slew time for occulter to align with new star
         if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
         else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
         nextObTimes = Time(nextObTimes,format='mjd')  #converting to astropy MJD time array
@@ -554,14 +582,15 @@ class Observatory(object):
             observable_range = np.diff(observableTimesNorm,axis=0)[0]
             # re-do calculations for observable windows that are less than 5 days long
             reDo = np.where(observable_range < self.occ_dtmin.value)[0]
-            correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
-            correctedObTimes = Time(correctedObTimes,format='mjd')
-            observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
+            if reDo.size:
+                correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
+                correctedObTimes = Time(correctedObTimes,format='mjd')
+                observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
 
         return Time(observableTimes,format='mjd') 
     
     def find_nextObsWindow(self,TL,sInds,currentTimes,koMap,koTimes):
-        """Method used by calculate_observableTimes for calculations
+        """Method used by calculate_observableTimes for finding next observable windows
         
         This method returns a nx2 ndarray of times for every star given in the
         target list. The two entries for every star are the next times (after 
@@ -590,7 +619,7 @@ class Observatory(object):
         nLoops = len(sInds)
         nextExitTime  = np.zeros(nLoops)
         nextEntryTime = np.zeros(nLoops)
-        
+
         #getting saved time closest to currentTime
         xx     = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
         xxMin  = np.min(xx,axis=1)

@@ -463,7 +463,7 @@ class SurveySimulation(object):
             startTimes = TK.currentTimeAbs + slewTimes
             startTimesNorm = TK.currentTimeNorm + slewTimes
             # indices of observable stars
-            kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
+            kogoodStart = Obs.keepout(TL, sInds, startTimes)
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 3. filter out all previously (more-)visited targets, unless in 
@@ -495,7 +495,7 @@ class SurveySimulation(object):
             # 5. find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], mode)
+                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 6. choose best target from remaining
@@ -847,7 +847,7 @@ class SurveySimulation(object):
             startTime = TK.currentTimeAbs + mode['syst']['ohTime']
             startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime']
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
         
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
@@ -871,7 +871,7 @@ class SurveySimulation(object):
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
         
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time

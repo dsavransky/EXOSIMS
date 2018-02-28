@@ -91,19 +91,20 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
-        self.OBnumber = 0#the number of the current Observing Block
+        self.OBnumber = -1#the number of the current Observing Block
         self.OBduration = float(OBduration)*u.day#the duration of each Observing Block
         self.OBstartTimes = list()# = [0.]*u.day#[0.]*u.day#an array of Observing Block Start Times defined as time since missionStart
-        self.OBstartTimes.append(0.*u.day)
+        #self.OBstartTimes.append(0.*u.day)
         maxOBduration = self.missionFinishNorm*self.missionPortion#the maximum Observation Block duration limited by mission portion
         self.OBendTimes = list()
-        self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
-        
+        #self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
+        self.advancetToStartOfNextOB()
 
         # initialize single observation time arrays. #these are the detection observations
         self.ObsNum = 0 #this is the number of detection observations that have occured
         self.ObsStartTimes = []*u.day
         self.ObsEndTimes = []*u.day
+        
         self.exoplanetObsTime = 0*u.day
 
         # initialize single observation START and END times
@@ -180,8 +181,6 @@ class TimeKeeping(object):
             if(flag == 1):
                 self.exoplanetObsTime += dt + tSkipped#increments allocated time 
 
-        
-
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block
         
@@ -195,8 +194,8 @@ class TimeKeeping(object):
         self.OBnumber += 1#increase the observation block number
         
         #create times for next observation block
-        self.OBstartTimes.append((self.OBnumber-1)*self.OBduration/self.missionPortion)#declares next OB start Time
-        self.OBendTimes.append(self.OBduration + (self.OBnumber-1)*self.OBduration/self.missionPortion)#sets the end time of the observation block
+        self.OBstartTimes.append((self.OBnumber)*self.OBduration/self.missionPortion)#declares next OB start Time
+        self.OBendTimes.append(self.OBduration + (self.OBnumber)*self.OBduration/self.missionPortion)#sets the end time of the observation block
         # Note: the next OB must not happen after mission finish
         
         self.currentTimeNorm = self.OBstartTimes[self.OBnumber]#update currentTimeNorm

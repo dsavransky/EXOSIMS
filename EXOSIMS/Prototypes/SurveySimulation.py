@@ -277,7 +277,7 @@ class SurveySimulation(object):
             char_mode = allModes[0]
         
         # begin Survey, and loop until mission is finished
-        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
+        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)#Artificially +1 so it says OB1 and not OB0
         self.logger.info(log_begin)
         self.vprint(log_begin)
         t0 = time.time()

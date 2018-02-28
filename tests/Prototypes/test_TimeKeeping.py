@@ -17,6 +17,7 @@ from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+import pdb
 
 class TestTimeKeepingMethods(unittest.TestCase):
     r"""Test TimeKeeping class."""
@@ -167,6 +168,49 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.allocate_time(dt)
         self.assertTrue(tk.mission_is_over())
 
+    def test_advancetToStartOfNextOB(self):
+        r""" Test advancetToStartOfNextOB method
+        """  
+        life = 2.0*u.year
+        obdur = 15
+        missPor = 0.6
+        tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
+
+        tNowNorm1 = tk.currentTimeNorm.copy()
+        tNowAbs1 = tk.currentTimeAbs.copy()
+        OBnumstart = tk.OBnumber #get initial OB number
+        tStart1 = tk.OBstartTimes[tk.OBnumber].copy()
+        tk.advancetToStartOfNextOB()
+        OBnumend = tk.OBnumber
+        tStart2 = tk.OBstartTimes[tk.OBnumber].copy()
+        tNowNorm2 = tk.currentTimeNorm.copy()
+        tNowAbs2 = tk.currentTimeAbs.copy()
+        self.assertEqual(OBnumend-OBnumstart,1)#only one observation block has been incremented
+
+        self.assertEqual((tStart2-tStart1).value,obdur/missPor)#The mission advances
+        self.assertEqual((tNowNorm2-tNowNorm1).value,obdur/missPor)
+        self.assertEqual((tNowAbs2-tNowAbs1).value,obdur/missPor)
+
+    def test_get_tStartNextOB(self):
+        r"""Test get_tStartNextOB Method
+        """
+        life = 2.0*u.year
+        obdur = 15
+        missPor = 0.6
+        tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
+
+        tStartNextOB = tk.get_tStartNextOB()
+        tk.advancetToStartOfNextOB()
+        self.assertEqual(tk.OBstartTimes[tk.OBnumber],tStartNextOB)
+
+    def test_get_tEndThisOB(self):
+        """Test get_tEndThisOB
+        """
+        life = 2.0*u.year
+        obdur = 15
+        missPor = 0.6
+        tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
+        self.assertEqual(tk.OBendTimes[tk.OBnumber],tk.get_tEndThisOB())
 
 if __name__ == '__main__':
     unittest.main()

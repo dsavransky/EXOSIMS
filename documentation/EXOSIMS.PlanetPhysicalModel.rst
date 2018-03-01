@@ -4,6 +4,14 @@ EXOSIMS\.PlanetPhysicalModel package
 Submodules
 ----------
 
+EXOSIMS\.PlanetPhysicalModel\.DoSPaper module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.DoSPaper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.PlanetPhysicalModel\.Forecaster module
 -----------------------------------------------
 

@@ -4,10 +4,18 @@ EXOSIMS\.Observatory package
 Submodules
 ----------
 
-EXOSIMS\.Observatory\.WFIRSTObservatory module
+EXOSIMS\.Observatory\.ObservatoryL2Halo module
 ----------------------------------------------
 
-.. automodule:: EXOSIMS.Observatory.WFIRSTObservatory
+.. automodule:: EXOSIMS.Observatory.ObservatoryL2Halo
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.Observatory\.SotoStarshade module
+------------------------------------------
+
+.. automodule:: EXOSIMS.Observatory.SotoStarshade
     :members:
     :undoc-members:
     :show-inheritance:

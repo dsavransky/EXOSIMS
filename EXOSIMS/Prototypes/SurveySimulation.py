@@ -457,7 +457,7 @@ class SurveySimulation(object):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,tmpCurrentTimeNorm)
+            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)#tmpCurrentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff

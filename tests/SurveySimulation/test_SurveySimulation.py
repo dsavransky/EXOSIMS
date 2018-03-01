@@ -278,61 +278,61 @@ class TestSurveySimulation(unittest.TestCase):
 
                 self.assertGreaterEqual(S,N)
 
-    def test_generate_fZ(self):
-        r"""Test generate fZ method
-        """
-        for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+    # def test_generate_fZ(self):
+    #     r"""Test generate fZ method
+    #     """
+    #     for mod in self.allmods:
+    #         if 'choose_revisit_target' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+    #             with RedirectStreams(stdout=self.dev_null):
+    #                 sim = mod(scriptfile=self.script)
 
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
-                self.assertEqual(sim.fZ_startSaved.shape[0],1)
+    #             #Check if File Exists and if it does, delete it
+    #             if os.path.isfile(sim.cachefname+'starkfZ'):
+    #                 os.remove(sim.cachefname+'starkfZ')
+    #             sInds = np.asarray([0])
+    #             sim.fZ_startSaved = sim.generate_fZ(sInds)
+    #             self.assertEqual(sim.fZ_startSaved.shape[0],1)
 
-    def test_calcfZmax(self):
-        r"""Test calcfZmax method
-        """
-        for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+    # def test_calcfZmax(self):
+    #     r"""Test calcfZmax method
+    #     """
+    #     for mod in self.allmods:
+    #         if 'choose_revisit_target' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+    #             with RedirectStreams(stdout=self.dev_null):
+    #                 sim = mod(scriptfile=self.script)
 
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
-                [val, sInd] = sim.calcfZmax(sInds)
-                try:
-                    self.assertIsInstance(sInd, type(np.asarray([])))
-                except:
-                    self.assertIsInstance(sInd, type(None))
+    #             #Check if File Exists and if it does, delete it
+    #             if os.path.isfile(sim.cachefname+'starkfZ'):
+    #                 os.remove(sim.cachefname+'starkfZ')
+    #             sInds = np.asarray([0])
+    #             sim.fZ_startSaved = sim.generate_fZ(sInds)
+    #             [val, sInd] = sim.calcfZmax(sInds)
+    #             try:
+    #                 self.assertIsInstance(sInd, type(np.asarray([])))
+    #             except:
+    #                 self.assertIsInstance(sInd, type(None))
 
-    def test_calcfZmin(self):
-        r"""Test calcfZmin method
-        """
-        for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+    # def test_calcfZmin(self):
+    #     r"""Test calcfZmin method
+    #     """
+    #     for mod in self.allmods:
+    #         if 'choose_revisit_target' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+    #             with RedirectStreams(stdout=self.dev_null):
+    #                 sim = mod(scriptfile=self.script)
 
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
-                [val, sInd] = sim.calcfZmin(sInds)
-                try:
-                    self.assertIsInstance(sInd, type(np.asarray([])))
-                except:
-                    self.assertIsInstance(sInd, type(None))
+    #             #Check if File Exists and if it does, delete it
+    #             if os.path.isfile(sim.cachefname+'starkfZ'):
+    #                 os.remove(sim.cachefname+'starkfZ')
+    #             sInds = np.asarray([0])
+    #             sim.fZ_startSaved = sim.generate_fZ(sInds)
+    #             [val, sInd] = sim.calcfZmin(sInds)
+    #             try:
+    #                 self.assertIsInstance(sInd, type(np.asarray([])))
+    #             except:
+    #                 self.assertIsInstance(sInd, type(None))
 
     def test_revisitFilter(self):
         r"""Test revisitFilter method

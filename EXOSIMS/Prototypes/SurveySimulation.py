@@ -438,7 +438,6 @@ class SurveySimulation(object):
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
             # 2. find spacecraft orbital START positions (if occulter, positions 
@@ -458,16 +457,7 @@ class SurveySimulation(object):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if len(sInds) > 0:
-                tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
-                        & (self.starVisits[sInds] < self.nVisitsMax))
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
-                            if x in sInds]
-                    tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds,tmpCurrentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -594,7 +584,20 @@ class SurveySimulation(object):
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
+
+        #Choose Revisit Target
+        sInd = self.choose_revisit_target(sInd)
         
+        return sInd
+
+    def choose_revisit_target(self,sInd):
+        """A Helper function for selecting revisit targets instead of the nominal detection targets
+        Args:
+            sInd - index of target currently scheduled for visiting
+        Returns:
+            sInd - index of target now scheduled for visiting
+        """
+        #Do Stuff
         return sInd
 
     def observation_detection(self, sInd, intTime, mode):
@@ -735,6 +738,23 @@ class SurveySimulation(object):
             self.logger.info(log_FA)
             self.vprint(log_FA)
         
+        #Schedule Target Revisit
+        self.scheduleRevisit(sInd,smin,det,pInds)
+
+        return detected.astype(int), fZ, systemParams, SNR, FA
+
+    def scheduleRevisit(self,sInd,smin,det,pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            pInds - Indices of planets around target star
+        Return:
+            updates self.starRevisit attribute
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -755,7 +775,7 @@ class SurveySimulation(object):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm + 0.75*T
-        
+
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:
@@ -766,8 +786,6 @@ class SurveySimulation(object):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]
-        
-        return detected.astype(int), fZ, systemParams, SNR, FA
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -1206,6 +1224,148 @@ class SurveySimulation(object):
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         ##########################################################
         return cachefname
+
+    # def generate_fZ(self, sInds):
+    #     """Calculates fZ values for each star over an entire orbit of the sun
+    #     Args:
+    #         sInds[nStars] - indicies of stars to generate yearly fZ for
+    #     Returns:
+    #         fZ[resolution, sInds] where fZ is the zodiacal light for each star and sInds are the indicies to generate fZ for
+    #     """
+    #     #Generate cache Name########################################################################
+    #     cachefname = self.cachefname+'starkfZ'
+
+    #     #Check if file exists#######################################################################
+    #     if os.path.isfile(cachefname):#check if file exists
+    #         self.vprint("Loading cached fZ from %s"%cachefname)
+    #         with open(cachefname, 'rb') as f:#load from cache
+    #             tmpfZ = pickle.load(f)
+    #         return tmpfZ
+
+    #     #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+    #     else:
+    #         self.vprint("Calculating fZ")
+    #         #OS = self.OpticalSystem#Testing to be sure I can remove this
+    #         #WA = OS.WA0#Testing to be sure I can remove this
+    #         ZL = self.ZodiacalLight
+    #         TL = self.TargetList
+    #         Obs = self.Observatory
+    #         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
+    #         resolution = [j for j in range(1000)]
+    #         fZ = np.zeros([sInds.shape[0], len(resolution)])
+    #         dt = 365.25/len(resolution)*u.d
+    #         for i in xrange(len(resolution)):#iterate through all times of year
+    #             time = startTime + dt*resolution[i]
+    #             fZ[:,i] = ZL.fZ(Obs, TL, sInds, time, self.mode)
+            
+    #         with open(cachefname, "wb") as fo:
+    #             wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+    #             pickle.dump(fZ,fo)
+    #             self.vprint("Saved cached 1st year fZ to %s"%cachefname)
+    #         return fZ
+
+    # def calcfZmax(self,sInds):
+    #     """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+    #     Args:
+    #         sInds[sInds] - the star indicies we would like fZmax and fZmaxInds returned for
+    #     Returns:
+    #         fZmax[sInds] - the maximum fZ where maxfZ occurs
+    #         fZmaxInds[sInds] - the indicies as a part of 1000 where the fZmaxInd occurs
+    #     """
+    #     #Generate cache Name########################################################################
+    #     cachefname = self.cachefname + 'fZmax'
+    #     Obs = self.Observatory
+    #     TL = self.TargetList
+    #     TK = self.TimeKeeping
+    #     mode = self.mode
+    #     fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+
+    #     #Check if file exists#######################################################################
+    #     if os.path.isfile(cachefname):#check if file exists
+    #         self.vprint("Loading cached fZmax from %s"%cachefname)
+    #         with open(cachefname, 'rb') as f:#load from cache
+    #             tmpDat = pickle.load(f)
+    #             fZmax = tmpDat[0,:]
+    #             fZmaxInds = tmpDat[1,:]
+    #         return fZmax, fZmaxInds
+
+    #     #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+    #     else:
+    #         self.vprint("Calculating fZmax")
+    #         tmpfZ = np.asarray(fZ_startSaved)
+    #         fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            
+    #         #Generate Time array heritage from generate_fZ
+    #         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
+    #         dt = 365.25/len(np.arange(1000))
+    #         time = [j*dt for j in range(1000)]
+                
+    #         #When are stars in KO regions
+    #         kogoodStart = np.zeros([len(time),sInds.shape[0]])#replaced self.schedule with sInds
+    #         for i in np.arange(len(time)):
+    #             kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+time[i]*u.d, mode)#replaced self.schedule with sInds
+    #             kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
+    #         kogoodStart[kogoodStart==0] = nan
+
+    #         #Filter Out fZ where star is in KO region
+
+    #         #Find maximum fZ of each star
+    #         fZmax = np.zeros(sInds.shape[0])
+    #         fZmaxInds = np.zeros(sInds.shape[0])
+    #         for i in xrange(len(sInds)):
+    #             fZmax[i] = min(fZ_matrix[i,:])
+    #             fZmaxInds[i] = np.argmax(fZ_matrix[i,:])
+
+    #         tmpDat = np.zeros([2,fZmax.shape[0]])
+    #         tmpDat[0,:] = fZmax
+    #         tmpDat[1,:] = fZmaxInds
+    #         with open(cachefname, "wb") as fo:
+    #             wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+    #             pickle.dump(tmpDat,fo)
+    #             self.vprint("Saved cached fZmax to %s"%cachefname)
+    #         return fZmax, fZmaxInds
+
+    # def calcfZmin(self, sInds):
+    #     """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+    #     Args:
+    #         sInds - the star indicies we would like fZmin and fZminInds returned for
+    #     Returns:
+    #         fZmin[sInds] - the minimum fZ
+    #         fZminInds[sInds] - the indicies as a part of 1000 where the fZminInd occurs
+    #     """
+    #     fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+    #     tmpfZ = np.asarray(fZ_startSaved)#convert into an array
+    #     fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+    #     #Find minimum fZ of each star
+    #     fZmin = np.zeros(sInds.shape[0])
+    #     fZminInds = np.zeros(sInds.shape[0])
+    #     for i in xrange(len(sInds)):
+    #         fZmin[i] = min(fZ_matrix[i,:])
+    #         fZminInds[i] = np.argmin(fZ_matrix[i,:])
+    #     return fZmin, fZminInds
+
+    def revisitFilter(self,sInds,tmpCurrentTimeNorm):
+        """Helper method for Overloading Revisit Filtering
+
+        Args:
+            sInds - indices of stars still in observation list
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+        Returns:
+            sInds - indices of stars still in observation list
+        """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)
+        if len(sInds) > 0:
+            tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
+                    & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
+            #The above condition should prevent revisits so long as all stars have not been observed
+            if self.starRevisit.size != 0:
+                dt_max = 1.*u.week
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
+                        if x in sInds]
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
+            sInds = np.where(tovisit)[0]
+        return sInds
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.

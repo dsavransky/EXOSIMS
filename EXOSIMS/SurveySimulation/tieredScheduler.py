@@ -755,7 +755,7 @@ class tieredScheduler(SurveySimulation):
             self.curves = curves
 
         # if no curves for current mode
-        if mode['systName'] not in self.curves.keys():
+        if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
             for t_i, t in enumerate(intTimes):
                 fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)

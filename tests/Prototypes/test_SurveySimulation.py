@@ -23,6 +23,7 @@ import astropy.units as u
 from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
+import pdb
 
 SimpleScript = resource_path('test-scripts/simplest.json')
 ErrorScript = resource_path('test-scripts/simplest-error.json')
@@ -98,7 +99,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with self.assertRaises(KeyError):
             sim = self.fixture(None)
 
-
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
@@ -113,7 +113,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
         sInd = sim.choose_next_target(None,np.arange(sim.TargetList.nStars),np.array([1.0]*sim.TargetList.nStars)*u.d,\
                 np.array([1.0]*sim.TargetList.nStars)*u.d)
         self.assertEqual(comprand[sInd],comprand.max())
-
 
     def test_reset_sim(self):
         r"""Test reset_sim method.

@@ -9,6 +9,12 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
+import csv
+try:
+    import cPickle as pickle
+except:
+    import pickle
+from numpy import nan
 
 Logger = logging.getLogger(__name__)
 
@@ -236,6 +242,11 @@ class SurveySimulation(object):
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
 
+        # choose observing modes selected for detection (default marked with a flag)
+        allModes = OS.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        self.mode = det_mode
+
     def __str__(self):
         """String representation of the Survey Simulation object
         
@@ -428,7 +439,6 @@ class SurveySimulation(object):
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
             # 2. find spacecraft orbital START positions (if occulter, positions 
@@ -448,7 +458,7 @@ class SurveySimulation(object):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,tovisit,tmpCurrentTimeNorm)
+            sInds = self.revisitFilter(sInds,tmpCurrentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -1300,9 +1310,9 @@ class SurveySimulation(object):
             time = [j*dt for j in range(1000)]
                 
             #When are stars in KO regions
-            kogoodStart = np.zeros([len(time),self.schedule.shape[0]])
+            kogoodStart = np.zeros([len(time),sInds.shape[0]])#replaced self.schedule with sInds
             for i in np.arange(len(time)):
-                kogoodStart[i,:] = Obs.keepout(TL, self.schedule, TK.currentTimeAbs+time[i]*u.d, mode)
+                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+time[i]*u.d, mode)#replaced self.schedule with sInds
                 kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
             kogoodStart[kogoodStart==0] = nan
 
@@ -1343,16 +1353,16 @@ class SurveySimulation(object):
             fZminInds[i] = np.argmin(fZ_matrix[i,:])
         return fZmin, fZminInds
 
-    def revisitFilter(self,sInds,tovisit,tmpCurrentTimeNorm):
+    def revisitFilter(self,sInds,tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering
 
         Args:
             sInds - indices of stars still in observation list
-            tovisit[nStars] - a boolean array containing number of revisits to stars
             tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
         Returns:
             sInds - indices of stars still in observation list
         """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)
         if len(sInds) > 0:
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations

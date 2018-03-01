@@ -359,6 +359,7 @@ class tieredScheduler(SurveySimulation):
         slewTime_fac = (2.*Obs.occulterSep/np.abs(self.ao)/(Obs.defburnPortion/2. \
                 - Obs.defburnPortion**2/4.)).decompose().to('d2')
         
+        cnt = 0
         # Now, start to look for available targets
         while not TK.mission_is_over():
             # 0/ initialize arrays
@@ -510,12 +511,6 @@ class tieredScheduler(SurveySimulation):
                 # update visited list for current star
                 self.starVisits[sInd] += 1
 
-                # int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
-
-                # if int_time < t_det:
-                #     # t_det = int_time #XXX test
-                #     pass
-
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds) or old_occ_sInd is None:
                 if old_occ_sInd is None or not np.any(sInds) or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
@@ -532,11 +527,14 @@ class tieredScheduler(SurveySimulation):
                         self.occ_sd = sd[occ_sInd]
                     self.ready_to_update = False
                     self.occ_starVisits[occ_sInd] += 1
-            break
 
-            # # if no observable target, call the TimeKeeping.wait() method
-            # else:
-            #     TK.wait()
+            # if no observable target, call the TimeKeeping.wait() method
+            if not np.any(sInds) and not np.any(occ_sInds):
+                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
+                cnt += 1
+                continue
+
+            break
 
         else:
             self.logger.info('Mission complete: no more time available')

@@ -95,7 +95,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, **specs):
+            WAint=None, dMagint=None, dt_max=1.*u.week, **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -199,6 +199,8 @@ class SurveySimulation(object):
         self.nVisitsMax = int(nVisitsMax)
         # integration time margin for characterization
         self.charMargin = float(charMargin)
+        # maximum time for revisit window    
+        self.dt_max = dt_max*u.week
         
         # populate outspec with all SurveySimulation scalar attributes
         for att in self.__dict__.keys():
@@ -232,7 +234,7 @@ class SurveySimulation(object):
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
         self.propagTimes = np.zeros(TL.nStars)*u.d
         self.lastObsTimes = np.zeros(TL.nStars)*u.d
-        self.starVisits = np.zeros(TL.nStars, dtype=int)
+        self.starVisits = np.zeros(TL.nStars, dtype=int)#contains the number of times each star was visited
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
@@ -592,12 +594,14 @@ class SurveySimulation(object):
 
     def choose_revisit_target(self,sInd):
         """A Helper function for selecting revisit targets instead of the nominal detection targets
+        Here you can use self.starRevisit to get the indicies of the stars to revisit
+        along with any of the modules in self to compute completeness or revisit integration times.
+        A decision can be made to prioritize the revisit or the other sInd
         Args:
             sInd - index of target currently scheduled for visiting
         Returns:
             sInd - index of target now scheduled for visiting
         """
-        #Do Stuff
         return sInd
 
     def observation_detection(self, sInd, intTime, mode):
@@ -708,7 +712,7 @@ class SurveySimulation(object):
             
         # if planets are detected, calculate the minimum apparent separation
         smin = None
-        det = (detected == 1)
+        det = (detected == 1)#If any of the planets around the star have been detected
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
             log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
@@ -748,6 +752,7 @@ class SurveySimulation(object):
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
+            det - 
             pInds - Indices of planets around target star
         Return:
             updates self.starRevisit attribute
@@ -758,7 +763,7 @@ class SurveySimulation(object):
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
-        if smin is not None:
+        if smin is not None:#smin is None if no planet was detected
             sp = smin
             if np.any(det):
                 pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
@@ -1225,125 +1230,6 @@ class SurveySimulation(object):
         ##########################################################
         return cachefname
 
-    # def generate_fZ(self, sInds):
-    #     """Calculates fZ values for each star over an entire orbit of the sun
-    #     Args:
-    #         sInds[nStars] - indicies of stars to generate yearly fZ for
-    #     Returns:
-    #         fZ[resolution, sInds] where fZ is the zodiacal light for each star and sInds are the indicies to generate fZ for
-    #     """
-    #     #Generate cache Name########################################################################
-    #     cachefname = self.cachefname+'starkfZ'
-
-    #     #Check if file exists#######################################################################
-    #     if os.path.isfile(cachefname):#check if file exists
-    #         self.vprint("Loading cached fZ from %s"%cachefname)
-    #         with open(cachefname, 'rb') as f:#load from cache
-    #             tmpfZ = pickle.load(f)
-    #         return tmpfZ
-
-    #     #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-    #     else:
-    #         self.vprint("Calculating fZ")
-    #         #OS = self.OpticalSystem#Testing to be sure I can remove this
-    #         #WA = OS.WA0#Testing to be sure I can remove this
-    #         ZL = self.ZodiacalLight
-    #         TL = self.TargetList
-    #         Obs = self.Observatory
-    #         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
-    #         resolution = [j for j in range(1000)]
-    #         fZ = np.zeros([sInds.shape[0], len(resolution)])
-    #         dt = 365.25/len(resolution)*u.d
-    #         for i in xrange(len(resolution)):#iterate through all times of year
-    #             time = startTime + dt*resolution[i]
-    #             fZ[:,i] = ZL.fZ(Obs, TL, sInds, time, self.mode)
-            
-    #         with open(cachefname, "wb") as fo:
-    #             wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-    #             pickle.dump(fZ,fo)
-    #             self.vprint("Saved cached 1st year fZ to %s"%cachefname)
-    #         return fZ
-
-    # def calcfZmax(self,sInds):
-    #     """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
-    #     Args:
-    #         sInds[sInds] - the star indicies we would like fZmax and fZmaxInds returned for
-    #     Returns:
-    #         fZmax[sInds] - the maximum fZ where maxfZ occurs
-    #         fZmaxInds[sInds] - the indicies as a part of 1000 where the fZmaxInd occurs
-    #     """
-    #     #Generate cache Name########################################################################
-    #     cachefname = self.cachefname + 'fZmax'
-    #     Obs = self.Observatory
-    #     TL = self.TargetList
-    #     TK = self.TimeKeeping
-    #     mode = self.mode
-    #     fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
-
-    #     #Check if file exists#######################################################################
-    #     if os.path.isfile(cachefname):#check if file exists
-    #         self.vprint("Loading cached fZmax from %s"%cachefname)
-    #         with open(cachefname, 'rb') as f:#load from cache
-    #             tmpDat = pickle.load(f)
-    #             fZmax = tmpDat[0,:]
-    #             fZmaxInds = tmpDat[1,:]
-    #         return fZmax, fZmaxInds
-
-    #     #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-    #     else:
-    #         self.vprint("Calculating fZmax")
-    #         tmpfZ = np.asarray(fZ_startSaved)
-    #         fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-            
-    #         #Generate Time array heritage from generate_fZ
-    #         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
-    #         dt = 365.25/len(np.arange(1000))
-    #         time = [j*dt for j in range(1000)]
-                
-    #         #When are stars in KO regions
-    #         kogoodStart = np.zeros([len(time),sInds.shape[0]])#replaced self.schedule with sInds
-    #         for i in np.arange(len(time)):
-    #             kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+time[i]*u.d, mode)#replaced self.schedule with sInds
-    #             kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
-    #         kogoodStart[kogoodStart==0] = nan
-
-    #         #Filter Out fZ where star is in KO region
-
-    #         #Find maximum fZ of each star
-    #         fZmax = np.zeros(sInds.shape[0])
-    #         fZmaxInds = np.zeros(sInds.shape[0])
-    #         for i in xrange(len(sInds)):
-    #             fZmax[i] = min(fZ_matrix[i,:])
-    #             fZmaxInds[i] = np.argmax(fZ_matrix[i,:])
-
-    #         tmpDat = np.zeros([2,fZmax.shape[0]])
-    #         tmpDat[0,:] = fZmax
-    #         tmpDat[1,:] = fZmaxInds
-    #         with open(cachefname, "wb") as fo:
-    #             wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-    #             pickle.dump(tmpDat,fo)
-    #             self.vprint("Saved cached fZmax to %s"%cachefname)
-    #         return fZmax, fZmaxInds
-
-    # def calcfZmin(self, sInds):
-    #     """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
-    #     Args:
-    #         sInds - the star indicies we would like fZmin and fZminInds returned for
-    #     Returns:
-    #         fZmin[sInds] - the minimum fZ
-    #         fZminInds[sInds] - the indicies as a part of 1000 where the fZminInd occurs
-    #     """
-    #     fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
-    #     tmpfZ = np.asarray(fZ_startSaved)#convert into an array
-    #     fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-    #     #Find minimum fZ of each star
-    #     fZmin = np.zeros(sInds.shape[0])
-    #     fZminInds = np.zeros(sInds.shape[0])
-    #     for i in xrange(len(sInds)):
-    #         fZmin[i] = min(fZ_matrix[i,:])
-    #         fZminInds[i] = np.argmin(fZ_matrix[i,:])
-    #     return fZmin, fZminInds
-
     def revisitFilter(self,sInds,tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering
 
@@ -1353,15 +1239,15 @@ class SurveySimulation(object):
         Returns:
             sInds - indices of stars still in observation list
         """
-        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)
-        if len(sInds) > 0:
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
             #The above condition should prevent revisits so long as all stars have not been observed
             if self.starRevisit.size != 0:
-                dt_max = 1.*u.week
+                #self.dt_max = 1.*u.week
                 dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] 
                         if x in sInds]
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]

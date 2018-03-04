@@ -28,6 +28,14 @@ EXOSIMS\.StarCatalog\.SIMBADCatalog module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS\.StarCatalog\.ToyCat1 module
+------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.ToyCat1
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

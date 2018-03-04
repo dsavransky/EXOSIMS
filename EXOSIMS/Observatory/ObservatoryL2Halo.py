@@ -214,22 +214,113 @@ class ObservatoryL2Halo(Observatory):
                 First derivative of the state vector consisting of stacked 
                 velocity and acceleration vectors in normalized units
         """
-
+        
+        mu = self.mu
+        m1 = self.m1
+        m2 = self.m2
+        
+        x,y,z,dx,dy,dz = s
         
         #occulter distance from each of the two other bodies
-        r1 = np.sqrt( (self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
-        r2 = np.sqrt( (1 - self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
+        r1 = np.sqrt( (mu - x)**2 + y**2 + z**2 )
+        r2 = np.sqrt( (1 - mu - x)**2 + y**2 + z**2 )
             
         #equations of motion
-        ds1 = s[0] + 2*s[4] + self.m1*(-self.mu-s[0])/r1**3 + self.m2*(1-self.mu-s[0])/r2**3
-        ds2 = s[1] - 2*s[3] - self.m1*s[1]/r1**3 - self.m2*s[1]/r2**3
-        ds3 = -self.m1*s[2]/r1**3 - self.m2*s[2]/r2**3
+        ds1 = x + 2*dy + m1*(-mu-x)/r1**3 + m2*(1-mu-x)/r2**3
+        ds2 = y - 2*dx - m1*y/r1**3 - m2*y/r2**3
+        ds3 = -m1*z/r1**3 - m2*z/r2**3
         
-        ds = np.vstack((s[3],s[4],s[5],ds1,ds2,ds3))
+        ds = [dx,dy,dz,ds1,ds2,ds3]
         
         return ds
     
-    def star_angularSep(self,TL,N1,N2,tA,tB):
+    def jacobian_CRTBP(self,t,s):
+        """Equations of motion of the CRTBP
+        
+        Equations of motion for the Circular Restricted Three Body 
+        Problem (CRTBP). First order form of the equations for integration, 
+        returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
+        All parameters are normalized so that time = 2*pi sidereal year.
+        Distances are normalized to 1AU. Coordinates are taken in a rotating 
+        frame centered at the center of mass of the two primary bodies
+        
+        Args:
+            t (float):
+                Times in normalized units
+            s (float nx6 array):
+                State vector consisting of stacked position and velocity vectors
+                in normalized units
+
+        Returns:
+            Jacobian (integer Quantity nx6 array):
+                Jacobian matrix of the state vector in normalized units
+        """
+        
+        mu = self.mu
+        m1 = self.m1
+        m2 = self.m2
+        
+        # unpack components from state vector
+        x,y,z,dx,dy,dz = s
+        
+        # determine shape of state vector (n = 6, m = size of t)
+        n, m = s.shape
+        
+        # breaking up some of the calculations for the jacobian
+        a8 = (mu + x - 1)**2 + y**2 + z**2
+        a9 = (mu - x)**2 + y**2 + z**2
+        a1 = 2*mu + 2*x - 2
+        a2 = 2*mu - 2*x
+        a3 = m2/a8**(1.5)
+        a4 = m1/a9**(1.5)
+        a5 = 3*m1*y*z/a9**(2.5) + 3*m2*y*z/a8**(2.5)
+        a6 = 2*a8
+        a7 = 2*a9
+        
+        #Calculating the different elements jacobian matrix
+        
+        # ddx,ddy,ddz wrt to x,y,z
+        # this part of the jacobian has size 3 x 3 x m
+        J1x = 3*m2*a1*(mu + x -1)/a6 - a3 - a4 - 3*m1*a2*(mu+x)/a7 + 1
+        J1y = 3*m1*y*(mu+x)/a9**(2.5) + 3*m2*y*(mu+x-1)/a8**(2.5)
+        J1z = 3*m1*z*(mu+x)/a9**(2.5) + 3*m2*z*(mu+x-1)/a8**(2.5)
+        J2x = 3*m2*y*a1/a6 - 3*m1*y*a2/a7
+        J2y = 3*m1*y**2/a9**(2.5) - a3 - a4 + 3*m2*y**2/a8**(2.5) + 1
+        J2z = a5
+        J3x = 3*m2*z*a1/a6 - 2*m1*z*a2/a7
+        J3y = a5
+        J3z = 3*m1*z**2/a9**(2.5) - a3 - a4 + 3*m2*z**2/a8**(2.5)
+        
+        J = np.array([[ J1x,  J1y,  J1z],
+                      [ J2x , J2y,  J2z],
+                      [ J3x , J3y,  J3z]])
+        
+        # dx,dy,dz wrt to x,y,z
+        # this part of the jacobian has size 3 x 3 x m
+        Z = np.zeros([3,3,m])
+        
+        # dx,dy,dz wrt to dx,dy,dz
+        # this part of the jacobian has size 3 x 3 x m
+        E = np.full_like(Z,np.eye(3).reshape(3,3,1))
+
+        # ddx,ddy,ddz wrt to dx,dy,dz
+        # this part of the jacobian has size 3 x 3 x m
+        w = np.array([[ 0 , 2 , 0],
+                      [-2 , 0 , 0],
+                      [ 0 , 0 , 0]])
+
+        W = np.full_like(Z,w.reshape(3,3,1))
+        
+        # stacking the different matrix blocks into a matrix 6 x 6 x m
+        row1 = np.hstack( [ Z , E ])
+        row2 = np.hstack( [ J , W ])
+
+        jacobian = np.vstack( [ row1, row2 ])
+        
+        return jacobian
+    
+    
+    def lookVectors(self,TL,N1,N2,tA,tB):
         """Finds star angular separations relative to the halo orbit positions 
         
         This method returns the angular separation relative to the telescope on its
@@ -250,7 +341,6 @@ class ObservatoryL2Halo(Observatory):
         Returns:
             angle (integer):
                 Angular separation between two target stars 
-        
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
@@ -326,9 +416,8 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
         """
         
-        EoM = lambda t,s: self.equationsOfMotion_CRTBP(s,t)
+        EoM = lambda s,t: self.equationsOfMotion_CRTBP(t,s)
              
-        s,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
-        self.info = info
+        s = itg.odeint(EoM, s0, t, full_output = 0,rtol=2.5e-14,atol=1e-22)
         
         return s

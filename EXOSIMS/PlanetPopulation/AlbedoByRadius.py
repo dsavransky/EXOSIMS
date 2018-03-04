@@ -96,7 +96,7 @@ class AlbedoByRadius(SAG13):
             sma = np.clip(a.to('AU').value, arcon[0], arcon[1])
             # upper limit for eccentricity given sma
             elim = np.zeros(len(sma))
-            amean = np.mean(arcon)
+            amean = np.mean(ar)
             elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
             elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
             elim[elim > self.erange[1]] = self.erange[1]

@@ -4,6 +4,14 @@ EXOSIMS\.PlanetPopulation package
 Submodules
 ----------
 
+EXOSIMS\.PlanetPopulation\.AlbedoByRadius module
+------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.AlbedoByRadius
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS\.PlanetPopulation\.EarthTwinHabZone1 module
 ---------------------------------------------------
 
@@ -16,6 +24,14 @@ EXOSIMS\.PlanetPopulation\.EarthTwinHabZone2 module
 ---------------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPopulation.EarthTwinHabZone2
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS\.PlanetPopulation\.JupiterTwin module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.JupiterTwin
     :members:
     :undoc-members:
     :show-inheritance:

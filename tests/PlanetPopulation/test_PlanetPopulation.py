@@ -118,8 +118,8 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_check) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
-                self.assertTrue(np.all(a*(1+e) <= obj.rrange[1]),'constrainOribts high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(a*(1-e) >= obj.rrange[0]),'constrainOribts low bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(a*(1+e) <= obj.rrange[1]),'constrainOrbits high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(a*(1-e) >= obj.rrange[0]),'constrainOrbits low bound failed for %s'%mod.__name__)
 
 
     def test_honor_prange(self):

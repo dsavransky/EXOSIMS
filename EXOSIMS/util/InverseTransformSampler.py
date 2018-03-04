@@ -43,15 +43,20 @@ class InverseTransformSampler():
 
         assert hasattr(f, '__call__'),\
                 "f must be callable."
-
-        ints = np.linspace(self.xMin,self.xMax, nints+1) #interval edges
-        x = np.diff(ints)/2. + ints[:-1] #interval midpoints
-        fX = f(x)
-        F = np.hstack([0,np.cumsum(fX)])
-        F /= F[-1]
-
-        self.Finv = interp1d(F, ints)
-
+        
+        if self.xMin != self.xMax:
+            ints = np.linspace(self.xMin,self.xMax, nints+1) #interval edges
+            x = np.diff(ints)/2. + ints[:-1] #interval midpoints
+            fX = f(x)
+            if not isinstance(fX,np.ndarray):
+                fX = np.array(fX,copy=False,ndmin=1)
+            
+            if len(fX) == 1:
+                fX = float(fX)*np.ones(x.shape)
+            F = np.hstack([0,np.cumsum(fX)])
+            F /= F[-1]
+            
+            self.Finv = interp1d(F, ints)
 
     def __call__(self, numTest=1):
         '''
@@ -67,5 +72,3 @@ class InverseTransformSampler():
             return np.zeros(numTest)+self.xMin
         
         return self.Finv(np.random.uniform(size=numTest))
-
-

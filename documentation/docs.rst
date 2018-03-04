@@ -41,4 +41,6 @@ This will rebuild all of the ``EXOSIMS.*`` rst files, after which you can run ``
 
 This entire procedure is also packaged into a bash script: ``builddocs.sh``.  On POSIX systems, you can just run this script from the documentation directory to rebuild and recompile everything and move the resulting html directory to the top level documentation directory. 
 
+For Windows users, this procedure is packaged into a batch file: ``builddocs.bat``. You can run this file from the documentation directory to rebuild and recompile everything and move the build html directory to the top level documentation directory.
+
 

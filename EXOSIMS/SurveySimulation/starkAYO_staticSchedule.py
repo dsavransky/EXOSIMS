@@ -211,7 +211,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             dec = self.TargetList.coords.dec[imat2].value
 
             currentTime = TK.currentTimeAbs
-            r_targ = TL.starprop(imat2,currentTime,False)
+            r_targ = TL.starprop(np.asarray(imat2).astype(int),currentTime,False)
             #dec = np.zeros(len(imat2))
             #for i in np.arange(len(imat2)):
             c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')

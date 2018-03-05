@@ -308,9 +308,11 @@ class TestSurveySimulation(unittest.TestCase):
                 #Check if File Exists and if it does, delete it
                 if os.path.isfile(sim.cachefname+'starkfZ'):
                     os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
+                sInds = np.arange(5)
                 sim.fZ_startSaved = sim.generate_fZ(sInds)
-                [val, sInd] = sim.calcfZmax(sInds)
+                val = np.zeros(sInds.shape[0])
+                inds = np.zeros(sInds.shape[0])
+                [val, inds] = sim.calcfZmax(sInds)
                 try:
                     self.assertIsInstance(sInd, type(np.asarray([])))
                 except:

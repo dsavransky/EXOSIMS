@@ -563,7 +563,7 @@ class Observatory(object):
                 Selected observing mode            
                 
         Returns:
-            observableTimes (astropy 2xn Time ndarray):
+            observableTimes (astropy nx2 Time ndarray):#n is the length of sInds
                 Start and end times of next observability time window in
                 absolute time MJD
         """

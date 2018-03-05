@@ -305,14 +305,13 @@ class SurveySimulation(object):
         sInd = None
         while not TK.mission_is_over():
             
-            # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.ObsStartTimes.append(TK.currentTimeNorm.to('day'))
-            
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
             assert det_intTime != 0, "Integration time can't be 0."
 
             if sInd is not None:
+                # save the start time of this observation (BEFORE any OH/settling/slew time)
+                TK.ObsStartTimes.append(TK.currentTimeNorm.to('day'))
                 TK.ObsNum += 1#we're making an observation
                 
                 # beginning of observation, start to populate DRM
@@ -387,15 +386,19 @@ class SurveySimulation(object):
                 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
-                if np.isinf(TK.OBduration):
-                    obsLength = (TK.ObsEndTimes[-1] - TK.ObsStartTimes[-1]).to('day')
-                    TK.advancetToStartOfNextOB()
+                #if np.isinf(TK.OBduration):
+                    #obsLength = (TK.ObsEndTimes[-1] - TK.ObsStartTimes[-1]).to('day')
+                    #TK.advancetToStartOfNextOB()
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.ObsEndTimes[-1].round(2))
                     break
-        
+            else:#sInd is None 
+                if TK.mission_is_over():#Check if mission is over #next_target may advance time to end of mission
+                    pass
+                else:#advance to next time a star comes out of keepout
+                    pass#needs to be changed
         else:
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
@@ -504,22 +507,21 @@ class SurveySimulation(object):
                 intTime = intTimes[sInd]
                 break
             
-            # if no observable target, call the TimeKeeping.wait() method
+            # if no observable target, advanceTime to next Observable Target
             else:
-                #THIS WILL BE REPLACED WITH GABE'S FUNCTION SO WE CAN ADVANCE TIME TO WHEN THE NEXT STAR COMES OUT OF KEEPOUT
-                koMap, koTimes = Obs.generate_koMap(TL,TK.missionStart,TK.missionFinishAbs)
-                #np.arange(TL.nStars) can be replaced with something better. We need to save the different filtering at each step
-                observableTimes = Obs.find_nextObsWindow(TL,np.arange(TL.nStars),startTimes,koMap,koTimes)
+                #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
+                observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,mode)
 
                 #If There are no observable targets for the rest of the mission
-                if observableTimes[1][observableTimes[0] > TK.currentTimeAbs.value*u.d].shape[0] == 0:
+                if not observableTimes[0][TK.missionFinishAbs.value*u.d > observableTimes[0].value*u.d >= TK.currentTimeAbs.value*u.d].shape[0] == 0:#Are there any stars coming out of keepout before end of mission
                     self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
                     #Manually advancing time to mission end
                     TK.currentTimeNorm = TK.missionFinishNorm
                     TK.currentTimeAbs = TK.missionFinishAbs
                     return DRM, None, None
                 else:#nominal wait time if at least 1 target is still in list and observable
-                    dt = np.min(observableTimes[0][observableTimes[0]>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d#np.min(observableTimes[0]-TK.currentTimeAbs.value*u.d)
+                    dt = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d
+                    #Advance this time Absolutely
                     TK.allocate_time(dt)#Note dt is not the correct time to advance this. It would not work with observation blocks
                     self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
             

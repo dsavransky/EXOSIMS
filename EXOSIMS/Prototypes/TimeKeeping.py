@@ -100,16 +100,13 @@ class TimeKeeping(object):
         #self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
         self.advancetToStartOfNextOB()
 
-        # initialize single observation time arrays. #these are the detection observations
+        # initialize single detection observation time arrays. #these are the detection observations
         self.ObsNum = 0 #this is the number of detection observations that have occured
         self.ObsStartTimes = list()#*u.day
         self.ObsEndTimes = list()#*u.day
         
+        # initialize time spend using instrument
         self.exoplanetObsTime = 0*u.day
-
-        # initialize single observation START and END times
-        #self.obsStart = 0.*u.day#an array containing the observation Start times
-        #self.obsEnd = 0.*u.day#an array containing the observation End times
         
         # initialize wait parameters
         self.waitTime = float(waitTime)*u.day#the default amount of time to wait in wait function
@@ -150,7 +147,7 @@ class TimeKeeping(object):
 
         return is_over
 
-    def allocate_time(self, dt, flag=0):
+    def allocate_time(self, dt, flag=1):
         r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
         
         Advance the mission time by dt units. If this requires moving into the next OB,

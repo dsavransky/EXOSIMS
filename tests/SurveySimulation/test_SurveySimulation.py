@@ -179,22 +179,6 @@ class TestSurveySimulation(unittest.TestCase):
 
                 self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
 
-    def test_choose_revisit_target(self):
-        r"""Test choose_revisit_target Method
-        """
-        for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
-
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
-
-                for sInd in [0,None]:
-                    sInd = sim.choose_revisit_target(sInd)
-                    try:
-                        self.assertIsInstance(sInd, int)
-                    except:
-                        self.assertIsInstance(sInd, type(None))
-
     def test_observation_detection(self):
         r"""Test observation_detection method.
 

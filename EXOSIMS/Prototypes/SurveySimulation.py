@@ -95,7 +95,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, dt_max=1.*u.week, **specs):
+            WAint=None, dMagint=None, dt_max=1., **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -586,22 +586,7 @@ class SurveySimulation(object):
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
-
-        #Choose Revisit Target
-        sInd = self.choose_revisit_target(sInd)
         
-        return sInd
-
-    def choose_revisit_target(self,sInd):
-        """A Helper function for selecting revisit targets instead of the nominal detection targets
-        Here you can use self.starRevisit to get the indicies of the stars to revisit
-        along with any of the modules in self to compute completeness or revisit integration times.
-        A decision can be made to prioritize the revisit or the other sInd
-        Args:
-            sInd - index of target currently scheduled for visiting
-        Returns:
-            sInd - index of target now scheduled for visiting
-        """
         return sInd
 
     def observation_detection(self, sInd, intTime, mode):
@@ -783,14 +768,11 @@ class SurveySimulation(object):
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
-        if self.starRevisit.size == 0:
-            self.starRevisit = np.array([revisit])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]
-            if revInd.size == 0:
-                self.starRevisit = np.vstack((self.starRevisit, revisit))
-            else:
-                self.starRevisit[revInd,1] = revisit[1]
+            revInds = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            self.starRevisit = np.vstack((self.starRevisit, revisit))
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -1245,7 +1227,6 @@ class SurveySimulation(object):
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
             #The above condition should prevent revisits so long as all stars have not been observed
             if self.starRevisit.size != 0:
-                #self.dt_max = 1.*u.week
                 dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
                 ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] 
                         if x in sInds]

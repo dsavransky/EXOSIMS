@@ -514,6 +514,9 @@ class SurveySimulation(object):
                 #If There are no observable targets for the rest of the mission
                 if observableTimes[1][observableTimes[0] > TK.currentTimeAbs.value*u.d].shape[0] == 0:
                     self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
+                    #Manually advancing time to mission end
+                    TK.currentTimeNorm = TK.missionFinishNorm
+                    TK.currentTimeAbs = TK.missionFinishAbs
                     return DRM, None, None
                 else:#nominal wait time if at least 1 target is still in list and observable
                     dt = np.min(observableTimes[0][observableTimes[0]>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d#np.min(observableTimes[0]-TK.currentTimeAbs.value*u.d)
@@ -1328,12 +1331,12 @@ class SurveySimulation(object):
             #Generate Time array heritage from generate_fZ
             startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
-            time = [j*dt for j in range(1000)]
+            timeArray = [j*dt for j in range(1000)]
                 
             #When are stars in KO regions
-            kogoodStart = np.zeros([len(time),sInds.shape[0]])#replaced self.schedule with sInds
-            for i in np.arange(len(time)):
-                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+time[i]*u.d, mode)#replaced self.schedule with sInds
+            kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])#replaced self.schedule with sInds
+            for i in np.arange(len(timeArray)):
+                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d, mode)#replaced self.schedule with sInds
                 kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
             kogoodStart[kogoodStart==0] = nan
 

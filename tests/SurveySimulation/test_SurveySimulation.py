@@ -314,9 +314,9 @@ class TestSurveySimulation(unittest.TestCase):
                 inds = np.zeros(sInds.shape[0])
                 [val, inds] = sim.calcfZmax(sInds)
                 try:
-                    self.assertIsInstance(sInd, type(np.asarray([])))
+                    self.assertIsInstance(inds, type(np.asarray([])))
                 except:
-                    self.assertIsInstance(sInd, type(None))
+                    self.assertIsInstance(inds, type(None))
 
     def test_calcfZmin(self):
         r"""Test calcfZmin method
@@ -332,11 +332,11 @@ class TestSurveySimulation(unittest.TestCase):
                     os.remove(sim.cachefname+'starkfZ')
                 sInds = np.asarray([0])
                 sim.fZ_startSaved = sim.generate_fZ(sInds)
-                [val, sInd] = sim.calcfZmin(sInds)
+                [val, inds] = sim.calcfZmin(sInds)
                 try:
-                    self.assertIsInstance(sInd, type(np.asarray([])))
+                    self.assertIsInstance(inds, type(np.asarray([])))
                 except:
-                    self.assertIsInstance(sInd, type(None))
+                    self.assertIsInstance(inds, type(None))
 
     def test_revisitFilter(self):
         r"""Test revisitFilter method

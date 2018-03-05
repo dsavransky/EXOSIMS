@@ -728,7 +728,7 @@ class Observatory(object):
         u2_Az = np.dot(a3,u_new.T)
         sgn = np.sign(u2_Az)
         
-        return sgn*sd
+        return sgn*sd#The star angular separation can be negative because it is with respect to a frame
         
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
@@ -1215,7 +1215,10 @@ class Observatory(object):
         else:
             sd = self.star_angularSep(TL,old_sInd,sInds,currentTime)
             # calculate slew time
-            slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+            slewTimes = np.sqrt(slewTime_fac*np.sin(abs(sd)/2.))#an issue exists if sd is negative
+            
+            #The following are debugging 
+            assert(np.where(np.isnan(slewTimes))[0].shape[0] > 0, 'At least one slewTime is nan')
         
         return sd,slewTimes
     

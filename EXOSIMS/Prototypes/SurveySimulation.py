@@ -460,6 +460,7 @@ class SurveySimulation(object):
                 sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
                 
             # start times, including slew times
+            #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
             startTimes = tmpCurrentTimeAbs + slewTimes
             startTimesNorm = tmpCurrentTimeNorm + slewTimes
             # indices of observable stars
@@ -506,8 +507,18 @@ class SurveySimulation(object):
             # if no observable target, call the TimeKeeping.wait() method
             else:
                 #THIS WILL BE REPLACED WITH GABE'S FUNCTION SO WE CAN ADVANCE TIME TO WHEN THE NEXT STAR COMES OUT OF KEEPOUT
-                TK.allocate_time(TK.waitTime)
-                self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(TK.waitTime))
+                koMap, koTimes = Obs.generate_koMap(TL,TK.missionStart,TK.missionFinishAbs)
+                #np.arange(TL.nStars) can be replaced with something better. We need to save the different filtering at each step
+                observableTimes = Obs.find_nextObsWindow(TL,np.arange(TL.nStars),startTimes,koMap,koTimes)
+
+                #If There are no observable targets for the rest of the mission
+                if observableTimes[1][observableTimes[0] > TK.currentTimeAbs.value*u.d].shape[0] == 0:
+                    self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
+                    return DRM, None, None
+                else:#nominal wait time if at least 1 target is still in list and observable
+                    dt = np.min(observableTimes[0][observableTimes[0]>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d#np.min(observableTimes[0]-TK.currentTimeAbs.value*u.d)
+                    TK.allocate_time(dt)#Note dt is not the correct time to advance this. It would not work with observation blocks
+                    self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
             
         else:
             return DRM, None, None

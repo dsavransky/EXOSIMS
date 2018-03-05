@@ -306,7 +306,7 @@ class SurveySimulation(object):
         while not TK.mission_is_over():
             
             # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.to('day')
+            TK.ObsStartTimes.append(TK.currentTimeNorm.to('day'))
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
@@ -325,7 +325,7 @@ class SurveySimulation(object):
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
                         + 'mission time at Obs start: %s')%(TK.ObsNum, sInd, TL.nStars, len(pInds), 
-                        TK.obsStart.round(2))
+                        TK.ObsStartTimes[-1].round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
@@ -383,17 +383,17 @@ class SurveySimulation(object):
                 self.DRM.append(DRM)
                 
                 # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
+                TK.ObsEndTimes.append(TK.currentTimeNorm.to('day'))
                 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd - TK.obsStart).to('day')
+                    obsLength = (TK.ObsEndTimes[-1] - TK.ObsStartTimes[-1]).to('day')
                     TK.advancetToStartOfNextOB()
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    self.vprint('Total fuel mass exceeded at %s'%TK.ObsEndTimes[-1].round(2))
                     break
         
         else:

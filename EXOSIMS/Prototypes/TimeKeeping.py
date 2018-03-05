@@ -102,14 +102,14 @@ class TimeKeeping(object):
 
         # initialize single observation time arrays. #these are the detection observations
         self.ObsNum = 0 #this is the number of detection observations that have occured
-        self.ObsStartTimes = []*u.day
-        self.ObsEndTimes = []*u.day
+        self.ObsStartTimes = list()#*u.day
+        self.ObsEndTimes = list()#*u.day
         
         self.exoplanetObsTime = 0*u.day
 
         # initialize single observation START and END times
-        self.obsStart = 0.*u.day#an array containing the observation Start times
-        self.obsEnd = 0.*u.day#an array containing the observation End times
+        #self.obsStart = 0.*u.day#an array containing the observation Start times
+        #self.obsEnd = 0.*u.day#an array containing the observation End times
         
         # initialize wait parameters
         self.waitTime = float(waitTime)*u.day#the default amount of time to wait in wait function

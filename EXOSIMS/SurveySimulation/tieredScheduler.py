@@ -348,6 +348,7 @@ class tieredScheduler(SurveySimulation):
         slewTime_fac = (2.*Obs.occulterSep/np.abs(self.ao)/(Obs.defburnPortion/2. \
                 - Obs.defburnPortion**2/4.)).decompose().to('d2')
         
+        cnt = 0
         # Now, start to look for available targets
         while not TK.mission_is_over():
             # 0/ initialize arrays
@@ -481,11 +482,6 @@ class tieredScheduler(SurveySimulation):
                 t_det = intTimes[sInd]
                 # update visited list for current star
                 self.starVisits[sInd] += 1
-                # int_time = self.calc_int_inflection([sInd], fEZ, startTimes, WA, detmode)[0]
-
-                # if int_time < t_det:
-                #     # t_det = int_time #XXX test
-                #     pass
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds) or old_occ_sInd is None:
@@ -502,11 +498,14 @@ class tieredScheduler(SurveySimulation):
                         self.occ_sd = sd[occ_sInd]
                     self.ready_to_update = False
                     self.occ_starVisits[occ_sInd] += 1
-            break
 
-            # # if no observable target, call the TimeKeeping.wait() method
-            # else:
-            #     TK.wait()
+            # if no observable target, call the TimeKeeping.wait() method
+            if not np.any(sInds) and not np.any(occ_sInds):
+                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
+                cnt += 1
+                continue
+
+            break
 
         else:
             self.logger.info('Mission complete: no more time available')
@@ -654,6 +653,7 @@ class tieredScheduler(SurveySimulation):
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         weights = (comps + f2_uv/6.)/t_dets
+
         sInd = np.random.choice(sInds[weights == max(weights)])
 
         # Comp = self.Completeness
@@ -668,6 +668,7 @@ class tieredScheduler(SurveySimulation):
         # sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
+
 
     def calc_int_inflection(self, t_sInds, fEZ, startTime, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness as a function of int_time
@@ -726,7 +727,7 @@ class tieredScheduler(SurveySimulation):
             self.curves = curves
 
         # if no curves for current mode
-        if mode['systName'] not in self.curves.keys():
+        if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
             for t_i, t in enumerate(intTimes):
                 fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
@@ -750,6 +751,7 @@ class tieredScheduler(SurveySimulation):
                 # update star completeness
                 idx = (np.abs(intTimes-int_time)).argmin()
                 comp = c_v_t[idx]
+                TL.comp[sInd] = comp
             else:
                 idt = np.abs(intTimes - max(intTimes)).argmin()
                 idx = np.abs(c_v_t - c_v_t[idt]*.9).argmin()
@@ -761,6 +763,7 @@ class tieredScheduler(SurveySimulation):
             int_times[i] = int_time
 
         return int_times
+
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information

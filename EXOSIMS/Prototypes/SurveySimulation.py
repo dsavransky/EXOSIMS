@@ -771,8 +771,11 @@ class SurveySimulation(object):
         if self.starRevisit.size == 0:#If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInds = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
-            self.starRevisit = np.vstack((self.starRevisit, revisit))
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]#over
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information

@@ -1229,11 +1229,11 @@ class SurveySimulation(object):
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
             #The above condition should prevent revisits so long as all stars have not been observed
-            if self.starRevisit.size != 0:
-                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] 
+            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)#absolute temporal spacing between revisit and now.
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] #return indice of all revisits within a threshold dt_max of revisit day
                         if x in sInds]
-                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
             sInds = np.where(tovisit)[0]
         return sInds
 

@@ -483,7 +483,8 @@ class tieredScheduler(SurveySimulation):
             # 7a/ Filter off stars with too-long inttimes
             if self.occ_arrives > TK.currentTimeAbs:
                 available_time = self.occ_arrives - TK.currentTimeAbs
-                sInds = sInds[intTimes[sInds] < available_time]
+                if np.any(sInds[intTimes[sInds] < available_time]):
+                    sInds = sInds[intTimes[sInds] < available_time]
 
             # 7b/ Choose best target from remaining
             if np.any(sInds):
@@ -513,12 +514,8 @@ class tieredScheduler(SurveySimulation):
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds) or old_occ_sInd is None:
-                if old_occ_sInd is None or not np.any(sInds) or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
+                if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
-                    if not np.any(sInds):
-                        sInd = occ_sInd
-                        t_det = (self.occ_arrives - TK.currentTimeAbs) + 1*u.d
-                        dmode = detmode[0]
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs
                     else:
@@ -744,8 +741,9 @@ class tieredScheduler(SurveySimulation):
                 print 'Cached completeness file not found at "%s".' % Cpath
                 print 'Beginning completeness curve calculations.'
                 curves = {}
+                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 for t_i, t in enumerate(intTimes):
-                    fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                    #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                     # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                     curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                 curves[mode['systName']] = curve
@@ -756,8 +754,9 @@ class tieredScheduler(SurveySimulation):
 
         # if no curves for current mode
         if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
+            fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
             for t_i, t in enumerate(intTimes):
-                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
             self.curves[mode['systName']] = curve
@@ -880,9 +879,13 @@ class tieredScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
-            for i,j in enumerate(WAp):
-                if tochar[i]:
-                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            intTimes = np.zeros(len(tochar))*u.day
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            # print(intTimes)
+            # for i,j in enumerate(WAp):
+            #     if tochar[i]:
+            #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            # print(intTimes)
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

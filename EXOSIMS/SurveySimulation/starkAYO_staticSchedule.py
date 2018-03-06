@@ -211,7 +211,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             dec = self.TargetList.coords.dec[imat2].value
 
             currentTime = TK.currentTimeAbs
-            r_targ = TL.starprop(imat2,currentTime,False)
+            r_targ = TL.starprop(np.asarray(imat2).astype(int),currentTime,False)
             #dec = np.zeros(len(imat2))
             #for i in np.arange(len(imat2)):
             c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
@@ -414,7 +414,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         for i in xrange(sInds.shape[0]):
             x0 = 0.00001
             maxCbyTtime[i] = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-15 , disp=False)
-            print(maxCbyTtime[i])
+            self.vprint("Max C/T calc completion:" + str(i/sInds.shape[0]))
         t_dets = maxCbyTtime
         #Sept 27, Execution time 101 seconds for 651 stars
 
@@ -452,7 +452,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             #When are stars in KO regions
             kogoodStart = np.zeros([len(time),self.schedule.shape[0]])
             for i in np.arange(len(time)):
-                kogoodStart[i,:] = Obs.keepout(TL, self.schedule, TK.currentTimeAbs+time[i]*u.d, mode)
+                kogoodStart[i,:] = Obs.keepout(TL, self.schedule, TK.currentTimeAbs+time[i]*u.d)
                 kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
             kogoodStart[kogoodStart==0] = nan
 

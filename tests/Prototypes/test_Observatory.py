@@ -113,8 +113,7 @@ class TestObservatoryMethods(unittest.TestCase):
         obs = self.fixture
         # the routine under test
         syst = {'occulter':False}
-        mode = {'syst':syst}
-        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref, mode)
+        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref)
         # return value should be True
         self.assertTrue(np.all(kogood))
         self.assertEqual(len(kogood), star_catalog.nStars)

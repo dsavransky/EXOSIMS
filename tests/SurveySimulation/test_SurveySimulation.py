@@ -297,7 +297,7 @@ class TestSurveySimulation(unittest.TestCase):
                 self.assertEqual(sim.fZ_startSaved.shape[0],1)
 
     def test_calcfZmax(self):
-        r"""Test calcfZmax method
+        """Test calcfZmax method
         """
         for mod in self.allmods:
             if 'choose_revisit_target' in mod.__dict__:

@@ -147,36 +147,55 @@ class TimeKeeping(object):
 
         return is_over
 
-    def allocate_time(self, dt, flag=1):
-        r"""Allocate a temporal block of width dt, advancing to the next OB if needed.
+    def allocate_time(self, t, flag=1):
+        r"""Allocate a temporal block of width t, advancing to the next OB if needed OR advance to absolute time t
         
         Advance the mission time by dt units. If this requires moving into the next OB,
         call the advancetToStartOfNextOB() method of the TimeKeeping class object.
         
         Args:
-            dt (astropy Quantity):
-                Temporal block allocated in units of day
+            t (astropy Quantity OR unitless OR Time Quantity):
+                Temporal block allocated in units of day OR assumed to be day OR absolute time to advance to
             flag (integer):
                 Indicates the allocated time is for the primary instrument (1) or some other instrument (0)
+                By default this function assumes all allocated time is attributed to the primary instrument
         
         """
-        if dt == 0:
-            return
+        if(type(t) == type(self.currentTimeAbs)):#t given as Time. Advance to TimeAbs t or start of next OB
+            assert(t.value > self.currentTimeAbs.value, 'allocate_time tAbs must be greater than currentTimeAbs')
+            #Check no OBendTimes occur between now and time to advance to
+            while(not self.currentTimeAbs.value < t.value):#continue until the current mission time is greater than or equal to the set point time 
+                tSkipped = 0
+                if(self.OBendTimes[self.OBnumber].value + self.missionStart.value <= t.to('day').value):#Check if next OBendTime occurs between now and t
+                    tSkipped = self.get_tEndThisOB()  - self.currentTimeNorm#time between now and the end of the OB
+                    self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
+                else:#No OBendTimes occur between now and setpoint
+                    tSkipped = (t - self.currentTimeAbs).value*u.d #time advanced
+                    self.currentTimeNorm = (t - self.missionStart).value*u.d#advances to t
+                    self.currentTimeAbs = t#advances absolute time to t
+                if(flag == 1):#adds OB time skipped over to exoplanetObsTime
+                    self.exoplanetObsTime += tSkipped#increments allocated time 
+        else:
+            if(type(t) == type(1*u.d)):#t is a dt to be added to the current mission time in units of day
+                dt = t
+            else:#assume unitless t given in units of dat
+                dt = t*u.d
+            assert(dt > 0*u.d, 'allocated_time dt must be positive nonzero')
+            assert(dt < self.OBduration, 'allocated_time dt must be less than OBduration')
+            #Check adding t would exceed CURRENT OBendTime
+            if (self.currentTimeNorm + dt > self.get_tEndThisOB()):#the allocationtime would exceed the current allowed OB
+                tSkipped = self.get_tEndThisOB()-self.currentTimeNorm#We add the time at the end of the OB skipped
+                self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
+                self.currentTimeNorm += dt#adds desired dt to start of next OB
+                self.currentTimeAbs += dt#adds desired dt to start of next OB
 
-        #Check if additional time would exceed CURRENT OBendTime
-        if (self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):#the allocationtime would exceed the current allowed OB
-            tSkipped = self.get_tEndThisOB()-self.currentTimeNorm#We add the time at the end of the OB skipped
-            self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
-            self.currentTimeNorm += dt#adds desired dt to start of next OB
-            self.currentTimeAbs += dt#adds desired dt to start of next OB
-
-            if(flag == 1):
-                self.exoplanetObsTime += dt#increments allocated time 
-        else:#Operation as normal
-            self.currentTimeNorm += dt
-            self.currentTimeAbs += dt
-            if(flag == 1):
-                self.exoplanetObsTime += dt + tSkipped#increments allocated time 
+                if(flag == 1):
+                    self.exoplanetObsTime += dt + tSkipped#increments allocated time 
+            else:#Operation as normal
+                self.currentTimeNorm += dt
+                self.currentTimeAbs += dt
+                if(flag == 1):
+                    self.exoplanetObsTime += dt#increments allocated time      
 
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block

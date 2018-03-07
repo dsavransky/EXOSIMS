@@ -471,7 +471,8 @@ class tieredScheduler(SurveySimulation):
             # 7a/ Filter off stars with too-long inttimes
             if self.occ_arrives > TK.currentTimeAbs:
                 available_time = self.occ_arrives - TK.currentTimeAbs
-                sInds = sInds[intTimes[sInds] < available_time]
+                if np.any(sInds[intTimes[sInds] < available_time]):
+                    sInds = sInds[intTimes[sInds] < available_time]
 
             # 7b/ Choose best target from remaining
             if np.any(sInds):
@@ -485,11 +486,8 @@ class tieredScheduler(SurveySimulation):
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds) or old_occ_sInd is None:
-                if old_occ_sInd is None or not np.any(sInds) or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
+                if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
-                    if not np.any(sInds):
-                        sInd = occ_sInd
-                        t_det = (self.occ_arrives - TK.currentTimeAbs) + 1*u.d
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs
                     else:

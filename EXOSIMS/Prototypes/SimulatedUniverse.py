@@ -460,13 +460,17 @@ class SimulatedUniverse(object):
                 Planet indices to keep
         
         """
-       
+        
+        # planet attributes which are floats and should not be filtered
+        bad_atts = ['Min']
+        
         if len(pInds) == 0:
             raise IndexError("Planets list filtered to empty.")
         
         for att in self.planet_atts:
-            if getattr(self, att).size != 0:
-                setattr(self, att, getattr(self, att)[pInds])
+            if att not in bad_atts:
+                if getattr(self, att).size != 0:
+                    setattr(self, att, getattr(self, att)[pInds])
         self.nPlans = len(pInds)
         assert self.nPlans, "Planets list is empty: nPlans = %r"%self.nPlans
 

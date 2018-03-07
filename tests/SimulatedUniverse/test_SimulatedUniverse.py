@@ -260,3 +260,60 @@ class TestSimulatedUniverse(unittest.TestCase):
             num = len(inds1) + len(inds2)
                         
             self.assertTrue(num == obj.nPlans,"Phase angles not set correctly")
+            
+    def test_dump_systems(self):
+        """
+        Test that dump_systems returns a dictionary with correct keys and values
+        """
+        
+        # required dictionary keys
+        req_keys = ['a','e','I','O','w','M0','Mp','mu','Rp','p','plan2star','star']
+        
+        # missing attributes from req_keys
+        matts = ['mu','star']
+        spec = json.loads(open(self.script).read())
+        spec['modules']['StarCatalog'] = 'EXOCAT1'
+        SU = SimulatedUniverse(**spec)
+        
+        test_dict = SU.dump_systems()
+        for key in req_keys:
+            self.assertIn(key,test_dict.keys(),"Key %s not in dictionary produced by dump_systems"%key)
+            if key not in matts:
+                self.assertTrue(np.all(test_dict[key] == getattr(SU,key)),"Value(s) for %s not same produced by dump_systems"%key)
+    
+    def test_revise_planets_list(self):
+        """
+        Test that revise_planets_list filters correctly
+        """
+        
+        spec = json.loads(open(self.script).read())
+        spec['Rprange'] = [1,20]
+        spec['modules']['StarCatalog'] = 'EXOCAT1'
+        SU = SimulatedUniverse(**spec)
+        
+        # keep planets > 4 R_earth
+        pInds = np.where(SU.Rp >= 4*u.R_earth)[0]
+        SU.revise_planets_list(pInds)
+        self.assertTrue(np.all(SU.Rp>=4*u.R_earth),"revise_planets_list does not filter correctly")
+    
+    def test_revise_stars_list(self):
+        """
+        Test that revise_stars_list filters correctly
+        """
+        
+        spec = json.loads(open(self.script).read())
+        spec['modules']['StarCatalog'] = 'EXOCAT1'
+        spec['eta'] = 1
+        SU = SimulatedUniverse(**spec)
+        
+        # star indices to keep
+        sInds = np.arange(0,10,dtype=int)
+        SU.revise_stars_list(sInds)
+        names = SU.TargetList.Name[sInds]
+        
+        # check correct stars in targetlist
+        self.assertTrue(np.all(names==SU.TargetList.Name),"revise_stars_list does not select correct stars")
+        # check that planets are only assigned to stars in filtered list
+        pInds = set(SU.plan2star)
+        sInds = set(sInds)
+        self.assertTrue(pInds.issubset(sInds),"revise_stars_list does not assign planets only to filtered stars")

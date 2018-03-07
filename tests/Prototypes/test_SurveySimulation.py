@@ -98,7 +98,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with self.assertRaises(KeyError):
             sim = self.fixture(None)
 
-
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
@@ -113,7 +112,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
         sInd = sim.choose_next_target(None,np.arange(sim.TargetList.nStars),np.array([1.0]*sim.TargetList.nStars)*u.d,\
                 np.array([1.0]*sim.TargetList.nStars)*u.d)
         self.assertEqual(comprand[sInd],comprand.max())
-
 
     def test_reset_sim(self):
         r"""Test reset_sim method.

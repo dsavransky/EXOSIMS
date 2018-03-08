@@ -137,7 +137,7 @@ class TargetList(object):
         # and are not propagated during the mission
         self.starprop_static = None
         if self.staticStars is True:
-            allInds = np.arange(self.nStars)
+            allInds = np.arange(self.nStars,dtype=int)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
             self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \

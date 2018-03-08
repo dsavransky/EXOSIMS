@@ -436,7 +436,7 @@ class TestPlanetPopulation(unittest.TestCase):
                 
                 aa, RR = np.meshgrid(a,Rp)
                 
-                fr = pp.dist_sma_radius(a,Rp)
+                fr = pp.dist_sma_radius(aa,RR)
                 self.assertTrue(np.all(fr[aa < pp.arange[0].value] == 0),'dist_sma_radius low bound failed on sma for %s'%mod.__name__)
                 self.assertTrue(np.all(fr[aa > pp.arange[1].value] == 0),'dist_sma_radius high bound failed on sma for %s'%mod.__name__)
                 self.assertTrue(np.all(fr[RR < pp.Rprange[0].value] == 0),'dist_sma_radius low bound failed on radius for %s'%mod.__name__)

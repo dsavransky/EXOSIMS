@@ -893,6 +893,9 @@ class GarrettCompleteness(BrownCompleteness):
         """Calculates completeness for given minimum and maximum separations
         and dMag
         
+        Note: this method assumes scaling orbits when scaleOrbits == True has
+        already occurred for smin, smax, dMag inputs
+        
         Args:
             smin (float ndarray):
                 Minimum separation(s) in AU

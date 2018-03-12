@@ -725,7 +725,7 @@ class tieredScheduler(SurveySimulation):
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
         sInds = np.arange(TL.nStars)
-        WA = self.WAint[0]   # don't use WA input because we don't know planet positions before characterization
+        WA = self.WAint   # don't use WA input because we don't know planet positions before characterization
         curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
@@ -881,11 +881,10 @@ class tieredScheduler(SurveySimulation):
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
-            # print(intTimes)
+
             # for i,j in enumerate(WAp):
             #     if tochar[i]:
             #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
-            # print(intTimes)
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

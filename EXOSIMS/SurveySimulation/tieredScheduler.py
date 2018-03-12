@@ -698,7 +698,7 @@ class tieredScheduler(SurveySimulation):
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
         sInds = np.arange(TL.nStars)
-        WA = self.WAint[0]   # don't use WA input because we don't know planet positions before characterization
+        WA = self.WAint   # don't use WA input because we don't know planet positions before characterization
         curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')

@@ -220,7 +220,20 @@ class SurveySimulation(object):
         # transform into arrays of length TargetList.nStars
         self.dMagint = np.array([dMagint]*TL.nStars)
         self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
-        
+        for i,Lstar in enumerate(TL.L):
+            if Lstar <1.6:
+               self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
+            else:
+                self.dMagint[i] = Comp.dMagLim
+
+            EEID = (np.sqrt(Lstar)/TL.dist[i]).value*u.arcsec
+            if EEID < OS.IWA:
+                EEID = OS.IWA
+            elif EEID > OS.OWA:
+                EEID = OS.OWA
+
+            self.WAint[i] = EEID
+    
         # add scalar values of WAint and dMagint to outspec
         self._outspec['dMagint'] = self.dMagint[0]
         self._outspec['WAint'] = self.WAint[0].to('arcsec').value

@@ -1,13 +1,16 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>EXOSIMS.PlanetPopulation.KeplerLike2 &#8212; EXOSIMS 1.3 documentation</title>
+    
+    <title>EXOSIMS.PlanetPopulation.KeplerLike3 &#8212; EXOSIMS 1.3 documentation</title>
+    
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -29,21 +32,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for EXOSIMS.PlanetPopulation.KeplerLike2</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.KeplerLike1</span> <span class="k">import</span> <span class="n">KeplerLike1</span>
+  <h1>Source code for EXOSIMS.PlanetPopulation.KeplerLike3</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.KeplerLike2</span> <span class="k">import</span> <span class="n">KeplerLike2</span>
 <span class="kn">from</span> <span class="nn">EXOSIMS.util.InverseTransformSampler</span> <span class="k">import</span> <span class="n">InverseTransformSampler</span>
 <span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">scipy.integrate</span> <span class="k">as</span> <span class="nn">integrate</span>
 
-<div class="viewcode-block" id="KeplerLike2"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2">[docs]</a><span class="k">class</span> <span class="nc">KeplerLike2</span><span class="p">(</span><span class="n">KeplerLike1</span><span class="p">):</span>
+<div class="viewcode-block" id="KeplerLike3"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KeplerLike3.KeplerLike3">[docs]</a><span class="k">class</span> <span class="nc">KeplerLike3</span><span class="p">(</span><span class="n">KeplerLike2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Population based on Kepler radius distribution with RV-like semi-major axis</span>
 <span class="sd">    distribution with exponential decay.</span>
@@ -59,14 +62,13 @@
 <span class="sd">    Attributes:</span>
 <span class="sd">        smaknee (float):</span>
 <span class="sd">            Location (in AU) of semi-major axis decay point (knee).</span>
-<span class="sd">            Not an astropy quantity.</span>
 <span class="sd">        esigma (float):</span>
 <span class="sd">            Sigma value of Rayleigh distribution for eccentricity.</span>
 <span class="sd">    </span>
 <span class="sd">    Notes:</span>
 <span class="sd">    1. The gen_mass function samples the Radius and calculates the mass from</span>
 <span class="sd">    there.  Any user-set mass limits are ignored.</span>
-<span class="sd">    2. The gen_albedo function samples the sma, and then calculates the albedos</span>
+<span class="sd">    2. The gen_abledo function samples the sma, and then calculates the albedos</span>
 <span class="sd">    from there. Any user-set albedo limits are ignored.</span>
 <span class="sd">    3. The Rprange is fixed to (1,22.6) R_Earth and cannot be overwritten by user</span>
 <span class="sd">    settings (the JSON input will be ignored) </span>
@@ -81,33 +83,50 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smaknee</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">esigma</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
-        <span class="n">KeplerLike1</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smaknee</span><span class="o">=</span><span class="n">smaknee</span><span class="p">,</span> <span class="n">esigma</span><span class="o">=</span><span class="n">esigma</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        <span class="n">KeplerLike1</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
         
-        <span class="c1"># unitless sma range</span>
-        <span class="n">ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sma_sampler</span> <span class="o">=</span> <span class="n">InverseTransformSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_sma</span><span class="p">,</span> <span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-<div class="viewcode-block" id="KeplerLike2.gen_sma"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KeplerLike2.KeplerLike2.gen_sma">[docs]</a>    <span class="k">def</span> <span class="nf">gen_sma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Generate semi-major axis values in AU</span>
+<div class="viewcode-block" id="KeplerLike3.gen_albedo"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KeplerLike3.KeplerLike3.gen_albedo">[docs]</a>    <span class="k">def</span> <span class="nf">gen_albedo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate geometric albedo values</span>
 <span class="sd">        </span>
-<span class="sd">        Samples a power law distribution with exponential turn-off </span>
-<span class="sd">        determined by class attribute smaknee</span>
+<span class="sd">        The prototype provides a uniform distribution between the minimum and </span>
+<span class="sd">        maximum values.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            n (integer):</span>
 <span class="sd">                Number of samples to generate</span>
 <span class="sd">                </span>
 <span class="sd">        Returns:</span>
-<span class="sd">            a (astropy Quantity array):</span>
-<span class="sd">                Semi-major axis in units of AU</span>
+<span class="sd">            p (float ndarray):</span>
+<span class="sd">                Albedo values</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sma_sampler</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prange</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">high</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="n">a</span></div></div>
+        <span class="k">return</span> <span class="n">p</span></div>
+
+<div class="viewcode-block" id="KeplerLike3.dist_albedo"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.KeplerLike3.KeplerLike3.dist_albedo">[docs]</a>    <span class="k">def</span> <span class="nf">dist_albedo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Probability density function for albedo</span>
+<span class="sd">        </span>
+<span class="sd">        The prototype provides a uniform distribution between the minimum and</span>
+<span class="sd">        maximum values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            x (float/ndarray):</span>
+<span class="sd">                Albedo value(s)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            f (ndarray):</span>
+<span class="sd">                Albedo probability density</span>
+<span class="sd">                </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+       
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prange</span><span class="p">)</span></div></div>
+
 </pre></div>
 
           </div>
@@ -141,7 +160,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

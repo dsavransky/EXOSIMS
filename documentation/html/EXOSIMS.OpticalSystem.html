@@ -5,12 +5,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>EXOSIMS.OpticalSystem package &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="EXOSIMS.PlanetPhysicalModel package" href="EXOSIMS.PlanetPhysicalModel.html" />
@@ -217,159 +214,6 @@ in units of 1/arcsec2</li>
 </dd></dl>
 
 </div>
-<div class="section" id="module-EXOSIMS.OpticalSystem.Nemati2">
-<span id="exosims-opticalsystem-nemati2-module"></span><h2>EXOSIMS.OpticalSystem.Nemati2 module<a class="headerlink" href="#module-EXOSIMS.OpticalSystem.Nemati2" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="EXOSIMS.OpticalSystem.Nemati2.Nemati2">
-<em class="property">class </em><code class="descclassname">EXOSIMS.OpticalSystem.Nemati2.</code><code class="descname">Nemati2</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati2.html#Nemati2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati2.Nemati2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.OpticalSystem.OpticalSystem</span></code></a></p>
-<p>Nemati Optical System class</p>
-<p>This class contains all variables and methods necessary to perform
-Optical System Module calculations in exoplanet mission simulation using
-the model from Nemati 2014.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.Nemati2.Nemati2.Cp_Cb_Csp">
-<code class="descname">Cp_Cb_Csp</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>dMag</em>, <em>WA</em>, <em>mode</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati2.html#Nemati2.Cp_Cb_Csp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati2.Nemati2.Cp_Cb_Csp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates electron count rates for planet signal, background noise,
-and speckle residuals.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>dMag</strong> (<em>float ndarray</em>) – Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
-<li><strong>returnExtra</strong> (<em>boolean</em>) – Optional flag, default False, set True to return additional rates for validation</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Planet signal electron count rate in units of 1/s
-C_b (astropy Quantity array):</p>
-<blockquote>
-<div><p>Background noise electron count rate in units of 1/s</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>C_sp (astropy Quantity array):</dt>
-<dd><p class="first last">Residual speckle spatial structure (systematic error) in units of 1/s</p>
-</dd>
-</dl>
-</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">C_p (astropy Quantity array)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.Nemati2.Nemati2.calc_dMag_per_intTime">
-<code class="descname">calc_dMag_per_intTime</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati2.html#Nemati2.calc_dMag_per_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati2.Nemati2.calc_dMag_per_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds achievable dMag for one integration time per star in the input
-list at one or more working angles.</p>
-<p>Achievable dMag is returned as an m x n array where m corresponds to
-each star in sInds and n corresponds to each working angle in WA.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Achievable dMag for given integration time and working angle</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.dMag">dMag</a> (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.Nemati2.Nemati2.calc_intTime">
-<code class="descname">calc_intTime</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>dMag</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati2.html#Nemati2.calc_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati2.Nemati2.calc_intTime" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds integration times of target systems for a specific observing
-mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>dMag</strong> (<em>float ndarray</em>) – Differences in magnitude between planets and their host star</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Integration times in units of day</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">intTime (astropy Quantity array)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.OpticalSystem.Nemati2.Nemati2.ddMag_dt">
-<code class="descname">ddMag_dt</code><span class="sig-paren">(</span><em>intTimes</em>, <em>TL</em>, <em>sInds</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/OpticalSystem/Nemati2.html#Nemati2.ddMag_dt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.OpticalSystem.Nemati2.Nemati2.ddMag_dt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds derivative of achievable dMag with respect to integration time</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times</li>
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>fZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
-<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
-<li><strong>WA</strong> (<em>astropy Quantity array</em>) – Working angles of the planets of interest in units of arcsec</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Derivative of achievable dMag with respect to integration time</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ddMagdt (ndarray)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-EXOSIMS.OpticalSystem">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -387,7 +231,6 @@ mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.KasdinBraems">EXOSIMS.OpticalSystem.KasdinBraems module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.Nemati">EXOSIMS.OpticalSystem.Nemati module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem.Nemati2">EXOSIMS.OpticalSystem.Nemati2 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.OpticalSystem">Module contents</a></li>
 </ul>
 </li>
@@ -428,7 +271,7 @@ mode (imaging or characterization), based on Nemati 2014 (SPIE).</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

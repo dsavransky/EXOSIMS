@@ -20,14 +20,6 @@ EXOSIMS\.OpticalSystem\.Nemati module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS\.OpticalSystem\.Nemati2 module
---------------------------------------
-
-.. automodule:: EXOSIMS.OpticalSystem.Nemati2
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

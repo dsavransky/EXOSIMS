@@ -95,7 +95,7 @@ class TestSurveySimulation(unittest.TestCase):
                      'star_ind',
                      'FA_char_WA']
 
-        exclude_mods = ['SS_char_only', 'SS_der_only']
+        exclude_mods = ['SS_char_only', 'SS_det_only']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

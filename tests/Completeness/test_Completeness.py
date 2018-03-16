@@ -96,8 +96,6 @@ class TestCompleteness(unittest.TestCase):
                 self.assertGreaterEqual(c,0,"Completeness less than zero for %s"%mod.__name__)
                 self.assertLessEqual(c,1,"Completeness greater than one for %s"%mod.__name__)
 
-
-
     def test_completeness_update(self):
         """
         Ensure that target completeness updates are properly sized
@@ -152,7 +150,7 @@ class TestCompleteness(unittest.TestCase):
             # check that scaleOrbits == True also works
             obj.PlanetPopulation.scaleOrbits = True
             
-            comp = obj.comp_per_intTime(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
+            comp = obj.comp_per_intTime(1*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
             
             self.assertEqual(len(comp),self.TL.nStars)

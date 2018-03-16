@@ -137,6 +137,19 @@ class TestGarrettCompleteness(unittest.TestCase):
         self.assertGreaterEqual(val,0,"Completeness evaluated less than zero by GarrettCompleteness when sma and eccentricity constant")
         self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when sma and eccentricity constant")
         
+    def test_constant_sma_constrainOrbits(self):
+        """
+        Test that GarrettCompleteness returns a valid completeness value when 
+        sma is constant and constrainOrbits is true
+        """
+        
+        spec = copy.deepcopy(self.spec2)
+        spec['arange'] = [5,5]
+        Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**spec)
+        val = Gcomp.comp_calc(1.,5.,22.)
+        self.assertGreaterEqual(val,0,"Completeness evaluated less than zero by GarrettCompleteness when sma constant and constrainOrbits==True")
+        self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when sma constant and constrainOrbits==True")
+        
     def test_constant_albedo(self):
         """
         Test that GarrettCompleteness returns a valid completeness value when

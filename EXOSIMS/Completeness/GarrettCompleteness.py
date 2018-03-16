@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
-
 import numpy as np
 import os
 import hashlib
@@ -695,26 +693,6 @@ class GarrettCompleteness(BrownCompleteness):
                         a2 = self.amax
                 f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=60)[0]
     
-        return f
-        
-    def pgrand(self, p, z):
-        """Calculates integrand for determining probability density of albedo
-        times planetary radius squared
-        
-        Args:
-            p (ndarray):
-                Values of albedo
-            z (float):
-                Value of albedo times planetary radius squared
-        
-        Returns:
-            f (ndarray):
-                Values of integrand
-        
-        """
-        
-        f = 1.0/(2.0*np.sqrt(z*p))*self.dist_radius(np.sqrt(z/p))*self.dist_albedo(p)
-        
         return f
     
     def Rgrand(self, R, z):

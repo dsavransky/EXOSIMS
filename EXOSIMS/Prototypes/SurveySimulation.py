@@ -318,7 +318,7 @@ class SurveySimulation(object):
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
-                DRM['OB_nb'] = TK.OBnumber#TK.ObsNum + 1
+                DRM['OB_nb'] = TK.OBnumber
                 DRM['ObsNum'] = TK.ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
@@ -394,12 +394,7 @@ class SurveySimulation(object):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.ObsEndTimes[-1].round(2))
                     break
-            else:#sInd is None 
-                if TK.mission_is_over():#Check if mission is over #next_target may advance time to end of mission
-                    pass
-                else:#advance to next time a star comes out of keepout
-                    pass#needs to be changed
-        else:
+        else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
@@ -499,7 +494,7 @@ class SurveySimulation(object):
                 sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
                 #Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 if sInd == None:
-                    TK.allocate_time(TK.waitTime)
+                    TK.allocate_time(TK.waitTime)#This exists because choose_next_target should be able to reject observing a target if those conditions are marginally unfavorable
                     intTime = None
                     self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
@@ -543,12 +538,13 @@ class SurveySimulation(object):
             if TK.mission_is_over():
                 return DRM, None, None
 
-        if(TK.currentTimeNorm + intTime + Obs.settlingTime + mode['syst']['ohTime'] > TK.get_tEndThisOB()):
-            self.vprint('The Obs would exceed the OB block')
-            self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.get_tEndThisOB()))
-            TK.advancetToStartOfNextOB()
-        else:
-            TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        #Check if Obs+intTime+settlingTime would exceed OB block
+        if(TK.currentTimeNorm + intTime + Obs.settlingTime + mode['syst']['ohTime'] >= TK.OBendTimes[TK.OBnumber]):
+            self.vprint('The Planned Obs would exceed the OB block')
+            self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.OBendTimes[TK.OBnumber]))
+        
+        #Allocate settling Time and overhead time
+        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
 
         return DRM, sInd, intTime
 
@@ -675,6 +671,16 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+
+        #Save Current Time before attempting time allocation
+        currentTimeNorm = TK.currentTimeNorm.copy()
+        currentTimeAbs = TK.currentTimeAbs.copy()
+
+        #Allocate Time
+        extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
+        success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True)#allocates time
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'])
+        dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -693,22 +699,25 @@ class SurveySimulation(object):
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # integrate the signal (planet flux) and noise
-            dt = intTime/self.ntFlux
+            #dt = intTime/self.ntFlux#DELETE
+            timePlus = 0#accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
-                TK.allocate_time(dt/2.)
+                timePlus += dt/2.
+                #TK.allocate_time(dt/2.)#DELETE
                 # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                 # propagate the system to match up with current time
-                SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                self.propagTimes[sInd] = TK.currentTimeNorm
+                SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                self.propagTimes[sInd] = currentTimeNorm + timePlus
                 # save planet parameters
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
                 Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, pInds, dt, mode, 
                         fZ=fZs[i])
                 # allocate second half of dt
-                TK.allocate_time(dt/2.)
+                #TK.allocate_time(dt/2.)#DELETE
+                timePlus += dt/2.
             
             # average output parameters
             fZ = np.mean(fZs)
@@ -719,16 +728,16 @@ class SurveySimulation(object):
             S = Ss.sum(0)
             N = Ns.sum(0)
             SNR[N > 0] = S[N > 0]/N[N > 0]
-            # allocate extra time for timeMultiplier
-            extraTime = intTime*(mode['timeMultiplier'] - 1)
-            TK.allocate_time(extraTime)
+            # allocate extra time for timeMultiplier#DELETE
+            #extraTime = intTime*(mode['timeMultiplier'] - 1)#DELETE
+            #TK.allocate_time(extraTime)#DELETE
         
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime*(mode['timeMultiplier'])
-            TK.allocate_time(totTime/2.)
-            fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-            TK.allocate_time(totTime/2.)
+            #TK.allocate_time(totTime/2.)#DELETE
+            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2, mode)[0]
+            #TK.allocate_time(totTime/2.)#DELETE
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred

@@ -213,6 +213,75 @@ class TimeKeeping(object):
         log_begin = 'OB%s:'%(self.OBnumber+1)#prints because this is the beginning of the nesxt observation block
         self.vprint(log_begin)
 
+    def advanceToAbsTime(self,tAbs, addExoplanetObsTime=True):
+        """Advances the current mission time to tAbs
+        Args:
+            tAbs (Astropy Quantity):
+                The absolute mission time to advance currentTimeAbs to
+            addExoplanetObsTime (bool):
+                A flag indicating whether to add advanced time to exoplanetObsTime or not
+        Updates Attributes:
+            currentTimeNorm
+            currentTimeAbs
+        Returns:
+            success (bool):
+                A bool indicating whether the operation was successful or not
+        """
+        #Checks on tAbs validity
+        if tAbs <= self.currentTimeAbs:
+            self.vprint("The time to advance to " + str(tAbs) + " is not after " + str(self.currentTimeAbs))
+            return False
+        if tAbs == np.inf:
+            self.vprint("The time to advance to is inf")
+            return False
+
+        #Use 1 and Use 3
+        if tAbs < self.get_tEndThisOB() + self.missionStart: # The time to advance to does not interfere leave the current OB
+            self.currentTimeNorm = (tAbs - self.missionStart).to('day')
+            self.currentTimeAbs = tAbs
+            if addExoplanetObsTime:  # count time towards exoplanet Obs Time
+                if (self.exoplanetObsTime + (tAbs - self.currentTimeAbs).to('day')) > (self.missionLife*self.missionPortion):
+                    self.vprint("The time added to exoplanetObsTime " + str((tAbs - self.currentTimeAbs).to('day')) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
+                    self.vprint("Advancing to tAbs failed under Use Case 1")
+                    return False
+                else:
+                    self.exoplanetObsTime += tAbs - self.currentTimeAbs
+                    return True
+            else:  # addExoplanetObsTime is False
+                self.exoplanetObsTime += 0*u.d
+            return True
+
+        #Use 2 and Use 4
+        if tAbs > self.missionFinishAbs:  # Equal to case covered above
+            if addExoplanetObsTime:  # Count time towards exoplanetObs Time
+                if (self.exoplanetObsTime + (tAbs - self.currentTimeAbs).to('day')) > (self.missionLife*self.missionPortion):
+                    self.vprint("The time added to exoplanetObsTime " + str((tAbs - self.currentTimeAbs).to('day')) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
+                    self.vprint("Advancing to tAbs failed under Use Case 4")
+                    return False
+                self.exoplanetObsTime += self.missionLife - self.currentTimeNorm#Advances exoplanet time to end of mission time
+            self.currentTimeNorm = (tAbs - self.missionStart).to('day')
+            self.currentTimeAbs = tAbs
+            return True
+
+        #Use 5 and 7 #extended to accomodate any current and future time between OBs
+        if np.any((tAbs<self.OBstartTimes[1:-1])*(tAbs>self.OBendTimes[0:-2])):  # The tAbs is between end End of an OB and start of the Next OB
+            endIndex = np.where((tAbs<self.OBstartTimes[1:-1])*(tAbs>self.OBendTimes[0:-2])==True)[0][0]  # Return OBnumber of End Index
+            if addExoplanetObsTime:  # Count time towards exoplanetObs Time
+                t_added = self.OBendTimes[endIndex] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
+                for ind in np.arange(endIndex+1,len(self.OBendTimes)):  # Add time for all additional OB
+                    t_added += self.OBendTimes[ind] - self.OBstartTimes[ind]
+                if self.exoplanetObsTime + t_added > self.missionLife*self.missionPortion:  # We can CANNOT allocate that time to exoplanetObsTime
+                    self.vprint("The time added to exoplanetObsTime " + str((tAbs - self.currentTimeAbs).to('day')) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
+                    self.vprint("Advancing to tAbs failed under Use Case 7")
+                    return False
+                self.exoplanetObsTime += t_added
+            self.currentTimeNorm = self.OBstartTimes[endIndex + 1]  # Advance Time to start of next OB
+            self.currentTimeAbs = self.OBstartTimes[endIndex + 1] + self.missionStart  # Advance Time to start of next OB
+            True
+
+        #Use 6 and 8 #extended to accomodate any current and future time between OBs
+        #NEED TO FINISH CODING THIS PORTION. SIMILAR LOGIC TO 5 AND 7 BUT WITH A LITTLE MORE ADDED TO IT BECAUSE OF ADDITIONAL TIME IN FUTURE BLOCK
+
     def get_tStartNextOB(self):
         """Returns start time of next Observation Block (OB)
         Returns:
@@ -252,7 +321,7 @@ class TimeKeeping(object):
 
         maxTimeExoplanetObsTime = self.missionLife - self.exoplanetObsTime
         maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
-        
+
         maxTimeMissionLife = self.missionLife - self.currentTimeNorm
         maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 

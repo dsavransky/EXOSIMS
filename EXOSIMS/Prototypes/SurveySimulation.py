@@ -720,7 +720,7 @@ class SurveySimulation(object):
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # integrate the signal (planet flux) and noise
             #dt = intTime/self.ntFlux#DELETE
-            timePlus = 0#accounts for the time since the current time
+            timePlus = Obs.settlingTime + mode['syst']['ohTime']#accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
                 timePlus += dt/2.
@@ -755,9 +755,9 @@ class SurveySimulation(object):
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime*(mode['timeMultiplier'])
-            #TK.allocate_time(totTime/2.)#DELETE
+            #DELETE#TK.allocate_time(totTime/2.)#DELETE
             fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2, mode)[0]
-            #TK.allocate_time(totTime/2.)#DELETE
+            #DELETE#TK.allocate_time(totTime/2.)#DELETE
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
@@ -942,7 +942,6 @@ class SurveySimulation(object):
             # planets to characterize
             tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
-        
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
@@ -950,7 +949,26 @@ class SurveySimulation(object):
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time
         if np.any(tochar):
-            TK.allocate_time(mode['syst']['ohTime'])
+            #Save Current Time before attempting time allocation
+            currentTimeNorm = TK.currentTimeNorm.copy()
+            currentTimeAbs = TK.currentTimeAbs.copy()
+
+            #Allocate Time
+            extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
+            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'],True)#allocates time
+            if success == False: #Time was not successfully allocated
+                #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                char_intTime = None
+                lenChar = len(pInds) + 1 if FA else len(pInds)
+                characterized = np.zeros(lenChar, dtype=float)
+                char_SNR = np.zeros(lenChar, dtype=float)
+                char_fZ = 0./u.arcsec**2
+                char_systemParams = SU.dump_system_params(sInd)
+                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+
+            dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
+
+            #TK.allocate_time(mode['syst']['ohTime'])
             intTime = np.max(intTimes[tochar])
             pIndsChar = pIndsDet[tochar]
             log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar, 
@@ -969,22 +987,25 @@ class SurveySimulation(object):
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
-                dt = intTime/self.ntFlux
+                #dt = intTime/self.ntFlux
+                timePlus = mode['syst']['ohTime']#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    TK.allocate_time(dt/2.)
+                    #DELETE#TK.allocate_time(dt/2.)
+                    timePlus += dt
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    TK.allocate_time(dt/2.)
+                    #DELETE#TK.allocate_time(dt/2.)
+                    timePlus += dt
                 
                 # average output parameters
                 fZ = np.mean(fZs)
@@ -996,15 +1017,15 @@ class SurveySimulation(object):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
-                extraTime = intTime*(mode['timeMultiplier'] - 1)
-                TK.allocate_time(extraTime)
+                #DELETE#extraTime = intTime*(mode['timeMultiplier'] - 1)
+                #DELETE#TK.allocate_time(extraTime)
             
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                TK.allocate_time(totTime/2.)
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-                TK.allocate_time(totTime/2.)
+                #DELETE#TK.allocate_time(totTime/2.)
+                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2, mode)[0]
+                #DELETE#TK.allocate_time(totTime/2.)
             
             # calculate the false alarm SNR (if any)
             SNRfa = []

@@ -71,6 +71,7 @@ target/
 
 #Editors
 .*.swp
+*.py2
 
 #EXOSIMS-specific
 toy_star_list_102715v2.csv

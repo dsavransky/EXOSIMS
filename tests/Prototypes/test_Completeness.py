@@ -85,7 +85,12 @@ class Test_Completeness_Prototype(unittest.TestCase):
         with self.assertRaises(AssertionError):
             dt = self.fixture.dcomp_dt(np.ones(self.nStars-1)*u.d,self,np.arange(self.nStars),0/(u.arcsec**2),0/(u.arcsec**2),np.zeros(2)*u.arcsec,{})
 
-
+    def test_completeness_specs(self):
+        spec = {'completeness_specs': {}, 'modules': {'PlanetPopulation': ' ', 'PlanetPhysicalModel': ' '}}
+        Comp = Completeness.Completeness(**spec)
+        
+        self.assertTrue(Comp.PlanetPopulation.__class__.__name__=='PlanetPopulation',"empty completeness_specs did not load prototype PlanetPopulation")
+        self.assertTrue(Comp.PlanetPhysicalModel.__class__.__name__=='PlanetPhysicalModel',"empty completeness_specs did not load prototype PlanetPhysicalModel")
             
     def test_str(self):
         r"""Test __str__ method, for full coverage."""
@@ -104,4 +109,3 @@ class Test_Completeness_Prototype(unittest.TestCase):
         self.assertEqual(type(result), type(''))
         # put stdout back
         sys.stdout = original_stdout
-

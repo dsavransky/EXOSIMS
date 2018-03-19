@@ -91,6 +91,9 @@ class PlanetPopulation(object):
         # star in a given universe
         self.eta = eta
         
+        # albedo is constant for planetary radius range
+        self.pfromRp = False
+        
         # populate all attributes to outspec
         for att in self.__dict__.keys():
             if att not in ['vprint']:

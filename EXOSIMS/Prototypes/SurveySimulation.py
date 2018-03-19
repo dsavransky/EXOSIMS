@@ -441,89 +441,92 @@ class SurveySimulation(object):
         tmpCurrentTimeAbs = TK.currentTimeAbs + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime']
 
-        # now, start to look for available targets
-        while not TK.mission_is_over():
-            # 1. initialize arrays
-            slewTimes = np.zeros(TL.nStars)*u.d
-            fZs = np.zeros(TL.nStars)/u.arcsec**2
-            intTimes = np.zeros(TL.nStars)*u.d
-            sInds = np.arange(TL.nStars)
+        # look for available targets
+        # 1. initialize arrays
+        slewTimes = np.zeros(TL.nStars)*u.d
+        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        intTimes = np.zeros(TL.nStars)*u.d
+        sInds = np.arange(TL.nStars)
+        
+        # 2. find spacecraft orbital START positions (if occulter, positions 
+        # differ for each star) and filter out unavailable targets
+        sd = None
+        if OS.haveOcculter == True:
+            sd,slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
+            dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
+            sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
             
-            # 2. find spacecraft orbital START positions (if occulter, positions 
-            # differ for each star) and filter out unavailable targets
-            sd = None
-            if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,tmpCurrentTimeAbs)  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,tmpCurrentTimeAbs)
-                sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
-                
-            # start times, including slew times
-            #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
-            startTimes = tmpCurrentTimeAbs + slewTimes
-            startTimesNorm = tmpCurrentTimeNorm + slewTimes
-            # indices of observable stars
-            kogoodStart = Obs.keepout(TL, sInds, startTimes)
-            sInds = sInds[np.where(kogoodStart)[0]]
-            
-            # 3. filter out all previously (more-)visited targets, unless in 
-            # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,tmpCurrentTimeNorm)
+        # start times, including slew times
+        #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
+        startTimes = tmpCurrentTimeAbs + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm + slewTimes
+        # indices of observable stars
+        kogoodStart = Obs.keepout(TL, sInds, startTimes)
+        sInds = sInds[np.where(kogoodStart)[0]]
+        
+        # 3. filter out all previously (more-)visited targets, unless in 
+        # revisit list, with time within some dt of start (+- 1 week)
+        sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
-            # 4. calculate integration times for ALL preselected targets, 
-            # and filter out totTimes > integration cutoff
-            if len(sInds) > 0:  
-                intTimes[sInds] = self.calc_targ_intTime(sInds,startTimes[sInds],mode)
+        # 4. calculate integration times for ALL preselected targets, 
+        # and filter out totTimes > integration cutoff
+        if len(sInds) > 0:
+            sInds, intTimes[sInds], endTimes = self.intTimeFilter(sInds, startTimes, mode, startTimesNorm, intTimes)
+        #DELETE
+        # if len(sInds) > 0:  
+        #     intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
 
-                totTimes = intTimes*mode['timeMultiplier']
-                # end times
-                endTimes = startTimes + totTimes
-                endTimesNorm = startTimesNorm + totTimes
-                # indices of observable stars
-                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
-                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+        #     totTimes = intTimes*mode['timeMultiplier']
+        #     # end times
+        #     endTimes = startTimes + totTimes
+        #     endTimesNorm = startTimesNorm + totTimes
+        #     # indices of observable stars
+        #     sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+        #             (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+        
+        # 5. find spacecraft orbital END positions (for each candidate target), 
+        # and filter out unavailable targets
+        if len(sInds) > 0 and Obs.checkKeepoutEnd:
+            kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
+            sInds = sInds[np.where(kogoodEnd)[0]]
+        
+        # 6. choose best target from remaining
+        if len(sInds) > 0:
+            # choose sInd of next target
+            sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
-            # 5. find spacecraft orbital END positions (for each candidate target), 
-            # and filter out unavailable targets
-            if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
-                sInds = sInds[np.where(kogoodEnd)[0]]
-            
-            # 6. choose best target from remaining
-            if len(sInds) > 0:
-                # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
-                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
-                if sInd == None:
-                    TK.allocate_time(TK.waitTime)#This exists because choose_next_target should be able to reject observing a target if those conditions are marginally unfavorable
-                    intTime = None
-                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
-                    continue
-                # store selected star integration time
-                intTime = intTimes[sInd]
-                break
-            
-            # if no observable target, advanceTime to next Observable Target
-            else:
-                #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
-                observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,mode)
-
-                #If There are no observable targets for the rest of the mission
-                if not ((observableTimes[0][(TK.missionFinishAbs.value*u.d > observableTimes[0].value*u.d)*(observableTimes[0].value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
-                    self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
-                    #Manually advancing time to mission end
-                    TK.currentTimeNorm = TK.missionFinishNorm
-                    TK.currentTimeAbs = TK.missionFinishAbs
-                    return DRM, None, None
-                else:#nominal wait time if at least 1 target is still in list and observable
-                    #dt = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d
-                    t = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])
-                    #Advance this time Absolutely
-                    TK.allocate_time(t)#Advance Time to this time OR start of next OB following this time
-
-                    self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
-            
+            if sInd == None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                return DRM, None, None
+                #DELETE#TK.allocate_time(TK.waitTime)#This exists because choose_next_target should be able to reject observing a target if those conditions are marginally unfavorable
+                #DELETE#intTime = None
+                #DELETE#continue
+            # store selected star integration time
+            intTime = intTimes[sInd]
+            break
+        
+        # if no observable target, advanceTime to next Observable Target
         else:
+            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm))
             return DRM, None, None
+            #DELETE
+            # #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
+            # observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,mode)
+
+            # #If There are no observable targets for the rest of the mission
+            # if not ((observableTimes[0][(TK.missionFinishAbs.value*u.d > observableTimes[0].value*u.d)*(observableTimes[0].value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+            #     self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
+            #     #Manually advancing time to mission end
+            #     TK.currentTimeNorm = TK.missionFinishNorm
+            #     TK.currentTimeAbs = TK.missionFinishAbs
+            #     return DRM, None, None
+            # else:#nominal wait time if at least 1 target is still in list and observable
+            #     #dt = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d
+            #     t = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])
+            #     #Advance this time Absolutely
+            #     TK.allocate_time(t)#Advance Time to this time OR start of next OB following this time
+
+            #     self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
         
         # update visited list for selected star
         self.starVisits[sInd] += 1
@@ -538,15 +541,32 @@ class SurveySimulation(object):
             if TK.mission_is_over():
                 return DRM, None, None
 
-        #Check if Obs+intTime+settlingTime would exceed OB block
-        if(TK.currentTimeNorm + intTime + Obs.settlingTime + mode['syst']['ohTime'] >= TK.OBendTimes[TK.OBnumber]):
-            self.vprint('The Planned Obs would exceed the OB block')
-            self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.OBendTimes[TK.OBnumber]))
-        
-        #Allocate settling Time and overhead time
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        #DELETE
+        # #Check if Obs+intTime+settlingTime would exceed OB block
+        # if(TK.currentTimeNorm + intTime + Obs.settlingTime + mode['syst']['ohTime'] > TK.OBendTimes[TK.OBnumber]):
+        #     self.vprint('The Planned Obs would exceed the OB block')
+        #     self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.OBendTimes[TK.OBnumber]))
 
         return DRM, sInd, intTime
+
+    def intTimeFilter(self, sInds, startTimes, mode, startTimesNorm, intTimes):
+        """Filters stars with best integration time greater than OS.intCutoff
+        """
+        #NEEDS TO BE UPDATED TO USE CALCFZMIN
+        TK = self.TimeKeeping
+        OS = self.OpticalSystem
+
+        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+
+        totTimes = intTimes*mode['timeMultiplier']
+        # end times
+        endTimes = startTimes + totTimes
+        endTimesNorm = startTimesNorm + totTimes
+        # indices of observable stars
+        sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+
+        return sInds, intTimes[sInds], endTimes
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Helper method for next_target to aid in overloading for alternative implementations.
@@ -679,7 +699,7 @@ class SurveySimulation(object):
         #Allocate Time
         extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
         success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True)#allocates time
-        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'])
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],)
         dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target

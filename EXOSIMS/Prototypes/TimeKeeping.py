@@ -22,8 +22,6 @@ class TimeKeeping(object):
     Attributes:
         missionStart (astropy Time):
             Mission start time in MJD
-        missionLife (astropy Quantity):
-            Mission life time in units of year
         missionPortion (float):
             Portion of mission devoted to planet-finding
         missionFinishNorm (astropy Quantity):
@@ -63,14 +61,14 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
 
-    def __init__(self, missionStart=60634, missionLife=0.1, 
-            missionPortion=1, OBduration=14, waitTime=1, **specs):
+    def __init__(self, missionStart=60634, missionFinishNorm=0.1, 
+            missionPortion=1, OBduration=np.inf, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # illegal value checks
-        assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
+        assert missionFinishNorm >= 0, "Need missionFinishNorm >= 0, got %f"%missionFinishNorm
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
                 "Require missionPortion in the interval ]0,1], got %f"%missionPortion
@@ -79,12 +77,11 @@ class TimeKeeping(object):
         # tai scale specified because the default, utc, requires accounting for leap
         # seconds, causing warnings from astropy.time when time-deltas are added
         self.missionStart = Time(float(missionStart), format='mjd', scale='tai')#the absolute date of mission start
-        self.missionLife = float(missionLife)*u.year#the total amount of time since mission start that can elapse
-        self.missionPortion = float(missionPortion)#the portion of missionLife the instrument can observe for
+        self.missionPortion = float(missionPortion)#the portion of missionFinishNorm the instrument can observe for
         
         # set values derived from quantities above
-        self.missionFinishNorm = self.missionLife.to('day')#the total amount of time since mission start that can possibly elapse
-        self.missionFinishAbs = self.missionStart + self.missionLife#the absolute time the mission can possibly end
+        self.missionFinishNorm = (float(missionFinishNorm)*u.year).to('day')#the total amount of time since mission start that can elapse
+        self.missionFinishAbs = self.missionStart + self.missionFinishNorm#the absolute time the mission can possibly end
         
         # initialize values updated by functions
         self.currentTimeNorm = 0.*u.day#the current amount of time since mission start that has elapsed
@@ -107,9 +104,6 @@ class TimeKeeping(object):
         
         # initialize time spend using instrument
         self.exoplanetObsTime = 0*u.day
-        
-        # initialize wait parameters
-        self.waitTime = float(waitTime)*u.day#the default amount of time to wait in wait function
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -141,10 +135,8 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = ((self.currentTimeNorm >= self.missionFinishNorm) or (self.exoplanetObsTime.to('day') >= self.missionLife.to('day')*self.missionPortion))
+        is_over = ((self.currentTimeNorm >= self.missionFinishNorm) or (self.exoplanetObsTime.to('day') >= self.missionFinishNorm.to('day')*self.missionPortion))
         
-
-
         return is_over
 
     def allocate_time(self, t, flag=1):
@@ -167,7 +159,7 @@ class TimeKeeping(object):
             while(not self.currentTimeAbs.value < t.value):#continue until the current mission time is greater than or equal to the set point time 
                 tSkipped = 0
                 if(self.OBendTimes[self.OBnumber].value + self.missionStart.value <= t.to('day').value):#Check if next OBendTime occurs between now and t
-                    tSkipped = self.get_tEndThisOB()  - self.currentTimeNorm#time between now and the end of the OB
+                    tSkipped = self.OBendTimes[self.OBnumber]  - self.currentTimeNorm#time between now and the end of the OB
                     self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
                 else:#No OBendTimes occur between now and setpoint
                     tSkipped = (t - self.currentTimeAbs).value*u.d #time advanced
@@ -183,8 +175,8 @@ class TimeKeeping(object):
             assert(dt > 0*u.d, 'allocated_time dt must be positive nonzero')
             assert(dt < self.OBduration, 'allocated_time dt must be less than OBduration')
             #Check adding t would exceed CURRENT OBendTime
-            if (self.currentTimeNorm + dt > self.get_tEndThisOB()):#the allocationtime would exceed the current allowed OB
-                tSkipped = self.get_tEndThisOB()-self.currentTimeNorm#We add the time at the end of the OB skipped
+            if (self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):#the allocationtime would exceed the current allowed OB
+                tSkipped = self.OBendTimes[self.OBnumber]-self.currentTimeNorm#We add the time at the end of the OB skipped
                 self.advancetToStartOfNextOB()#calculate and advance to the start of the next Observation Block
                 self.currentTimeNorm += dt#adds desired dt to start of next OB
                 self.currentTimeAbs += dt#adds desired dt to start of next OB
@@ -241,3 +233,28 @@ class TimeKeeping(object):
         """
         tEndThisOB = self.OBendTimes[-1]
         return tEndThisOB
+
+    def get_ObsDetectionMaxIntTime(self,Obs,mode):
+        """Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
+        Args:
+            mode (dict):
+                Selected observing mode for detection
+        Returns:
+            maxIntTimeOBendTime (astropy Quantity):
+                The maximum integration time bounded by Observation Block end Time
+            maxIntTimeExoplanetObsTime (astropy Quantity):
+                The maximum integration time bounded by exoplanetObsTime
+            maxIntTimeMissionLife (astropy Quantity):
+                The maximum integration time bounded by MissionLife
+        """
+        maxTimeOBendTime = self.get_tEndThisOB() - self.currentTimeNorm
+        maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+
+        maxTimeExoplanetObsTime = self.missionLife - self.exoplanetObsTime
+        maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        
+        maxTimeMissionLife = self.missionLife - self.currentTimeNorm
+        maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+
+        return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
+

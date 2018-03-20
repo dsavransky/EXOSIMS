@@ -51,7 +51,7 @@ class TargetList(object):
         tint0 (astropy Quantity array):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
-            Completeness value for each target star
+            Initial completeness value for each target star
         MsEst (float ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):

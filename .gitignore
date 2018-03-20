@@ -83,9 +83,12 @@ fitting_parameters.h5
 *.so
 *.acomp
 *.dcomp
+*.fcomp
 statsFun_C
 *.p
 *.pkl
 *.t0
+*.starkfZ
+*.maxCbyTt0
 *.starkfZ
 *.maxCbyTt0

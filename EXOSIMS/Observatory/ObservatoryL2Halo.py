@@ -318,7 +318,6 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
             t (integer):
                 Times in normalized units
-            
 
         Returns:
             s (integer nx6 array):

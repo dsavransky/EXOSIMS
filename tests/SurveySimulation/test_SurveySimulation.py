@@ -40,7 +40,7 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['KnownRVSurvey']
+        exclude_mods=['KnownRVSurvey', 'tieredScheduler']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
@@ -93,8 +93,11 @@ class TestSurveySimulation(unittest.TestCase):
                      'star_ind',
                      'FA_char_WA']
 
+        exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'run_sim' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -120,7 +123,11 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'next_target' in mod.__dict__:
         
                 with RedirectStreams(stdout=self.dev_null):
@@ -145,7 +152,11 @@ class TestSurveySimulation(unittest.TestCase):
         old_sInd in sInds, old_sInd not in sInds
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'choose_next_target' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -185,7 +196,11 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure that all outputs are set as expected
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'observation_detection' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -222,8 +237,11 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
+        exclude_mods = ['tieredScheduler']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'observation_characterization' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -252,7 +270,11 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure that signal is greater than noise for dummy planet
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'calc_signal_noise' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)

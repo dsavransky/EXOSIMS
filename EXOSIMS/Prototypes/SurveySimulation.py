@@ -424,6 +424,8 @@ class SurveySimulation(object):
             intTime (astropy Quantity):
                 Selected star integration time for detection in units of day. 
                 Defaults to None.
+            waitTime (astropy Quantity):
+                a strategically advantageous amount of time to wait in the case of an occulter for slew times
         
         """
         
@@ -493,11 +495,11 @@ class SurveySimulation(object):
         # 6. choose best target from remaining
         if len(sInds) > 0:
             # choose sInd of next target
-            sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
             if sInd == None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
-                return DRM, None, None
+                return DRM, None, None, waitTime
                 #DELETE#TK.allocate_time(TK.waitTime)#This exists because choose_next_target should be able to reject observing a target if those conditions are marginally unfavorable
                 #DELETE#intTime = None
                 #DELETE#continue
@@ -508,7 +510,7 @@ class SurveySimulation(object):
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm))
-            return DRM, None, None
+            return DRM, None, None, None
             #DELETE
             # #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
             # observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,mode)
@@ -533,13 +535,15 @@ class SurveySimulation(object):
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
         
-        # populate DRM with occulter related values
-        if OS.haveOcculter == True:
-            DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
-            # update current time by adding slew time for the chosen target
-            TK.advanceToAbsTime(TK.currentTimeAbs + slewTimes[sInd],False)########ASK DMITRY ABOUT THIS
-            if TK.mission_is_over():
-                return DRM, None, None
+        #TECHNICALLY THIS CAN BE DELETED. IF THIS LOGIC IS NECESSARY, THEN THE APPROPRIATE PLACE TO IMPLEMENT IT IS BY HAVING NEXT_TARGET RETURN A SLEWTIME AND ALLOW THE MISSION TO ADVANCE TO THAT SPECIFIC TIME.
+        # # populate DRM with occulter related values
+        # if OS.haveOcculter == True:
+        #     DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
+        #     # update current time by adding slew time for the chosen target
+        #     TK.advanceToAbsTime(TK.currentTimeAbs + slewTimes[sInd],False)########ASK DMITRY ABOUT THIS
+        #     if TK.mission_is_over():
+        #         return DRM, None, None
+
 
         #DELETE
         # #Check if Obs+intTime+settlingTime would exceed OB block
@@ -547,7 +551,7 @@ class SurveySimulation(object):
         #     self.vprint('The Planned Obs would exceed the OB block')
         #     self.vprint('CurrentTimeNorm is ' + str(TK.currentTimeNorm) + 'intTime+settlingTime+ohTime is ' + str(intTime + Obs.settlingTime + mode['syst']['ohTime']) + ' Next OBendTime is ' + str(TK.OBendTimes[TK.OBnumber]))
 
-        return DRM, sInd, intTime
+        return DRM, sInd, intTime, waitTime
 
     def intTimeFilter(self, sInds, startTimes, mode, startTimesNorm, intTimes):
         """Filters stars with best integration time greater than OS.intCutoff
@@ -622,6 +626,8 @@ class SurveySimulation(object):
         Returns:
             sInd (integer):
                 Index of next target star
+            waitTime (astropy Quantity):
+                some amount strategic amount of time to wait in case an occulter slew is desired (default is None)
         
         """
         
@@ -641,7 +647,7 @@ class SurveySimulation(object):
         #Choose Revisit Target
         sInd = self.choose_revisit_target(sInd)
         
-        return sInd
+        return sInd, None
 
     def choose_revisit_target(self,sInd):
         """A Helper function for selecting revisit targets instead of the nominal detection targets

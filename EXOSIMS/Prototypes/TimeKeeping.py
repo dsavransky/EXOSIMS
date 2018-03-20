@@ -3,6 +3,8 @@ import numpy as np
 import astropy.units as u
 from astropy.time import Time
 import os, sys
+import csv
+from numpy import nan
 
 class TimeKeeping(object):
     """TimeKeeping class template.
@@ -25,8 +27,8 @@ class TimeKeeping(object):
             Mission start time in MJD
         missionPortion (float):
             Portion of mission devoted to planet-finding
-        missionFinishNorm (astropy Quantity):
-            Mission finish normalized time in units of day
+        missionLife (astropy Quantity):
+            Mission Life and mission finish normalized time in units of day
         missionFinishAbs (astropy Time):
             Mission finish absolute time in MJD
         currentTimeNorm (astropy Quantity):
@@ -47,15 +49,6 @@ class TimeKeeping(object):
         OBendTimes (astropy Quantity array):
             Array containing the normalized end times of each observing block 
             throughout the mission, in units of day
-        obsStart (astropy Quantity):
-            Normalized start time of the observation currently executed by the 
-            Survey Simulation, in units of day
-        obsEnd (astropy Quantity):
-            Normalized end time of the observation currently executed by the 
-            Survey Simulation, in units of day
-        waitTime (astropy Quantity):
-            Default allocated duration to wait in units of day, when the
-            Survey Simulation does not find any observable target
         
     """
 
@@ -73,6 +66,8 @@ class TimeKeeping(object):
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
                 "Require missionPortion in the interval [0,1], got %f"%missionPortion
+        # OBduration must be positive nonzero
+        assert OBduration > 0, "Required OBduration positive nonzero, got %f"%OBduration
         
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
@@ -90,11 +85,6 @@ class TimeKeeping(object):
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
         self.init_OB(missionSchedule, OBduration)
-
-        # initialize single detection observation time arrays. #these are the detection observations
-        self.ObsNum = 0 #this is the number of detection observations that have occured
-        self.ObsStartTimes = list()#*u.day
-        self.ObsEndTimes = list()#*u.day
         
         # initialize time spend using instrument
         self.exoplanetObsTime = 0*u.day
@@ -117,22 +107,33 @@ class TimeKeeping(object):
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
     def init_OB(self, missionSchedule, OBduration):
-        """
+        """ Initializes mission Observing Blocks from file or missionDuration, missionLife, and missionPortion
         """
         if missionSchedule is not None:  # If the missionSchedule is specified
-            if os.path.isfile(missionSchedule):#check if file exists
+            tmpOBtimes = list()
+            if os.path.isfile(missionSchedule):  # Check if a mission schedule is manually specified
                 self.vprint("Loading Manual Schedule from %s"%missionSchedule)
-                with open(missionSchedule, 'rb') as f:#load from cache
-                    missionSchedule = pickle.load(f)
-            #return missionSchedule
-        self.OBnumber = -1#the number of the current Observing Block
-        self.OBduration = float(OBduration)*u.day#the duration of each Observing Block
-        self.OBstartTimes = list()# = [0.]*u.day#[0.]*u.day#an array of Observing Block Start Times defined as time since missionStart
-        #self.OBstartTimes.append(0.*u.day)
-        maxOBduration = self.missionLife*self.missionPortion#the maximum Observation Block duration limited by mission portion
-        self.OBendTimes = list()
-        #self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
-        #self.advancetToStartOfNextOB()
+                with open(missionSchedule, 'rb') as f:  # load csv file
+                    lines = csv.reader(f,delimiter=',')
+                    self.vprint('The manual Schedule is:')
+                    for line in lines:
+                        tmpOBtimes.append(line)
+                        self.vprint(line)
+                print(saltyburrito)
+                self.OBstartTimes = np.asarray([item[0] for item in tmpOBtimes])
+                self.OBendTimes = np.asarray([item[1] for item in tmpOBtimes])
+        else:  # Automatically construct OB from OBduration, missionLife, and missionPortion
+            if OBduration == np.inf:  # There is 1 OB spanning the mission
+                self.OBstartTimes = np.asarray([0*u.d])
+                self.OBendTimes = np.asarray([self.missionLife])
+            else:  # OB
+                startToStart = OBduration/self.missionPortion
+                numBlocks = np.ceil(self.missionLife/startToStart)#This is the number of Observing Blocks
+                self.OBstartTimes = np.arange(numBlocks)*startToStart
+                self.OBendTimes = self.OBstartTimes + OBduration
+                if self.OBendTimes[-1] > self.missionLife:  # If the end of the last observing block exceeds the end of mission
+                    self.OBendTimes[-1] = self.missionLife.copy()  # Set end of last OB to end of mission
+        self.OBnumber = 0
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?

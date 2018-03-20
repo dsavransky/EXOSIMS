@@ -2,6 +2,7 @@ from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+import os, sys
 
 class TimeKeeping(object):
     """TimeKeeping class template.
@@ -61,17 +62,17 @@ class TimeKeeping(object):
     _modtype = 'TimeKeeping'
     _outspec = {}
 
-    def __init__(self, missionStart=60634, missionFinishNorm=0.1, 
-            missionPortion=1, OBduration=np.inf, **specs):
-        
+    def __init__(self, missionStart=60634, missionLife=0.1, 
+            missionPortion=1, OBduration=np.inf, missionSchedule=None, **specs):
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
         # illegal value checks
-        assert missionFinishNorm >= 0, "Need missionFinishNorm >= 0, got %f"%missionFinishNorm
+        assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
         # arithmetic on missionPortion fails if it is outside the legal range
         assert missionPortion > 0 and missionPortion <= 1, \
-                "Require missionPortion in the interval ]0,1], got %f"%missionPortion
+                "Require missionPortion in the interval [0,1], got %f"%missionPortion
         
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
@@ -80,22 +81,15 @@ class TimeKeeping(object):
         self.missionPortion = float(missionPortion)#the portion of missionFinishNorm the instrument can observe for
         
         # set values derived from quantities above
-        self.missionFinishNorm = (float(missionFinishNorm)*u.year).to('day')#the total amount of time since mission start that can elapse
-        self.missionFinishAbs = self.missionStart + self.missionFinishNorm#the absolute time the mission can possibly end
+        self.missionLife = (float(missionLife)*u.year).to('day')#the total amount of time since mission start that can elapse
+        self.missionFinishAbs = self.missionStart + self.missionLife#the absolute time the mission can possibly end
         
         # initialize values updated by functions
         self.currentTimeNorm = 0.*u.day#the current amount of time since mission start that has elapsed
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
-        self.OBnumber = -1#the number of the current Observing Block
-        self.OBduration = float(OBduration)*u.day#the duration of each Observing Block
-        self.OBstartTimes = list()# = [0.]*u.day#[0.]*u.day#an array of Observing Block Start Times defined as time since missionStart
-        #self.OBstartTimes.append(0.*u.day)
-        maxOBduration = self.missionFinishNorm*self.missionPortion#the maximum Observation Block duration limited by mission portion
-        self.OBendTimes = list()
-        #self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
-        self.advancetToStartOfNextOB()
+        self.init_OB(missionSchedule, OBduration)
 
         # initialize single detection observation time arrays. #these are the detection observations
         self.ObsNum = 0 #this is the number of detection observations that have occured
@@ -122,6 +116,24 @@ class TimeKeeping(object):
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
+    def init_OB(self, missionSchedule, OBduration):
+        """
+        """
+        if missionSchedule is not None:  # If the missionSchedule is specified
+            if os.path.isfile(missionSchedule):#check if file exists
+                self.vprint("Loading Manual Schedule from %s"%missionSchedule)
+                with open(missionSchedule, 'rb') as f:#load from cache
+                    missionSchedule = pickle.load(f)
+            #return missionSchedule
+        self.OBnumber = -1#the number of the current Observing Block
+        self.OBduration = float(OBduration)*u.day#the duration of each Observing Block
+        self.OBstartTimes = list()# = [0.]*u.day#[0.]*u.day#an array of Observing Block Start Times defined as time since missionStart
+        #self.OBstartTimes.append(0.*u.day)
+        maxOBduration = self.missionLife*self.missionPortion#the maximum Observation Block duration limited by mission portion
+        self.OBendTimes = list()
+        #self.OBendTimes.append(min(self.OBduration, maxOBduration).to('day').value*u.day)
+        #self.advancetToStartOfNextOB()
+
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?
         
@@ -135,7 +147,7 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = ((self.currentTimeNorm >= self.missionFinishNorm) or (self.exoplanetObsTime.to('day') >= self.missionFinishNorm.to('day')*self.missionPortion))
+        is_over = ((self.currentTimeNorm >= self.missionLife) or (self.exoplanetObsTime.to('day') >= self.missionLife.to('day')*self.missionPortion))
         
         return is_over
 

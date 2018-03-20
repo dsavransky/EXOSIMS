@@ -13,7 +13,12 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class luvoirScheduler(linearJScheduler):
+class linearJScheduler_PDC(linearJScheduler):
+    """linearJScheduler_PDC -  linearJScheduler_PDC Parallel Detection, Parallel Characterization
+    This scheduler inherits from the LJS, but is capable of taking in two detection
+    modes and two chracterization modes and performing parallel detections and
+    characterizations.
+    """
 
     def __init__(self, **specs):
         

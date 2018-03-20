@@ -13,7 +13,11 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class luvoirScheduler_det_only(linearJScheduler):
+class linearJScheduler_PD_det_only(linearJScheduler):
+    """linearJScheduler_PD_det_only -  linearJScheduler_PD_det_only Parallel Detection, no Characterization
+    This scheduler performs parallel detections using the LJS, but does not
+    perform any characterizations
+    """
 
     def __init__(self, **specs):
         
@@ -115,44 +119,8 @@ class luvoirScheduler_det_only(linearJScheduler):
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
                 # populate the DRM with detection results
                 
-                # PERFORM CHARACTERIZATION and populate spectra list attribute
+                # XXX PERFORM CHARACTERIZATION and populate spectra list attribute
                 DRM['char_info'] = []
-                # for mode_index, char_mode in enumerate(char_modes):
-                #     char_data = {}
-                #     if char_mode['SNR'] not in [0, np.inf]:
-                #         characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                #                 self.observation_characterization(sInd, char_mode, mode_index)
-                #     else:
-                #         char_intTime = None
-                #         lenChar = len(pInds) + 1 if FA[mode_index] else len(pInds)
-                #         characterized = np.zeros(lenChar, dtype=float)
-                #         char_SNR = np.zeros(lenChar, dtype=float)
-                #         char_fZ = 0./u.arcsec**2
-                #         char_systemParams = SU.dump_system_params(sInd)
-                #     assert char_intTime != 0, "Integration time can't be 0."
-                #     # update the occulter wet mass
-                #     if OS.haveOcculter == True and char_intTime is not None:
-                #         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
-                #     # populate the DRM with characterization results
-                #     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                #     char_data['char_status'] = characterized[:-1] if FA[mode_index] else characterized
-                #     char_data['char_SNR'] = char_SNR[:-1] if FA[mode_index] else char_SNR
-                #     char_data['char_fZ'] = char_fZ.to('1/arcsec2')
-                #     char_data['char_params'] = char_systemParams
-                #     # populate the DRM with FA results
-                #     char_data['FA_det_status'] = int(FA[mode_index])
-                #     char_data['FA_char_status'] = characterized[-1] if FA[mode_index] else 0
-                #     char_data['FA_char_SNR'] = char_SNR[-1] if FA[mode_index] else 0.
-                #     char_data['FA_char_fEZ'] = self.lastDetected[sInd,1,mode_index][-1]/u.arcsec**2 \
-                #             if FA[mode_index] else 0./u.arcsec**2
-                #     char_data['FA_char_dMag'] = self.lastDetected[sInd,2,mode_index][-1] if FA[mode_index] else 0.
-                #     char_data['FA_char_WA'] = self.lastDetected[sInd,3,mode_index][-1]*u.arcsec \
-                #             if FA[mode_index] else 0.*u.arcsec
-                    
-                #     # populate the DRM with observation modes
-                #     char_data['char_mode'] = dict(char_mode)
-                #     del char_data['char_mode']['inst'], char_data['char_mode']['syst']
-                #     DRM['char_info'].append(char_data)
                 
                 # append result values to self.DRM
                 self.DRM.append(DRM)

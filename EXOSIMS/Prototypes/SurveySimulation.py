@@ -503,7 +503,7 @@ class SurveySimulation(object):
                 #DELETE#continue
             # store selected star integration time
             intTime = intTimes[sInd]
-            break
+            #DELETE#break
         
         # if no observable target, advanceTime to next Observable Target
         else:

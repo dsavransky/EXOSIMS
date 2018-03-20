@@ -287,6 +287,7 @@ class TimeKeeping(object):
                     self.vprint("Advancing to tAbs failed under Use Case 7")
                     return False
                 self.exoplanetObsTime += t_added
+            self.OBnumber = endIndex + 1  # set OBnumber to correct Observing Block
             self.currentTimeNorm = self.OBstartTimes[endIndex + 1]  # Advance Time to start of next OB
             self.currentTimeAbs = self.OBstartTimes[endIndex + 1] + self.missionStart  # Advance Time to start of next OB
             True

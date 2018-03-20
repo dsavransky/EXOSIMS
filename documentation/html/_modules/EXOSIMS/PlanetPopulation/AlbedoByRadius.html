@@ -1,0 +1,208 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EXOSIMS.PlanetPopulation.AlbedoByRadius &#8212; EXOSIMS 1.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.PlanetPopulation.AlbedoByRadius</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.PlanetPopulation.SAG13</span> <span class="k">import</span> <span class="n">SAG13</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="AlbedoByRadius"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.AlbedoByRadius.AlbedoByRadius">[docs]</a><span class="k">class</span> <span class="nc">AlbedoByRadius</span><span class="p">(</span><span class="n">SAG13</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Planet Population module based on SAG13 occurrence rates.</span>
+<span class="sd">    </span>
+<span class="sd">    NOTE: This assigns constant albedo based on radius ranges.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes: </span>
+<span class="sd">        SAG13coeffs (float 4x2 ndarray):</span>
+<span class="sd">            Coefficients used by the SAG13 broken power law. The 4 lines</span>
+<span class="sd">            correspond to Gamma, alpha, beta, and the minimum radius.</span>
+<span class="sd">        Gamma (float ndarray):</span>
+<span class="sd">            Gamma coefficients used by SAG13 broken power law.</span>
+<span class="sd">        alpha (float ndarray):</span>
+<span class="sd">            Alpha coefficients used by SAG13 broken power law.</span>
+<span class="sd">        beta (float ndarray):</span>
+<span class="sd">            Beta coefficients used by SAG13 broken power law.</span>
+<span class="sd">        Rplim (float ndarray):</span>
+<span class="sd">            Minimum radius used by SAG13 broken power law.</span>
+<span class="sd">        SAG13starMass (astropy Quantity):</span>
+<span class="sd">            Assumed stellar mass corresponding to the given set of coefficients.</span>
+<span class="sd">        mu (astropy Quantity):</span>
+<span class="sd">            Gravitational parameter associated with SAG13starMass.</span>
+<span class="sd">        Ca (float 2x1 ndarray):</span>
+<span class="sd">            Constants used for sampling.</span>
+<span class="sd">        ps (float nx1 ndarray):</span>
+<span class="sd">            Constant geometric albedo values.</span>
+<span class="sd">        Rb (float (n-1)x1 ndarray):</span>
+<span class="sd">            Planetary radius break points for albedos in earthRad.</span>
+<span class="sd">        Rbs (float (n+1)x1 ndarray):</span>
+<span class="sd">            Planetary radius break points with 0 padded on left and np.inf </span>
+<span class="sd">            padded on right</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SAG13coeffs</span><span class="o">=</span><span class="p">[[</span><span class="o">.</span><span class="mi">38</span><span class="p">,</span> <span class="o">-.</span><span class="mi">19</span><span class="p">,</span> <span class="o">.</span><span class="mi">26</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],[</span><span class="o">.</span><span class="mi">73</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.18</span><span class="p">,</span> <span class="o">.</span><span class="mi">59</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">]],</span>
+            <span class="n">SAG13starMass</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">Rprange</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="o">/</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">17.0859375</span><span class="p">],</span>
+            <span class="n">arange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.09084645</span><span class="p">,</span> <span class="mf">1.45354324</span><span class="p">],</span> <span class="n">ps</span><span class="o">=</span><span class="p">[</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.5</span><span class="p">],</span> <span class="n">Rb</span><span class="o">=</span><span class="p">[</span><span class="mf">1.4</span><span class="p">],</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;prange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">ps</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ps</span><span class="p">)]</span>
+        <span class="n">SAG13</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">SAG13coeffs</span><span class="o">=</span><span class="n">SAG13coeffs</span><span class="p">,</span> <span class="n">SAG13starMass</span><span class="o">=</span><span class="n">SAG13starMass</span><span class="p">,</span> 
+                       <span class="n">Rprange</span><span class="o">=</span><span class="n">Rprange</span><span class="p">,</span> <span class="n">arange</span><span class="o">=</span><span class="n">arange</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+        <span class="c1"># cast inputs to arrays</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Rb</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># check to ensure proper inputs</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ps</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rb</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> \
+            <span class="s1">&#39;input albedos must have one more element than break radii&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="mf">0.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Rb</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">))</span>
+        
+        <span class="c1"># albedo is constant for planetary radius range</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfromRp</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="c1"># populate _outspec with new specific attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;ps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;Rb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rb</span>
+        
+<div class="viewcode-block" id="AlbedoByRadius.gen_plan_params"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.AlbedoByRadius.AlbedoByRadius.gen_plan_params">[docs]</a>    <span class="k">def</span> <span class="nf">gen_plan_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate semi-major axis (AU), eccentricity, geometric albedo, and</span>
+<span class="sd">        planetary radius (earthRad)</span>
+<span class="sd">        </span>
+<span class="sd">        Semi-major axis and planetary radius are jointly distributed. </span>
+<span class="sd">        Eccentricity is a Rayleigh distribution. Albedo is a constant value</span>
+<span class="sd">        based on planetary radius.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            n (integer):</span>
+<span class="sd">                Number of samples to generate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            a (astropy Quantity array):</span>
+<span class="sd">                Semi-major axis in units of AU</span>
+<span class="sd">            e (float ndarray):</span>
+<span class="sd">                Eccentricity</span>
+<span class="sd">            p (float ndarray):</span>
+<span class="sd">                Geometric albedo</span>
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planetary radius in units of earthRad</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="c1"># generate semi-major axis and planetary radius samples</span>
+        <span class="n">Rp</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_radius_sma</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        
+        <span class="c1"># check for constrainOrbits == True for eccentricity samples</span>
+        <span class="c1"># constants</span>
+        <span class="n">C1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">esigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrainOrbits</span><span class="p">:</span>
+            <span class="c1"># restrict semi-major axis limits</span>
+            <span class="n">arcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+            <span class="c1"># clip sma values to sma range</span>
+            <span class="n">sma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">arcon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">arcon</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># upper limit for eccentricity given sma</span>
+            <span class="n">elim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sma</span><span class="p">))</span>
+            <span class="n">amean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">sma</span> <span class="o">&lt;=</span> <span class="n">amean</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">sma</span><span class="p">[</span><span class="n">sma</span> <span class="o">&lt;=</span> <span class="n">amean</span><span class="p">]</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">sma</span> <span class="o">&gt;</span> <span class="n">amean</span><span class="p">]</span> <span class="o">=</span> <span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">sma</span><span class="p">[</span><span class="n">sma</span><span class="o">&gt;</span><span class="n">amean</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">elim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">elim</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># additional constant</span>
+            <span class="n">C2</span> <span class="o">=</span> <span class="n">C1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">elim</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">esigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">sma</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">C2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enorm</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">esigma</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="o">-</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">C1</span> <span class="o">-</span> <span class="n">C2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)))</span>
+        <span class="c1"># generate albedo from planetary radius</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_p_from_Rp</span><span class="p">(</span><span class="n">Rp</span><span class="p">)</span>
+        </div>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">Rp</span>
+    
+<div class="viewcode-block" id="AlbedoByRadius.get_p_from_Rp"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.AlbedoByRadius.AlbedoByRadius.get_p_from_Rp">[docs]</a>    <span class="k">def</span> <span class="nf">get_p_from_Rp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rp</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate constant albedos for radius ranges</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planetary radius with units of earthRad</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            p (float ndarray):</span>
+<span class="sd">                Albedo values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;earthRad&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rbs</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">Rp</span><span class="o">&gt;=</span><span class="bp">self</span><span class="o">.</span><span class="n">Rbs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">&amp;</span><span class="p">(</span><span class="n">Rp</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">Rbs</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">p</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        </div></div>
+        <span class="k">return</span> <span class="n">p</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

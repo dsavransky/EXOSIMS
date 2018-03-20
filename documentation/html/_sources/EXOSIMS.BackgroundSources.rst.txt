@@ -1,11 +1,11 @@
-EXOSIMS\.BackgroundSources package
-==================================
+EXOSIMS.BackgroundSources package
+=================================
 
 Submodules
 ----------
 
-EXOSIMS\.BackgroundSources\.GalaxiesFaintStars module
------------------------------------------------------
+EXOSIMS.BackgroundSources.GalaxiesFaintStars module
+---------------------------------------------------
 
 .. automodule:: EXOSIMS.BackgroundSources.GalaxiesFaintStars
     :members:

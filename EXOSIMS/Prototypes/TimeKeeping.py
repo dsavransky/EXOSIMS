@@ -108,6 +108,18 @@ class TimeKeeping(object):
 
     def init_OB(self, missionSchedule, OBduration):
         """ Initializes mission Observing Blocks from file or missionDuration, missionLife, and missionPortion
+        Args:
+            missionSchedule (string):
+                a string containing the missionSchedule file
+            OBduration (astropy Quantity):
+                the duration of a single observing block
+        Updates Attributes:
+            OBstartTimes:
+                Updates the start times of observing blocks
+            OBendTimes:
+                Updates the end times of the observing blocks
+            OBnumber:
+                The Observing Block Number
         """
         if missionSchedule is not None:  # If the missionSchedule is specified
             tmpOBtimes = list()
@@ -148,7 +160,9 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = ((self.currentTimeNorm >= self.missionLife) or (self.exoplanetObsTime.to('day') >= self.missionLife.to('day')*self.missionPortion))
+        is_over = ((self.currentTimeNorm >= self.missionLife) \
+            or (self.exoplanetObsTime.to('day') >= self.missionLife.to('day')*self.missionPortion) \
+            or (self.currentTimeNorm >= self.OBendTimes[-1]))
         
         return is_over
 

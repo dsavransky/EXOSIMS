@@ -455,7 +455,8 @@ class linearJScheduler_DDPC(linearJScheduler):
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
-            planinds = pIndsChar[0][:-1] if pIndsChar[0][-1] == -1 else pIndsChar[0]
+            planinds1 = pIndsChar[0] if len(pIndsChar[0]) >= len(pIndsChar[1]) else pIndsChar[1]
+            planinds = planinds1[:-1] if planinds1[-1] == -1 else planinds1
             SNRplans = np.zeros((len(planinds), nmodes))
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
@@ -519,7 +520,11 @@ class linearJScheduler_DDPC(linearJScheduler):
                 
                     # save all SNRs (planets and FA) to one array
                     SNRinds = np.where(det)[0][tochars[m_i]]
-                    SNR[SNRinds, m_i] = np.append(SNRplans[tochars[m_i], m_i], SNRfa)
+
+                    if np.append(SNRplans[:, m_i], SNRfa).shape != SNR[SNRinds, m_i].shape:
+                        SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)[SNRinds]
+                    else:
+                        SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)
                 
                     # now, store characterization status: 1 for full spectrum, 
                     # -1 for partial spectrum, 0 for not characterized

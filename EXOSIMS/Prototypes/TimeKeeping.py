@@ -137,7 +137,7 @@ class TimeKeeping(object):
         else:  # Automatically construct OB from OBduration, missionLife, and missionPortion
             if OBduration == np.inf:  # There is 1 OB spanning the mission
                 self.OBstartTimes = np.asarray([0])*u.d
-                self.OBendTimes = np.asarray([self.missionLife])
+                self.OBendTimes = np.asarray([self.missionLife.to('day').value])*u.d
             else:  # OB
                 startToStart = OBduration/self.missionPortion
                 numBlocks = np.ceil(self.missionLife/startToStart)#This is the number of Observing Blocks
@@ -145,6 +145,7 @@ class TimeKeeping(object):
                 self.OBendTimes = self.OBstartTimes + OBduration
                 if self.OBendTimes[-1] > self.missionLife:  # If the end of the last observing block exceeds the end of mission
                     self.OBendTimes[-1] = self.missionLife.copy()  # Set end of last OB to end of mission
+        self.OBduration = OBduration
         self.OBnumber = 0
 
     def mission_is_over(self):

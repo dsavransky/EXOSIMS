@@ -118,8 +118,8 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_check) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
-                self.assertTrue(np.all(a*(1+e) <= obj.rrange[1]),'constrainOribts high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(a*(1-e) >= obj.rrange[0]),'constrainOribts low bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(a*(1+e) <= obj.rrange[1]),'constrainOrbits high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(a*(1-e) >= obj.rrange[0]),'constrainOrbits low bound failed for %s'%mod.__name__)
 
 
     def test_honor_prange(self):
@@ -128,7 +128,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating p samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','AlbedoByRadius']
         exclude_checkrange = ['KeplerLike1','SAG13']
 
         tmp = np.random.rand(1)*0.5
@@ -421,3 +421,24 @@ class TestPlanetPopulation(unittest.TestCase):
                 self.assertTrue(np.all(fr[(Mp >= pp.Mprange[0].value) & (Mp <= pp.Mprange[1].value)] > 0))
 
 
+    def test_dist_sma_radius(self):
+        """
+        Test that sma and radius values outside of the range have zero probability
+        """
+        
+        for mod in self.allmods:
+            if 'dist_sma_radius' in mod.__dict__:
+                with RedirectStreams(stdout=self.dev_null):
+                    pp = mod(**self.spec)
+                
+                a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*100),100)
+                Rp = np.logspace(np.log10(pp.Rprange[0].value/10.),np.log10(pp.Rprange[1].value*100),100)
+                
+                aa, RR = np.meshgrid(a,Rp)
+                
+                fr = pp.dist_sma_radius(aa,RR)
+                self.assertTrue(np.all(fr[aa < pp.arange[0].value] == 0),'dist_sma_radius low bound failed on sma for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[aa > pp.arange[1].value] == 0),'dist_sma_radius high bound failed on sma for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[RR < pp.Rprange[0].value] == 0),'dist_sma_radius low bound failed on radius for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[RR > pp.Rprange[1].value] == 0),'dist_sma_radius high bound failed on radius for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[(aa > pp.arange[0].value) & (aa < pp.arange[1].value) & (RR > pp.Rprange[0].value) & (RR < pp.Rprange[1].value)] > 0),'dist_sma_radius is improper pdf for %s'%mod.__name__)

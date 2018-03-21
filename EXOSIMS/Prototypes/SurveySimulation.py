@@ -95,7 +95,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, **specs):
+            WAint=None, dMagint=None, dt_max=1., **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -124,7 +124,12 @@ class SurveySimulation(object):
         
         # mission simulation logger
         self.logger = specs.get('logger', logging.getLogger(__name__))
-        
+       
+        # set up numpy random number (generate it if not in specs)
+        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
+        self.vprint('Numpy random seed is: %s'%self.seed)
+        np.random.seed(self.seed)
+
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
         if isinstance(specs['modules'].itervalues().next(), basestring):
@@ -194,10 +199,8 @@ class SurveySimulation(object):
         self.nVisitsMax = int(nVisitsMax)
         # integration time margin for characterization
         self.charMargin = float(charMargin)
-        # set up numpy random number (generate it if not in specs)
-        self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
-        self.vprint('Numpy random seed is: %s'%self.seed)
-        np.random.seed(self.seed)
+        # maximum time for revisit window    
+        self.dt_max = dt_max*u.week
         
         # populate outspec with all SurveySimulation scalar attributes
         for att in self.__dict__.keys():
@@ -244,7 +247,7 @@ class SurveySimulation(object):
         self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
         self.propagTimes = np.zeros(TL.nStars)*u.d
         self.lastObsTimes = np.zeros(TL.nStars)*u.d
-        self.starVisits = np.zeros(TL.nStars, dtype=int)
+        self.starVisits = np.zeros(TL.nStars, dtype=int)#contains the number of times each star was visited
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
@@ -450,7 +453,6 @@ class SurveySimulation(object):
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
             # 2. find spacecraft orbital START positions (if occulter, positions 
@@ -470,16 +472,7 @@ class SurveySimulation(object):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if len(sInds) > 0:
-                tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
-                        & (self.starVisits[sInds] < self.nVisitsMax))
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
-                            if x in sInds]
-                    tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)#tmpCurrentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -717,7 +710,7 @@ class SurveySimulation(object):
             
         # if planets are detected, calculate the minimum apparent separation
         smin = None
-        det = (detected == 1)
+        det = (detected == 1)#If any of the planets around the star have been detected
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
             log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
@@ -747,10 +740,28 @@ class SurveySimulation(object):
             self.logger.info(log_FA)
             self.vprint(log_FA)
         
+        #Schedule Target Revisit
+        self.scheduleRevisit(sInd,smin,det,pInds)
+
+        return detected.astype(int), fZ, systemParams, SNR, FA
+
+    def scheduleRevisit(self,sInd,smin,det,pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            det - 
+            pInds - Indices of planets around target star
+        Return:
+            updates self.starRevisit attribute
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
-        if smin is not None:
+        if smin is not None:#smin is None if no planet was detected
             sp = smin
             if np.any(det):
                 pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
@@ -767,19 +778,17 @@ class SurveySimulation(object):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm + 0.75*T
-        
+
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
-        if self.starRevisit.size == 0:
-            self.starRevisit = np.array([revisit])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
-                self.starRevisit[revInd,1] = revisit[1]
-        
-        return detected.astype(int), fZ, systemParams, SNR, FA
+                self.starRevisit[revInd,1] = revisit[1]#over
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -1097,7 +1106,14 @@ class SurveySimulation(object):
         
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-        
+       
+        # re-initialize SurveySimulation arrays
+        specs = self._outspec
+        specs['modules'] = self.modules
+        if 'seed' in specs:
+            specs.pop('seed')
+        self.__init__(**specs)
+
         # reset mission time and observatory parameters
         TK.__init__(**TK._outspec)
         self.Observatory.__init__(**self.Observatory._outspec)
@@ -1109,13 +1125,7 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-        # re-initialize SurveySimulation arrays
-        specs = self._outspec
-        specs['modules'] = self.modules
-        if 'seed' in specs:
-            specs.pop('seed')
-        self.__init__(**specs)
-        
+
         self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):
@@ -1217,6 +1227,28 @@ class SurveySimulation(object):
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         ##########################################################
         return cachefname
+
+    def revisitFilter(self,sInds,tmpCurrentTimeNorm):
+        """Helper method for Overloading Revisit Filtering
+
+        Args:
+            sInds - indices of stars still in observation list
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+        Returns:
+            sInds - indices of stars still in observation list
+        """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
+            tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
+                    & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
+            #The above condition should prevent revisits so long as all stars have not been observed
+            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)#absolute temporal spacing between revisit and now.
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] #return indice of all revisits within a threshold dt_max of revisit day
+                        if x in sInds]
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+            sInds = np.where(tovisit)[0]
+        return sInds
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.

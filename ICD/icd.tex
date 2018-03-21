@@ -488,7 +488,6 @@ These parameters apply to all simulations, and are described in detail in their 
 \item[\textbf{TargetList}]
 \item[staticStars] (boolean) Boolean used to force static target positions set at mission start time.
 \item[keepStarCatalog] (boolean) Boolean representing whether to delete the star catalog after assembling the target list.  If true, object reference will be available from TargetList object.
-\item[fillPhotometry] (boolean) If true, attempts to fill in photometric values for targets based on their spectral types.
 
 \item[\textbf{Observatory}]
 \item[koAngleMin] (float) Telescope minimum keepout angle in units of $deg$. 
@@ -692,7 +691,7 @@ The starlight suppression system throughput and contrast - or residual intensity
 
 By definition, the detection mode IWA correspond to the working angle at which integration times are calculated during the detection phase. This IWA must not be confused with the global IWA. There are 3 types of IWA/OWA:\\
 1- Each coronagraph has its own IWA/OWA in arcsec defined at its operation wavelength.\\
-2- Each observing mode has its own IWA/OWA, based on the coronagraph IWA/OWA and rescaled to the mode’s specific wavelength. For simple cases where no observing modes are specified, the detection IWA will simply correspond to the coronagraph IWA.\\
+2- Each observing mode has its own IWA/OWA, based on the coronagraph IWA/OWA and rescaled to the modeâs specific wavelength. For simple cases where no observing modes are specified, the detection IWA will simply correspond to the coronagraph IWA.\\
 3- A global IWA/OWA can be specified for the whole telescope, to filter out targets during the initialization, thus before the mission starts. By defaults, the global IWA = minimum(mode\_IWAs) and global OWA = maximum(mode\_OWAs). However, the user can specify a global IWA that is very small or even zero to avoid filtering out targets during initialization, without affecting the detection IWA described above.
 
 The input and output of the Optical System methods are depicted in \reffig{fig:opticalsysmodule}. The Optical System module has three methods used in simulation:
@@ -1449,6 +1448,7 @@ All planetary parameters are generated in the constructor via calls to the appro
     \item[I (astropy Quantity array)] \hfill \\ Planet inclination in units of $ deg $
     \item[O (astropy Quantity array)] \hfill \\ Planet right ascension of the ascending node in units of $ deg $
     \item[w (astropy Quantity array)] \hfill \\ Planet argument of perigee in units of $ deg $
+    \item[Min (float)] \hfill \\ Constant initial mean anomaly for all planets (optional)
     \item[M0 (astropy Quantity array)] \hfill \\ Initial mean anomaly in units of $ deg $
     \item[p (float ndarray)] \hfill \\ Planet albedo
     \item[Rp (astropy Quantity array)] \hfill \\ Planet radius in units of $earthRad$
@@ -1484,6 +1484,18 @@ The \verb+gen_physical_properties+ method generates the planetary systems for th
     \item[Mp (astropy Quantity array)] \hfill \\ Planet mass in units of $earthMass$
     \item[Rp (astropy Quantity array)] \hfill \\ Planet radius in units of $earthRad$
 \end{description}
+\end{itemize}
+
+\subsection{gen\_M0 Method} \label{sec:genM0task}
+The \verb+gen_M0+ method generates the constant or random initial mean anomaly for each simulated planet inside of \verb+gen_physical_properties+. This method does not take any explicit inputs.
+
+\subsubsection*{Output}
+\begin{itemize}
+    \item 
+    \begin{description}
+        \item[M0 (astropy Quantity array)] \hfill \\
+        Initial mean anomalies in units of $deg$
+    \end{description}
 \end{itemize}
 
 \subsubsection{init\_systems Method} \label{sec:initsystemstask}

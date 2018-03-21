@@ -52,8 +52,6 @@ class TargetList(object):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
             Initial completeness value for each target star
-        comp (ndarray):
-            Completeness value for each target star
         MsEst (float ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
@@ -134,13 +132,12 @@ class TargetList(object):
             self.StarCatalog = specs['modules']['StarCatalog']
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars
-        self.comp = np.array([0.0]*self.nStars)
         
         # if staticStars is True, the star coordinates are taken at mission start, 
         # and are not propagated during the mission
         self.starprop_static = None
         if self.staticStars is True:
-            allInds = np.arange(self.nStars)
+            allInds = np.arange(self.nStars,dtype=int)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
             self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \

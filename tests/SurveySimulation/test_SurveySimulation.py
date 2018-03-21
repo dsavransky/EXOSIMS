@@ -40,7 +40,7 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['KnownRVSurvey']
+        exclude_mods=['KnownRVSurvey', 'tieredScheduler']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
@@ -61,8 +61,6 @@ class TestSurveySimulation(unittest.TestCase):
             for rmod in required_modules:
                 self.assertIn(rmod, sim.__dict__)
                 self.assertEqual(getattr(sim,rmod)._modtype,rmod)
-
-
 
     def test_run_sim(self):
         r"""Test run_sim method.
@@ -95,8 +93,11 @@ class TestSurveySimulation(unittest.TestCase):
                      'star_ind',
                      'FA_char_WA']
 
+        exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'run_sim' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -114,8 +115,7 @@ class TestSurveySimulation(unittest.TestCase):
 
                 for key in DRM_keys:
                     self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
-
-    
+   
     def test_next_target(self):
         r"""Test next_target method.
 
@@ -123,7 +123,11 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'next_target' in mod.__dict__:
         
                 with RedirectStreams(stdout=self.dev_null):
@@ -141,7 +145,6 @@ class TestSurveySimulation(unittest.TestCase):
                 # resulting DRM is a dictionary -- contents unimportant
                 self.assertIsInstance(DRM_out, dict, 'DRM_out is not a dict for %s'%mod.__name__)
 
-
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
@@ -149,7 +152,11 @@ class TestSurveySimulation(unittest.TestCase):
         old_sInd in sInds, old_sInd not in sInds
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'choose_next_target' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -183,14 +190,17 @@ class TestSurveySimulation(unittest.TestCase):
 
                 self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
 
-
     def test_observation_detection(self):
         r"""Test observation_detection method.
 
         Approach: Ensure that all outputs are set as expected
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'observation_detection' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -206,14 +216,32 @@ class TestSurveySimulation(unittest.TestCase):
                     self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'])
                 self.assertIsInstance(FA, bool)    
 
+    def test_scheduleRevisit(self):
+        """Runs scheduleRevisit method
+        """
+        for mod in self.allmods:
+            if 'choose_revisit_target' in mod.__dict__:
+
+                with RedirectStreams(stdout=self.dev_null):
+                    sim = mod(scriptfile=self.script)
+
+                sInd = [0]
+                smin = None
+                det = 0
+                pInds = [0]
+                sim.scheduleRevisit(sInd,smin,det,pInds)
+
     def test_observation_characterization(self):
         r"""Test observation_characterization method.
 
         Approach: Ensure all outputs are set as expected
         """
 
+        exclude_mods = ['tieredScheduler']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'observation_characterization' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -236,14 +264,17 @@ class TestSurveySimulation(unittest.TestCase):
                 
                 self.assertLessEqual(intTime,sim.OpticalSystem.intCutoff)
 
-
     def test_calc_signal_noise(self):
         r"""Test calc_signal_noise method.
 
         Approach: Ensure that signal is greater than noise for dummy planet
         """
 
+        exclude_mods = ['tieredScheduler']
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'calc_signal_noise' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -253,3 +284,19 @@ class TestSurveySimulation(unittest.TestCase):
 
                 self.assertGreaterEqual(S,N)
 
+    def test_revisitFilter(self):
+        r"""Test revisitFilter method
+        """
+        for mod in self.allmods:
+            if 'choose_revisit_target' in mod.__dict__:
+
+                with RedirectStreams(stdout=self.dev_null):
+                    sim = mod(scriptfile=self.script)
+
+                sInds = np.asarray([0])
+                tovisit = np.zeros(sim.TargetList.nStars, dtype=bool)
+                sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
+                try:
+                    self.assertIsInstance(sInds, np.ndarray)
+                except:
+                    self.assertIsInstance(sInds, type(list()))

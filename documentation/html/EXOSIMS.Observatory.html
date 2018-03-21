@@ -1,6 +1,6 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -34,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -46,14 +46,123 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="exosims-observatory-observatoryl2halo-module">
-<h2>EXOSIMS.Observatory.ObservatoryL2Halo module<a class="headerlink" href="#exosims-observatory-observatoryl2halo-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.Observatory.WFIRSTObservatory">
+<span id="exosims-observatory-wfirstobservatory-module"></span><h2>EXOSIMS.Observatory.WFIRSTObservatory module<a class="headerlink" href="#module-EXOSIMS.Observatory.WFIRSTObservatory" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Observatory.WFIRSTObservatory.</code><code class="descname">WFIRSTObservatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMinMoon=None</em>, <em>koAngleMinEarth=None</em>, <em>koAngleMax=90</em>, <em>koAngleSmall=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>spkpath=None</em>, <em>checkKeepoutEnd=True</em>, <em>forceStaticEphem=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.Observatory.Observatory" title="EXOSIMS.Prototypes.Observatory.Observatory"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.Observatory.Observatory</span></code></a></p>
+<p>WFIRST Observatory class</p>
+<p>This class contains all variables and methods specific to the WFIRST
+observatory needed to perform Observatory Definition Module calculations
+in exoplanet mission simulation.</p>
+<dl class="method">
+<dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout">
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.keepout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds keepout Boolean values for stars of interest.</p>
+<p>This method returns the keepout Boolean values for stars of interest, where
+True is an observable star.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) &#8211; TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) &#8211; Integer indices of the stars of interest</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>mode</strong> (<em>dict</em>) &#8211; Selected observing mode</li>
+<li><strong>returnExtra</strong> (<em>boolean</em>) &#8211; Optional flag, default False, set True to return additional rates
+for validation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True is a target unobstructed and observable, and False is a
+target unobservable due to obstructions in the keepout zone.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">kogood (boolean ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note: If multiple times and targets, currentTime and sInds sizes must match.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit">
+<code class="descname">orbit</code><span class="sig-paren">(</span><em>currentTime</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatory.html#WFIRSTObservatory.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory.orbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
+<p>This method returns the WFIRST geosynchronous circular orbit position vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_obs (astropy Quantity nx3 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
-<div class="section" id="exosims-observatory-sotostarshade-module">
-<h2>EXOSIMS.Observatory.SotoStarshade module<a class="headerlink" href="#exosims-observatory-sotostarshade-module" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="exosims-observatory-wfirstobservatoryl2-module">
-<h2>EXOSIMS.Observatory.WFIRSTObservatoryL2 module<a class="headerlink" href="#exosims-observatory-wfirstobservatoryl2-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-EXOSIMS.Observatory.WFIRSTObservatoryL2">
+<span id="exosims-observatory-wfirstobservatoryl2-module"></span><h2>EXOSIMS.Observatory.WFIRSTObservatoryL2 module<a class="headerlink" href="#module-EXOSIMS.Observatory.WFIRSTObservatoryL2" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2">
+<em class="property">class </em><code class="descclassname">EXOSIMS.Observatory.WFIRSTObservatoryL2.</code><code class="descname">WFIRSTObservatoryL2</code><span class="sig-paren">(</span><em>equinox=60575.25</em>, <em>orbit_datapath=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatoryL2.html#WFIRSTObservatoryL2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory" title="EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Observatory.WFIRSTObservatory.WFIRSTObservatory</span></code></a></p>
+<p>WFIRST Observatory at L2 implementation.
+Only difference between this and the WFIRSTObservatory implementation
+is the orbit method, and carrying an internal equinox time value.</p>
+<p>Orbit is stored in pickled dictionary on disk (generated by MATLAB
+code adapted from E. Kolemen (2008).  Describes approx. 6 month halo
+which is then patched for the entire mission duration).</p>
+<dl class="method">
+<dt id="EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2.orbit">
+<code class="descname">orbit</code><span class="sig-paren">(</span><em>currentTime</em>, <em>eclip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/WFIRSTObservatoryL2.html#WFIRSTObservatoryL2.orbit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.WFIRSTObservatoryL2.WFIRSTObservatoryL2.orbit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame for current time (MJD).</p>
+<p>This method returns the WFIRST L2 Halo orbit position vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) &#8211; Current absolute mission time in MJD</li>
+<li><strong>eclip</strong> (<em>boolean</em>) &#8211; Boolean used to switch to heliocentric ecliptic frame. Defaults to
+False, corresponding to heliocentric equatorial frame.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Observatory orbit positions vector in heliocentric equatorial (default)
+or ecliptic frame in units of AU</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">r_obs (astropy Quantity nx3 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note: Use eclip=True to get ecliptic coordinates.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-EXOSIMS.Observatory">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.Observatory" title="Permalink to this headline">¶</a></h2>
@@ -70,9 +179,8 @@
   <ul>
 <li><a class="reference internal" href="#">EXOSIMS.Observatory package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#exosims-observatory-observatoryl2halo-module">EXOSIMS.Observatory.ObservatoryL2Halo module</a></li>
-<li><a class="reference internal" href="#exosims-observatory-sotostarshade-module">EXOSIMS.Observatory.SotoStarshade module</a></li>
-<li><a class="reference internal" href="#exosims-observatory-wfirstobservatoryl2-module">EXOSIMS.Observatory.WFIRSTObservatoryL2 module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Observatory.WFIRSTObservatory">EXOSIMS.Observatory.WFIRSTObservatory module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.Observatory.WFIRSTObservatoryL2">EXOSIMS.Observatory.WFIRSTObservatoryL2 module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.Observatory">Module contents</a></li>
 </ul>
 </li>
@@ -113,7 +221,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

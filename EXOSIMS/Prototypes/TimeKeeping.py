@@ -136,7 +136,7 @@ class TimeKeeping(object):
                 self.OBendTimes = np.asarray([item[1] for item in tmpOBtimes])
         else:  # Automatically construct OB from OBduration, missionLife, and missionPortion
             if OBduration == np.inf:  # There is 1 OB spanning the mission
-                self.OBstartTimes = np.asarray([0*u.d])
+                self.OBstartTimes = np.asarray([0])*u.d
                 self.OBendTimes = np.asarray([self.missionLife])
             else:  # OB
                 startToStart = OBduration/self.missionPortion

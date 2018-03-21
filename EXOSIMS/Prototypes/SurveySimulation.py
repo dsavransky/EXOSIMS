@@ -303,28 +303,30 @@ class SurveySimulation(object):
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
+        Obsnum = 0
+        #DELETE#ObsStartTimes = list()
         while not TK.mission_is_over():
             
             # acquire the NEXT TARGET star index and create DRM
-            DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
+            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
             assert det_intTime != 0, "Integration time can't be 0."
 
             if sInd is not None:
                 # save the start time of this observation (BEFORE any OH/settling/slew time)
-                TK.ObsStartTimes.append(TK.currentTimeNorm.to('day'))
-                TK.ObsNum += 1#we're making an observation
+                #DELETE#ObsStartTimes.append(TK.currentTimeNorm.to('day'))
+                ObsNum += 1#we're making an observation so increment observation number
                 
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day')
                 DRM['OB_nb'] = TK.OBnumber
-                DRM['ObsNum'] = TK.ObsNum
+                DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time at Obs start: %s')%(TK.ObsNum, sInd, TL.nStars, len(pInds), 
-                        TK.ObsStartTimes[-1].round(2))
+                        + 'mission time at Obs start: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        TK.currentTimeNorm.to('day').round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
@@ -382,7 +384,7 @@ class SurveySimulation(object):
                 self.DRM.append(DRM)
                 
                 # calculate observation end time
-                TK.ObsEndTimes.append(TK.currentTimeNorm.to('day'))
+                #DELETE#TK.ObsEndTimes.append(TK.currentTimeNorm.to('day'))
                 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
@@ -392,7 +394,7 @@ class SurveySimulation(object):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.ObsEndTimes[-1].round(2))
+                    self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
                     break
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s

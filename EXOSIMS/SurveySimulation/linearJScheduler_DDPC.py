@@ -455,31 +455,48 @@ class linearJScheduler_DDPC(linearJScheduler):
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
-            planinds1 = pIndsChar[0] if len(pIndsChar[0]) >= len(pIndsChar[1]) else pIndsChar[1]
-            planinds = planinds1[:-1] if planinds1[-1] == -1 else planinds1
-            SNRplans = np.zeros((len(planinds), nmodes))
-            if len(planinds) > 0:
+            if len(pIndsChar[0]) > 0:
+                planinds = pIndsChar[0][:-1] if pIndsChar[0][-1] == -1 else pIndsChar[0]
+            else: 
+                planinds = []
+            if len(pIndsChar[1]) > 0:
+                planinds2 = pIndsChar[1][:-1] if pIndsChar[1][-1] == -1 else pIndsChar[1]
+            else:
+                planinds2 = []
+            SNRplans = np.zeros((len(planinds)))
+            SNRplans2 = np.zeros((len(planinds2)))
+            if len(planinds) > 0 and len(planinds2) > 0:
                 # initialize arrays for SNR integration
-                fZs = np.zeros((self.ntFlux,nmodes))/u.arcsec**2
+                fZs = np.zeros((self.ntFlux, nmodes))/u.arcsec**2
                 systemParamss = np.empty(self.ntFlux, dtype='object')
-                Ss = np.zeros((self.ntFlux, len(planinds), nmodes))
-                Ns = np.zeros((self.ntFlux, len(planinds), nmodes))
+                Ss = np.zeros((self.ntFlux, len(planinds)))
+                Ns = np.zeros((self.ntFlux, len(planinds)))
+                Ss2 = np.zeros((self.ntFlux, len(planinds2)))
+                Ns2 = np.zeros((self.ntFlux, len(planinds2)))
                 # integrate the signal (planet flux) and noise
                 dt = intTime/self.ntFlux
                 for i in range(self.ntFlux):
                     # allocate first half of dt
                     TK.allocate_time(dt/2.)
-                    for m_i, mode in enumerate(modes):
-                        # calculate current zodiacal light brightness
-                        fZs[i,m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-                        # propagate the system to match up with current time
-                        SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                        self.propagTimes[sInd] = TK.currentTimeNorm
-                        # save planet parameters
-                        systemParamss[i] = SU.dump_system_params(sInd)
-                        # calculate signal and noise (electron count rates)
-                        Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                                                                          fZ=fZs[i,m_i])
+                    fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, modes[0])[0]
+                    fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, modes[1])[0]
+                    SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = TK.currentTimeNorm
+                    systemParamss[i] = SU.dump_system_params(sInd)
+                    Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, modes[0], fZ=fZs[i,0])
+                    Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
+
+                    # for m_i, mode in enumerate(modes):
+                    #     # calculate current zodiacal light brightness
+                    #     fZs[i,m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                    #     # propagate the system to match up with current time
+                    #     SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
+                    #     self.propagTimes[sInd] = TK.currentTimeNorm
+                    #     # save planet parameters
+                    #     systemParamss[i] = SU.dump_system_params(sInd)
+                    #     # calculate signal and noise (electron count rates)
+                    #     Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                    #                                                       fZ=fZs[i,m_i])
                     # allocate second half of dt
                     TK.allocate_time(dt/2.)
                 
@@ -492,7 +509,10 @@ class linearJScheduler_DDPC(linearJScheduler):
                 # calculate planets SNR
                 S = Ss.sum(0)
                 N = Ns.sum(0)
+                S2 = Ss2.sum(0)
+                N2 = Ns2.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
+                SNRplans2[N2 > 0] = S2[N2 > 0]/N2[N2 > 0]
                 # allocate extra time for timeMultiplier
                 extraTime = intTime*(mode['timeMultiplier'] - 1)
                 TK.allocate_time(extraTime)
@@ -516,15 +536,19 @@ class linearJScheduler_DDPC(linearJScheduler):
                         C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
                         S = (C_p*intTime).decompose().value
                         N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
-                        SNRfa = (S/N if N > 0 else 0.)
+                        SNRfa.append([S/N if N > 0 else 0.])
                 
                     # save all SNRs (planets and FA) to one array
                     SNRinds = np.where(det)[0][tochars[m_i]]
-
-                    if np.append(SNRplans[:, m_i], SNRfa).shape != SNR[SNRinds, m_i].shape:
-                        SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)[SNRinds]
+                    if m_i == 0:
+                        SNR[SNRinds, 0] = np.append(SNRplans[:], SNRfa)
                     else:
-                        SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)
+                        SNR[SNRinds, 1] = np.append(SNRplans2[:], SNRfa)
+
+                    # if np.append(SNRplans[:, m_i], SNRfa).shape != SNR[SNRinds, m_i].shape:
+                    #     SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)[SNRinds]
+                    # else:
+                    #     SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)
                 
                     # now, store characterization status: 1 for full spectrum, 
                     # -1 for partial spectrum, 0 for not characterized

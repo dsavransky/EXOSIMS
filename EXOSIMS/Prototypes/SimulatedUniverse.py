@@ -99,7 +99,17 @@ class SimulatedUniverse(object):
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
         self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
-       
+        
+        # check if KnownRVPlanetsUniverse has correct input modules
+        if specs['modules']['SimulatedUniverse'] == 'KnownRVPlanetsUniverse':
+            val = specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList' \
+            and specs['modules']['PlanetPopulation'] == 'KnownRVPlanets'
+            assert val == True, 'KnownRVPlanetsUniverse must use KnownRVPlanetsTargetList and KnownRVPlanets'
+        else:
+            val = specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList' \
+            or specs['modules']['PlanetPopulation'] == 'KnownRVPlanets'
+            assert val == False, 'KnownRVPlanetsTargetList or KnownRVPlanets should not be used with this SimulatedUniverse'
+            
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
                 'TargetList')(**specs)

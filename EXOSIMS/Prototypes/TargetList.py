@@ -87,6 +87,14 @@ class TargetList(object):
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
         
+        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
+        if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
+            assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
+            'KnownRVPlanetsTargetList must use KnownRVPlanets'
+        else:
+            assert specs['modules']['PlanetPopulation'] != 'KnownRVPlanets', \
+            'This TargetList cannot use KnownRVPlanets'
+        
         # populate outspec
         for att in self.__dict__.keys():
             if att not in ['vprint']:

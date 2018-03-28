@@ -55,21 +55,25 @@ class TestSimulatedUniverse(unittest.TestCase):
                     'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
 
         for mod in self.allmods:
+            
             with RedirectStreams(stdout=self.dev_null):
                 spec = copy.deepcopy(self.spec)
                 spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
                 spec['modules']['StarCatalog']='EXOCAT1'
+                spec['modules']['SimulatedUniverse'] = mod.__name__
                 if 'Kepler' in mod.__name__:
                     spec['modules']['PlanetPopulation']='KeplerLike1'
+                    spec['scaleOrbits'] = True
                 elif 'KnownRV' in mod.__name__:
                     spec['modules']['PlanetPopulation']='KnownRVPlanets'
                     spec['modules']['TargetList']='KnownRVPlanetsTargetList'
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
-
-                obj = mod(**spec)
-
+                    spec['scaleOrbits'] = True
+  
+            obj = mod(**spec)
+            
             #verify that all attributes are there
             for att in req_atts:
                 self.assertTrue(hasattr(obj,att))

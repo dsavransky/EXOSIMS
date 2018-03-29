@@ -130,10 +130,6 @@ class MissionSim(object):
         #save a copy of specs up to this point to use with the survey ensemble later
         specs0 = copy.deepcopy(specs)
 
-        # set up numpy random number and add seed to specs
-        #self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
-        #specs['seed'] = self.seed
-        
         # start logging, with log file and logging level (default: INFO)
         self.logfile = specs.get('logfile', None)
         self.loglevel = specs.get('loglevel', 'INFO').upper()
@@ -174,6 +170,9 @@ class MissionSim(object):
         self.modules['SurveySimulation'] = SS
         self.modules['SurveyEnsemble'] = self.SurveyEnsemble
 
+        # alias SurveySimulation random seed to attribute for easier access
+        self.seed = self.SurveySimulation.seed        
+        
     def get_logger(self, logfile, loglevel):
         r"""Set up logging object so other modules can use logging.info(),
         logging.warning, etc.

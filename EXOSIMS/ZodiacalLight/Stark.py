@@ -5,7 +5,7 @@ import os, inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import interp1d, griddata
+from scipy.interpolate import griddata, CubicSpline #interp1d, DELETE ME OLD INTERPOLANT
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -66,8 +66,8 @@ class Stark(ZodiacalLight):
         Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
         # create data point coordinates
         lon_pts = np.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 75, 90,
-                105, 120, 135, 150, 165, 180]) # deg
-        lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
+                105, 120, 135, 150, 165, 180]) # deg ecliptic longitude with 0 at sun
+        lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg ecliptic latitude with 0 at sun
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(zip(np.concatenate(x_pts), np.concatenate(y_pts)))
         # create data values, normalized by (90,0) value
@@ -86,8 +86,10 @@ class Stark(ZodiacalLight):
                 3.2e-9, 6.9e-10]) # W/m2/sr/um
         x = np.log10(zodi_lam)
         y = np.log10(zodi_Blam)
-        logf = interp1d(x, y, kind='quadratic')
-        f = 10.**(logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        #logf = interp1d(x, y, kind='quadratic')#DELETE ME OLD INTERPOLANT
+        logf = CubicSpline(x, zodi_Blam, bc_type='clamped')
+        f = logf(np.log10(lam.to('um').value))*u.W/u.m**2/u.sr/u.um
+        #f = 10.**(logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um#DELETE ME OLD INTERPOLANT
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon

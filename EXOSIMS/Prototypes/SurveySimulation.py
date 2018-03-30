@@ -247,7 +247,6 @@ class SurveySimulation(object):
         startTime = self.TimeKeeping.missionStart
         endTime   = self.TimeKeeping.missionFinishAbs
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
-       
 
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
@@ -645,21 +644,8 @@ class SurveySimulation(object):
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
-
-        #Choose Revisit Target
-        sInd = self.choose_revisit_target(sInd)
         
         return sInd, None
-
-    def choose_revisit_target(self,sInd):
-        """A Helper function for selecting revisit targets instead of the nominal detection targets
-        Args:
-            sInd - index of target currently scheduled for visiting
-        Returns:
-            sInd - index of target now scheduled for visiting
-        """
-        #Do Stuff
-        return sInd
 
     def observation_detection(self, sInd, intTime, mode):
         """Determines SNR and detection status for a given integration time 

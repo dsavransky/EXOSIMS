@@ -308,7 +308,7 @@ class SurveySimulation(object):
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
-            assert det_intTime != 0, "Integration time can't be 0."
+            assert det_intTime != 0 and sInd is not None, "Integration time can't be 0."
 
             if sInd is not None:
                 # save the start time of this observation (BEFORE any OH/settling/slew time)
@@ -395,6 +395,8 @@ class SurveySimulation(object):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
                     break
+            else:
+                #AdvanceToAbsTime function calls
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
@@ -556,8 +558,27 @@ class SurveySimulation(object):
 
     def intTimeFilter(self, sInds, startTimes, mode, startTimesNorm, intTimes):
         """Filters stars with best integration time greater than OS.intCutoff
+        Args:
+            sInds (integer aray):
+                Indicies of target starts to filter
+            startTimes (astropy Quantity array):
+                absolute start times of observations.  
+                must be of the same size as sInds 
+            mode (dict):
+                Selected observing mode for detection
+            startTimesNorm (astropy Quantity array):
+                mission normalized start time of observations
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+        Returns:
+            sInds (integer array):
+                Indicies of target starts to filter
+            intTimes (astropy Quantity array):
+                Integration times for detection of fitlered stars in units of day
+            endTimes (astropy Quantity array):
+                mission normalized end times of observations
         """
-        #NEEDS TO BE UPDATED TO USE CALCFZMIN
+        #NEEDS TO BE UPDATED TO USE CALCFZMIN. MEANS WE NEED TO MODIFY CALC_TARG_INTTIME
         TK = self.TimeKeeping
         OS = self.OpticalSystem
 

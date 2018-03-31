@@ -350,4 +350,3 @@ class TimeKeeping(object):
         maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
         return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
-

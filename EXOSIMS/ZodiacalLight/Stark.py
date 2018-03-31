@@ -100,7 +100,7 @@ class Stark(ZodiacalLight):
         
         return fZ
 
-    def generate_fZ(self, sInds):
+    def generate_fZ(self, sInds, ZL, TL, Obs):
         """Calculates fZ values for each star over an entire orbit of the sun
         Args:
             sInds[nStars] - indicies of stars to generate yearly fZ for
@@ -149,6 +149,10 @@ class Stark(ZodiacalLight):
         """
         #Generate cache Name########################################################################
         cachefname = self.cachefname + 'fZmax'
+
+        if hasattr(self,'fZ_startSaved'):
+            self.generate_fZ(sInds)
+
         Obs = self.Observatory
         TL = self.TargetList
         TK = self.TimeKeeping

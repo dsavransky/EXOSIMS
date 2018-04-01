@@ -51,7 +51,7 @@ class TargetList(object):
         tint0 (astropy Quantity array):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
-            Completeness value for each target star
+            Initial completeness value for each target star
         MsEst (float ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
@@ -86,6 +86,14 @@ class TargetList(object):
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
+        
+        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
+        if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
+            assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
+            'KnownRVPlanetsTargetList must use KnownRVPlanets'
+        else:
+            assert specs['modules']['PlanetPopulation'] != 'KnownRVPlanets', \
+            'This TargetList cannot use KnownRVPlanets'
         
         # populate outspec
         for att in self.__dict__.keys():
@@ -137,7 +145,7 @@ class TargetList(object):
         # and are not propagated during the mission
         self.starprop_static = None
         if self.staticStars is True:
-            allInds = np.arange(self.nStars)
+            allInds = np.arange(self.nStars,dtype=int)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
             self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \

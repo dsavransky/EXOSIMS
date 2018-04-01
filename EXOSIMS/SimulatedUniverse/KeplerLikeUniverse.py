@@ -48,6 +48,6 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.a[self.Rp > np.nanmax(PPMod.ggdat['radii'])] = 0.02*u.AU
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
-        self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly
         self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
-        self.Mp = PPMod.calc_mass_from_radius(self.Rp)      # mass
+        self.gen_M0()                                   # initial mean anomaly
+        self.Mp = PPMod.calc_mass_from_radius(self.Rp)  # mass

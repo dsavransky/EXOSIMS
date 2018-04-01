@@ -145,7 +145,7 @@ class BrownCompleteness(Completeness):
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
-    # ensure that completeness is between 0 and 1
+        # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
         
         return comp0
@@ -474,6 +474,9 @@ class BrownCompleteness(Completeness):
         """Calculates completeness for given minimum and maximum separations
         and dMag
         
+        Note: this method assumes scaling orbits when scaleOrbits == True has
+        already occurred for smin, smax, dMag inputs
+        
         Args:
             smin (float ndarray):
                 Minimum separation(s) in AU
@@ -489,6 +492,8 @@ class BrownCompleteness(Completeness):
         """
         
         comp = self.EVPOC(smin, smax, 0., dMag)
+        # remove small values
+        comp[comp<1e-6] = 0.
         
         return comp
 
@@ -605,7 +610,14 @@ class BrownCompleteness(Completeness):
         else:
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value
-        smin[smin>smax] = smax[smin>smax]    
+        smin[smin>smax] = smax[smin>smax]
+        
+        # take care of scaleOrbits == True
+        if self.PlanetPopulation.scaleOrbits:
+            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
+            smin = smin/np.sqrt(L)
+            smax = smax/np.sqrt(L)
+            dMag -= 2.5*np.log10(L)
         
         return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag            
     

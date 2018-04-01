@@ -57,4 +57,6 @@ class SAG13Universe(SimulatedUniverse):
         _, self.e, _, _ = PPop.gen_plan_params(self.nPlans)     # eccentricity
         self.p = PPMod.calc_albedo_from_sma(self.a)             # albedo
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)   # orientation angles
-        self.M0 = np.random.uniform(360,size=self.nPlans)*u.deg # initial mean anomaly
+        if PPop.scaleOrbits:
+            self.a *= np.sqrt(TL.L[self.plan2star])
+        self.gen_M0()                                    # initial mean anomaly

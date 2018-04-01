@@ -1,11 +1,11 @@
-EXOSIMS\.SurveyEnsemble package
-===============================
+EXOSIMS.SurveyEnsemble package
+==============================
 
 Submodules
 ----------
 
-EXOSIMS\.SurveyEnsemble\.IPClusterEnsemble module
--------------------------------------------------
+EXOSIMS.SurveyEnsemble.IPClusterEnsemble module
+-----------------------------------------------
 
 .. automodule:: EXOSIMS.SurveyEnsemble.IPClusterEnsemble
     :members:

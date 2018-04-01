@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>EXOSIMS.Prototypes.SurveySimulation &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
-        VERSION:     '1.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,8 +20,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
-  </head>
-  <body>  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -127,6 +118,9 @@
 <span class="sd">            Working angle used for integration time calculation in units of arcsec</span>
 <span class="sd">        dMagint (float ndarray):</span>
 <span class="sd">            Delta magnitude used for integration time calculation</span>
+<span class="sd">        scaleWAdMag (bool):</span>
+<span class="sd">            If True, rescale dMagint and WAint for all stars based on luminosity and </span>
+<span class="sd">            to ensure that WA is within the IWA/OWA. Defaults False.</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -134,7 +128,7 @@
     <span class="n">_outspec</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scriptfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ntFlux</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">nVisitsMax</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">charMargin</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> 
-            <span class="n">WAint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dMagint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+            <span class="n">WAint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dMagint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dt_max</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">scaleWAdMag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
         
         <span class="c1"># if a script file is provided read it in. If not set, assumes that </span>
         <span class="c1"># dictionary has been passed through specs.</span>
@@ -163,7 +157,12 @@
         
         <span class="c1"># mission simulation logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logger&#39;</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">))</span>
-        
+       
+        <span class="c1"># set up numpy random number (generate it if not in specs)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">py_random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1e9</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s1">&#39;Numpy random seed is: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+
         <span class="c1"># if any of the modules is a string, assume that they are all strings </span>
         <span class="c1"># and we need to initalize</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">itervalues</span><span class="p">()</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span> <span class="n">basestring</span><span class="p">):</span>
@@ -233,10 +232,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nVisitsMax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nVisitsMax</span><span class="p">)</span>
         <span class="c1"># integration time margin for characterization</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">charMargin</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">charMargin</span><span class="p">)</span>
-        <span class="c1"># set up numpy random number (generate it if not in specs)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">py_random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1e9</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s1">&#39;Numpy random seed is: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="c1"># maximum time for revisit window    </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt_max</span> <span class="o">=</span> <span class="n">dt_max</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">week</span>
         
         <span class="c1"># populate outspec with all SurveySimulation scalar attributes</span>
         <span class="k">for</span> <span class="n">att</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -246,31 +243,62 @@
         <span class="c1"># load the dMag and WA values for integration:</span>
         <span class="c1"># - dMagint defaults to the completeness limiting delta magnitude</span>
         <span class="c1"># - WAint defaults to the detection mode IWA-OWA midpoint</span>
+        <span class="c1"># If inputs are scalars, save scalars to outspec, otherwise save full lists</span>
         <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
         <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
         <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
         <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
-        <span class="n">dMagint</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span> <span class="k">if</span> <span class="n">dMagint</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">dMagint</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">dMagint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dMagint</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span> 
         <span class="k">if</span> <span class="n">WAint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">WAint</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
+            <span class="n">WAint</span> <span class="o">=</span> <span class="n">WAint</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dMagint</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">WAint</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;dMagint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">WAint</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">WAint</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
-        <span class="c1"># transform into arrays of length TargetList.nStars</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dMagint</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">WAint</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">WAint</span><span class="o">.</span><span class="n">unit</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">)</span> <span class="o">==</span> <span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">),</span> \
+                    <span class="s2">&quot;Input dMagint array doesn&#39;t match number of target stars.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;dMagint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span>
         
-        <span class="c1"># add scalar values of WAint and dMagint to outspec</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;dMagint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;WAint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;WAint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="o">.</span><span class="n">unit</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">)</span> <span class="o">==</span> <span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">),</span> \
+                    <span class="s2">&quot;Input WAint array doesn&#39;t match number of target stars.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;WAint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;arcsec&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         
+        <span class="c1">#if requested, rescale based on luminosities and mode limits</span>
+        <span class="k">if</span> <span class="n">scaleWAdMag</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">Lstar</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">L</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">Lstar</span> <span class="o">&lt;</span> <span class="mf">1.6</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">Lstar</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                   <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">Lstar</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">dMagLim</span>
+
+                <span class="n">EEID</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Lstar</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">EEID</span> <span class="o">&lt;</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]:</span>
+                    <span class="n">EEID</span> <span class="o">=</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">EEID</span> <span class="o">&gt;</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]:</span>
+                    <span class="n">EEID</span> <span class="o">=</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">EEID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span><span class="p">[</span><span class="s1">&#39;scaleWAdMag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scaleWAdMag</span> 
+
         <span class="c1"># initialize arrays updated in run_sim()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fullSpectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">partialSpectra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">nPlans</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">propagTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lastObsTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="c1">#contains the number of times each star was visited</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lastDetected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
@@ -428,8 +456,8 @@
             <span class="n">log_end</span> <span class="o">=</span> <span class="s2">&quot;Mission complete: no more time available.</span><span class="se">\n</span><span class="s2">&quot;</span> \
                     <span class="o">+</span> <span class="s2">&quot;Simulation duration: </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">dtsim</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span> \
                     <span class="o">+</span> <span class="s2">&quot;Results stored in SurveySimulation.DRM (Design Reference Mission).&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_end</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">log_end</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_end</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="n">log_end</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SurveySimulation.next_target"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">[docs]</a>    <span class="k">def</span> <span class="nf">next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_sInd</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds index of next target star and calculates its integration time.</span>
@@ -483,7 +511,6 @@
             <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
             <span class="n">fZs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
             <span class="n">intTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
-            <span class="n">tovisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
             <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
             
             <span class="c1"># 2. find spacecraft orbital START positions (if occulter, positions </span>
@@ -513,16 +540,7 @@
             
             <span class="c1"># 3. filter out all previously (more-)visited targets, unless in </span>
             <span class="c1"># revisit list, with time within some dt of start (+- 1 week)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">tovisit</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">==</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]))</span> \
-                        <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVisitsMax</span><span class="p">))</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">dt_max</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">week</span>
-                    <span class="n">dt_rev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
-                    <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">dt_rev</span> <span class="o">&lt;</span> <span class="n">dt_max</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> 
-                            <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sInds</span><span class="p">]</span>
-                    <span class="n">tovisit</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVisitsMax</span><span class="p">)</span>
-                <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tovisit</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">revisitFilter</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span><span class="c1">#tmpCurrentTimeNorm)</span>
 
             <span class="c1"># 4. calculate integration times for ALL preselected targets, </span>
             <span class="c1"># and filter out totTimes &gt; integration cutoff</span>
@@ -584,8 +602,8 @@
             <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">slewTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
                 <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-        
-        <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">intTime</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">intTime</span>
 
 <div class="viewcode-block" id="SurveySimulation.calc_targ_intTime"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.calc_targ_intTime">[docs]</a>    <span class="k">def</span> <span class="nf">calc_targ_intTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTimes</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper method for next_target to aid in overloading for alternative implementations.</span>
@@ -618,9 +636,8 @@
         <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
         <span class="n">WA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
         <span class="n">intTimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">intTimes</span></div>
-
+        </div>
+        <span class="k">return</span> <span class="n">intTimes</span>
 
 <div class="viewcode-block" id="SurveySimulation.choose_next_target"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target">[docs]</a>    <span class="k">def</span> <span class="nf">choose_next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_sInd</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">slewTimes</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper method for method next_target to simplify alternative implementations.</span>
@@ -657,8 +674,8 @@
         <span class="n">comps</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="n">dt</span><span class="p">)</span>
         <span class="c1"># choose target with maximum completeness</span>
         <span class="n">sInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">sInds</span><span class="p">[</span><span class="n">comps</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">comps</span><span class="p">)])</span>
-        
-        <span class="k">return</span> <span class="n">sInd</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">sInd</span>
 
 <div class="viewcode-block" id="SurveySimulation.observation_detection"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection">[docs]</a>    <span class="k">def</span> <span class="nf">observation_detection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">intTime</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Determines SNR and detection status for a given integration time </span>
@@ -768,7 +785,7 @@
             
         <span class="c1"># if planets are detected, calculate the minimum apparent separation</span>
         <span class="n">smin</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">det</span> <span class="o">=</span> <span class="p">(</span><span class="n">detected</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="p">(</span><span class="n">detected</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="c1">#If any of the planets around the star have been detected</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">det</span><span class="p">):</span>
             <span class="n">smin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">det</span><span class="p">]])</span>
             <span class="n">log_det</span> <span class="o">=</span> <span class="s1">&#39;   - Detected planet inds </span><span class="si">%s</span><span class="s1"> (</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">pInds</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> 
@@ -798,10 +815,28 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_FA</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="n">log_FA</span><span class="p">)</span>
         
+        <span class="c1">#Schedule Target Revisit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduleRevisit</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span><span class="n">smin</span><span class="p">,</span><span class="n">det</span><span class="p">,</span><span class="n">pInds</span><span class="p">)</span>
+</div>
+        <span class="k">return</span> <span class="n">detected</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">systemParams</span><span class="p">,</span> <span class="n">SNR</span><span class="p">,</span> <span class="n">FA</span>
+
+<div class="viewcode-block" id="SurveySimulation.scheduleRevisit"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.scheduleRevisit">[docs]</a>    <span class="k">def</span> <span class="nf">scheduleRevisit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sInd</span><span class="p">,</span><span class="n">smin</span><span class="p">,</span><span class="n">det</span><span class="p">,</span><span class="n">pInds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A Helper Method for scheduling revisits after observation detection</span>
+<span class="sd">        Args:</span>
+<span class="sd">            sInd - sInd of the star just detected</span>
+<span class="sd">            smin - minimum separation of the planet to star of planet just detected</span>
+<span class="sd">            det - </span>
+<span class="sd">            pInds - Indices of planets around target star</span>
+<span class="sd">        Return:</span>
+<span class="sd">            updates self.starRevisit attribute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
         <span class="c1"># in both cases (detection or false alarm), schedule a revisit </span>
         <span class="c1"># based on minimum separation</span>
         <span class="n">Ms</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">MsTrue</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">smin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">smin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span><span class="c1">#smin is None if no planet was detected</span>
             <span class="n">sp</span> <span class="o">=</span> <span class="n">smin</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">det</span><span class="p">):</span>
                 <span class="n">pInd_smin</span> <span class="o">=</span> <span class="n">pInds</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">det</span><span class="p">]])]</span>
@@ -818,19 +853,17 @@
             <span class="n">mu</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">G</span><span class="o">*</span><span class="p">(</span><span class="n">Mp</span> <span class="o">+</span> <span class="n">Ms</span><span class="p">)</span>
             <span class="n">T</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sp</span><span class="o">**</span><span class="mi">3</span><span class="o">/</span><span class="n">mu</span><span class="p">)</span>
             <span class="n">t_rev</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">+</span> <span class="mf">0.75</span><span class="o">*</span><span class="n">T</span>
-        
+
         <span class="c1"># finally, populate the revisit list (NOTE: sInd becomes a float)</span>
         <span class="n">revisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sInd</span><span class="p">,</span> <span class="n">t_rev</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">revisit</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span><span class="c1">#If starRevisit has nothing in it</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">revisit</span><span class="p">])</span><span class="c1">#initialize sterRevisit</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">revInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sInd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">revInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sInd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="c1">#indices of the first column of the starRevisit list containing sInd </span>
             <span class="k">if</span> <span class="n">revInd</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">,</span> <span class="n">revisit</span><span class="p">))</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">revInd</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">revisit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        
-        <span class="k">return</span> <span class="n">detected</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">systemParams</span><span class="p">,</span> <span class="n">SNR</span><span class="p">,</span> <span class="n">FA</span></div>
+            <span class="k">else</span><span class="p">:</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">revInd</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">revisit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="c1">#over</span>
 
 <div class="viewcode-block" id="SurveySimulation.observation_characterization"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_characterization">[docs]</a>    <span class="k">def</span> <span class="nf">observation_characterization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Finds if characterizations are possible and relevant information</span>
@@ -1019,8 +1052,8 @@
             <span class="n">charplans</span> <span class="o">=</span> <span class="n">characterized</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">FA</span> <span class="k">else</span> <span class="n">characterized</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fullSpectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charplans</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">partialSpectra</span><span class="p">[</span><span class="n">pInds</span><span class="p">[</span><span class="n">charplans</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
-        
-        <span class="k">return</span> <span class="n">characterized</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">systemParams</span><span class="p">,</span> <span class="n">SNR</span><span class="p">,</span> <span class="n">intTime</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">characterized</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">systemParams</span><span class="p">,</span> <span class="n">SNR</span><span class="p">,</span> <span class="n">intTime</span>
 
 <div class="viewcode-block" id="SurveySimulation.calc_signal_noise"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.calc_signal_noise">[docs]</a>    <span class="k">def</span> <span class="nf">calc_signal_noise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">pInds</span><span class="p">,</span> <span class="n">t_int</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">fZ</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fEZ</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dMag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">WA</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the signal and noise fluxes for a given time interval. Called</span>
@@ -1079,8 +1112,8 @@
             <span class="c1"># calculate signal and noise levels (based on Nemati14 formula)</span>
             <span class="n">Signal</span><span class="p">[</span><span class="n">obs</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">C_p</span><span class="o">*</span><span class="n">t_int</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
             <span class="n">Noise</span><span class="p">[</span><span class="n">obs</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">C_b</span><span class="o">*</span><span class="n">t_int</span> <span class="o">+</span> <span class="p">(</span><span class="n">C_sp</span><span class="o">*</span><span class="n">t_int</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Noise</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Noise</span>
 
 <div class="viewcode-block" id="SurveySimulation.update_occulter_mass"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.update_occulter_mass">[docs]</a>    <span class="k">def</span> <span class="nf">update_occulter_mass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">t_int</span><span class="p">,</span> <span class="n">skMode</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Updates the occulter wet mass in the Observatory module, and stores all </span>
@@ -1122,8 +1155,8 @@
         <span class="c1"># update spacecraft mass</span>
         <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-</span> <span class="n">mass_used</span>
         <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;scMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">DRM</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">DRM</span>
 
 <div class="viewcode-block" id="SurveySimulation.reset_sim"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim">[docs]</a>    <span class="k">def</span> <span class="nf">reset_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">genNewPlanets</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rewindPlanets</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Performs a full reset of the current simulation by:</span>
@@ -1148,7 +1181,14 @@
         
         <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
         <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
-        
+       
+        <span class="c1"># re-initialize SurveySimulation arrays</span>
+        <span class="n">specs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span>
+        <span class="k">if</span> <span class="s1">&#39;seed&#39;</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+            <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+
         <span class="c1"># reset mission time and observatory parameters</span>
         <span class="n">TK</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">TK</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span><span class="o">.</span><span class="n">_outspec</span><span class="p">)</span>
@@ -1160,14 +1200,8 @@
         <span class="c1"># re-initialize systems if requested (default)</span>
         <span class="k">if</span> <span class="n">rewindPlanets</span><span class="p">:</span>
             <span class="n">SU</span><span class="o">.</span><span class="n">init_systems</span><span class="p">()</span>
-        <span class="c1"># re-initialize SurveySimulation arrays</span>
-        <span class="n">specs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outspec</span>
-        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;modules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span>
-        <span class="k">if</span> <span class="s1">&#39;seed&#39;</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
-            <span class="n">specs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;seed&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Simulation reset.&quot;</span><span class="p">)</span></div>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vprint</span><span class="p">(</span><span class="s2">&quot;Simulation reset.&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SurveySimulation.genOutSpec"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.genOutSpec">[docs]</a>    <span class="k">def</span> <span class="nf">genOutSpec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tofile</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Join all _outspec dicts from all modules into one output dict</span>
@@ -1239,8 +1273,8 @@
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tofile</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                         <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="n">array_encoder</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">out</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">out</span>
 
 <div class="viewcode-block" id="SurveySimulation.generateHashfName"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.generateHashfName">[docs]</a>    <span class="k">def</span> <span class="nf">generateHashfName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generate cached file Hashname</span>
@@ -1266,8 +1300,30 @@
         <span class="n">fileloc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">cachefname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fileloc</span><span class="p">,</span><span class="n">cachefname</span><span class="o">+</span><span class="n">os</span><span class="o">.</span><span class="n">extsep</span><span class="p">)</span><span class="c1">#join into filepath and fname</span>
         <span class="c1">#Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.</span>
-        <span class="c1">##########################################################</span>
-        <span class="k">return</span> <span class="n">cachefname</span></div></div>
+        <span class="c1">##########################################################</span></div>
+        <span class="k">return</span> <span class="n">cachefname</span>
+
+<div class="viewcode-block" id="SurveySimulation.revisitFilter"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.revisitFilter">[docs]</a>    <span class="k">def</span> <span class="nf">revisitFilter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">tmpCurrentTimeNorm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Helper method for Overloading Revisit Filtering</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sInds - indices of stars still in observation list</span>
+<span class="sd">            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            sInds - indices of stars still in observation list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tovisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span><span class="c1">#tovisit is a boolean array containing the </span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span><span class="c1">#so long as there is at least 1 star left in sInds</span>
+            <span class="n">tovisit</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">==</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]))</span> \
+                    <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVisitsMax</span><span class="p">))</span><span class="c1">#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations</span>
+            <span class="c1">#The above condition should prevent revisits so long as all stars have not been observed</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span><span class="c1">#There is at least one revisit planned in starRevisit</span>
+                <span class="n">dt_rev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="n">tmpCurrentTimeNorm</span><span class="p">)</span><span class="c1">#absolute temporal spacing between revisit and now.</span>
+                <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">dt_rev</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt_max</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#return indice of all revisits within a threshold dt_max of revisit day</span>
+                        <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sInds</span><span class="p">]</span>
+                <span class="n">tovisit</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nVisitsMax</span><span class="p">)</span><span class="c1">#IF duplicates exist in ind_rev, the second occurence takes priority</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tovisit</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div></div>
+        <span class="k">return</span> <span class="n">sInds</span>
 
 <div class="viewcode-block" id="array_encoder"><a class="viewcode-back" href="../../../EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.array_encoder">[docs]</a><span class="k">def</span> <span class="nf">array_encoder</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.</span>
@@ -1317,8 +1373,8 @@
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;_modtype&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__dict__</span>
     <span class="c1"># an object for which no encoding is defined yet</span>
-    <span class="c1">#   as noted above, ordinary types (lists, ints, floats) do not take this path</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not JSON-encode an object of type </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span></div>
+    <span class="c1">#   as noted above, ordinary types (lists, ints, floats) do not take this path</span></div>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not JSON-encode an object of type </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
 </pre></div>
 
           </div>
@@ -1336,12 +1392,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -1352,7 +1410,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

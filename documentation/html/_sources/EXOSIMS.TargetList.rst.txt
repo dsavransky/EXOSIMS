@@ -1,11 +1,11 @@
-EXOSIMS\.TargetList package
-===========================
+EXOSIMS.TargetList package
+==========================
 
 Submodules
 ----------
 
-EXOSIMS\.TargetList\.KnownRVPlanetsTargetList module
-----------------------------------------------------
+EXOSIMS.TargetList.KnownRVPlanetsTargetList module
+--------------------------------------------------
 
 .. automodule:: EXOSIMS.TargetList.KnownRVPlanetsTargetList
     :members:

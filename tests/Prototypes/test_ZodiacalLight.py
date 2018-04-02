@@ -103,7 +103,14 @@ class Test_Zodiacal_prototype(unittest.TestCase):
                 if os.path.isfile(sim.cachefname+'starkfZ'):
                     os.remove(sim.cachefname+'starkfZ')
                 sInds = np.asarray([0])
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
+                Obs = sim.Observatory
+                TL = sim.TargetList
+                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+                OS = sim.OpticalSystem
+                allModes = OS.observingModes
+                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                hashname = sim.cachefname
+                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
                 self.assertEqual(sim.fZ_startSaved.shape[0],1)
 
     def test_calcfZmax(self):
@@ -119,10 +126,17 @@ class Test_Zodiacal_prototype(unittest.TestCase):
                 if os.path.isfile(sim.cachefname+'starkfZ'):
                     os.remove(sim.cachefname+'starkfZ')
                 sInds = np.arange(5)
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
+                Obs = sim.Observatory
+                TL = sim.TargetList
+                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+                OS = sim.OpticalSystem
+                allModes = OS.observingModes
+                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                hashname = sim.cachefname
+                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
                 val = np.zeros(sInds.shape[0])
                 inds = np.zeros(sInds.shape[0])
-                [val, inds] = sim.calcfZmax(sInds)
+                [val, inds] = sim.calcfZmax(sInds, Obs, TL, currentTimeAbs, mode, hashname)
                 try:
                     self.assertIsInstance(inds, type(np.asarray([])))
                 except:
@@ -141,8 +155,15 @@ class Test_Zodiacal_prototype(unittest.TestCase):
                 if os.path.isfile(sim.cachefname+'starkfZ'):
                     os.remove(sim.cachefname+'starkfZ')
                 sInds = np.asarray([0])
-                sim.fZ_startSaved = sim.generate_fZ(sInds)
-                [val, inds] = sim.calcfZmin(sInds)
+                Obs = sim.Observatory
+                TL = sim.TargetList
+                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+                OS = sim.OpticalSystem
+                allModes = OS.observingModes
+                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                hashname = sim.cachefname
+                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+                [val, inds] = sim.calcfZmincalcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
                 try:
                     self.assertIsInstance(inds, type(np.asarray([])))
                 except:

@@ -395,8 +395,32 @@ class SurveySimulation(object):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
                     break
-            else:
+            else:#sInd == None
                 #AdvanceToAbsTime function calls
+                #CASE 1
+                if waitTime is not None:
+                    TK.advanceToAbsTime(Tk.currentTimeAbs + waitTime)
+                else:
+                    #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,mode)
+
+                    #CASE 2
+                    #If There are no observable targets for the rest of the mission
+                    if not ((observableTimes[0][(TK.missionFinishAbs.value*u.d > observableTimes[0].value*u.d)*(observableTimes[0].value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
+                        #Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionFinishNorm
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                        return DRM, None, None
+                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
+                        #dt = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d
+                        #TODO ADD ADVANCE TO WHEN FZMIN OCURS
+                        tAbs = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])
+                        #Advance this time Absolutely
+                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+
+                        self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
+                
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \

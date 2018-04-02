@@ -442,9 +442,9 @@ class linearJScheduler_DDPC(linearJScheduler):
             pIndsChar = []
             TK.allocate_time(modes[0]['syst']['ohTime'])
             for m_i, mode in enumerate(modes):
-                if len(pIndsDet[m_i]) > 0:
-                    if intTime is None or np.max(intTimes_all[0][tochars[0]]) > intTime:
-                        intTime = np.max(intTimes_all[0][tochars[0]])
+                if len(pIndsDet[m_i]) > 0 and np.any(tochars[m_i]):
+                    if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
+                        intTime = np.max(intTimes_all[m_i][tochars[m_i]])
                     pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
                     log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
                             len(pIndsChar[m_i]), len(pIndsDet[m_i]))

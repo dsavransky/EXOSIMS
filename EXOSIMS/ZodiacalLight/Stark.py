@@ -16,7 +16,7 @@ class Stark(ZodiacalLight):
     
     """
 
-    def fZ(self, Obs, TL, sInds, currentTime, mode):
+    def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -26,7 +26,7 @@ class Stark(ZodiacalLight):
                 TargetList class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTimeAbs (astropy Time array):
                 Current absolute mission time in MJD
             mode (dict):
                 Selected observing mode
@@ -38,7 +38,7 @@ class Stark(ZodiacalLight):
         """
         
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTime, eclip=True)
+        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distances (projected in ecliptic plane)
         r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
         # observatory ecliptic longitudes
@@ -47,7 +47,7 @@ class Stark(ZodiacalLight):
         lon0 = (r_obs_lon + 180) % 360
         
         # target star positions vector in heliocentric true ecliptic frame
-        r_targ = TL.starprop(sInds, currentTime, eclip=True)
+        r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
@@ -100,63 +100,31 @@ class Stark(ZodiacalLight):
         
         return fZ
 
-    def generate_fZ(self, sInds, ZL, TL, Obs):
-        """Calculates fZ values for each star over an entire orbit of the sun
-        Args:
-            sInds[nStars] - indicies of stars to generate yearly fZ for
-        Returns:
-            fZ[resolution, sInds] where fZ is the zodiacal light for each star and sInds are the indicies to generate fZ for
-        """
-        #Generate cache Name########################################################################
-        cachefname = self.cachefname+'starkfZ'
-
-        #Check if file exists#######################################################################
-        if os.path.isfile(cachefname):#check if file exists
-            self.vprint("Loading cached fZ from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpfZ = pickle.load(f)
-            return tmpfZ
-
-        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
-        else:
-            self.vprint("Calculating fZ")
-            #OS = self.OpticalSystem#Testing to be sure I can remove this
-            #WA = OS.WA0#Testing to be sure I can remove this
-            ZL = self.ZodiacalLight
-            TL = self.TargetList
-            Obs = self.Observatory
-            startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
-            resolution = [j for j in range(1000)]
-            fZ = np.zeros([sInds.shape[0], len(resolution)])
-            dt = 365.25/len(resolution)*u.d
-            for i in xrange(len(resolution)):#iterate through all times of year
-                time = startTime + dt*resolution[i]
-                fZ[:,i] = ZL.fZ(Obs, TL, sInds, time, self.mode)
-            
-            with open(cachefname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
-                pickle.dump(fZ,fo)
-                self.vprint("Saved cached 1st year fZ to %s"%cachefname)
-            return fZ
-
-    def calcfZmax(self,sInds):
+    def calcfZmax(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
-            sInds[sInds] - the star indicies we would like fZmax and fZmaxInds returned for
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmax and fZmaxInds returned for
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            currentTimeAbs (astropy Time array):
+                current absolute time im MJD
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
         Returns:
-            fZmax[sInds] - the maximum fZ where maxfZ occurs
-            fZmaxInds[sInds] - the indicies as a part of 1000 where the fZmaxInd occurs
+            fZmax[sInds] (astropy Quantity array):
+                the maximum fZ
         """
         #Generate cache Name########################################################################
-        cachefname = self.cachefname + 'fZmax'
+        cachefname = hashname + 'fZmax'
 
-        if hasattr(self,'fZ_startSaved'):
-            self.generate_fZ(sInds)
+        if not hasattr(self,'fZ_startSaved'):
+            self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
 
-        Obs = self.Observatory
-        TL = self.TargetList
-        TK = self.TimeKeeping
-        mode = self.mode
         fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
 
         #Check if file exists#######################################################################
@@ -175,7 +143,7 @@ class Stark(ZodiacalLight):
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ
-            startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs#Array of current times
+            startTime = np.zeros(sInds.shape[0])*u.d + currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in range(1000)]
                 
@@ -202,16 +170,30 @@ class Stark(ZodiacalLight):
                 wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 pickle.dump(tmpDat,fo)
                 self.vprint("Saved cached fZmax to %s"%cachefname)
-            return fZmax, fZmaxInds
+            return fZmax#, fZmaxInds
 
-    def calcfZmin(self, sInds):
+    def calcfZmin(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
-            sInds - the star indicies we would like fZmin and fZminInds returned for
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmin and fZminInds returned for
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            currentTimeAbs (astropy Time array):
+                current absolute time im MJD
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
         Returns:
-            fZmin[sInds] - the minimum fZ
-            fZminInds[sInds] - the indicies as a part of 1000 where the fZminInd occurs
+            fZmin[sInds] (astropy Quantity array):
+                the minimum fZ
         """
+        if not hasattr(self,'fZ_startSaved'):
+            self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+
         fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
         tmpfZ = np.asarray(fZ_startSaved)#convert into an array
         fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
@@ -221,4 +203,5 @@ class Stark(ZodiacalLight):
         for i in xrange(len(sInds)):
             fZmin[i] = min(fZ_matrix[i,:])
             fZminInds[i] = np.argmin(fZ_matrix[i,:])
-        return fZmin, fZminInds
+
+        return fZmin #fZminInds

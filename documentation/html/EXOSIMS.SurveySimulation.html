@@ -4,34 +4,23 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>EXOSIMS.SurveySimulation package &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="EXOSIMS.TargetList package" href="EXOSIMS.TargetList.html" />
-    <link rel="prev" title="EXOSIMS.SurveyEnsemble package" href="EXOSIMS.SurveyEnsemble.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
-  </head>
-  <body>  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -48,7 +37,7 @@
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.KnownRVSurvey.KnownRVSurvey">
 <em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.KnownRVSurvey.</code><code class="descname">KnownRVSurvey</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/KnownRVSurvey.html#KnownRVSurvey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.KnownRVSurvey.KnownRVSurvey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>Survey Simulation module based on Know RV planets</p>
 <p>This class uses estimates of delta magnitude (dMagint) and instrument
 working angle (WAint) for integration time calculation, specific to
@@ -61,7 +50,7 @@ the known RV planets.</p>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.SLSQPScheduler.SLSQPScheduler">
 <em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.SLSQPScheduler.</code><code class="descname">SLSQPScheduler</code><span class="sig-paren">(</span><em>cacheOptTimes=False</em>, <em>staticOptTimes=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SLSQPScheduler.html#SLSQPScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SLSQPScheduler.SLSQPScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>This class implements a continuous optimization of integration times
 using the scipy minimize function with method SLSQP.  ortools with the CBC
 linear solver is used to find an initial solution consistent with the constraints.
@@ -187,12 +176,288 @@ Same size as t</li>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.SS_char_only">
+<span id="exosims-surveysimulation-ss-char-only-module"></span><h2>EXOSIMS.SurveySimulation.SS_char_only module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.SS_char_only" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.SS_char_only.SS_char_only">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.SS_char_only.</code><code class="descname">SS_char_only</code><span class="sig-paren">(</span><em>coeffs=[1, 0, 0, 0], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_char_only.html#SS_char_only"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_char_only.SS_char_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTimes</em>, <em>t_dets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_char_only.html#SS_char_only.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next target based on truncated depth first search
+of linear cost function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>float array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>t_dets</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.observation_characterization">
+<code class="descname">observation_characterization</code><span class="sig-paren">(</span><em>sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_char_only.html#SS_char_only.observation_characterization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.observation_characterization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if characterizations are possible and relevant information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInd</strong> (<em>integer</em>) – Integer index of the star of interest</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for characterization</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Characterization status for each planet orbiting the observed</dt>
+<dd><p class="first last">target star including False Alarm if any, where 1 is full spectrum,
+-1 partial spectrum, and 0 not characterized</p>
+</dd>
+<dt>fZ (astropy Quantity):</dt>
+<dd><p class="first last">Surface brightness of local zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>systemParams (dict):</dt>
+<dd><p class="first last">Dictionary of time-dependant planet properties averaged over the
+duration of the integration</p>
+</dd>
+<dt>SNR (float ndarray):</dt>
+<dd><p class="first last">Characterization signal-to-noise ratio of the observable planets.
+Defaults to None.</p>
+</dd>
+<dt>intTime (astropy Quantity):</dt>
+<dd><p class="first last">Selected star characterization time in units of day. Defaults to None.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">characterized (integer list)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.run_sim">
+<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_char_only.html#SS_char_only.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_char_only.SS_char_only.run_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the survey simulation</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.SS_det_only">
+<span id="exosims-surveysimulation-ss-det-only-module"></span><h2>EXOSIMS.SurveySimulation.SS_det_only module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.SS_det_only" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.SS_det_only.</code><code class="descname">SS_det_only</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>dt_max=1.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<p>SS_det_only is a variant of survey scheduler that performs only detections</p>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_EVPOC">
+<code class="descname">calc_EVPOC</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.calc_EVPOC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_EVPOC" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_int_inflection">
+<code class="descname">calc_int_inflection</code><span class="sig-paren">(</span><em>sInd</em>, <em>fEZ</em>, <em>fZ</em>, <em>WA</em>, <em>mode</em>, <em>ischar=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.calc_int_inflection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_int_inflection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate integration time based on inflection point of Completeness as a function of int_time</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInd</strong> (<em>integer</em>) – Index of the target star</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>fZ</strong> (<em>astropy Quantity</em>) – </li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) – Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The suggested integration time</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int_time (float)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.choose_next_target">
+<code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTime</em>, <em>t_dets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.choose_next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next telescope target based on star completeness and integration time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>slewTime</strong> (<em>float array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>t_dets</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genC">
+<code class="descname">genC</code><span class="sig-paren">(</span><em>Cpath</em>, <em>nplan</em>, <em>xedges</em>, <em>yedges</em>, <em>steps</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.genC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets completeness interpolant for initial completeness</p>
+<p>This function either loads a completeness .comp file based on specified
+Planet Population module or performs Monte Carlo simulations to get
+the 2D completeness values needed for interpolation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Cpath</strong> (<em>string</em>) – path to 2D completeness value array</li>
+<li><strong>nplan</strong> (<em>float</em>) – number of planets used in each simulation</li>
+<li><strong>xedges</strong> (<em>float ndarray</em>) – x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>float ndarray</em>) – y edge of 2d histogram (dMag)</li>
+<li><strong>steps</strong> (<em>integer</em>) – number of simulations to perform</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2D numpy ndarray containing completeness probability density values</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">H (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genplans">
+<code class="descname">genplans</code><span class="sig-paren">(</span><em>nplan</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.genplans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genplans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates planet data needed for Monte Carlo simulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>nplan</strong> (<em>integer</em>) – Number of planets</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet apparent separations in units of AU
+dMag (ndarray):<blockquote>
+<div>Difference in brightness</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">s (astropy Quantity array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.hist">
+<code class="descname">hist</code><span class="sig-paren">(</span><em>nplan</em>, <em>xedges</em>, <em>yedges</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.hist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns completeness histogram for Monte Carlo simulation</p>
+<p>This function uses the inherited Planet Population module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nplan</strong> (<em>float</em>) – number of planets used</li>
+<li><strong>xedges</strong> (<em>float ndarray</em>) – x edge of 2d histogram (separation)</li>
+<li><strong>yedges</strong> (<em>float ndarray</em>) – y edge of 2d histogram (dMag)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2D numpy ndarray containing completeness histogram</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">h (ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.next_target">
+<code class="descname">next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds index of next target star and calculates its integration time.</p>
+<p>This method chooses the next target star index based on which
+stars are available, their integration time, and maximum completeness.
+Returns None if no target could be found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Design Reference Mission, contains the results of one complete</dt>
+<dd><p class="first last">observation (detection and characterization)</p>
+</dd>
+<dt>sInd (integer):</dt>
+<dd><p class="first last">Index of next target star. Defaults to None.</p>
+</dd>
+<dt>intTime (astropy Quantity):</dt>
+<dd><p class="first last">Selected star integration time for detection in units of day.
+Defaults to None.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DRM (dict)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.run_sim">
+<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/SS_det_only.html#SS_det_only.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.run_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the survey simulation</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.SurveySimulation.cbytScheduler">
 <span id="exosims-surveysimulation-cbytscheduler-module"></span><h2>EXOSIMS.SurveySimulation.cbytScheduler module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.cbytScheduler" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.cbytScheduler.cbytScheduler">
 <em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.cbytScheduler.</code><code class="descname">cbytScheduler</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/cbytScheduler.html#cbytScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.cbytScheduler.cbytScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>C-by-t Scheduler</p>
 <p>This class implements a Scheduler that selects the current highest
 Completeness/Integration Time.</p>
@@ -231,7 +496,7 @@ of linear cost function.</p>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler">
 <em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.linearJScheduler.</code><code class="descname">linearJScheduler</code><span class="sig-paren">(</span><em>coeffs=[1, 1, 2, 1], **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/linearJScheduler.html#linearJScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.linearJScheduler.linearJScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>This class implements the linear cost function scheduler described
 in Savransky et al. (2010).</p>
 <blockquote>
@@ -278,8 +543,8 @@ of linear cost function.</p>
 <span id="exosims-surveysimulation-randomwalkscheduler-module"></span><h2>EXOSIMS.SurveySimulation.randomWalkScheduler module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.randomWalkScheduler" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.randomWalkScheduler.randomWalkScheduler">
-<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.randomWalkScheduler.</code><code class="descname">randomWalkScheduler</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/randomWalkScheduler.html#randomWalkScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.randomWalkScheduler.randomWalkScheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.randomWalkScheduler.</code><code class="descname">randomWalkScheduler</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>dt_max=1.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/randomWalkScheduler.html#randomWalkScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.randomWalkScheduler.randomWalkScheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>This class implements a random walk scheduler that selects the
 next target at random from the pool of currently available targets.</p>
 <p>This is useful for mapping out the space of possible mission outcomes
@@ -317,13 +582,18 @@ for a fixed population of planets in order to validate other schedulers.</p>
 <span id="exosims-surveysimulation-starkayo-staticschedule-module"></span><h2>EXOSIMS.SurveySimulation.starkAYO_staticSchedule module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule">
-<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO_staticSchedule.</code><code class="descname">starkAYO_staticSchedule</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.starkAYO_staticSchedule.</code><code class="descname">starkAYO_staticSchedule</code><span class="sig-paren">(</span><em>cacheOptTimes=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
 <p>starkAYO _static Scheduler</p>
 <p>This class implements a Scheduler that creates a list of stars to observe and integration times to observe them. It also selects the best star to observe at any moment in time
 Generates cachedfZ.csv and cachedMaxCbyTtime.csv
 If the above exist but some problem is found, moved_MacCbyTtime.csv and moved_fZAllStars.csv are created</p>
 <p>2nd execution time 2 min 30 sec</p>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcTinit">
+<code class="descname">calcTinit</code><span class="sig-paren">(</span><em>sInds</em>, <em>TL</em>, <em>fZ</em>, <em>fEZ</em>, <em>WA</em>, <em>mode</em>, <em>Cb</em>, <em>Csp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.calcTinit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcTinit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calc_targ_intTime">
 <code class="descname">calc_targ_intTime</code><span class="sig-paren">(</span><em>sInds</em>, <em>startTimes</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.calc_targ_intTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calc_targ_intTime" title="Permalink to this definition">¶</a></dt>
@@ -347,6 +617,16 @@ same dimension as sInds</td>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcfZmax">
+<code class="descname">calcfZmax</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>TK</em>, <em>sInds</em>, <em>mode</em>, <em>fZ_startSaved</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.calcfZmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcfZmax" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcfZmin">
+<code class="descname">calcfZmin</code><span class="sig-paren">(</span><em>sInds</em>, <em>fZ_startSaved</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/starkAYO_staticSchedule.html#starkAYO_staticSchedule.calcfZmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.calcfZmin" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.SurveySimulation.starkAYO_staticSchedule.starkAYO_staticSchedule.choose_next_target">
@@ -430,6 +710,210 @@ fZ[nStars] - zodiacal light for each target</td>
 </dd></dl>
 
 </div>
+<div class="section" id="module-EXOSIMS.SurveySimulation.tieredScheduler">
+<span id="exosims-surveysimulation-tieredscheduler-module"></span><h2>EXOSIMS.SurveySimulation.tieredScheduler module<a class="headerlink" href="#module-EXOSIMS.SurveySimulation.tieredScheduler" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler">
+<em class="property">class </em><code class="descclassname">EXOSIMS.SurveySimulation.tieredScheduler.</code><code class="descname">tieredScheduler</code><span class="sig-paren">(</span><em>coeffs=[2, 1, 8, 4], occHIPs=[], topstars=0, missionPortion=0.75, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.SurveySimulation.SurveySimulation</span></code></a></p>
+<p>This class implements a tiered scheduler that independantly schedules the observatory
+while the starshade slews to its next target.</p>
+<blockquote>
+<div><p>Args:
+as (iterable 4x1):</p>
+<blockquote>
+<div>Cost function coefficients: slew distance, completeness</div></blockquote>
+<dl class="docutils">
+<dt>as (iterable nx1)</dt>
+<dd>List of star HIP numbers to initialize occulter target list.</dd>
+<dt>**specs:</dt>
+<dd>user specified values</dd>
+</dl>
+</div></blockquote>
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.calc_int_inflection">
+<code class="descname">calc_int_inflection</code><span class="sig-paren">(</span><em>t_sInds</em>, <em>fEZ</em>, <em>startTime</em>, <em>WA</em>, <em>mode</em>, <em>ischar=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.calc_int_inflection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.calc_int_inflection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate integration time based on inflection point of Completeness as a function of int_time</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t_sInds</strong> (<em>integer array</em>) – Indices of the target stars</li>
+<li><strong>fEZ</strong> (<em>astropy Quantity array</em>) – Surface brightness of exo-zodiacal light in units of 1/arcsec2</li>
+<li><strong>startTime</strong> (<em>astropy Quantity array</em>) – Surface brightness of local zodiacal light in units of 1/arcsec2</li>
+<li><strong>WA</strong> (<em>astropy Quantity</em>) – Working angle of the planet of interest in units of arcsec</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The suggested integration time</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int_times (astropy quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.choose_next_occulter_target">
+<code class="descname">choose_next_occulter_target</code><span class="sig-paren">(</span><em>old_occ_sInd</em>, <em>occ_sInds</em>, <em>t_dets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.choose_next_occulter_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.choose_next_occulter_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next target for the occulter based on truncated
+depth first search of linear cost function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_occ_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>occ_sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>t_dets</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.choose_next_telescope_target">
+<code class="descname">choose_next_telescope_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>t_dets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.choose_next_telescope_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.choose_next_telescope_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose next telescope target based on star completeness and integration time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>t_dets</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.next_target">
+<code class="descname">next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>old_occ_sInd</em>, <em>detmode</em>, <em>charmode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.next_target" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds index of next target star and calculates its integration time.</p>
+<p>This method chooses the next target star index based on which
+stars are available, their integration time, and maximum completeness.
+Returns None if no target could be found.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star for the telescope</li>
+<li><strong>old_occ_sInd</strong> (<em>integer</em>) – Index of the previous target star for the occulter</li>
+<li><strong>detmode</strong> (<em>dict</em>) – Selected observing mode for detection</li>
+<li><strong>charmode</strong> (<em>dict</em>) – Selected observing mode for characterization</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Contains the results of survey simulation
+sInd (integer):</p>
+<blockquote>
+<div><p>Index of next target star. Defaults to None.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>occ_sInd (integer):</dt>
+<dd><p class="first last">Index of next occulter target star. Defaults to None.</p>
+</dd>
+<dt>t_det (astropy Quantity):</dt>
+<dd><p class="first last">Selected star integration time for detection in units of day.
+Defaults to None.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">DRM (dicts)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.observation_characterization">
+<code class="descname">observation_characterization</code><span class="sig-paren">(</span><em>sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.observation_characterization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.observation_characterization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds if characterizations are possible and relevant information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInd</strong> (<em>integer</em>) – Integer index of the star of interest</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for characterization</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Characterization status for each planet orbiting the observed</dt>
+<dd><p class="first last">target star including False Alarm if any, where 1 is full spectrum,
+-1 partial spectrum, and 0 not characterized</p>
+</dd>
+<dt>fZ (astropy Quantity):</dt>
+<dd><p class="first last">Surface brightness of local zodiacal light in units of 1/arcsec2</p>
+</dd>
+<dt>systemParams (dict):</dt>
+<dd><p class="first last">Dictionary of time-dependant planet properties averaged over the
+duration of the integration</p>
+</dd>
+<dt>SNR (float ndarray):</dt>
+<dd><p class="first last">Characterization signal-to-noise ratio of the observable planets.
+Defaults to None.</p>
+</dd>
+<dt>intTime (astropy Quantity):</dt>
+<dd><p class="first last">Selected star characterization time in units of day. Defaults to None.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">characterized (integer list)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.run_sim">
+<code class="descname">run_sim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/SurveySimulation/tieredScheduler.html#tieredScheduler.run_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.SurveySimulation.tieredScheduler.tieredScheduler.run_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the survey simulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Message printed at the end of a survey simulation.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">mission_end (string)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-EXOSIMS.SurveySimulation">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-EXOSIMS.SurveySimulation" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -447,10 +931,13 @@ fZ[nStars] - zodiacal light for each target</td>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.KnownRVSurvey">EXOSIMS.SurveySimulation.KnownRVSurvey module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.SLSQPScheduler">EXOSIMS.SurveySimulation.SLSQPScheduler module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.SS_char_only">EXOSIMS.SurveySimulation.SS_char_only module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.SS_det_only">EXOSIMS.SurveySimulation.SS_det_only module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.cbytScheduler">EXOSIMS.SurveySimulation.cbytScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.linearJScheduler">EXOSIMS.SurveySimulation.linearJScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.randomWalkScheduler">EXOSIMS.SurveySimulation.randomWalkScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule">EXOSIMS.SurveySimulation.starkAYO_staticSchedule module</a></li>
+<li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation.tieredScheduler">EXOSIMS.SurveySimulation.tieredScheduler module</a></li>
 <li><a class="reference internal" href="#module-EXOSIMS.SurveySimulation">Module contents</a></li>
 </ul>
 </li>
@@ -459,10 +946,6 @@ fZ[nStars] - zodiacal light for each target</td>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
-      <li>Previous: <a href="EXOSIMS.SurveyEnsemble.html" title="previous chapter">EXOSIMS.SurveyEnsemble package</a></li>
-      <li>Next: <a href="EXOSIMS.TargetList.html" title="next chapter">EXOSIMS.TargetList package</a></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -475,12 +958,14 @@ fZ[nStars] - zodiacal light for each target</td>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -491,7 +976,7 @@ fZ[nStars] - zodiacal light for each target</td>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

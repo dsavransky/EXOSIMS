@@ -1,0 +1,430 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EXOSIMS.Observatory.SotoStarshade &#8212; EXOSIMS 1.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.Observatory.SotoStarshade</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Observatory.ObservatoryL2Halo</span> <span class="k">import</span> <span class="n">ObservatoryL2Halo</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="k">import</span> <span class="n">solve_bvp</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="k">as</span> <span class="nn">optimize</span>
+
+<span class="n">EPS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+
+
+<div class="viewcode-block" id="SotoStarshade"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade">[docs]</a><span class="k">class</span> <span class="nc">SotoStarshade</span><span class="p">(</span><span class="n">ObservatoryL2Halo</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; StarShade Observatory class</span>
+<span class="sd">    This class is implemented at L2 and contains all variables, functions, </span>
+<span class="sd">    and integrators to calculate occulter dynamics. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">missionStart</span><span class="o">=</span><span class="mf">60634.</span><span class="p">,</span><span class="n">orbit_datapath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">):</span> 
+
+        <span class="n">ObservatoryL2Halo</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SotoStarshade.boundary_conditions"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.boundary_conditions">[docs]</a>    <span class="k">def</span> <span class="nf">boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rA</span><span class="p">,</span><span class="n">rB</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates boundary conditions for solving a boundary value problem</span>
+<span class="sd">        </span>
+<span class="sd">        This method returns the boundary conditions for the starshade transfer</span>
+<span class="sd">        trajectory between the lines of sight of two different stars. Point A</span>
+<span class="sd">        corresponds to the starshade alignment with star A; Point B, with star B.</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            rA (float 1x3 ndarray):</span>
+<span class="sd">                Starshade position vector aligned with current star of interest</span>
+<span class="sd">            rB (float 1x3 ndarray):</span>
+<span class="sd">                Starshade position vector aligned with next star of interest</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BC (float 1x6 ndarray):</span>
+<span class="sd">                Star position vector in rotating frame in units of AU</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+        <span class="n">BC1</span> <span class="o">=</span> <span class="n">rA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">BC2</span> <span class="o">=</span> <span class="n">rA</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">BC3</span> <span class="o">=</span> <span class="n">rA</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        
+        <span class="n">BC4</span> <span class="o">=</span> <span class="n">rB</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rB</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">BC5</span> <span class="o">=</span> <span class="n">rB</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rB</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">BC6</span> <span class="o">=</span> <span class="n">rB</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rB</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        
+        <span class="n">BC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">BC1</span><span class="p">,</span><span class="n">BC2</span><span class="p">,</span><span class="n">BC3</span><span class="p">,</span><span class="n">BC4</span><span class="p">,</span><span class="n">BC5</span><span class="p">,</span><span class="n">BC6</span><span class="p">])</span>
+        </div>
+        <span class="k">return</span> <span class="n">BC</span>
+    
+<div class="viewcode-block" id="SotoStarshade.send_it"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.send_it">[docs]</a>    <span class="k">def</span> <span class="nf">send_it</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">,</span><span class="n">tB</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Solves boundary value problem between starshade star alignments</span>
+<span class="sd">        </span>
+<span class="sd">        This method solves the boundary value problem for starshade star alignments</span>
+<span class="sd">        with two given stars at times tA and tB. It uses scipy&#39;s solve_bvp method.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (float 1x3 ndarray):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            nA (integer):</span>
+<span class="sd">                Integer index of the current star of interest</span>
+<span class="sd">            nB (integer):</span>
+<span class="sd">                Integer index of the next star of interest</span>
+<span class="sd">            tA (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">            tB (astropy Time array):</span>
+<span class="sd">                Absolute mission time for next star alignment in MJD</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            s (float nx6 ndarray):</span>
+<span class="sd">                State vectors in rotating frame in normalized units</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">angle</span><span class="p">,</span><span class="n">uA</span><span class="p">,</span><span class="n">uB</span><span class="p">,</span><span class="n">r_tscp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_angularSep</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">,</span><span class="n">tB</span><span class="p">)</span>
+        
+        <span class="c1">#position vector of occulter in heliocentric frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rA</span> <span class="o">=</span> <span class="n">uA</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;au&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">r_tscp</span><span class="p">[</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rB</span> <span class="o">=</span> <span class="n">uB</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">occulterSep</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;au&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">r_tscp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="n">a</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">tA</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">equinox</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;yr&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">yr</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">tB</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">equinox</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;yr&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">u</span><span class="o">.</span><span class="n">yr</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        
+        <span class="c1">#running shooting algorithm</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        
+        <span class="n">guess</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rB</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">sG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">rA</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> 
+                       <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">guess</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">guess</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">guess</span><span class="p">[</span><span class="mi">2</span><span class="p">])])</span>               
+            
+        <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_bvp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equationsOfMotion_CRTBP</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">boundary_conditions</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">sG</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+        
+        <span class="n">s</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">T</span>
+        </div>
+        <span class="k">return</span> <span class="n">s</span>
+    
+    
+<div class="viewcode-block" id="SotoStarshade.calculate_dV"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_dV">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_dV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">tA</span><span class="p">):</span>  
+        <span class="sd">&quot;&quot;&quot;Finds the change in velocity needed to transfer to a new star line of sight</span>
+<span class="sd">        </span>
+<span class="sd">        This method sums the total delta-V needed to transfer from one star</span>
+<span class="sd">        line of sight to another. It determines the change in velocity to move from</span>
+<span class="sd">        one station-keeping orbit to a transfer orbit at the current time, then from</span>
+<span class="sd">        the transfer orbit to the next station-keeping orbit at currentTime + dt.</span>
+<span class="sd">        Station-keeping orbits are modeled as discrete boundary value problems.</span>
+<span class="sd">        This method can handle multiple indeces for the next target stars and calculates</span>
+<span class="sd">        the dVs of each trajectory from the same starting star.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            dt (float 1x1 ndarray):</span>
+<span class="sd">                Number of days corresponding to starshade slew time</span>
+<span class="sd">            TL (float 1x3 ndarray):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            nA (integer):</span>
+<span class="sd">                Integer index of the current star of interest</span>
+<span class="sd">            N  (integer):</span>
+<span class="sd">                Integer index of the next star(s) of interest</span>
+<span class="sd">            tA (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dV (float nx6 ndarray):</span>
+<span class="sd">                State vectors in rotating frame in normalized units</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">dt</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
+        <span class="k">if</span> <span class="n">nA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if only calculating one trajectory, this allows loop to run</span>
+            <span class="k">if</span> <span class="n">N</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">N</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">N</span><span class="p">])</span>
+            
+            <span class="c1"># time to reach star B&#39;s line of sight</span>
+            <span class="n">tB</span> <span class="o">=</span> <span class="n">tA</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+            
+            <span class="c1"># initializing arrays for BVP state solutions</span>
+            <span class="n">sol_slew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="mi">6</span><span class="p">])</span>
+            <span class="n">sol_skA</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="mi">6</span><span class="p">])</span>
+            <span class="n">sol_skB</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="mi">6</span><span class="p">])</span>
+    
+            <span class="c1"># simulating station-keeping trajectory for starting star A at time tA</span>
+            <span class="n">solA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_it</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">tA</span> <span class="o">-</span> <span class="mi">15</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">min</span><span class="p">,</span><span class="n">tA</span><span class="p">)</span> 
+            <span class="n">sol_skA</span> <span class="o">=</span> <span class="n">solA</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">)):</span>   
+                <span class="c1"># simulating slew trajectory from star A at tA to star B at tB</span>
+                <span class="n">sol</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_it</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">N</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="n">tA</span><span class="p">,</span><span class="n">tB</span><span class="p">)</span>
+                <span class="n">sol_slew</span><span class="p">[:,</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">sol</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+                
+                <span class="c1"># simulating station-keeping trajectory for final star B at time tB</span>
+                <span class="n">solB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_it</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">N</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="n">N</span><span class="p">[</span><span class="n">x</span><span class="p">],</span><span class="n">tB</span><span class="p">,</span><span class="n">tB</span> <span class="o">+</span> <span class="mi">15</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">min</span><span class="p">)</span>
+                <span class="n">sol_skB</span><span class="p">[</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">solB</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="c1"># starshade velocities at both endpoints of the slew trajectory</span>
+            <span class="n">v_slewA</span> <span class="o">=</span> <span class="n">sol_slew</span><span class="p">[</span> <span class="mi">0</span><span class="p">,:,</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">year</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> 
+            <span class="n">v_slewB</span> <span class="o">=</span> <span class="n">sol_slew</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:,</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">year</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> 
+            
+            <span class="c1"># station-keeping velocities JUST before and after the slew trajectory</span>
+            <span class="n">v_skA</span> <span class="o">=</span> <span class="n">sol_skA</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">year</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="n">v_skB</span> <span class="o">=</span> <span class="n">sol_skB</span><span class="p">[:,</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">year</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            
+            <span class="c1"># delta-Vs at both endpoints of the slew trajectory</span>
+            <span class="n">dvA</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_slewA</span><span class="o">-</span><span class="n">v_skA</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+            <span class="n">dvB</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_slewB</span><span class="o">-</span><span class="n">v_skB</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># total delta-V needed to transfer to new star line of sight</span>
+            <span class="n">dV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dvA</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dvB</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
+        <span class="k">return</span> <span class="n">dV</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">m</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>    
+    
+
+<div class="viewcode-block" id="SotoStarshade.minimize_slewTimes"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.minimize_slewTimes">[docs]</a>    <span class="k">def</span> <span class="nf">minimize_slewTimes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Minimizes the slew time for a starshade transferring to a new star line of sight</span>
+<span class="sd">        </span>
+<span class="sd">        This method uses scipy&#39;s optimization module to minimize the slew time for</span>
+<span class="sd">        a starshade transferring between one star&#39;s line of sight to another&#39;s under </span>
+<span class="sd">        the constraint that the total change in velocity cannot exceed more than a </span>
+<span class="sd">        certain percentage of the total fuel on board the starshade. </span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (float 1x3 ndarray):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            nA (integer):</span>
+<span class="sd">                Integer index of the current star of interest</span>
+<span class="sd">            nB (integer):</span>
+<span class="sd">                Integer index of the next star of interest</span>
+<span class="sd">            tA (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            opt_slewTime (float):</span>
+<span class="sd">                Optimal slew time in days for starshade transfer to a new line of sight</span>
+<span class="sd">            opt_dV (float):</span>
+<span class="sd">                Optimal total change in velocity in m/s for starshade line of sight transfer</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">def</span> <span class="nf">slewTime_objFun</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">dt</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="k">return</span> <span class="n">dt</span>
+        
+        <span class="k">def</span> <span class="nf">slewTime_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">,</span><span class="n">percent</span><span class="p">):</span>
+            <span class="n">dV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_dV</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">)</span>
+            <span class="n">dV_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DV_tot</span> <span class="o">*</span> <span class="n">percent</span> 
+        
+            <span class="k">return</span> <span class="n">dV_max</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">dV</span>
+        
+        <span class="n">dt_guess</span><span class="o">=</span><span class="mi">20</span>
+        <span class="n">percent</span><span class="o">=</span><span class="mf">0.05</span>        
+        <span class="n">Tol</span><span class="o">=</span><span class="mf">1e-3</span>
+        
+        <span class="n">t0</span> <span class="o">=</span> <span class="p">[</span><span class="n">dt_guess</span><span class="p">]</span>
+        
+        <span class="n">res</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slewTime_objFun</span><span class="p">,</span><span class="n">t0</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;COBYLA&#39;</span><span class="p">,</span>
+                        <span class="n">constraints</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ineq&#39;</span><span class="p">,</span> <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">slewTime_constraints</span><span class="p">,</span><span class="s1">&#39;args&#39;</span><span class="p">:([</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">,</span><span class="n">percent</span><span class="p">])},</span>
+                        <span class="n">tol</span><span class="o">=</span><span class="n">Tol</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;disp&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+                        
+        <span class="n">opt_slewTime</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">opt_dV</span>       <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_dV</span><span class="p">(</span><span class="n">opt_slewTime</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">)</span>
+        </div>
+        <span class="k">return</span> <span class="n">opt_slewTime</span><span class="p">,</span><span class="n">opt_dV</span>
+    
+<div class="viewcode-block" id="SotoStarshade.minimize_fuelUsage"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.minimize_fuelUsage">[docs]</a>    <span class="k">def</span> <span class="nf">minimize_fuelUsage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Minimizes the fuel usage of a starshade transferring to a new star line of sight</span>
+<span class="sd">        </span>
+<span class="sd">        This method uses scipy&#39;s optimization module to minimize the fuel usage for</span>
+<span class="sd">        a starshade transferring between one star&#39;s line of sight to another&#39;s. The </span>
+<span class="sd">        total slew time for the transfer is bounded with some dt_min and dt_max.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (float 1x3 ndarray):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            nA (integer):</span>
+<span class="sd">                Integer index of the current star of interest</span>
+<span class="sd">            nB (integer):</span>
+<span class="sd">                Integer index of the next star of interest</span>
+<span class="sd">            tA (astropy Time array):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            opt_slewTime (float):</span>
+<span class="sd">                Optimal slew time in days for starshade transfer to a new line of sight</span>
+<span class="sd">            opt_dV (float):</span>
+<span class="sd">                Optimal total change in velocity in m/s for starshade line of sight transfer</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">def</span> <span class="nf">fuelUsage_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">dt_min</span><span class="p">,</span><span class="n">dt_max</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">dt_max</span> <span class="o">-</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span> <span class="o">-</span> <span class="n">dt_min</span>
+        
+        <span class="n">dt_guess</span><span class="o">=</span><span class="mi">20</span>
+        <span class="n">dt_min</span><span class="o">=</span><span class="mi">1</span>
+        <span class="n">dt_max</span><span class="o">=</span><span class="mi">40</span>        
+        <span class="n">Tol</span><span class="o">=</span><span class="mf">1e-3</span>
+        
+        <span class="n">t0</span> <span class="o">=</span> <span class="p">[</span><span class="n">dt_guess</span><span class="p">]</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculate_dV</span><span class="p">,</span><span class="n">t0</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;COBYLA&#39;</span><span class="p">,</span>
+                        <span class="n">constraints</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ineq&#39;</span><span class="p">,</span> <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fuelUsage_constraints</span><span class="p">,</span><span class="s1">&#39;args&#39;</span><span class="p">:([</span><span class="n">dt_min</span><span class="p">,</span><span class="n">dt_max</span><span class="p">])},</span>
+                        <span class="n">tol</span><span class="o">=</span><span class="n">Tol</span><span class="p">,</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span><span class="n">nA</span><span class="p">,</span><span class="n">nB</span><span class="p">,</span><span class="n">tA</span><span class="p">),</span><span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;disp&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+        <span class="n">opt_slewTime</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">opt_dV</span>   <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fun</span>
+        </div>
+        <span class="k">return</span> <span class="n">opt_slewTime</span><span class="p">,</span><span class="n">opt_dV</span>
+
+<div class="viewcode-block" id="SotoStarshade.calculate_slewTimes"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_slewTimes">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_slewTimes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">TL</span><span class="p">,</span><span class="n">old_sInd</span><span class="p">,</span><span class="n">sInds</span><span class="p">,</span><span class="n">currentTime</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds slew times and separation angles between target stars</span>
+<span class="sd">        </span>
+<span class="sd">        This method determines the slew times of an occulter spacecraft needed</span>
+<span class="sd">        to transfer from one star&#39;s line of sight to all others in a given </span>
+<span class="sd">        target list.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            TL (TargetList module):</span>
+<span class="sd">                TargetList class object</span>
+<span class="sd">            old_sInd (integer):</span>
+<span class="sd">                Integer index of the most recently observed star</span>
+<span class="sd">            sInds (integer):</span>
+<span class="sd">                Integer indeces of the star of interest</span>
+<span class="sd">            currentTime (astropy Time):</span>
+<span class="sd">                Current absolute mission time in MJD</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            sInds (integer):</span>
+<span class="sd">                Integer indeces of the star of interest</span>
+<span class="sd">            sd (astropy Quantity):</span>
+<span class="sd">                Angular separation between stars in rad</span>
+<span class="sd">            slewTimes (astropy Quantity):</span>
+<span class="sd">                Time to transfer to new star line of sight in units of days</span>
+<span class="sd">            dV (astropy Quantity):</span>
+<span class="sd">                Delta-V used to transfer to new star line of sight in units of m/s</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">deg</span>
+            
+        <span class="k">if</span> <span class="n">old_sInd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># position vector of previous target star</span>
+            <span class="n">r_old</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">old_sInd</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">u_old</span> <span class="o">=</span> <span class="n">r_old</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_old</span><span class="p">)</span>
+            <span class="c1"># position vector of new target stars</span>
+            <span class="n">r_new</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">currentTime</span><span class="p">)</span>
+            <span class="n">u_new</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_new</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="c1"># angle between old and new stars</span>
+            <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_old</span><span class="p">,</span> <span class="n">u_new</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+    
+            <span class="n">slewTimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constTOF</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+            </div>
+        <span class="k">return</span> <span class="n">sd</span><span class="p">,</span><span class="n">slewTimes</span>
+    
+        
+<div class="viewcode-block" id="SotoStarshade.log_occulterResults"><a class="viewcode-back" href="../../../EXOSIMS.Observatory.html#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.log_occulterResults">[docs]</a>    <span class="k">def</span> <span class="nf">log_occulterResults</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">DRM</span><span class="p">,</span><span class="n">slewTimes</span><span class="p">,</span><span class="n">sInd</span><span class="p">,</span><span class="n">sd</span><span class="p">,</span><span class="n">dV</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the given DRM to include occulter values and results</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            DRM (dict):</span>
+<span class="sd">                Design Reference Mission, contains the results of one complete</span>
+<span class="sd">                observation (detection and characterization)</span>
+<span class="sd">            slewTimes (astropy Quantity):</span>
+<span class="sd">                Time to transfer to new star line of sight in units of days</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Integer index of the star of interest</span>
+<span class="sd">            sd (astropy Quantity):</span>
+<span class="sd">                Angular separation between stars in rad</span>
+<span class="sd">            dV (astropy Quantity):</span>
+<span class="sd">                Delta-V used to transfer to new star line of sight in units of m/s</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            DRM (dict):</span>
+<span class="sd">                Design Reference Mission, contains the results of one complete</span>
+<span class="sd">                observation (detection and characterization)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slewTimes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sd</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+        
+        <span class="n">dV</span> <span class="o">=</span> <span class="n">dV</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+        <span class="n">slew_mass_used</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">*</span> <span class="p">(</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">dV</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slewIsp</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">g0</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dV</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slew_mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-</span> <span class="n">slew_mass_used</span>
+        <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;scMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scMass</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+        </div></div>
+        <span class="k">return</span> <span class="n">DRM</span>
+    
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

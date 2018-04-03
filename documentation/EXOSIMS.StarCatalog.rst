@@ -1,37 +1,29 @@
-EXOSIMS\.StarCatalog package
-============================
+EXOSIMS.StarCatalog package
+===========================
 
 Submodules
 ----------
 
-EXOSIMS\.StarCatalog\.EXOCAT1 module
-------------------------------------
+EXOSIMS.StarCatalog.EXOCAT1 module
+----------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.EXOCAT1
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS\.StarCatalog\.SIMBAD300Catalog module
----------------------------------------------
+EXOSIMS.StarCatalog.SIMBAD300Catalog module
+-------------------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.SIMBAD300Catalog
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS\.StarCatalog\.SIMBADCatalog module
-------------------------------------------
+EXOSIMS.StarCatalog.SIMBADCatalog module
+----------------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.SIMBADCatalog
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS\.StarCatalog\.ToyCat1 module
-------------------------------------
-
-.. automodule:: EXOSIMS.StarCatalog.ToyCat1
     :members:
     :undoc-members:
     :show-inheritance:

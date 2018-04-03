@@ -1,11 +1,11 @@
-EXOSIMS\.PostProcessing package
-===============================
+EXOSIMS.PostProcessing package
+==============================
 
 Submodules
 ----------
 
-EXOSIMS\.PostProcessing\.PostProcessing2 module
------------------------------------------------
+EXOSIMS.PostProcessing.PostProcessing2 module
+---------------------------------------------
 
 .. automodule:: EXOSIMS.PostProcessing.PostProcessing2
     :members:

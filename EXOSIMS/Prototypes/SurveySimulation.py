@@ -88,6 +88,9 @@ class SurveySimulation(object):
             Working angle used for integration time calculation in units of arcsec
         dMagint (float ndarray):
             Delta magnitude used for integration time calculation
+        scaleWAdMag (bool):
+            If True, rescale dMagint and WAint for all stars based on luminosity and 
+            to ensure that WA is within the IWA/OWA. Defaults False.
         
     """
 
@@ -95,7 +98,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, dt_max=1., **specs):
+            WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, **specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -210,37 +213,55 @@ class SurveySimulation(object):
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
+        # If inputs are scalars, save scalars to outspec, otherwise save full lists
         Comp = self.Completeness
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        dMagint = Comp.dMagLim if dMagint is None else float(dMagint)
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+
+        if dMagint is None:
+            dMagint = Comp.dMagLim 
         if WAint is None:
-            mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
             WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
-        else:
-            WAint = float(WAint)*u.arcsec
-        # transform into arrays of length TargetList.nStars
-        self.dMagint = np.array([dMagint]*TL.nStars)
-        self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
-        for i,Lstar in enumerate(TL.L):
-            if Lstar <1.6:
-               self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
-            else:
-                self.dMagint[i] = Comp.dMagLim
-
-            EEID = (np.sqrt(Lstar)/TL.dist[i]).value*u.arcsec
-            if EEID < OS.IWA:
-                EEID = OS.IWA
-            elif EEID > OS.OWA:
-                EEID = OS.OWA
-
-            self.WAint[i] = EEID
-    
-        # add scalar values of WAint and dMagint to outspec
-        self._outspec['dMagint'] = self.dMagint[0]
-        self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            WAint = WAint.to('arcsec')
         
+        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+
+        if len(self.dMagint) is 1:
+            self._outspec['dMagint'] = self.dMagint[0]
+            self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
+        else:
+            assert (len(self.dMagint) == TL.nStars), \
+                    "Input dMagint array doesn't match number of target stars."
+            self._outspec['dMagint'] = self.dMagint
+        
+        if len(self.WAint) is 1:
+            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
+        else:
+            assert (len(self.WAint) == TL.nStars), \
+                    "Input WAint array doesn't match number of target stars."
+            self._outspec['WAint'] = self.WAint.to('arcsec').value
+        
+        #if requested, rescale based on luminosities and mode limits
+        if scaleWAdMag:
+            for i,Lstar in enumerate(TL.L):
+                if (Lstar < 1.6) and (Lstar > 0):
+                   self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
+                else:
+                    self.dMagint[i] = Comp.dMagLim
+
+                EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
+                if EEID < mode['IWA']:
+                    EEID = mode['IWA']
+                elif EEID > mode['OWA']:
+                    EEID = mode['OWA']
+
+                self.WAint[i] = EEID
+        self._outspec['scaleWAdMag'] = scaleWAdMag 
+
         # initialize arrays updated in run_sim()
         self.DRM = []
         self.fullSpectra = np.zeros(SU.nPlans, dtype=int)

@@ -1,0 +1,629 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EXOSIMS.SurveySimulation.SS_det_only &#8212; EXOSIMS 1.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.SurveySimulation.SS_det_only</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.SurveySimulation</span> <span class="k">import</span> <span class="n">SurveySimulation</span>
+<span class="kn">import</span> <span class="nn">EXOSIMS</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">astropy.constants</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<div class="viewcode-block" id="SS_det_only"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only">[docs]</a><span class="k">class</span> <span class="nc">SS_det_only</span><span class="p">(</span><span class="n">SurveySimulation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    SS_det_only is a variant of survey scheduler that performs only detections</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SS_det_only.run_sim"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.run_sim">[docs]</a>    <span class="k">def</span> <span class="nf">run_sim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the survey simulation </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">SU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SimulatedUniverse</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        
+        <span class="c1"># TODO: start using this self.currentSep</span>
+        <span class="c1"># set occulter separation if haveOcculter</span>
+        <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currentSep</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">occulterSep</span>
+        
+        <span class="c1"># choose observing modes selected for detection (default marked with a flag)</span>
+        <span class="n">allModes</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">observingModes</span>
+        <span class="n">det_mode</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;detectionMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="n">allModes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># and for characterization (default is first spectro/IFS mode)</span>
+        <span class="n">spectroModes</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">mode</span><span class="p">:</span> <span class="s1">&#39;spec&#39;</span> <span class="ow">in</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;inst&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">allModes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">spectroModes</span><span class="p">):</span>
+            <span class="n">char_mode</span> <span class="o">=</span> <span class="n">spectroModes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># if no spectro mode, default char mode is first observing mode</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">char_mode</span> <span class="o">=</span> <span class="n">allModes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="c1"># begin Survey, and loop until mission is finished</span>
+        <span class="n">log_begin</span> <span class="o">=</span> <span class="s1">&#39;OB</span><span class="si">%s</span><span class="s1">: survey beginning.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_begin</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">log_begin</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
+            
+            <span class="c1"># save the start time of this observation (BEFORE any OH/settling/slew time)</span>
+            <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># acquire the NEXT TARGET star index and create DRM</span>
+            <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">det_intTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_target</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">det_mode</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">det_intTime</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Integration time can&#39;t be 0.&quot;</span>
+            
+            <span class="k">if</span> <span class="n">sInd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># get the index of the selected target for the extended list</span>
+                <span class="k">if</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">&gt;</span> <span class="n">TK</span><span class="o">.</span><span class="n">missionLife</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;plan_detected&#39;</span><span class="p">]]):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starExtended</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;star_ind&#39;</span><span class="p">]))</span>
+                
+                <span class="c1"># beginning of observation, start to populate DRM</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;star_ind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sInd</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;star_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">Name</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;OB_nb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">pInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">SU</span><span class="o">.</span><span class="n">plan2star</span> <span class="o">==</span> <span class="n">sInd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;plan_inds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pInds</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                <span class="n">log_obs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;  Observation #</span><span class="si">%s</span><span class="s1">, target #</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1"> with </span><span class="si">%s</span><span class="s1"> planet(s), &#39;</span> \
+                        <span class="o">+</span> <span class="s1">&#39;mission time: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">sInd</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">),</span> 
+                        <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_obs</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="n">log_obs</span>
+                
+                <span class="c1"># PERFORM DETECTION and populate revisit list attribute</span>
+                <span class="n">detected</span><span class="p">,</span> <span class="n">det_fZ</span><span class="p">,</span> <span class="n">det_systemParams</span><span class="p">,</span> <span class="n">det_SNR</span><span class="p">,</span> <span class="n">FA</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">observation_detection</span><span class="p">(</span><span class="n">sInd</span><span class="p">,</span> <span class="n">det_intTime</span><span class="p">,</span> <span class="n">det_mode</span><span class="p">)</span>
+                <span class="c1"># update the occulter wet mass</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_occulter_mass</span><span class="p">(</span><span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">det_intTime</span><span class="p">,</span> <span class="s1">&#39;det&#39;</span><span class="p">)</span>
+                <span class="c1"># populate the DRM with detection results</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">det_intTime</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">detected</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_SNR&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">det_SNR</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_fZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">det_fZ</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;1/arcsec2&#39;</span><span class="p">)</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">det_systemParams</span>
+                
+                <span class="n">char_intTime</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">lenChar</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">FA</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">pInds</span><span class="p">)</span>
+                <span class="n">characterized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">lenChar</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">char_SNR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">lenChar</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">char_fZ</span> <span class="o">=</span> <span class="mf">0.</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">char_systemParams</span> <span class="o">=</span> <span class="n">SU</span><span class="o">.</span><span class="n">dump_system_params</span><span class="p">(</span><span class="n">sInd</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">char_intTime</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Integration time can&#39;t be 0.&quot;</span>
+                <span class="c1"># update the occulter wet mass</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">char_intTime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">DRM</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_occulter_mass</span><span class="p">(</span><span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">char_intTime</span><span class="p">,</span> <span class="s1">&#39;char&#39;</span><span class="p">)</span>
+
+                <span class="c1"># populate the DRM with observation modes</span>
+                <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">det_mode</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_mode&#39;</span><span class="p">][</span><span class="s1">&#39;inst&#39;</span><span class="p">],</span> <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;det_mode&#39;</span><span class="p">][</span><span class="s1">&#39;syst&#39;</span><span class="p">]</span>
+                <span class="c1"># DRM[&#39;char_mode&#39;] = dict(char_mode)</span>
+                <span class="c1"># del DRM[&#39;char_mode&#39;][&#39;inst&#39;], DRM[&#39;char_mode&#39;][&#39;syst&#39;]</span>
+                
+                <span class="c1"># append result values to self.DRM</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">DRM</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DRM</span><span class="p">)</span>
+                
+                <span class="c1"># calculate observation end time</span>
+                <span class="n">TK</span><span class="o">.</span><span class="n">obsEnd</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                
+                <span class="c1"># with prototype TimeKeeping, if no OB duration was specified, advance</span>
+                <span class="c1"># to the next OB with timestep equivalent to time spent on one target</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">OBduration</span><span class="p">):</span>
+                    <span class="n">obsLength</span> <span class="o">=</span> <span class="p">(</span><span class="n">TK</span><span class="o">.</span><span class="n">obsEnd</span> <span class="o">-</span> <span class="n">TK</span><span class="o">.</span><span class="n">obsStart</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                    <span class="n">TK</span><span class="o">.</span><span class="n">next_observing_block</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="n">obsLength</span><span class="p">)</span>
+                
+                <span class="c1"># with occulter, if spacecraft fuel is depleted, exit loop</span>
+                <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="ow">and</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">&lt;</span> <span class="n">Obs</span><span class="o">.</span><span class="n">dryMass</span><span class="p">:</span>
+                    <span class="nb">print</span> <span class="s1">&#39;Total fuel mass exceeded at </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">TK</span><span class="o">.</span><span class="n">obsEnd</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">break</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dtsim</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">s</span>
+            <span class="n">log_end</span> <span class="o">=</span> <span class="s2">&quot;Mission complete: no more time available.</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                    <span class="o">+</span> <span class="s2">&quot;Simulation duration: </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">dtsim</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)</span> \
+                    <span class="o">+</span> <span class="s2">&quot;Results stored in SurveySimulation.DRM (Design Reference Mission).&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">log_end</span><span class="p">)</span></div>
+            <span class="nb">print</span> <span class="n">log_end</span>
+
+<div class="viewcode-block" id="SS_det_only.next_target"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.next_target">[docs]</a>    <span class="k">def</span> <span class="nf">next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_sInd</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds index of next target star and calculates its integration time.</span>
+<span class="sd">        </span>
+<span class="sd">        This method chooses the next target star index based on which</span>
+<span class="sd">        stars are available, their integration time, and maximum completeness.</span>
+<span class="sd">        Returns None if no target could be found.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            old_sInd (integer):</span>
+<span class="sd">                Index of the previous target star</span>
+<span class="sd">            mode (dict):</span>
+<span class="sd">                Selected observing mode for detection</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            DRM (dict):</span>
+<span class="sd">                Design Reference Mission, contains the results of one complete</span>
+<span class="sd">                observation (detection and characterization)</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Index of next target star. Defaults to None.</span>
+<span class="sd">            intTime (astropy Quantity):</span>
+<span class="sd">                Selected star integration time for detection in units of day. </span>
+<span class="sd">                Defaults to None.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+        
+        <span class="c1"># create DRM</span>
+        <span class="n">DRM</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># allocate settling time + overhead time</span>
+        <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">Obs</span><span class="o">.</span><span class="n">settlingTime</span> <span class="o">+</span> <span class="n">mode</span><span class="p">[</span><span class="s1">&#39;syst&#39;</span><span class="p">][</span><span class="s1">&#39;ohTime&#39;</span><span class="p">])</span>
+        
+        <span class="c1"># in case of an occulter, initialize slew time factor</span>
+        <span class="c1"># (add transit time and reduce starshade mass)</span>
+        <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">ao</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">thrust</span><span class="o">/</span><span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span>
+            <span class="n">slewTime_fac</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">Obs</span><span class="o">.</span><span class="n">occulterSep</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ao</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">Obs</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">/</span><span class="mf">2.</span> <span class="o">-</span> 
+                    <span class="n">Obs</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">4.</span><span class="p">))</span><span class="o">.</span><span class="n">decompose</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;d2&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># now, start to look for available targets</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
+            <span class="c1"># 1/ initialize arrays</span>
+            <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+            <span class="n">fZs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">/</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">intTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">d</span>
+            <span class="n">tovisit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span>
+            
+            <span class="c1"># 2/ find spacecraft orbital START positions (if occulter, positions </span>
+            <span class="c1"># differ for each star) and filter out unavailable targets</span>
+            <span class="n">sd</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="c1"># find angle between old and new stars, default to pi/2 for first target</span>
+                <span class="k">if</span> <span class="n">old_sInd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">90</span><span class="p">)]</span><span class="o">*</span><span class="n">TL</span><span class="o">.</span><span class="n">nStars</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># position vector of previous target star</span>
+                    <span class="n">r_old</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">old_sInd</span><span class="p">,</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">u_old</span> <span class="o">=</span> <span class="n">r_old</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_old</span><span class="p">)</span>
+                    <span class="c1"># position vector of new target stars</span>
+                    <span class="n">r_new</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">starprop</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span><span class="p">)</span>
+                    <span class="n">u_new</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_new</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">T</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">r_new</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+                    <span class="c1"># angle between old and new stars</span>
+                    <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u_old</span><span class="p">,</span> <span class="n">u_new</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+                <span class="c1"># calculate slew time</span>
+                <span class="n">slewTimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">slewTime_fac</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">sd</span><span class="o">/</span><span class="mf">2.</span><span class="p">))</span>
+            <span class="c1"># start times, including slew times</span>
+            <span class="n">startTimes</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeAbs</span> <span class="o">+</span> <span class="n">slewTimes</span>
+            <span class="n">startTimesNorm</span> <span class="o">=</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span> <span class="o">+</span> <span class="n">slewTimes</span>
+            <span class="c1"># indices of observable stars</span>
+            <span class="n">kogoodStart</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTimes</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">kogoodStart</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            
+            <span class="c1"># 3/ calculate integration times for ALL preselected targets, </span>
+            <span class="c1"># and filter out totTimes &gt; integration cutoff</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># assumed values for detection</span>
+                <span class="n">fZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fZ</span><span class="p">(</span><span class="n">Obs</span><span class="p">,</span> <span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">startTimes</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+                <span class="n">fEZ</span> <span class="o">=</span> <span class="n">ZL</span><span class="o">.</span><span class="n">fEZ0</span>
+                <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dMagint</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+                <span class="n">WA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">WAint</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span>
+                <span class="n">intTimes</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+                <span class="n">totTimes</span> <span class="o">=</span> <span class="n">intTimes</span><span class="o">*</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;timeMultiplier&#39;</span><span class="p">]</span>
+                <span class="c1"># end times</span>
+                <span class="n">endTimes</span> <span class="o">=</span> <span class="n">startTimes</span> <span class="o">+</span> <span class="n">totTimes</span>
+                <span class="n">endTimesNorm</span> <span class="o">=</span> <span class="n">startTimesNorm</span> <span class="o">+</span> <span class="n">totTimes</span>
+                <span class="c1"># indices of observable stars</span>
+                <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">totTimes</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">totTimes</span> <span class="o">&lt;=</span> <span class="n">OS</span><span class="o">.</span><span class="n">intCutoff</span><span class="p">)</span> <span class="o">&amp;</span> 
+                        <span class="p">(</span><span class="n">endTimesNorm</span> <span class="o">&lt;=</span> <span class="n">TK</span><span class="o">.</span><span class="n">OBendTimes</span><span class="p">[</span><span class="n">TK</span><span class="o">.</span><span class="n">OBnumber</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="c1"># 4/ find spacecraft orbital END positions (for each candidate target), </span>
+            <span class="c1"># and filter out unavailable targets</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">Obs</span><span class="o">.</span><span class="n">checkKeepoutEnd</span><span class="p">:</span>
+                <span class="n">kogoodEnd</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">keepout</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">endTimes</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+                <span class="n">sInds</span> <span class="o">=</span> <span class="n">sInds</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">kogoodEnd</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            
+            <span class="c1"># 5/ filter out all previously (more-)visited targets, unless in </span>
+            <span class="c1"># revisit list, with time within some dt of start (+- 1 week)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">tovisit</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">==</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">dt_max</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">week</span>
+                    <span class="n">dt_rev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+                    <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">dt_rev</span> <span class="o">&lt;</span> <span class="n">dt_max</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> 
+                            <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sInds</span><span class="p">]</span>
+                    <span class="n">tovisit</span><span class="p">[</span><span class="n">ind_rev</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tovisit</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="c1"># 6/ choose best target from remaining</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># choose sInd of next target</span>
+                <span class="n">sInd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choose_next_target</span><span class="p">(</span><span class="n">old_sInd</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">slewTimes</span><span class="p">,</span> <span class="n">intTimes</span><span class="p">[</span><span class="n">sInds</span><span class="p">])</span>
+                <span class="c1"># store selected star integration time</span>
+                <span class="n">intTime</span> <span class="o">=</span> <span class="n">intTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
+                <span class="k">break</span>
+            
+            <span class="c1"># if no observable target, call the TimeKeeping.wait() method</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">TK</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        
+        <span class="c1"># update visited list for selected star</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># store normalized start time for future completeness update</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastObsTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">=</span> <span class="n">startTimesNorm</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
+        
+        <span class="c1"># populate DRM with occulter related values</span>
+        <span class="k">if</span> <span class="n">OS</span><span class="o">.</span><span class="n">haveOcculter</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># find values related to slew time</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slewTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sd</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+            <span class="n">slew_mass_used</span> <span class="o">=</span> <span class="n">slewTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span><span class="o">*</span><span class="n">Obs</span><span class="o">.</span><span class="n">defburnPortion</span><span class="o">*</span><span class="n">Obs</span><span class="o">.</span><span class="n">flowRate</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_dV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">slewTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span><span class="o">*</span><span class="n">ao</span><span class="o">*</span><span class="n">Obs</span><span class="o">.</span><span class="n">defburnPortion</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;m/s&#39;</span><span class="p">)</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;slew_mass_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slew_mass_used</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+            <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span> <span class="o">-</span> <span class="n">slew_mass_used</span>
+            <span class="n">DRM</span><span class="p">[</span><span class="s1">&#39;scMass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Obs</span><span class="o">.</span><span class="n">scMass</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;kg&#39;</span><span class="p">)</span>
+            <span class="c1"># update current time by adding slew time for the chosen target</span>
+            <span class="n">TK</span><span class="o">.</span><span class="n">allocate_time</span><span class="p">(</span><span class="n">slewTimes</span><span class="p">[</span><span class="n">sInd</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">TK</span><span class="o">.</span><span class="n">mission_is_over</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        </div>
+        <span class="k">return</span> <span class="n">DRM</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">intTime</span>
+
+
+<div class="viewcode-block" id="SS_det_only.choose_next_target"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.choose_next_target">[docs]</a>    <span class="k">def</span> <span class="nf">choose_next_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_sInd</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="n">slewTime</span><span class="p">,</span> <span class="n">t_dets</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Choose next telescope target based on star completeness and integration time.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            old_sInd (integer):</span>
+<span class="sd">                Index of the previous target star</span>
+<span class="sd">            sInds (integer array):</span>
+<span class="sd">                Indices of available targets</span>
+<span class="sd">            slewTime (float array):</span>
+<span class="sd">                slew times to all stars (must be indexed by sInds)</span>
+<span class="sd">            t_dets (astropy Quantity array):</span>
+<span class="sd">                Integration times for detection in units of day</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Index of next target star</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">TK</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TimeKeeping</span>
+
+        <span class="n">nStars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sInds</span><span class="p">)</span>
+
+        <span class="c1"># reshape sInds</span>
+        <span class="n">sInds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span><span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># 1/ Choose next telescope target</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="n">Comp</span><span class="o">.</span><span class="n">completeness_update</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+
+        <span class="c1"># add weight for star revisits</span>
+        <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dt_max</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">week</span>
+            <span class="n">dt_rev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="n">TK</span><span class="o">.</span><span class="n">currentTimeNorm</span><span class="p">)</span>
+            <span class="n">ind_rev</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starRevisit</span><span class="p">[</span><span class="n">dt_rev</span> <span class="o">&lt;</span> <span class="n">dt_max</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sInds</span><span class="p">]</span>
+
+        <span class="n">f2_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">),</span> 
+                          <span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInds</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">sInds</span><span class="p">,</span> <span class="n">ind_rev</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">comps</span> <span class="o">+</span> <span class="n">f2_uv</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span><span class="o">/</span><span class="n">t_dets</span>
+        <span class="n">sInd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">sInds</span><span class="p">[</span><span class="n">weights</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">weights</span><span class="p">)])</span>
+</div>
+        <span class="k">return</span> <span class="n">sInd</span>
+
+<div class="viewcode-block" id="SS_det_only.calc_int_inflection"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_int_inflection">[docs]</a>    <span class="k">def</span> <span class="nf">calc_int_inflection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">ischar</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate integration time based on inflection point of Completeness as a function of int_time</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            sInd (integer):</span>
+<span class="sd">                Index of the target star</span>
+<span class="sd">            fEZ (astropy Quantity array):</span>
+<span class="sd">                Surface brightness of exo-zodiacal light in units of 1/arcsec2</span>
+<span class="sd">            fZ (astropy Quantity):</span>
+<span class="sd">            WA (astropy Quantity):</span>
+<span class="sd">                Working angle of the planet of interest in units of arcsec</span>
+<span class="sd">            mode (dict):</span>
+<span class="sd">                Selected observing mode</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int_time (float):</span>
+<span class="sd">                The suggested integration time</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">OS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpticalSystem</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+        <span class="n">TL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TargetList</span>
+        <span class="n">ZL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ZodiacalLight</span>
+        <span class="n">Obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Observatory</span>
+
+        <span class="n">dMagmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span>\
+                  <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rprange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">dMagmax</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">dMagLim</span>
+        <span class="n">num_points</span> <span class="o">=</span> <span class="mi">250</span>
+
+        <span class="n">dMags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">dMagmin</span><span class="p">,</span> <span class="n">dMagmax</span><span class="p">,</span> <span class="n">num_points</span><span class="p">)</span>
+
+        <span class="c1"># calculate t_det as a function of dMag</span>
+        <span class="n">t_dets</span> <span class="o">=</span> <span class="n">OS</span><span class="o">.</span><span class="n">calc_intTime</span><span class="p">(</span><span class="n">TL</span><span class="p">,</span> <span class="n">sInd</span><span class="p">,</span> <span class="n">fZ</span><span class="p">,</span> <span class="n">fEZ</span><span class="p">,</span> <span class="n">dMags</span><span class="p">,</span> <span class="n">WA</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+
+        <span class="c1"># calculate comp as a function of dMag</span>
+        <span class="n">smin</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;IWA&#39;</span><span class="p">])</span>
+        <span class="n">smax</span> <span class="o">=</span> <span class="n">TL</span><span class="o">.</span><span class="n">dist</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="s1">&#39;OWA&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">EVPOC</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calc_EVPOC</span><span class="p">()</span>
+
+        <span class="n">comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EVPOC</span><span class="p">(</span><span class="n">smin</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">smax</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dMagmin</span><span class="p">,</span> <span class="n">dMags</span><span class="p">)</span>
+
+        <span class="c1"># find the inflection point of the completeness graph</span>
+        <span class="k">if</span> <span class="n">ischar</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">int_time</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">comps</span><span class="p">)</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">comps</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">int_time</span> <span class="o">=</span> <span class="n">int_time</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">starVisits</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span>
+
+            <span class="c1"># update star completeness</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t_dets</span><span class="o">-</span><span class="n">int_time</span><span class="p">))</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="n">comp</span> <span class="o">=</span> <span class="n">comps</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">TL</span><span class="o">.</span><span class="n">comp</span><span class="p">[</span><span class="n">sInd</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">comps</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">comps</span><span class="p">)</span><span class="o">*.</span><span class="mi">9</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="n">int_time</span> <span class="o">=</span> <span class="n">t_dets</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">comp</span> <span class="o">=</span> <span class="n">comps</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+</div>
+        <span class="k">return</span> <span class="n">int_time</span>
+
+<div class="viewcode-block" id="SS_det_only.calc_EVPOC"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.calc_EVPOC">[docs]</a>    <span class="k">def</span> <span class="nf">calc_EVPOC</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span>
+
+        <span class="n">bins</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="c1"># xedges is array of separation values for interpolant</span>
+        <span class="n">xedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span><span class="o">*</span>\
+                <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">xedges</span> <span class="o">=</span> <span class="n">xedges</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="c1"># yedges is array of delta magnitude values for interpolant</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span>\
+                <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rprange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">prange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span>\
+                <span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rprange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">Comp</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">rrange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">1e-11</span><span class="p">))</span>
+        <span class="n">yedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+
+        <span class="c1"># number of planets for each Monte Carlo simulation</span>
+        <span class="n">nplan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="mf">1e6</span><span class="p">,</span><span class="n">Comp</span><span class="o">.</span><span class="n">Nplanets</span><span class="p">]))</span>
+        <span class="c1"># number of simulations to perform (must be integer)</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Comp</span><span class="o">.</span><span class="n">Nplanets</span><span class="o">/</span><span class="n">nplan</span><span class="p">)</span>
+        
+        <span class="n">Cpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Comp</span><span class="o">.</span><span class="n">classpath</span><span class="p">,</span> <span class="n">Comp</span><span class="o">.</span><span class="n">filename</span><span class="o">+</span><span class="s1">&#39;.comp&#39;</span><span class="p">)</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genC</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">steps</span><span class="p">)</span>
+        <span class="n">EVPOCpdf</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">EVPOC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">EVPOCpdf</span><span class="o">.</span><span class="n">integral</span><span class="p">)</span>
+</div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EVPOC</span> <span class="o">=</span> <span class="n">EVPOC</span>
+
+<div class="viewcode-block" id="SS_det_only.genC"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genC">[docs]</a>    <span class="k">def</span> <span class="nf">genC</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Cpath</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets completeness interpolant for initial completeness</span>
+<span class="sd">        </span>
+<span class="sd">        This function either loads a completeness .comp file based on specified</span>
+<span class="sd">        Planet Population module or performs Monte Carlo simulations to get</span>
+<span class="sd">        the 2D completeness values needed for interpolation.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Cpath (string):</span>
+<span class="sd">                path to 2D completeness value array</span>
+<span class="sd">            nplan (float):</span>
+<span class="sd">                number of planets used in each simulation</span>
+<span class="sd">            xedges (float ndarray):</span>
+<span class="sd">                x edge of 2d histogram (separation)</span>
+<span class="sd">            yedges (float ndarray):</span>
+<span class="sd">                y edge of 2d histogram (dMag)</span>
+<span class="sd">            steps (integer):</span>
+<span class="sd">                number of simulations to perform</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            H (float ndarray):</span>
+<span class="sd">                2D numpy ndarray containing completeness probability density values</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># if the 2D completeness pdf array exists as a .comp file load it</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">Cpath</span><span class="p">):</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># run Monte Carlo simulation and pickle the resulting array</span>
+            <span class="nb">print</span> <span class="s1">&#39;Cached completeness file not found at &quot;</span><span class="si">%s</span><span class="s1">&quot;.&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
+            <span class="nb">print</span> <span class="s1">&#39;Beginning Monte Carlo completeness calculations.&#39;</span>
+            
+            <span class="n">t0</span><span class="p">,</span> <span class="n">t1</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span> <span class="c1"># keep track of per-iteration time</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+                <span class="n">t0</span><span class="p">,</span> <span class="n">t1</span> <span class="o">=</span> <span class="n">t1</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">t0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">delta_t_msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="c1"># no message</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">delta_t_msg</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">%.3f</span><span class="s1"> s/iteration]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="s1">&#39;Completeness iteration: </span><span class="si">%5d</span><span class="s1"> / </span><span class="si">%5d</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">delta_t_msg</span><span class="p">)</span>
+                <span class="c1"># get completeness histogram</span>
+                <span class="n">h</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">H</span> <span class="o">=</span> <span class="n">h</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">H</span> <span class="o">+=</span> <span class="n">h</span>
+
+            <span class="n">Nplanets</span> <span class="o">=</span> <span class="mf">1e8</span>
+            
+            <span class="n">H</span> <span class="o">=</span> <span class="n">H</span><span class="o">/</span><span class="p">(</span><span class="n">Nplanets</span><span class="o">*</span><span class="p">(</span><span class="n">xedges</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">xedges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">yedges</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">yedges</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                        
+            <span class="c1"># store 2D completeness pdf array as .comp file</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+            <span class="nb">print</span> <span class="s1">&#39;Monte Carlo completeness calculations finished&#39;</span>
+            <span class="nb">print</span> <span class="s1">&#39;2D completeness array stored in </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
+        </div>
+        <span class="k">return</span> <span class="n">H</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span>
+
+<div class="viewcode-block" id="SS_det_only.hist"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.hist">[docs]</a>    <span class="k">def</span> <span class="nf">hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nplan</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns completeness histogram for Monte Carlo simulation</span>
+<span class="sd">        </span>
+<span class="sd">        This function uses the inherited Planet Population module.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            nplan (float):</span>
+<span class="sd">                number of planets used</span>
+<span class="sd">            xedges (float ndarray):</span>
+<span class="sd">                x edge of 2d histogram (separation)</span>
+<span class="sd">            yedges (float ndarray):</span>
+<span class="sd">                y edge of 2d histogram (dMag)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            h (ndarray):</span>
+<span class="sd">                2D numpy ndarray containing completeness histogram</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genplans</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
+        <span class="c1"># get histogram</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">yedges</span><span class="p">,</span> <span class="n">xedges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">dMag</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                <span class="nb">range</span><span class="o">=</span><span class="p">[[</span><span class="n">yedges</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">yedges</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="p">[</span><span class="n">xedges</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">xedges</span><span class="o">.</span><span class="n">max</span><span class="p">()]])</span>
+        </div>
+        <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">xedges</span><span class="p">,</span> <span class="n">yedges</span>
+
+<div class="viewcode-block" id="SS_det_only.genplans"><a class="viewcode-back" href="../../../EXOSIMS.SurveySimulation.html#EXOSIMS.SurveySimulation.SS_det_only.SS_det_only.genplans">[docs]</a>    <span class="k">def</span> <span class="nf">genplans</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nplan</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates planet data needed for Monte Carlo simulation</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            nplan (integer):</span>
+<span class="sd">                Number of planets</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            s (astropy Quantity array):</span>
+<span class="sd">                Planet apparent separations in units of AU</span>
+<span class="sd">            dMag (ndarray):</span>
+<span class="sd">                Difference in brightness</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">PPop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span>
+        
+        <span class="n">nplan</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
+        
+        <span class="c1"># sample uniform distribution of mean anomaly</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">high</span><span class="o">=</span><span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">nplan</span><span class="p">)</span>
+        <span class="c1"># sample semi-major axis</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_sma</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># sample other necessary orbital parameters</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">PPop</span><span class="o">.</span><span class="n">erange</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># all circular orbits</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">a</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># sample eccentricity</span>
+            <span class="k">if</span> <span class="n">PPop</span><span class="o">.</span><span class="n">constrainOrbits</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen_from_sma</span><span class="p">(</span><span class="n">nplan</span><span class="p">,</span><span class="n">a</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_eccen</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>   
+            <span class="c1"># Newton-Raphson to find E</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="n">eccanom</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">e</span><span class="p">)</span>
+            <span class="c1"># orbital radius</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">e</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">E</span><span class="p">))</span>
+
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">nplan</span><span class="p">))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+        <span class="c1"># sample albedo, planetary radius, phase function</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_albedo</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">PPop</span><span class="o">.</span><span class="n">gen_radius</span><span class="p">(</span><span class="n">nplan</span><span class="p">)</span>
+        <span class="n">Phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Completeness</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        
+        <span class="c1"># calculate dMag</span>
+        <span class="n">dMag</span> <span class="o">=</span> <span class="n">deltaMag</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">Rp</span><span class="p">,</span><span class="n">r</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span><span class="p">,</span><span class="n">Phi</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMag</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

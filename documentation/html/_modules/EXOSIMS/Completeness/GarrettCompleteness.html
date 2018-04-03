@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>EXOSIMS.Completeness.GarrettCompleteness &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
-        VERSION:     '1.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
@@ -28,8 +20,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
-  </head>
-  <body>  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -38,11 +29,9 @@
             
   <h1>Source code for EXOSIMS.Completeness.GarrettCompleteness</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-
 <span class="kn">from</span> <span class="nn">EXOSIMS.Completeness.BrownCompleteness</span> <span class="k">import</span> <span class="n">BrownCompleteness</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">hashlib</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="k">as</span> <span class="nn">optimize</span>
 <span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">interpolate</span>
@@ -111,6 +100,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">econst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">emin</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">emax</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pconst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmin</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmax</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmax</span>
+        <span class="c1"># degenerate case where aconst, econst and e = 0</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">aconst</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">econst</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">])</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">emax</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> \
+            <span class="s2">&quot;At least one parameter (out of semi-major axis, albedo, and radius) must vary when eccentricity is constant and zero.&quot;</span>
         <span class="c1"># solve for bstar</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">rad</span>
         <span class="n">Phis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPhysicalModel</span><span class="o">.</span><span class="n">calc_Phi</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
@@ -154,23 +146,24 @@
         <span class="n">b2val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
         <span class="c1"># b &gt; bstar</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binv2</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">b2val</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">b2</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># get pdf of r</span>
-        <span class="nb">print</span> <span class="s1">&#39;Generating pdf of orbital radius&#39;</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
-        <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)):</span>
-            <span class="n">fr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_r</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span> <span class="s1">&#39;Finished pdf of orbital radius&#39;</span>
-
-        <span class="c1"># get pdf of p*R**2</span>
-        <span class="nb">print</span> <span class="s1">&#39;Generating pdf of albedo times planetary radius squared&#39;</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
-        <span class="n">fz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)):</span>
-            <span class="n">fz</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_z</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dist_z</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">fz</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="nb">print</span> <span class="s1">&#39;Finished pdf of albedo times planetary radius squared&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmin</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">:</span>
+            <span class="c1"># get pdf of r</span>
+            <span class="nb">print</span> <span class="s1">&#39;Generating pdf of orbital radius&#39;</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)):</span>
+                <span class="n">fr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_r</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">fr</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;Finished pdf of orbital radius&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">]):</span>
+            <span class="c1"># get pdf of p*R**2</span>
+            <span class="nb">print</span> <span class="s1">&#39;Generating pdf of albedo times planetary radius squared&#39;</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="n">fz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)):</span>
+                <span class="n">fz</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_z</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dist_z</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">fz</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;Finished pdf of albedo times planetary radius squared&#39;</span>
                 
 <div class="viewcode-block" id="GarrettCompleteness.target_completeness"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.target_completeness">[docs]</a>    <span class="k">def</span> <span class="nf">target_completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">TL</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates completeness values for target stars</span>
@@ -232,8 +225,8 @@
             <span class="n">comp0</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist_sv</span><span class="p">(</span><span class="n">smin</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">smax</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
         <span class="c1"># ensure that completeness values are between 0 and 1</span>
         <span class="n">comp0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">comp0</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">comp0</span></div>
+</div>
+        <span class="k">return</span> <span class="n">comp0</span>
         
 <div class="viewcode-block" id="GarrettCompleteness.genComp"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.genComp">[docs]</a>    <span class="k">def</span> <span class="nf">genComp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Cpath</span><span class="p">,</span> <span class="n">TL</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generates function to get completeness values</span>
@@ -275,8 +268,8 @@
             <span class="n">H</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;dist_s&#39;</span><span class="p">:</span> <span class="n">dist_s</span><span class="p">}</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">Cpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">))</span>
             <span class="nb">print</span> <span class="s1">&#39;Completeness data stored in </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">Cpath</span>
-            
-        <span class="k">return</span> <span class="n">dist_s</span></div>
+            </div>
+        <span class="k">return</span> <span class="n">dist_s</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.comp_s"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_s">[docs]</a>    <span class="k">def</span> <span class="nf">comp_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMag</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates completeness by first integrating over dMag and then</span>
@@ -305,8 +298,8 @@
             <span class="n">comp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_sv</span><span class="p">,</span> <span class="n">smin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">smax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dMag</span><span class="p">[</span><span class="n">i</span><span class="p">],),</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># ensure completeness values are between 0 and 1</span>
         <span class="n">comp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">comp</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">comp</span>
             
     <span class="nd">@memoize</span>    
     <span class="k">def</span> <span class="nf">f_s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">):</span>
@@ -359,16 +352,50 @@
         <span class="k">if</span> <span class="p">(</span><span class="n">dmag</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mindmag</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dmag</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxdmag</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">):</span>
             <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">ztest</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span>
-            <span class="k">if</span> <span class="n">ztest</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmin</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">:</span>
+                <span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="p">)</span>
+                <span class="n">b2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">-</span><span class="n">b1</span>
+                <span class="n">z1</span> <span class="o">=</span> <span class="mf">10.0</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b1</span><span class="p">)</span>
+                <span class="n">z2</span> <span class="o">=</span> <span class="mf">10.0</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">):</span>
-                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span><span class="n">dmag</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">z1</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">z1</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">):</span>
+                    <span class="n">f</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b1</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_z</span><span class="p">(</span><span class="n">z1</span><span class="p">)</span><span class="o">*</span><span class="n">z1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">b1</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">z2</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">z2</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">):</span>
+                    <span class="n">f</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_z</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span><span class="o">*</span><span class="n">z2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">b2</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">ztest</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">:</span>
-                    <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">ztest</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">pfromRp</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="n">minR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rbs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">maxR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">Rbs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">minR</span><span class="p">)):</span>
+                        <span class="n">ptest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">get_p_from_Rp</span><span class="p">(</span><span class="n">minR</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">earthRad</span><span class="p">)</span>
+                        <span class="n">Rtest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ztest</span><span class="o">/</span><span class="n">ptest</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">Rtest</span> <span class="o">&gt;</span> <span class="n">minR</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">Rtest</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span><span class="p">:</span>
+                                <span class="n">Rl</span> <span class="o">=</span> <span class="n">Rtest</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">Rl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span> <span class="o">&gt;</span> <span class="n">minR</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                                <span class="n">Rl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">Rl</span> <span class="o">=</span> <span class="n">minR</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmax</span> <span class="o">&gt;</span> <span class="n">maxR</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                            <span class="n">Ru</span> <span class="o">=</span> <span class="n">maxR</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">Ru</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rmax</span>
+                        <span class="k">if</span> <span class="n">Rl</span> <span class="o">&lt;</span> <span class="n">Ru</span><span class="p">:</span>
+                            <span class="n">f</span> <span class="o">+=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsRp</span><span class="p">,</span> <span class="n">Rl</span><span class="p">,</span> <span class="n">Ru</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span><span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="n">ztest</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">):</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span><span class="n">dmag</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="n">ztest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">ztest</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">:</span>
+                        <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagsz</span><span class="p">,</span> <span class="n">ztest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zmax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.f_dmagsz"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmagsz">[docs]</a>    <span class="k">def</span> <span class="nf">f_dmagsz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
@@ -411,8 +438,51 @@
             <span class="n">fa</span><span class="p">[</span><span class="n">good2</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_z</span><span class="p">(</span><span class="n">za</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span><span class="p">(</span><span class="n">r2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Jac</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">]))</span>
             
         <span class="n">f</span><span class="p">[</span><span class="n">vals</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">]</span> <span class="o">=</span> <span class="n">fa</span>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
+    
+<div class="viewcode-block" id="GarrettCompleteness.f_dmagsRp"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_dmagsRp">[docs]</a>    <span class="k">def</span> <span class="nf">f_dmagsRp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rp</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the joint probability density of planetary radius, </span>
+<span class="sd">        dMag, and projected separation</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            Rp (ndarray):</span>
+<span class="sd">                Values of planetary radius</span>
+<span class="sd">            dmag (float):</span>
+<span class="sd">                Planet delta magnitude</span>
+<span class="sd">            s (float):</span>
+<span class="sd">                Value of projected separation</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            f (ndarray):</span>
+<span class="sd">                Values of joint probability density</span>
+<span class="sd">                </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Rp</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Rp</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="mf">10.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">PlanetPopulation</span><span class="o">.</span><span class="n">get_p_from_Rp</span><span class="p">(</span><span class="n">Rp</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">earthRad</span><span class="p">)</span><span class="o">/</span><span class="n">Rp</span><span class="o">**</span><span class="mi">2</span>
         
-        <span class="k">return</span> <span class="n">f</span></div>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Rp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">vals</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">]</span>
+        <span class="n">Rpa</span> <span class="o">=</span> <span class="n">Rp</span><span class="p">[</span><span class="n">vals</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">]</span>
+        <span class="n">valsa</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">vals</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">]</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binv1</span><span class="p">(</span><span class="n">valsa</span><span class="p">)</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">binv2</span><span class="p">(</span><span class="n">valsa</span><span class="p">)</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b1</span><span class="p">)</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">s</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">)</span>
+        <span class="n">good1</span> <span class="o">=</span> <span class="p">((</span><span class="n">r1</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r1</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">))</span>
+        <span class="n">good2</span> <span class="o">=</span> <span class="p">((</span><span class="n">r2</span><span class="o">&gt;</span><span class="bp">self</span><span class="o">.</span><span class="n">rmin</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r2</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pconst</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rconst</span><span class="p">):</span>
+            <span class="n">fa</span><span class="p">[</span><span class="n">good1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b1</span><span class="p">[</span><span class="n">good1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span><span class="p">(</span><span class="n">r1</span><span class="p">[</span><span class="n">good1</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Jac</span><span class="p">(</span><span class="n">b1</span><span class="p">[</span><span class="n">good1</span><span class="p">]))</span>
+            <span class="n">fa</span><span class="p">[</span><span class="n">good2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span><span class="p">(</span><span class="n">r2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Jac</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fa</span><span class="p">[</span><span class="n">good1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_radius</span><span class="p">(</span><span class="n">Rpa</span><span class="p">[</span><span class="n">good1</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b1</span><span class="p">[</span><span class="n">good1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span><span class="p">(</span><span class="n">r1</span><span class="p">[</span><span class="n">good1</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Jac</span><span class="p">(</span><span class="n">b1</span><span class="p">[</span><span class="n">good1</span><span class="p">]))</span>
+            <span class="n">fa</span><span class="p">[</span><span class="n">good2</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_radius</span><span class="p">(</span><span class="n">Rpa</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_r</span><span class="p">(</span><span class="n">r2</span><span class="p">[</span><span class="n">good2</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Jac</span><span class="p">(</span><span class="n">b2</span><span class="p">[</span><span class="n">good2</span><span class="p">]))</span>
+            
+        <span class="n">f</span><span class="p">[</span><span class="n">vals</span><span class="o">&lt;</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">]</span> <span class="o">=</span> <span class="n">fa</span>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.mindmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.mindmag">[docs]</a>    <span class="k">def</span> <span class="nf">mindmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the minimum value of dMag for projected separation</span>
@@ -435,8 +505,8 @@
             <span class="n">mindmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdmin3</span><span class="o">-</span><span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mindmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        
-        <span class="k">return</span> <span class="n">mindmag</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">mindmag</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.maxdmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.maxdmag">[docs]</a>    <span class="k">def</span> <span class="nf">maxdmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the maximum value of dMag for projected separation</span>
@@ -457,8 +527,8 @@
             <span class="n">maxdmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdmax</span> <span class="o">-</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">s</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="p">))))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">maxdmag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdmax</span> <span class="o">-</span> <span class="mf">2.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.0</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">maxdmag</span></div>
+</div>
+        <span class="k">return</span> <span class="n">maxdmag</span>
 
 <div class="viewcode-block" id="GarrettCompleteness.Jac"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.Jac">[docs]</a>    <span class="k">def</span> <span class="nf">Jac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates determinant of the Jacobian transformation matrix to get</span>
@@ -475,8 +545,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">f</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.5</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phi</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dPhi</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">-</span> <span class="mf">5.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.rgrand1"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand1">[docs]</a>    <span class="k">def</span> <span class="nf">rgrand1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates first integrand for determinining probability density of</span>
@@ -499,8 +569,8 @@
             <span class="n">f</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_eccen_con</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">a</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">f</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_eccen</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.rgrand2"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrand2">[docs]</a>    <span class="k">def</span> <span class="nf">rgrand2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates second integrand for determining probability density of</span>
@@ -536,8 +606,8 @@
                     <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_sma</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgrand1</span><span class="p">,</span><span class="n">emin1</span><span class="p">,</span><span class="n">elim</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">r</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">60</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_sma</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgrand1</span><span class="p">,</span> <span class="n">emin1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">emax</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">r</span><span class="p">),</span> <span class="n">n</span><span class="o">=</span><span class="mi">60</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">f</span></div>
+</div>
+        <span class="k">return</span> <span class="n">f</span>
         
 <div class="viewcode-block" id="GarrettCompleteness.rgrandac"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandac">[docs]</a>    <span class="k">def</span> <span class="nf">rgrandac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates integrand for determining probability density of orbital</span>
@@ -560,8 +630,8 @@
             <span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_eccen_con</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">a</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_eccen</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
         
 <div class="viewcode-block" id="GarrettCompleteness.rgrandec"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.rgrandec">[docs]</a>    <span class="k">def</span> <span class="nf">rgrandec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates integrand for determining probability density of orbital</span>
@@ -581,8 +651,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">a</span><span class="o">*</span><span class="n">e</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">r</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_sma</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
 
 <div class="viewcode-block" id="GarrettCompleteness.f_r"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_r">[docs]</a>    <span class="k">def</span> <span class="nf">f_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the probability density of orbital radius</span>
@@ -652,28 +722,8 @@
                     <span class="k">if</span> <span class="n">a2</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">amax</span><span class="p">:</span>
                         <span class="n">a2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amax</span>
                 <span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rgrand2v</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">r</span><span class="p">,),</span> <span class="n">n</span><span class="o">=</span><span class="mi">60</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    
-        <span class="k">return</span> <span class="n">f</span></div>
-        
-<div class="viewcode-block" id="GarrettCompleteness.pgrand"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.pgrand">[docs]</a>    <span class="k">def</span> <span class="nf">pgrand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculates integrand for determining probability density of albedo</span>
-<span class="sd">        times planetary radius squared</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            p (ndarray):</span>
-<span class="sd">                Values of albedo</span>
-<span class="sd">            z (float):</span>
-<span class="sd">                Value of albedo times planetary radius squared</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            f (ndarray):</span>
-<span class="sd">                Values of integrand</span>
-<span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="n">f</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">z</span><span class="o">*</span><span class="n">p</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_radius</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">z</span><span class="o">/</span><span class="n">p</span><span class="p">))</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_albedo</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+    </div>
+        <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.Rgrand"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.Rgrand">[docs]</a>    <span class="k">def</span> <span class="nf">Rgrand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates integrand for determining probability density of albedo</span>
@@ -692,8 +742,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_albedo</span><span class="p">(</span><span class="n">z</span><span class="o">/</span><span class="n">R</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">dist_radius</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="o">/</span><span class="n">R</span><span class="o">**</span><span class="mi">2</span>
-        
-        <span class="k">return</span> <span class="n">f</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">f</span>
   
 <div class="viewcode-block" id="GarrettCompleteness.f_z"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_z">[docs]</a>    <span class="k">def</span> <span class="nf">f_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates probability density of albedo times planetary radius </span>
@@ -730,8 +780,8 @@
                     <span class="n">f</span> <span class="o">=</span> <span class="mf">0.0</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">f</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rgrand</span><span class="p">,</span><span class="n">R1</span><span class="p">,</span><span class="n">R2</span><span class="p">,</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">z</span><span class="p">,),</span><span class="n">n</span><span class="o">=</span><span class="mi">200</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                 
-        <span class="k">return</span> <span class="n">f</span></div>
+                 </div>
+        <span class="k">return</span> <span class="n">f</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.s_bound"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.s_bound">[docs]</a>    <span class="k">def</span> <span class="nf">s_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">smax</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the bounding value of projected separation for dMag</span>
@@ -759,8 +809,8 @@
             <span class="n">s</span> <span class="o">=</span> <span class="n">smax</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phiinv</span><span class="p">(</span><span class="mf">10.0</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.4</span><span class="o">*</span><span class="n">dmag</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">rmax</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pmin</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rmin</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
-    
-        <span class="k">return</span> <span class="n">s</span></div>
+    </div>
+        <span class="k">return</span> <span class="n">s</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.f_sdmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.f_sdmag">[docs]</a>    <span class="k">def</span> <span class="nf">f_sdmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">dmag</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates the joint probability density of projected separation and</span>
@@ -776,8 +826,8 @@
 <span class="sd">            f (float):</span>
 <span class="sd">                Value of joint probability density</span>
 <span class="sd">        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmags</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span></div>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmags</span><span class="p">(</span><span class="n">dmag</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
     
     <span class="nd">@memoize</span>
     <span class="k">def</span> <span class="nf">f_dmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dmag</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">):</span>
@@ -844,12 +894,15 @@
                 <span class="n">comp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">fixed_quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_dmagv</span><span class="p">,</span> <span class="n">d1</span><span class="p">,</span> <span class="n">dMagMax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">smin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">smax</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c1"># ensure completeness values are between 0 and 1</span>
         <span class="n">comp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">comp</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">comp</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.comp_calc"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.comp_calc">[docs]</a>    <span class="k">def</span> <span class="nf">comp_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMag</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates completeness for given minimum and maximum separations</span>
 <span class="sd">        and dMag</span>
+<span class="sd">        </span>
+<span class="sd">        Note: this method assumes scaling orbits when scaleOrbits == True has</span>
+<span class="sd">        already occurred for smin, smax, dMag inputs</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            smin (float ndarray):</span>
@@ -866,8 +919,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comp_dmag</span><span class="p">(</span><span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">,</span> <span class="n">dMag</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">comp</span></div>
+        </div>
+        <span class="k">return</span> <span class="n">comp</span>
     
 <div class="viewcode-block" id="GarrettCompleteness.calc_fdmag"><a class="viewcode-back" href="../../../EXOSIMS.Completeness.html#EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness.calc_fdmag">[docs]</a>    <span class="k">def</span> <span class="nf">calc_fdmag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dMag</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Calculates probability density of dMag by integrating over projected</span>
@@ -888,8 +941,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_dmagv</span><span class="p">(</span><span class="n">dMag</span><span class="p">,</span> <span class="n">smin</span><span class="p">,</span> <span class="n">smax</span><span class="p">)</span>
-            
-        <span class="k">return</span> <span class="n">f</span></div></div>
+            </div></div>
+        <span class="k">return</span> <span class="n">f</span>
 </pre></div>
 
           </div>
@@ -907,12 +960,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -923,7 +978,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

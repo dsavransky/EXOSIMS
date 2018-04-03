@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Python Module Index &#8212; EXOSIMS 1.3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -31,8 +23,7 @@
 
 
 
-  </head>
-  <body>  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -99,7 +90,12 @@
      <tr class="cg-1">
        <td></td>
        <td>&#160;&#160;&#160;
-       <a href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory.WFIRSTObservatory"><code class="xref">EXOSIMS.Observatory.WFIRSTObservatory</code></a></td><td>
+       <a href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory.ObservatoryL2Halo"><code class="xref">EXOSIMS.Observatory.ObservatoryL2Halo</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.Observatory.html#module-EXOSIMS.Observatory.SotoStarshade"><code class="xref">EXOSIMS.Observatory.SotoStarshade</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-1">
        <td></td>
@@ -144,12 +140,22 @@
      <tr class="cg-1">
        <td></td>
        <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.AlbedoByRadius"><code class="xref">EXOSIMS.PlanetPopulation.AlbedoByRadius</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
        <a href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone1"><code class="xref">EXOSIMS.PlanetPopulation.EarthTwinHabZone1</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-1">
        <td></td>
        <td>&#160;&#160;&#160;
        <a href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.EarthTwinHabZone2"><code class="xref">EXOSIMS.PlanetPopulation.EarthTwinHabZone2</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.PlanetPopulation.html#module-EXOSIMS.PlanetPopulation.JupiterTwin"><code class="xref">EXOSIMS.PlanetPopulation.JupiterTwin</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-1">
        <td></td>
@@ -339,7 +345,22 @@
      <tr class="cg-1">
        <td></td>
        <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.SS_char_only"><code class="xref">EXOSIMS.SurveySimulation.SS_char_only</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.SS_det_only"><code class="xref">EXOSIMS.SurveySimulation.SS_det_only</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
        <a href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.starkAYO_staticSchedule"><code class="xref">EXOSIMS.SurveySimulation.starkAYO_staticSchedule</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="cg-1">
+       <td></td>
+       <td>&#160;&#160;&#160;
+       <a href="EXOSIMS.SurveySimulation.html#module-EXOSIMS.SurveySimulation.tieredScheduler"><code class="xref">EXOSIMS.SurveySimulation.tieredScheduler</code></a></td><td>
        <em></em></td></tr>
      <tr class="cg-1">
        <td></td>
@@ -462,12 +483,14 @@
 </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -478,7 +501,7 @@
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.4</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>

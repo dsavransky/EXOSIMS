@@ -1,19 +1,19 @@
-EXOSIMS\.PlanetPhysicalModel package
-====================================
+EXOSIMS.PlanetPhysicalModel package
+===================================
 
 Submodules
 ----------
 
-EXOSIMS\.PlanetPhysicalModel\.Forecaster module
------------------------------------------------
+EXOSIMS.PlanetPhysicalModel.Forecaster module
+---------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel.Forecaster
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS\.PlanetPhysicalModel\.FortneyMarleyCahoyMix1 module
------------------------------------------------------------
+EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
+---------------------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1
     :members:

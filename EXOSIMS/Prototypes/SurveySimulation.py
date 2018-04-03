@@ -497,7 +497,7 @@ class SurveySimulation(object):
         # differ for each star) and filter out unavailable targets
         sd = None
         if OS.haveOcculter == True:
-            sd,slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
+            sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
             
@@ -506,6 +506,7 @@ class SurveySimulation(object):
         startTimes = tmpCurrentTimeAbs + slewTimes
         startTimesNorm = tmpCurrentTimeNorm + slewTimes
         # indices of observable stars
+        #TODO replace with Gabe's Keepout function
         kogoodStart = Obs.keepout(TL, sInds, startTimes)
         sInds = sInds[np.where(kogoodStart)[0]]
         
@@ -532,6 +533,7 @@ class SurveySimulation(object):
         # 5. find spacecraft orbital END positions (for each candidate target), 
         # and filter out unavailable targets
         if len(sInds) > 0 and Obs.checkKeepoutEnd:
+            #TODO replace with gabe's keepout map function
             kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
             sInds = sInds[np.where(kogoodEnd)[0]]
         

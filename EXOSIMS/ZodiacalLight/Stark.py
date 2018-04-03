@@ -122,11 +122,6 @@ class Stark(ZodiacalLight):
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmax'
 
-        if not hasattr(self,'fZ_startSaved'):
-            self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-
-        fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
-
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZmax from %s"%cachefname)
@@ -134,7 +129,12 @@ class Stark(ZodiacalLight):
                 tmpDat = pickle.load(f)
                 fZmax = tmpDat[0,:]
                 fZmaxInds = tmpDat[1,:]
-            return fZmax, fZmaxInds
+            return fZmax#, fZmaxInds
+
+        if not hasattr(self,'fZ_startSaved'):
+            self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+
+        fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
@@ -192,7 +192,7 @@ class Stark(ZodiacalLight):
                 the minimum fZ
         """
         if not hasattr(self,'fZ_startSaved'):
-            self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+            self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
 
         fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
         tmpfZ = np.asarray(fZ_startSaved)#convert into an array

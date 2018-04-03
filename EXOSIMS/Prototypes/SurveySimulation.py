@@ -102,7 +102,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, **specs):
+            WAint=None, dMagint=None, dt_max=1.,**specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -206,6 +206,8 @@ class SurveySimulation(object):
         self.nVisitsMax = int(nVisitsMax)
         # integration time margin for characterization
         self.charMargin = float(charMargin)
+        # maximum time for revisit window    
+        self.dt_max = dt_max*u.week
         
         # populate outspec with all SurveySimulation scalar attributes
         for att in self.__dict__.keys():
@@ -1366,9 +1368,8 @@ class SurveySimulation(object):
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
             #The above condition should prevent revisits so long as all stars have not been observed
             if self.starRevisit.size != 0:
-                dt_max = 1.*u.week
                 dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] 
                         if x in sInds]
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]

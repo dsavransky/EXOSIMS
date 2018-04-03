@@ -46,7 +46,10 @@ class tieredScheduler(SurveySimulation):
         
         self.coeffs = coeffs
         if occHIPs != []:
-            occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
+            if not os.path.isfile(occHIPs):
+                occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts', occHIPs)
+            else:
+                occHIPs_path = occHIPs
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
             self.occHIPs = HIPsfile.split(',')

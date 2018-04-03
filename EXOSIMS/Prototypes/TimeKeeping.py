@@ -114,11 +114,11 @@ class TimeKeeping(object):
             OBduration (astropy Quantity):
                 the duration of a single observing block
         Updates Attributes:
-            OBstartTimes:
+            OBstartTimes (astropy Quantity array):
                 Updates the start times of observing blocks
-            OBendTimes:
+            OBendTimes (astropy Quantity array):
                 Updates the end times of the observing blocks
-            OBnumber:
+            OBnumber (integer):
                 The Observing Block Number
         """
         if missionSchedule is not None:  # If the missionSchedule is specified
@@ -177,7 +177,11 @@ class TimeKeeping(object):
             addExoplanetObsTime (bool):
                 Indicates the allocated time is for the primary instrument (True) or some other instrument (False)
                 By default this function assumes all allocated time is attributed to the primary instrument (is True)
-
+        Updates Attributes:
+            currentTimeNorm (astropy Quantity):
+                The current time since mission start
+            currentTimeAbs (astropy Time Quantity):
+                The current Time in MJD
         Returns:
             success (bool):
                 a flag indicating the time allocation was successful or not successful
@@ -211,29 +215,28 @@ class TimeKeeping(object):
             self.currentTimeNorm += dt
             return True   
 
-    # def advancetToStartOfNextOB(self):
-    #     """Advances to Start of Next Observation Block
-        
-    #     This method is called in the allocate_time() method of the TimeKeeping 
-    #     class object, when the allocated time requires moving outside of the current OB.
-        
-    #     If no OB duration was specified, a new Observing Block is created for 
-    #     each observation in the SurveySimulation module. 
-        
-    #     """
-    #     self.OBnumber += 1#increase the observation block number
-        
-    #     #create times for next observation block
-    #     self.OBstartTimes.append((self.OBnumber)*self.OBduration/self.missionPortion)#declares next OB start Time
-    #     self.OBendTimes.append(self.OBduration + (self.OBnumber)*self.OBduration/self.missionPortion)#sets the end time of the observation block
-    #     # Note: the next OB must not happen after mission finish
-        
-    #     self.currentTimeNorm = self.OBstartTimes[self.OBnumber]#update currentTimeNorm
-    #     self.currentTimeAbs = self.OBstartTimes[self.OBnumber] + self.missionStart#update currentTimeAbs
+    def advancetToStartOfNextOB(self):
+        """Advances to Start of Next Observation Block
+        This method is called in the allocate_time() method of the TimeKeeping 
+        class object, when the allocated time requires moving outside of the current OB.
+        If no OB duration was specified, a new Observing Block is created for 
+        each observation in the SurveySimulation module. 
 
-    #     # begin Survey, and loop until mission is finished
-    #     log_begin = 'OB%s:'%(self.OBnumber+1)#prints because this is the beginning of the nesxt observation block
-    #     self.vprint(log_begin)
+        Updates Attributes:
+            OBnumber (integer):
+                The Observing Block Number
+            currentTimeNorm (astropy Quantity):
+                The current time since mission start
+            currentTimeAbs (astropy Time Quantity):
+                The current Time in MJD
+        """
+        self.OBnumber += 1#increase the observation block number
+        self.currentTimeNorm = self.OBstartTimes[self.OBnumber]#update currentTimeNorm
+        self.currentTimeAbs = self.OBstartTimes[self.OBnumber] + self.missionStart#update currentTimeAbs
+
+        # begin Survey, and loop until mission is finished
+        log_begin = 'OB%s:'%(self.OBnumber)#prints because this is the beginning of the nesxt observation block
+        self.vprint(log_begin)
 
     def advanceToAbsTime(self,tAbs, addExoplanetObsTime=True):
         """Advances the current mission time to tAbs
@@ -243,8 +246,10 @@ class TimeKeeping(object):
             addExoplanetObsTime (bool):
                 A flag indicating whether to add advanced time to exoplanetObsTime or not
         Updates Attributes:
-            currentTimeNorm
-            currentTimeAbs
+            currentTimeNorm (astropy Quantity):
+                The current time since mission start
+            currentTimeAbs (astropy Time Quantity):
+                The current Time in MJD
         Returns:
             success (bool):
                 A bool indicating whether the operation was successful or not

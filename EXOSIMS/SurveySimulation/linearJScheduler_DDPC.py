@@ -309,7 +309,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 cnt += 1
             
         else:
-            return DRM, None, None
+            return DRM, None, None, None
         
         # update visited list for selected star
         self.starVisits[sInd] += 1
@@ -322,7 +322,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():
-                return DRM, None, None
+                return DRM, None, None, None
         
         return DRM, sInd, intTime, dmode
 

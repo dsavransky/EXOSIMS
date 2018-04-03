@@ -250,13 +250,23 @@ class SurveySimulation(object):
         endTime   = self.TimeKeeping.missionFinishAbs
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
 
-        #Generate File Hashnames and loction
+        # Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         self.mode = det_mode
+
+        # Precalculating intTimeFilter
+        sInds = np.arange(TL.nStars)
+        self.fZmin = ZL.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping.currentTimeAbs, self.mode, self.cachefname)
+        fEZ = self.ZodiacalLight.fEZ0
+        dMag = self.dMagint[sInds]
+        WA = self.WAint[sInds]
+        self.intTimeFilter = np.ones(TL.nStars)
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, fZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier']
+        self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff))
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -422,7 +432,11 @@ class SurveySimulation(object):
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
 
                         self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
-                
+
+                #Conditional Advance To Start of Next OB
+                if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]):
+                    if not TK.mission_is_over():#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
@@ -604,19 +618,19 @@ class SurveySimulation(object):
             endTimes (astropy Quantity array):
                 mission normalized end times of observations
         """
-        #NEEDS TO BE UPDATED TO USE CALCFZMIN. MEANS WE NEED TO MODIFY CALC_TARG_INTTIME
-        TK = self.TimeKeeping
-        OS = self.OpticalSystem
+        #TK = self.TimeKeeping
+        #OS = self.OpticalSystem
 
-        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        #intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        totTimes = self.intTimesIntTimeFilter
 
-        totTimes = intTimes*mode['timeMultiplier']
+        #totTimes = intTimes*mode['timeMultiplier']
         # end times
         endTimes = startTimes + totTimes
         endTimesNorm = startTimesNorm + totTimes
         # indices of observable stars
-        sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
-                (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+        sInds = np.intersect1d(np.intersect1d(self.intTimeFilterInds,sInds), (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+        #sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) &        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
 
         return sInds, intTimes[sInds], endTimes
 

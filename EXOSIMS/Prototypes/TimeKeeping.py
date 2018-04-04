@@ -263,7 +263,7 @@ class TimeKeeping(object):
             return False
 
         #Use 1 and Use 3
-        if tAbs =< self.OBendTimes[self.OBnumber] + self.missionStart: # The time to advance to does not leave the current OB (and by extension the end of mission)
+        if tAbs <= self.OBendTimes[self.OBnumber] + self.missionStart: # The time to advance to does not leave the current OB (and by extension the end of mission)
             self.currentTimeNorm = (tAbs - self.missionStart).to('day')
             self.currentTimeAbs = tAbs
             if addExoplanetObsTime:  # count time towards exoplanet Obs Time

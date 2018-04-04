@@ -260,7 +260,7 @@ class SurveySimulation(object):
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars)
-        self.fZmin = ZL.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping.currentTimeAbs, self.mode, self.cachefname)
+        self.fZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping.currentTimeAbs, self.mode, self.cachefname)
         fEZ = self.ZodiacalLight.fEZ0
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]

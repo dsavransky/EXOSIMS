@@ -197,8 +197,8 @@ class Stark(ZodiacalLight):
         if not hasattr(self,'fZ_startSaved'):
             self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
 
-        fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
-        tmpfZ = np.asarray(fZ_startSaved)#convert into an array
+        #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+        tmpfZ = np.asarray(self.fZ_startSaved)#convert into an array
         fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
         #Find minimum fZ of each star
         fZmin = np.zeros(sInds.shape[0])
@@ -207,4 +207,4 @@ class Stark(ZodiacalLight):
             fZmin[i] = min(fZ_matrix[i,:])
             fZminInds[i] = np.argmin(fZ_matrix[i,:])
 
-        return fZmin #fZminInds
+        return fZmin/u.arcsec**2 #fZminInds

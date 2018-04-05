@@ -168,12 +168,7 @@ class ZodiacalLight(object):
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZ from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
-                print(pickle.load(f))
                 tmpfZ = pickle.load(f)
-                try:
-                    f.close()
-                except:
-                    pass
             return tmpfZ
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
@@ -191,7 +186,6 @@ class ZodiacalLight(object):
                 fZ[:,i] = self.fZ(Obs, TL, sInds, time, mode)
             
             with open(cachefname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 pickle.dump(fZ,fo)
                 self.vprint("Saved cached 1st year fZ to %s"%cachefname)
             return fZ

@@ -84,9 +84,6 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
-        #self.OBstartTimes = np.asarray([0])*u.d
-        #self.OBendTimes = np.asarray([0])*u.d
-        #self.OBnumber = 0
         self.init_OB(str(missionSchedule), OBduration*u.d)
         
         # initialize time spend using instrument
@@ -150,7 +147,7 @@ class TimeKeeping(object):
                     self.OBendTimes[-1] = self.missionLife.copy()  # Set end of last OB to end of mission
         self.OBduration = OBduration
         self.OBnumber = 0
-        self.vprint(self.OBendTimes)
+        self.vprint('OBendTimes is: ' + self.OBendTimes)
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?

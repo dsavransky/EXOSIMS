@@ -855,9 +855,12 @@ class tieredScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
-            for i,j in enumerate(WAp):
-                if tochar[i]:
-                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            intTimes = np.zeros(len(tochar))*u.day
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            
+            # for i,j in enumerate(WAp):
+            #     if tochar[i]:
+            #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

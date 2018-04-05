@@ -711,7 +711,6 @@ class tieredScheduler_DD_temp(SurveySimulation):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-
         Returns:
             int_times (astropy quantity array):
                 The suggested integration time

@@ -2,6 +2,12 @@
 from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
+import os
+import csv
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -170,6 +176,7 @@ class ZodiacalLight(object):
             self.vprint("Calculating fZ")
             #OS = self.OpticalSystem#Testing to be sure I can remove this
             #WA = OS.WA0#Testing to be sure I can remove this
+            sInds= np.arange(TL.nStars)
             startTime = np.zeros(sInds.shape[0])*u.d + currentTimeAbs#Array of current times
             resolution = [j for j in range(1000)]
             fZ = np.zeros([sInds.shape[0], len(resolution)])

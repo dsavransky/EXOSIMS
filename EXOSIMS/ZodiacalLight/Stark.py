@@ -6,6 +6,10 @@ import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
 from scipy.interpolate import griddata, CubicSpline #interp1d, DELETE ME OLD INTERPOLANT
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -131,15 +135,14 @@ class Stark(ZodiacalLight):
                 fZmaxInds = tmpDat[1,:]
             return fZmax#, fZmaxInds
 
-        if not hasattr(self,'fZ_startSaved'):
-            self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-
-        fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
-
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint("Calculating fZmax")
-            tmpfZ = np.asarray(fZ_startSaved)
+            if not hasattr(self,'fZ_startSaved'):
+                self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+
+            #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+            tmpfZ = np.asarray(self.fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ

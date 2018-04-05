@@ -86,7 +86,7 @@
   ],
   "modules": {
     "PlanetPopulation": " ",
-    "StarCatalog": " ",
+    "StarCatalog": "EXOCAT1",
     "OpticalSystem": " ",
     "ZodiacalLight": " ",
     "BackgroundSources": " ",

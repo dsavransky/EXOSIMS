@@ -67,7 +67,7 @@ class TimeKeeping(object):
         assert missionPortion > 0 and missionPortion <= 1, \
                 "Require missionPortion in the interval [0,1], got %f"%missionPortion
         # OBduration must be positive nonzero
-        assert OBduration > 0, "Required OBduration positive nonzero, got %f"%OBduration
+        assert OBduration*u.d > 0*u.d, "Required OBduration positive nonzero, got %f"%OBduration
         
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
@@ -84,7 +84,10 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
-        self.init_OB(missionSchedule, OBduration)
+        #self.OBstartTimes = np.asarray([0])*u.d
+        #self.OBendTimes = np.asarray([0])*u.d
+        #self.OBnumber = 0
+        self.init_OB(str(missionSchedule), OBduration*u.d)
         
         # initialize time spend using instrument
         self.exoplanetObsTime = 0*u.day
@@ -121,20 +124,21 @@ class TimeKeeping(object):
             OBnumber (integer):
                 The Observing Block Number
         """
-        if missionSchedule is not None:  # If the missionSchedule is specified
+        if not missionSchedule=='None':  # If the missionSchedule is specified
             tmpOBtimes = list()
-            if os.path.isfile(missionSchedule):  # Check if a mission schedule is manually specified
+            schedulefname = str(os.path.dirname(__file__)+'/../Scripts/' + missionSchedule)
+            if os.path.isfile(schedulefname):  # Check if a mission schedule is manually specified
                 self.vprint("Loading Manual Schedule from %s"%missionSchedule)
-                with open(missionSchedule, 'rb') as f:  # load csv file
+                with open(schedulefname, 'rb') as f:  # load csv file
                     lines = csv.reader(f,delimiter=',')
                     self.vprint('The manual Schedule is:')
                     for line in lines:
                         tmpOBtimes.append(line)
                         self.vprint(line)
-                self.OBstartTimes = np.asarray([item[0] for item in tmpOBtimes])*u.d
-                self.OBendTimes = np.asarray([item[1] for item in tmpOBtimes])*u.d
+                self.OBstartTimes = np.asarray([float(item[0]) for item in tmpOBtimes])*u.d
+                self.OBendTimes = np.asarray([float(item[1]) for item in tmpOBtimes])*u.d
         else:  # Automatically construct OB from OBduration, missionLife, and missionPortion
-            if OBduration == np.inf:  # There is 1 OB spanning the mission
+            if OBduration == np.inf*u.d:  # There is 1 OB spanning the mission
                 self.OBstartTimes = np.asarray([0])*u.d
                 self.OBendTimes = np.asarray([self.missionLife.to('day').value])*u.d
             else:  # OB
@@ -146,6 +150,7 @@ class TimeKeeping(object):
                     self.OBendTimes[-1] = self.missionLife.copy()  # Set end of last OB to end of mission
         self.OBduration = OBduration
         self.OBnumber = 0
+        self.vprint(self.OBendTimes)
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?

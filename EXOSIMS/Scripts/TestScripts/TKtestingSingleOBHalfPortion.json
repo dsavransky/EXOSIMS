@@ -84,18 +84,18 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": " ",
-    "StarCatalog": " ",
-    "OpticalSystem": " ",
-    "ZodiacalLight": " ",
+    "PlanetPopulation": "KeplerLike2",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
     "BackgroundSources": " ",
-    "PlanetPhysicalModel": " ",
-    "Observatory": " ",
+    "PlanetPhysicalModel": "Forecaster",
+    "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": " ",
+    "Completeness": "BrownCompleteness",
     "TargetList": " ",
-    "SimulatedUniverse": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
     "SurveySimulation": " ",
     "SurveyEnsemble": " "
   }

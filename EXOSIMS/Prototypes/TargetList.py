@@ -72,7 +72,7 @@ class TargetList(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, staticStars=True, 
-            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -321,8 +321,6 @@ class TargetList(object):
                     JmH = JmHi[m.groups()[0]](m.groups()[1])
                     self.Jmag[i] = self.Hmag[i] + JmH
 
-
-    
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
         
@@ -356,7 +354,6 @@ class TargetList(object):
         self.completeness_filter()
         if self.explainFiltering:
             print("%d targets remain after completeness filter."%self.nStars)
-
 
     def nan_filter(self):
         """Populates Target List and filters out values which are nan

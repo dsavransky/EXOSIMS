@@ -56,7 +56,7 @@ class TimeKeeping(object):
     _outspec = {}
 
     def __init__(self, missionStart=60634, missionLife=0.1, 
-            missionPortion=1, OBduration=np.inf, missionSchedule=None, **specs):
+        missionPortion=1, OBduration=np.inf, missionSchedule=None, **specs):
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -195,18 +195,18 @@ class TimeKeeping(object):
 
         #Check dt exceeds mission life
         if(self.currentTimeNorm + dt > self.missionLife):
-            self.vprint('The temporal block to allocate dt=%f at curremtTimeNorm=%f would exceed missionLife %f'%(dt, self.currentTimeNorm, self.missionLife))
+            self.vprint('The temporal block to allocate dt=%f at curremtTimeNorm=%f would exceed missionLife %f'%(dt.value, self.currentTimeNorm.value, self.missionLife.value))
             return False #The time to allocate would exceed the missionLife
 
         #Check dt exceeds current OB
         if(self.currentTimeNorm + dt > self.OBendTimes[self.OBnumber]):
-            self.vprint('The temporal block to allocate dt=%f at currentTimeNorm=%f would exceed the end of OBnum=%f at time OBendTimes=%f'%(dt, self.currentTimeNorm, self.OBnumber, self.OBendTimes[self.OBnumber]))
+            self.vprint('The temporal block to allocate dt=%f at currentTimeNorm=%f would exceed the end of OBnum=%f at time OBendTimes=%f'%(dt.value, self.currentTimeNorm.value, self.OBnumber, self.OBendTimes[self.OBnumber].value))
             return False
 
         #Check exceeds allowed instrument Time
         if(addExoplanetObsTime):
             if(self.exoplanetObsTime + dt > self.missionLife*self.missionPortion):
-                self.vprint('The temporal block to allocate dt=%f with current exoplanetObsTime=%f would exceed allowed exoplanetObsTime=%f'%(dt, self.exoplanetObsTime, self.missionLife*self.missionPortion))
+                self.vprint('The temporal block to allocate dt=%f with current exoplanetObsTime=%f would exceed allowed exoplanetObsTime=%f'%(dt.value, self.exoplanetObsTime.value, self.missionLife.value*self.missionPortion))
                 return False # The time to allocate would exceed the allowed exoplanet obs time
             self.currentTimeAbs += dt
             self.currentTimeNorm += dt

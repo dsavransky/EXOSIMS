@@ -95,11 +95,13 @@ class SurveySimulation(object):
     """
 
     _modtype = 'SurveySimulation'
-    _outspec = {}
-
+    
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, **specs):
         
+        #start the outspec
+        self._outspec = {}
+
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
         if scriptfile is not None:
@@ -132,6 +134,7 @@ class SurveySimulation(object):
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         self.vprint('Numpy random seed is: %s'%self.seed)
         np.random.seed(self.seed)
+        self._outspec['seed'] = self.seed
 
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
@@ -198,18 +201,20 @@ class SurveySimulation(object):
         
         # observation time sampling
         self.ntFlux = int(ntFlux)
+        self._outspec['ntFlux'] = self.ntFlux
+
         # maximum number of observations per star
         self.nVisitsMax = int(nVisitsMax)
+        self._outspec['nVisitsMax'] = self.nVisitsMax
+
         # integration time margin for characterization
         self.charMargin = float(charMargin)
+        self._outspec['charMargin'] = self.charMargin
+
         # maximum time for revisit window    
-        self.dt_max = dt_max*u.week
-        
-        # populate outspec with all SurveySimulation scalar attributes
-        for att in self.__dict__.keys():
-            if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
-                self._outspec[att] = self.__dict__[att]
-        
+        self.dt_max = float(dt_max)*u.week
+        self._outspec['dt_max'] = self.dt_max.value
+
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
@@ -263,18 +268,28 @@ class SurveySimulation(object):
         self._outspec['scaleWAdMag'] = scaleWAdMag 
 
         # initialize arrays updated in run_sim()
-        self.DRM = []
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.propagTimes = np.zeros(TL.nStars)*u.d
-        self.lastObsTimes = np.zeros(TL.nStars)*u.d
-        self.starVisits = np.zeros(TL.nStars, dtype=int)#contains the number of times each star was visited
-        self.starRevisit = np.array([])
-        self.starExtended = np.array([], dtype=int)
-        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+        self.initializeStorageArrays()
 
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
+
+    def initializeStorageArrays(self):
+        """
+        Initialize all storage arrays based on # of stars and targets
+        """
+
+        self.DRM = []
+        self.fullSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.partialSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.propagTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.lastObsTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.starVisits = np.zeros(self.TargetList.nStars, dtype=int)#contains the number of times each star was visited
+        self.starRevisit = np.array([])
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
+
+        return
+
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -1147,6 +1162,9 @@ class SurveySimulation(object):
         if rewindPlanets:
             SU.init_systems()
 
+        #reset helper arrays
+        self.initializeStorageArrays()
+
         self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):
@@ -1265,8 +1283,7 @@ class SurveySimulation(object):
             #The above condition should prevent revisits so long as all stars have not been observed
             if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
                 dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)#absolute temporal spacing between revisit and now.
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] #return indice of all revisits within a threshold dt_max of revisit day
-                        if x in sInds]
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
             sInds = np.where(tovisit)[0]
         return sInds

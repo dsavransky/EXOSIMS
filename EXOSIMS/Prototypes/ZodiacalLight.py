@@ -28,9 +28,11 @@ class ZodiacalLight(object):
     """
 
     _modtype = 'ZodiacalLight'
-    _outspec = {}
-
+    
     def __init__(self, magZ=23, magEZ=22, varEZ=0, **specs):
+
+        #start the outspec
+        self._outspec = {}
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -45,7 +47,7 @@ class ZodiacalLight(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['vprint']:
+            if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 

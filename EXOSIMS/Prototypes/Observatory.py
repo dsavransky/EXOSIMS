@@ -72,13 +72,15 @@ class Observatory(object):
     """
 
     _modtype = 'Observatory'
-    _outspec = {}
 
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
             koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
             scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
             defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
             forceStaticEphem=False, **specs):
+
+        #start the outspec
+        self._outspec = {}
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -133,7 +135,7 @@ class Observatory(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['vprint']:
+            if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         

@@ -80,10 +80,10 @@ class Observatory(object):
     _outspec = {}
 
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
-            koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
-            slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
-            defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-            forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, occ_dtStep = 5, **specs):
+        koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
+        slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+        defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
+        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):#DELETE occ_dtStep=5,
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -112,11 +112,11 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
-        self.occ_dtmin  = occ_dtmin*u.d
-        self.occ_dtmax  = occ_dtmax*u.d
-        self.occ_dtStep = occ_dtStep*u.d
-        self.maxdVpct = maxdVpct
+        self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
+        self.occ_dtmin  = occ_dtmin*u.d             # Minimum occulter slew time (days)
+        self.occ_dtmax  = occ_dtmax*u.d             # Maximum occulter slew time (days)
+        #DELETE self.occ_dtStep = occ_dtStep*u.d            # Occulter slew time stel (days)
+        self.maxdVpct = maxdVpct                    # Maximum deltaV percent
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -1193,7 +1193,7 @@ class Observatory(object):
                 TargetList class object
             old_sInd (integer):
                 Integer index of the most recently observed star
-            sInds (integer):
+            sInds (integer ndarray):
                 Integer indeces of the star of interest
             currentTime (astropy Time):
                 Current absolute mission time in MJD

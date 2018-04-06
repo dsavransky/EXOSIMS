@@ -350,7 +350,7 @@ class TimeKeeping(object):
         maxTimeOBendTime = self.OBendTimes[self.OBnumber] - self.currentTimeNorm
         maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
-        maxTimeExoplanetObsTime = self.missionLife - self.exoplanetObsTime
+        maxTimeExoplanetObsTime = self.missionLife*self.missionPortion - self.exoplanetObsTime
         maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
         maxTimeMissionLife = self.missionLife - self.currentTimeNorm

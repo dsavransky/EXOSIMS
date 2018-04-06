@@ -259,13 +259,13 @@ class SurveySimulation(object):
         self.mode = det_mode
 
         # Precalculating intTimeFilter
-        sInds = np.arange(TL.nStars)
-        self.fZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping.currentTimeAbs, self.mode, self.cachefname)
-        fEZ = self.ZodiacalLight.fEZ0
-        dMag = self.dMagint[sInds]
-        WA = self.WAint[sInds]
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.fZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier']
-        self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff))
+        sInds = np.arange(TL.nStars) #Initialize some sInds array
+        self.fZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping.currentTimeAbs, self.mode, self.cachefname) # find fZmin to use in intTimeFilter
+        fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
+        dMag = self.dMagint[sInds] # grabbing dMag
+        WA = self.WAint[sInds] # grabbing WA
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.fZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -515,12 +515,23 @@ class SurveySimulation(object):
         
         # 3. filter out all previously (more-)visited targets, unless in 
         # revisit list, with time within some dt of start (+- 1 week)
-        sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
-
-        # 4. calculate integration times for ALL preselected targets, 
-        # and filter out totTimes > integration cutoff
         if len(sInds) > 0:
-            sInds, intTimes[sInds], endTimes = self.intTimeFilter(sInds, startTimes, mode, startTimesNorm, intTimes)
+            print 'revisit filter'
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+
+        # 4.1 calculate integration times for ALL preselected targets
+        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        endTimes = startTimes + intTimes
+        # 4.2 filter out totTimes > integration cutoff
+        if len(sInds) > 0:
+            print 'intTimeFilter'
+            print len(sInds)
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+            #DELETE sInds = self.intTimeFilter(sInds, startTimes, mode, startTimesNorm, intTimes) #sInds must be the first variable returned
+
+        
+
+
         #DELETE
         # if len(sInds) > 0:  
         #     intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
@@ -537,6 +548,7 @@ class SurveySimulation(object):
         # and filter out unavailable targets
         if len(sInds) > 0 and Obs.checkKeepoutEnd:
             #TODO replace with gabe's keepout map function
+            print 'KO end'
             kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
             sInds = sInds[np.where(kogoodEnd)[0]]
         
@@ -558,6 +570,7 @@ class SurveySimulation(object):
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm))
+            print saltyburrito
             return DRM, None, None, None
             #DELETE
             # #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
@@ -601,43 +614,53 @@ class SurveySimulation(object):
 
         return DRM, sInd, intTime, waitTime
 
-    def intTimeFilter(self, sInds, startTimes, mode, startTimesNorm, intTimes):
-        """Filters stars with best integration time greater than OS.intCutoff
-        Args:
-            sInds (integer aray):
-                Indicies of target starts to filter
-            startTimes (astropy Quantity array):
-                absolute start times of observations.  
-                must be of the same size as sInds 
-            mode (dict):
-                Selected observing mode for detection
-            startTimesNorm (astropy Quantity array):
-                mission normalized start time of observations
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-        Returns:
-            sInds (integer array):
-                Indicies of target starts to filter
-            intTimes (astropy Quantity array):
-                Integration times for detection of fitlered stars in units of day
-            endTimes (astropy Quantity array):
-                mission normalized end times of observations
-        """
-        TK = self.TimeKeeping
-        #OS = self.OpticalSystem
+    # def intTimeFilter(self, sInds, startTimes, mode, startTimesNorm, intTimes):
+    #     """Filters stars with best integration time greater than OS.intCutoff
+    #     Args:
+    #         sInds (integer aray):
+    #             Indicies of target starts to filter
+    #         startTimes (astropy Quantity array):
+    #             absolute start times of observations.  
+    #             has length TL.nStars
+    #         mode (dict):
+    #             Selected observing mode for detection
+    #         startTimesNorm (astropy Quantity array):
+    #             mission normalized start time of observations has length TL.nStars
+    #         intTimes (astropy Quantity array):
+    #             Integration times for detection in units of day has length TL.nStars
+    #     Returns:
+    #         sInds (integer array):
+    #             Indicies of target starts to filter
+    #         intTimes (astropy Quantity array):
+    #             Integration times for detection of filtered stars in units of day
+    #         endTimes (astropy Quantity array):
+    #             mission normalized end times of observations
+    #     """
+    #     # indices of observable stars
+    #     sInds = np.intersect1d(self.intTimeFilterInds,sInds)
 
-        #intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-        totTimes = self.intTimesIntTimeFilter
+    #     # TK = self.TimeKeeping
+    #     # #OS = self.OpticalSystem
 
-        #totTimes = intTimes*mode['timeMultiplier']
-        # end times
-        endTimes = startTimes + totTimes
-        endTimesNorm = startTimesNorm + totTimes
-        # indices of observable stars
-        sInds = np.intersect1d(np.intersect1d(self.intTimeFilterInds,sInds), (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
-        #sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) &        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+    #     # #intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+    #     # totTimes = self.intTimesIntTimeFilter#DELETE [self.intTimeFilterInds]
 
-        return sInds, intTimes[sInds], endTimes
+    #     # #totTimes = intTimes*mode['timeMultiplier']
+    #     # # end times
+    #     # endTimes = startTimes + totTimes
+    #     # endTimesNorm = startTimesNorm + totTimes
+
+    #     # #DELETE maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(self.Observatory,mode)
+    #     # #DELETE maxIT = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)
+        
+    #     # #DELETE np.where(endTimesNorm <= TK.OBendTimes[TK.OBnumber])[0]
+    #     # #DELETE sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) &        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+
+
+    #     # #Return order here is crucial. 
+    #     # #sInds must be returned first: ex. sInds, intTimes[sInds], endTimes[sInds] = self.intTimeFilter(...)
+    #     # #an indexing error occurs if return of form: intTimes[sInds], endTimes[sInds], sInds = self.intTimeFilter(...)
+    #     return sInds#, intTimes[sInds], endTimes[sInds] 
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Helper method for next_target to aid in overloading for alternative implementations.

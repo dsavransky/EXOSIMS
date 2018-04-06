@@ -14,10 +14,6 @@ except:
     import pickle
 import hashlib
 import csv
-try:
-    import cPickle as pickle
-except:
-    import pickle
 from numpy import nan
 
 Logger = logging.getLogger(__name__)
@@ -102,7 +98,7 @@ class SurveySimulation(object):
     _outspec = {}
 
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, dt_max=1.,**specs):
+        WAint=None, dMagint=None, dt_max=1.,**specs):
         
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
@@ -214,6 +210,8 @@ class SurveySimulation(object):
             if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
                 self._outspec[att] = self.__dict__[att]
         
+        print saltyburrito
+
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
@@ -474,7 +472,6 @@ class SurveySimulation(object):
                 a strategically advantageous amount of time to wait in the case of an occulter for slew times
         
         """
-        
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -528,9 +525,6 @@ class SurveySimulation(object):
             print len(sInds)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             #DELETE sInds = self.intTimeFilter(sInds, startTimes, mode, startTimesNorm, intTimes) #sInds must be the first variable returned
-
-        
-
 
         #DELETE
         # if len(sInds) > 0:  

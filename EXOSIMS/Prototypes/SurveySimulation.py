@@ -209,8 +209,6 @@ class SurveySimulation(object):
         for att in self.__dict__.keys():
             if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
                 self._outspec[att] = self.__dict__[att]
-        
-        print saltyburrito
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
@@ -518,6 +516,9 @@ class SurveySimulation(object):
 
         # 4.1 calculate integration times for ALL preselected targets
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
         endTimes = startTimes + intTimes
         # 4.2 filter out totTimes > integration cutoff
         if len(sInds) > 0:
@@ -776,7 +777,7 @@ class SurveySimulation(object):
         #Allocate Time
         extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
         success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True)#allocates time
-        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],)
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
         dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target

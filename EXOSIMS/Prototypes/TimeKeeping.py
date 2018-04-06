@@ -147,7 +147,7 @@ class TimeKeeping(object):
                     self.OBendTimes[-1] = self.missionLife.copy()  # Set end of last OB to end of mission
         self.OBduration = OBduration
         self.OBnumber = 0
-        self.vprint('OBendTimes is: ' + self.OBendTimes)
+        self.vprint('OBendTimes is: ' + str(self.OBendTimes)) # Could Be Deleted
 
     def mission_is_over(self):
         r"""Is the time allocated for the mission used up?

@@ -13,9 +13,11 @@ class SurveyEnsemble(object):
     """
 
     _modtype = 'SurveyEnsemble'
-    _outspec = {}
 
     def __init__(self, **specs):
+
+        #start the outspec
+        self._outspec = {}
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

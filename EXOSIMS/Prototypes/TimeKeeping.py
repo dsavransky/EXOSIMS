@@ -372,14 +372,14 @@ class TimeKeeping(object):
 
         return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
 
-    def get_TAbs_mission_is_over(self):
-        """Calculates nearest mission termination time in Absolute Time
-        Returns:
-            tAbs (astropy Time Quantity):
-                The absolute time that terminaltes the mission
-        """
-        tAbs1 = self.OBendTimes[-1] + self.missionStart
-        tAbs2 = (self.missionLife*self.missionPortion - self.exoplanetObsTime) + self.currentTimeAbs
-        tAbs3 = self.missionLife + self.missionStart
+    # def get_TAbs_mission_is_over(self):
+    #     """Calculates nearest mission termination time in Absolute Time
+    #     Returns:
+    #         tAbs (astropy Time Quantity):
+    #             The absolute time that terminaltes the mission
+    #     """
+    #     tAbs1 = self.OBendTimes[-1] + self.missionStart
+    #     tAbs2 = (self.missionLife*self.missionPortion - self.exoplanetObsTime) + self.currentTimeAbs
+    #     tAbs3 = self.missionLife + self.missionStart
 
-        return min(tAbs1,tAbs2,tAbs3)
+    #     return min(tAbs1,tAbs2,tAbs3)

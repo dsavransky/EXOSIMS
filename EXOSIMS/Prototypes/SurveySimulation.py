@@ -311,7 +311,7 @@ class SurveySimulation(object):
         sInd = None
         ObsNum = 0
         #DELETE#ObsStartTimes = list()
-        while not TK.mission_is_over():
+        while not TK.mission_is_over(Obs,det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -405,7 +405,7 @@ class SurveySimulation(object):
             else:#sInd == None
                 if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over():#as long as the mission is not over
+                    if not TK.mission_is_over(Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
 
                 elif(waitTime is not None):

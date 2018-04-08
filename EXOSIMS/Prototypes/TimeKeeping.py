@@ -149,22 +149,26 @@ class TimeKeeping(object):
         self.OBnumber = 0
         self.vprint('OBendTimes is: ' + str(self.OBendTimes)) # Could Be Deleted
 
-    def mission_is_over(self):
+    def mission_is_over(self, Obs, mode):
         r"""Is the time allocated for the mission used up?
         
         This supplies an abstraction around the test:
             (currentTimeNorm > missionFinishNorm)
         so that users of the class do not have to perform arithmetic
         on class variables.
-        
+        Args:
+            Obs (Observatory Object):
+                Observatory module for obs.settlingTime
+            mode ():
+                for overhead time
         Returns:
             is_over (Boolean):
                 True if the mission time is used up, else False.
         """
         
-        is_over = ((self.currentTimeNorm >= self.missionLife) \
-            or (self.exoplanetObsTime.to('day') >= self.missionLife.to('day')*self.missionPortion) \
-            or (self.currentTimeNorm >= self.OBendTimes[-1]))
+        is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife) \
+            or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
+            or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]))
         
         return is_over
 

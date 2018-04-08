@@ -304,7 +304,7 @@ class SurveySimulation(object):
             char_mode = allModes[0]
         
         # begin Survey, and loop until mission is finished
-        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)#Artificially +1 so it says OB1 and not OB0
+        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber)#Artificially +1 so it says OB0
         self.logger.info(log_begin)
         self.vprint(log_begin)
         t0 = time.time()
@@ -403,21 +403,32 @@ class SurveySimulation(object):
                     self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
                     break
             else:#sInd == None
-                #AdvanceToAbsTime function calls
-                #CASE 1
-                if waitTime is not None:
-                    TK.advanceToAbsTime(Tk.currentTimeAbs + waitTime)
+                if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                    #Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over():#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+
+                elif(waitTime is not None):
+                    #AdvanceToAbsTime function calls
+                    #CASE 1: Advance specific wait time
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
+                    if success == False:
+                        self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 1')
+                        #print saltyburrito
+                        #DELETE TK.advanceToAbsTime(TK.get_TAbs_mission_is_over(), False)
+                        #DELETE if min(TKget_ObsDetectionMaxIntTime(Obs,mode)) < (Obs.settlingTime + mode['syst']['ohTime']).value:
+
                 else:
                     #DELETE np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
                     #DELETE allocate settling time + overhead time
                     #DELETE tmpCurrentTimeAbs = TK.currentTimeAbs + Obs.settlingTime + mode['syst']['ohTime']
                     # start times, including slew times
                     startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
 
                     #CASE 2
                     #If There are no observable targets for the rest of the mission
-                    if not ((observableTimes[0][(TK.missionFinishAbs.value*u.d > observableTimes[0].value*u.d)*(observableTimes[0].value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                    if((observableTimes[(TK.missionFinishAbs.value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
                         #Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
@@ -426,16 +437,15 @@ class SurveySimulation(object):
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #dt = np.min(observableTimes[0][observableTimes[0].value*u.d>TK.currentTimeAbs.value*u.d])-TK.currentTimeAbs.value*u.d
                         #TODO ADD ADVANCE TO WHEN FZMIN OCURS
-                        tAbs = np.min(observableTimes[0][observableTimes[0].value*u.d > TK.currentTimeAbs.value*u.d])
+                        tAbs = np.min(observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d])
                         #Advance this time Absolutely
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
-
-                        self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' waiting ' + str(dt))
-
-                #Conditional Advance To Start of Next OB
-                if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]):
-                    if not TK.mission_is_over():#as long as the mission is not over
-                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                        if success == False:
+                            self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 2')
+                            #print saltyburrito
+                            #DELETE TK.advanceToAbsTime(TK.get_TAbs_mission_is_over(), False)
+                        self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' Advanced To tNorm= ' + str(tAbs-TK.missionStart))
+                
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
@@ -511,7 +521,6 @@ class SurveySimulation(object):
         # 3. filter out all previously (more-)visited targets, unless in 
         # revisit list, with time within some dt of start (+- 1 week)
         if len(sInds) > 0:
-            print 'revisit filter'
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
@@ -520,10 +529,10 @@ class SurveySimulation(object):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
         endTimes = startTimes + intTimes
+        if maxIntTime.value <= 0:
+            sInds = np.asarray([],dtype=int)
         # 4.2 filter out totTimes > integration cutoff
         if len(sInds) > 0:
-            print 'intTimeFilter'
-            print len(sInds)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             #DELETE sInds = self.intTimeFilter(sInds, startTimes, mode, startTimesNorm, intTimes) #sInds must be the first variable returned
 
@@ -543,7 +552,6 @@ class SurveySimulation(object):
         # and filter out unavailable targets
         if len(sInds) > 0 and Obs.checkKeepoutEnd:
             #TODO replace with gabe's keepout map function
-            print 'KO end'
             kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
             sInds = sInds[np.where(kogoodEnd)[0]]
         
@@ -565,7 +573,6 @@ class SurveySimulation(object):
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm))
-            print saltyburrito
             return DRM, None, None, None
             #DELETE
             # #np.arange(TL.nStars) can be replaced with something better but we need to save the different filtering at each step
@@ -1032,6 +1039,7 @@ class SurveySimulation(object):
             currentTimeAbs = TK.currentTimeAbs.copy()
 
             #Allocate Time
+            intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
             success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'],True)#allocates time
             if success == False: #Time was not successfully allocated
@@ -1044,10 +1052,10 @@ class SurveySimulation(object):
                 char_systemParams = SU.dump_system_params(sInd)
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
-            dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
+            #DELETE dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
 
             #TK.allocate_time(mode['syst']['ohTime'])
-            intTime = np.max(intTimes[tochar])
+            
             pIndsChar = pIndsDet[tochar]
             log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
@@ -1065,7 +1073,7 @@ class SurveySimulation(object):
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
-                #dt = intTime/self.ntFlux
+                dt = intTime/self.ntFlux
                 timePlus = mode['syst']['ohTime']#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt

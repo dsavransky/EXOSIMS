@@ -38,9 +38,11 @@ class PostProcessing(object):
     """
     
     _modtype = 'PostProcessing'
-    _outspec = {}
-
+    
     def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, **specs):
+
+        #start the outspec
+        self._outspec = {}
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -87,7 +89,7 @@ class PostProcessing(object):
         
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['vprint', 'ppFact', 'FAdMag0']:
+            if att not in ['vprint', 'ppFact', 'FAdMag0','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         # populate with values which may be interpolants

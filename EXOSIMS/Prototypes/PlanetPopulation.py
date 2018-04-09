@@ -52,12 +52,14 @@ class PlanetPopulation(object):
     """
 
     _modtype = 'PlanetPopulation'
-    _outspec = {}
-
+    
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
             Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
             Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
-        
+       
+        #start the outspec
+        self._outspec = {}
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
@@ -96,7 +98,7 @@ class PlanetPopulation(object):
         
         # populate all attributes to outspec
         for att in self.__dict__.keys():
-            if att not in ['vprint']:
+            if att not in ['vprint','_outspec']:
                 dat = copy.copy(self.__dict__[att])
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
                 

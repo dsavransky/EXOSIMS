@@ -508,15 +508,16 @@ class SurveySimulation(object):
             sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
-            
+
         # start times, including slew times
         #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
         startTimes = tmpCurrentTimeAbs + slewTimes
         startTimesNorm = tmpCurrentTimeNorm + slewTimes
         # indices of observable stars
-        #TODO replace with Gabe's Keepout function
-        kogoodStart = Obs.keepout(TL, sInds, startTimes)
-        sInds = sInds[np.where(kogoodStart)[0]]
+
+        # 2.5 Filter stars not observable at startTimes
+        koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+        sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         
         # 3. filter out all previously (more-)visited targets, unless in 
         # revisit list, with time within some dt of start (+- 1 week)
@@ -547,13 +548,15 @@ class SurveySimulation(object):
         #     # indices of observable stars
         #     sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
         #             (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+
+
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
-        # 5. find spacecraft orbital END positions (for each candidate target), 
+        # 5.2 find spacecraft orbital END positions (for each candidate target), 
         # and filter out unavailable targets
         if len(sInds) > 0 and Obs.checkKeepoutEnd:
-            #TODO replace with gabe's keepout map function
-            kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
-            sInds = sInds[np.where(kogoodEnd)[0]]
+            koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         
         # 6. choose best target from remaining
         if len(sInds) > 0:

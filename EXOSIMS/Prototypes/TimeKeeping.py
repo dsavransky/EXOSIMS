@@ -159,8 +159,8 @@ class TimeKeeping(object):
         Args:
             Obs (Observatory Object):
                 Observatory module for obs.settlingTime
-            mode ():
-                for overhead time
+            mode (dict):
+                Selected observing mode for detection (uses only overhead time)
         Returns:
             is_over (Boolean):
                 True if the mission time is used up, else False.

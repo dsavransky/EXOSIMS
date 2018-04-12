@@ -412,11 +412,7 @@ class SurveySimulation(object):
                         return DRM, None, None
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
-                        oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d]
-                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)#advance do that observable time
-                        else:
-                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tAbs = np.min(observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d])
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         if success == False:
                             self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 2')
@@ -1256,7 +1252,7 @@ class SurveySimulation(object):
         cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
         fileloc = os.path.split(inspect.getfile(self.__class__))[0]
         cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
-        #  Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
+        #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname
 
     def revisitFilter(self,sInds,tmpCurrentTimeNorm):

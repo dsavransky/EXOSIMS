@@ -72,7 +72,7 @@ class TimeKeeping(object):
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
         # seconds, causing warnings from astropy.time when time-deltas are added
-        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')#the absolute date of mission start
+        self.missionStart = Time(float(missionStart), format='mjd', scale='tai')#the absolute date of mission start must have scale tai
         self.missionPortion = float(missionPortion)#the portion of missionFinishNorm the instrument can observe for
         
         # set values derived from quantities above
@@ -248,7 +248,7 @@ class TimeKeeping(object):
         """Advances the current mission time to tAbs
         Args:
             tAbs (Astropy Quantity):
-                The absolute mission time to advance currentTimeAbs to
+                The absolute mission time to advance currentTimeAbs to. MUST HAVE scale='tai'
             addExoplanetObsTime (bool):
                 A flag indicating whether to add advanced time to exoplanetObsTime or not
         Updates Attributes:
@@ -302,7 +302,7 @@ class TimeKeeping(object):
 
         #Use 5 and 7 #extended to accomodate any current and future time between OBs
         tNorm = (tAbs - self.missionStart).value*u.d
-        if np.any((tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])):  # The tAbs is between end End of an OB and start of the Next OB
+        if np.any(  (tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])  ):  # The tAbs is between end End of an OB and start of the Next OB
             endIndex = np.where((tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])==True)[0][0]  # Return OBnumber of End Index
             t_added = self.OBendTimes[endIndex] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
             for ind in np.arange(endIndex+1,len(self.OBendTimes)):  # Add time for all additional OB

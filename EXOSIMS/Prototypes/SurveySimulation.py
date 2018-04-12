@@ -417,7 +417,6 @@ class SurveySimulation(object):
                             tAbs = np.min(oTnowToEnd)#advance do that observable time
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
-                        tAbs = np.min(observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d])
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         if success == False:
                             self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 2')

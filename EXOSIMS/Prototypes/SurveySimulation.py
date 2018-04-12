@@ -518,9 +518,11 @@ class SurveySimulation(object):
         # 5.2 find spacecraft orbital END positions (for each candidate target), 
         # and filter out unavailable targets
         if len(sInds) > 0 and Obs.checkKeepoutEnd:
-            koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
-        
+            try: # endTimes may exist past koTimes so we have an exception to hand this case
+                koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
+                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            except:
+                sInds = np.asarray([],dtype=int)
         # 6. choose best target from remaining
         if len(sInds) > 0:
             # choose sInd of next target

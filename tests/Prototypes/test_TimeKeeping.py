@@ -14,6 +14,8 @@ import unittest
 import StringIO
 from collections import namedtuple
 from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping
+from EXOSIMS.Prototypes.Observatory import Observatory
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -149,24 +151,35 @@ class TestTimeKeepingMethods(unittest.TestCase):
         Approach: Allocate time until mission completes.  Check that the mission terminated at
         the right time.
         """
-
-        print 'mission_is_over()'
-        life = 2.0 * u.year
+        life = 0.1 * u.year
         tk = self.fixture(missionLife=life.to(u.year).value, missionPortion=1.0)
-        # allocate blocks of size dt
-        dt = 1 * u.day
-        # mission not over
-        self.assertFalse(tk.mission_is_over())
-        while not tk.mission_is_over():
-            tk.allocate_time(dt)
-        self.assertTrue(tk.mission_is_over())
+        Obs = Observatory(settlingTime=0.5)
+        OS = OpticalSystem(ohTime=0.5)
+        allModes = OS.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        dt = 1 * u.day  # allocate blocks of size dt
+
+
+        # 1) mission not over
+        self.assertFalse(tk.mission_is_over(Obs, det_mode)) #the mission has just begun
+
+        # 2) exoplanetObsTime exceeded
+        tk.exoplanetObsTime = 1.1*tk.missionLife*tk.missionPortion
+        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        tk.exoplanetObsTime = 0.*tk.missionLife*tk.missionPortion
+
+
+        # 2) Allocate a single Day
+        while not tk.mission_is_over(Obs, det_mode):
+            success = tk.allocate_time(dt, Obs, det_mode, False)
+        self.assertTrue(tk.mission_is_over(Obs, det_mode))
         # ensure mission terminates within delta/2 of its lifetime
         #   note: if missionPortion is not 1, the mission can end outside an observation window,
         #   and the current time will not be close to the lifetime.
         self.assertAlmostEqual(tk.currentTimeNorm.to(u.day).value, life.to(u.day).value, delta=dt.to(u.day).value/2)
         # allocate more time, and ensure mission is still over
         tk.allocate_time(dt)
-        self.assertTrue(tk.mission_is_over())
+        self.assertTrue(tk.mission_is_over(Obs, det_mode))
 
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method
@@ -191,26 +204,26 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.assertEqual((tNowNorm2-tNowNorm1).value,obdur/missPor)
         self.assertEqual((tNowAbs2-tNowAbs1).value,obdur/missPor)
 
-    def test_get_tStartNextOB(self):
-        r"""Test get_tStartNextOB Method
-        """
-        life = 2.0*u.year
-        obdur = 15
-        missPor = 0.6
-        tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
+    # def test_get_tStartNextOB(self):
+    #     r"""Test get_tStartNextOB Method
+    #     """
+    #     life = 2.0*u.year
+    #     obdur = 15
+    #     missPor = 0.6
+    #     tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
 
-        tStartNextOB = tk.get_tStartNextOB()
-        tk.advancetToStartOfNextOB()
-        self.assertEqual(tk.OBstartTimes[tk.OBnumber],tStartNextOB)
+    #     tStartNextOB = tk.get_tStartNextOB()
+    #     tk.advancetToStartOfNextOB()
+    #     self.assertEqual(tk.OBstartTimes[tk.OBnumber],tStartNextOB)
 
-    def test_get_tEndThisOB(self):
-        """Test get_tEndThisOB
-        """
-        life = 2.0*u.year
-        obdur = 15
-        missPor = 0.6
-        tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
-        self.assertEqual(tk.OBendTimes[tk.OBnumber],tk.get_tEndThisOB())
+    # def test_get_tEndThisOB(self):
+    #     """Test get_tEndThisOB
+    #     """
+    #     life = 2.0*u.year
+    #     obdur = 15
+    #     missPor = 0.6
+    #     tk = self.fixture(missionLife=life.to(u.year).value, OBduration=obdur, missionPortion=missPor)
+    #     self.assertEqual(tk.OBendTimes[tk.OBnumber],tk.get_tEndThisOB())
 
 if __name__ == '__main__':
     unittest.main()

@@ -517,7 +517,7 @@ class Observatory(object):
         
         # global times when keepout is checked for all stars
         koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
-        koTimes = Time(koTimes,format='mjd')
+        koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
 
         if os.path.exists(koPath):
             # keepout map already exists for parameters
@@ -571,7 +571,7 @@ class Observatory(object):
         # minimum slew time for occulter to align with new star
         if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
         else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
-        nextObTimes = Time(nextObTimes,format='mjd')  #converting to astropy MJD time array
+        nextObTimes = Time(nextObTimes,format='mjd',scale='tai')  #converting to astropy MJD time array
         
         # finding observable times 
         observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value
@@ -585,10 +585,10 @@ class Observatory(object):
             reDo = np.where(observable_range < self.occ_dtmin.value)[0]
             if reDo.size:
                 correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
-                correctedObTimes = Time(correctedObTimes,format='mjd')
+                correctedObTimes = Time(correctedObTimes,format='mjd',scale='tai')
                 observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
 
-        return Time(observableTimes,format='mjd') 
+        return Time(observableTimes,format='mjd',scale='tai') 
     
     def find_nextObsWindow(self,TL,sInds,currentTimes,koMap,koTimes):
         """Method used by calculate_observableTimes for finding next observable windows
@@ -964,7 +964,7 @@ class Observatory(object):
         
         """
         
-        j2000 = Time(2000., format='jyear')
+        j2000 = Time(2000., format='jyear',scale='tai')
         TDB = (currentTime.jd - j2000.jd)/36525.
         
         return TDB

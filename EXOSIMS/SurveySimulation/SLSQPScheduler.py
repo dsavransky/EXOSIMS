@@ -18,7 +18,7 @@ class SLSQPScheduler(SurveySimulation):
     linear solver is used to find an initial solution consistent with the constraints.
     For details see Savransky et al. 2017 (SPIE).
 
-    Args:        
+    Args:         
         \*\*specs:
             user specified values
 
@@ -248,7 +248,7 @@ class SLSQPScheduler(SurveySimulation):
             #### instead of actual time left, try bounding by maxTime - detection time used
             #need to update time used in choose_next_target
             
-            timeLeft = (self.TimeKeeping.missionFinishNorm - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
+            timeLeft = (self.TimeKeeping.missionLife - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
             bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
 
             initguess = self.t0[sInds].to(u.d).value

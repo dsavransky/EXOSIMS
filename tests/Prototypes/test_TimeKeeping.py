@@ -66,51 +66,82 @@ class TestTimeKeepingMethods(unittest.TestCase):
         Approach: Ensure ordinary allocations succeed, and that erroneous allocations
         fail.  Ensure allocations increase the mission time state variables correctly.
         """
-
-        print 'allocate_time()'
         tk = self.fixture(OBduration=10.0)
-        ## 1: Basic allocations
 
-        # basic allocation: no time
-        t0 = tk.currentTimeNorm.copy()
-        tk.allocate_time(0.0*u.day)
-        self.assertEqual(tk.currentTimeNorm,0.0*u.day)
+        # 1) dt = 0
+        self.assertFalse(tk.allocate_time(0*u.d,True))
+        self.assertFalse(tk.allocate_time(0*u.d,False))
+        # 2) dt < 0
+        self.assertFalse(tk.allocate_time(-1*u.d,True))
+        self.assertFalse(tk.allocate_time(-1*u.d,False))
+        # 3) Exceeds missionLife
+        tk.missionLife = 365*u.d
+        tk.currentTimeNorm = tk.missionLife - 1*u.d
+        tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
+        self.assertFalse(tk.allocate_time(2*u.d,True))
+        self.assertFalse(tk.allocate_time(2*u.d,False))
+        tk.currentTimeNorm = 0*u.d
+        tk.currentTimeAbs = tk.missionStart
+        # 4) Exceeds current OB
+        tk.OBendTimes = [20]*u.d
+        tk.OBnumber = 0
+        tk.currentTimeNorm = tk.OBendTimes[tk.OBnumber] - 1*u.d
+        tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
+        self.assertFalse(tk.allocate_time(2*u.d,True))
+        self.assertFalse(tk.allocate_time(2*u.d,False))
+        tk.currentTimeNorm = 0*u.d
+        tk.currentTimeAbs = tk.missionStart
+        # 5) Exceeds exoplanetObsTime
+        tk.missionLife = 10*u.d
+        tk.missionPortion = 0.1
+        tk.exoplanetObsTime = tk.missionLife*tk.missionPortion
 
-        # basic allocation: a day
-        tk.allocate_time(1.0*u.day)
-        self.assertEqual(tk.currentTimeNorm-t0,1.0*u.day)
 
-        # basic allocation: longer than timekeeping window
-        # should put you at start of next block
-        OBnum = tk.OBnumber
-        tk.allocate_time(tk.OBduration + 1.0*u.day)
-        self.assertEqual(OBnum+1,tk.OBnumber)
-        self.assertEqual(tk.OBstartTimes[-1],tk.currentTimeNorm)
 
-        ## 2: Consistency
-        # do not allow to go beyond the first observation window
-        #tk = self.fixture(missionPortion=1.0, missionLife=(2*n_test*scale).to(u.year).value)
-        tk = self.fixture(OBduration=100.)
-        n_test = 10
-        scale = tk.OBduration / (n_test + 1) # scale of allocations [day]
-        # series of (small) basic allocations
-        for _ in range(n_test):
-            t0n = tk.currentTimeNorm.copy()
-            t0a = tk.currentTimeAbs.copy()
-            dt = scale * np.random.rand()
-            tk.allocate_time(dt)
-            t1n = tk.currentTimeNorm
-            t1a = tk.currentTimeAbs
-            # print('timeDifference ' + str((t1n-t0n)))
-            # print('dt             ' + str(dt))
-            try:
-                self.assertAlmostEqual((t1n - t0n).to(u.day).value, dt.to(u.day).value, places=8)
-            except:
-                self.assertAlmostEqual((t1n - t0n).to(u.day).value, (tk.OBstartTimes[tk.OBnumber]-t0n).to(u.day).value, places=8)
-            try:
-                self.assertAlmostEqual((t1a - t0a).to(u.day).value, dt.to(u.day).value, places=8)
-            except:
-                self.assertAlmostEqual((t1a - t0a).to(u.day).value, (tk.OBstartTimes[tk.OBnumber] + tk.missionStart - t0a).to(u.day).value, places=8)
+
+
+
+
+        # # basic allocation: no time
+        # t0 = tk.currentTimeNorm.copy()
+        # tk.allocate_time(0.0*u.day)
+        # self.assertEqual(tk.currentTimeNorm,0.0*u.day)
+
+        # # basic allocation: a day
+        # tk.allocate_time(1.0*u.day)
+        # self.assertEqual(tk.currentTimeNorm-t0,1.0*u.day)
+
+        # # basic allocation: longer than timekeeping window
+        # # should put you at start of next block
+        # OBnum = tk.OBnumber
+        # tk.allocate_time(tk.OBduration + 1.0*u.day)
+        # self.assertEqual(OBnum+1,tk.OBnumber)
+        # self.assertEqual(tk.OBstartTimes[-1],tk.currentTimeNorm)
+
+        # ## 2: Consistency
+        # # do not allow to go beyond the first observation window
+        # #tk = self.fixture(missionPortion=1.0, missionLife=(2*n_test*scale).to(u.year).value)
+        # tk = self.fixture(OBduration=100.)
+        # n_test = 10
+        # scale = tk.OBduration / (n_test + 1) # scale of allocations [day]
+        # # series of (small) basic allocations
+        # for _ in range(n_test):
+        #     t0n = tk.currentTimeNorm.copy()
+        #     t0a = tk.currentTimeAbs.copy()
+        #     dt = scale * np.random.rand()
+        #     tk.allocate_time(dt)
+        #     t1n = tk.currentTimeNorm
+        #     t1a = tk.currentTimeAbs
+        #     # print('timeDifference ' + str((t1n-t0n)))
+        #     # print('dt             ' + str(dt))
+        #     try:
+        #         self.assertAlmostEqual((t1n - t0n).to(u.day).value, dt.to(u.day).value, places=8)
+        #     except:
+        #         self.assertAlmostEqual((t1n - t0n).to(u.day).value, (tk.OBstartTimes[tk.OBnumber]-t0n).to(u.day).value, places=8)
+        #     try:
+        #         self.assertAlmostEqual((t1a - t0a).to(u.day).value, dt.to(u.day).value, places=8)
+        #     except:
+        #         self.assertAlmostEqual((t1a - t0a).to(u.day).value, (tk.OBstartTimes[tk.OBnumber] + tk.missionStart - t0a).to(u.day).value, places=8)
 
     # def test_allocate_time_long(self):
     #     r"""Test allocate_time method (cumulative).

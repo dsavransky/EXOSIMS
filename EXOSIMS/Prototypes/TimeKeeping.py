@@ -166,9 +166,9 @@ class TimeKeeping(object):
                 True if the mission time is used up, else False.
         """
         
-        is_over = ((self.currentTimeNorm + settlingTime + ohTime >= self.missionLife) \
-            or (self.exoplanetObsTime.to('day') + settlingTime + ohTime >= self.missionLife.to('day')*self.missionPortion) \
-            or (self.currentTimeNorm + settlingTime + ohTime >= self.OBendTimes[-1]))
+        is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife) \
+            or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
+            or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]))
         
         return is_over
 

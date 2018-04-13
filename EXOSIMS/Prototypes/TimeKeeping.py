@@ -158,7 +158,7 @@ class TimeKeeping(object):
         on class variables.
         Args:
             Obs (Observatory Object):
-                Observatory module for obs.settlingTime
+                Observatory module for Obs.settlingTime
             mode (dict):
                 Selected observing mode for detection (uses only overhead time)
         Returns:
@@ -347,6 +347,8 @@ class TimeKeeping(object):
     def get_ObsDetectionMaxIntTime(self,Obs,mode):
         """Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
         Args:
+            Obs (Observatory Object):
+                Observatory module for Obs.settlingTime
             mode (dict):
                 Selected observing mode for detection
         Returns:

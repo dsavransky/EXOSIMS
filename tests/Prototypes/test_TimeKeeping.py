@@ -164,10 +164,18 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.assertFalse(tk.mission_is_over(Obs, det_mode)) #the mission has just begun
 
         # 2) exoplanetObsTime exceeded
-        tk.exoplanetObsTime = 1.1*tk.missionLife*tk.missionPortion
+        tk.exoplanetObsTime = 1.1*tk.missionLife*tk.missionPortion # set exoplanetObsTime to failure condition
         self.assertTrue(tk.mission_is_over(Obs, det_mode))
-        tk.exoplanetObsTime = 0.*tk.missionLife*tk.missionPortion
+        tk.exoplanetObsTime = 0.*tk.missionLife*tk.missionPortion # reset exoplanetObsTime
 
+        # 3) missionLife exceeded
+        tk.currentTimeNorm = 1.1*tk.missionLife
+        tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife
+        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        tk.currentTimeNorm = 0*u.d
+        tk.currentTimeAbs = tk.missionStart
+
+        # 4) OBendTimes Exceeded
 
         # 2) Allocate a single Day
         while not tk.mission_is_over(Obs, det_mode):

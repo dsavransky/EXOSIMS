@@ -7,6 +7,7 @@
 r"""TimeKeeping module unit tests
 
 Michael Turmon, JPL, Mar/Apr 2016
+Dean Keithly , Cornell, Apr 2018
 """
 
 import sys
@@ -153,41 +154,34 @@ class TestTimeKeepingMethods(unittest.TestCase):
         """
         life = 0.1 * u.year
         tk = self.fixture(missionLife=life.to(u.year).value, missionPortion=1.0)
-        Obs = Observatory(settlingTime=0.5)
-        OS = OpticalSystem(ohTime=0.5)
-        allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-        dt = 1 * u.day  # allocate blocks of size dt
 
-
-        # 1) mission not over
-        self.assertFalse(tk.mission_is_over(Obs, det_mode)) #the mission has just begun
+        # 1) mission has just begun
+        self.assertFalse(tk.mission_is_over(0.5*u.d, 0.5*u.d)) #the mission has just begun
 
         # 2) exoplanetObsTime exceeded
         tk.exoplanetObsTime = 1.1*tk.missionLife*tk.missionPortion # set exoplanetObsTime to failure condition
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(0.5*u.d, 0.5*u.d))
         tk.exoplanetObsTime = 0.*tk.missionLife*tk.missionPortion # reset exoplanetObsTime
 
         # 3) missionLife exceeded
         tk.currentTimeNorm = 1.1*tk.missionLife
         tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(0.5*u.d, 0.5*u.d))
         tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
 
         # 4) OBendTimes Exceeded
-
-        # 2) Allocate a single Day
-        while not tk.mission_is_over(Obs, det_mode):
-            success = tk.allocate_time(dt, Obs, det_mode, False)
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
-        # ensure mission terminates within delta/2 of its lifetime
-        #   note: if missionPortion is not 1, the mission can end outside an observation window,
-        #   and the current time will not be close to the lifetime.
-        self.assertAlmostEqual(tk.currentTimeNorm.to(u.day).value, life.to(u.day).value, delta=dt.to(u.day).value/2)
-        # allocate more time, and ensure mission is still over
-        tk.allocate_time(dt)
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        tmpOBendTimes = tk.OBendTimes.copy()
+        tmpOBstartTimes = tk.OBstartTimes.copy()
+        tk.OBendTimes = [10]*u.d
+        tk.OBstartTimes = [0]*u.d
+        tk.currentTimeNorm = 1.1*tk.OBendTimes[0]
+        tk.currentTimeAbs = tk.missionStart + 1.1*tk.OBendTimes[0]
+        self.assertTrue(tk.mission_is_over(0.5*u.d, 0.5*u.d))
+        tk.currentTimeNorm = 0*u.d
+        tk.currentTimeAbs = tk.missionStart
+        tk.OBendTimes = tmpOBendTimes
+        tk.OBstartTimes = tmpOBstartTimes
 
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method

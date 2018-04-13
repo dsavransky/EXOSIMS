@@ -310,7 +310,7 @@ class SurveySimulation(object):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(Obs.settlingTime,det_mode['syst']['ohTime']):
+        while not TK.mission_is_over(Obs,det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -389,10 +389,10 @@ class SurveySimulation(object):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
                     break
-            else:#sInd == None: Time Advancement
+            else:#sInd == None
                 if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over(Obs.settlingTime,det_mode['syst']['ohTime']):#as long as the mission is not over
+                    if not TK.mission_is_over(Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
@@ -422,7 +422,7 @@ class SurveySimulation(object):
                             self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 2')
                         self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' Advanced To tNorm= ' + str(tAbs-TK.missionStart))
                 
-        else:#TK.mission_is_over(Obs.settlingTime,det_mode['syst']['ohTime'])
+        else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
@@ -502,7 +502,7 @@ class SurveySimulation(object):
 
         # 4.1 calculate integration times for ALL preselected targets
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs.settlingTime, mode['syst']['ohTime'], mode['timeMultiplier'])
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
         endTimes = startTimes + intTimes

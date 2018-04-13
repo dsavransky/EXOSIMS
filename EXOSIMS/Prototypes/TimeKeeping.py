@@ -149,7 +149,7 @@ class TimeKeeping(object):
         self.OBnumber = 0
         self.vprint('OBendTimes is: ' + str(self.OBendTimes)) # Could Be Deleted
 
-    def mission_is_over(self, Obs, mode):
+    def mission_is_over(self, settlingTime, ohTime):
         r"""Is the time allocated for the mission used up?
         
         This supplies an abstraction around the test:
@@ -157,10 +157,10 @@ class TimeKeeping(object):
         so that users of the class do not have to perform arithmetic
         on class variables.
         Args:
-            Obs (Observatory Object):
-                Observatory module for obs.settlingTime
-            mode (dict):
-                Selected observing mode for detection (uses only overhead time)
+            settlingTime (astropy Quantity):
+                Observatory settling time as specified in Obs.settlingTime
+            ohTime (astropy Quantity):
+                Instrument overhead time as specified by det_mode['syst']['ohTime']
         Returns:
             is_over (Boolean):
                 True if the mission time is used up, else False.
@@ -344,11 +344,15 @@ class TimeKeeping(object):
         self.vprint('No Use Case Found in AdvanceToAbsTime')#Can delete if functioning flawlessly
         self.vprint(fail)
 
-    def get_ObsDetectionMaxIntTime(self,Obs,mode):
+    def get_ObsDetectionMaxIntTime(self,settlingTime, ohTime, timeMultiplier):
         """Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
         Args:
-            mode (dict):
-                Selected observing mode for detection
+            settlingTime (astropy Quantity):
+                Observatory settling time as specified in Obs.settlingTime
+            ohTime (astropy Quantity):
+                Instrument overhead time as specified by det_mode['syst']['ohTime']
+            timeMultiplier (float):
+                Integration time multiplier as specified by det_mode['timeMultiplier']
         Returns:
             maxIntTimeOBendTime (astropy Quantity):
                 The maximum integration time bounded by Observation Block end Time
@@ -358,13 +362,13 @@ class TimeKeeping(object):
                 The maximum integration time bounded by MissionLife
         """
         maxTimeOBendTime = self.OBendTimes[self.OBnumber] - self.currentTimeNorm
-        maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeOBendTime = (maxTimeOBendTime - settlingTime - ohTime)/(1 + timeMultiplier -1)
 
         maxTimeExoplanetObsTime = self.missionLife*self.missionPortion - self.exoplanetObsTime
-        maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - settlingTime - ohTime)/(1 + timeMultiplier -1)
 
         maxTimeMissionLife = self.missionLife - self.currentTimeNorm
-        maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeMissionLife = (maxTimeMissionLife - settlingTime - ohTime)/(1 + timeMultiplier -1)
 
         #Ensure all are positive or zero
         if maxIntTimeOBendTime < 0:

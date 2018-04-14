@@ -264,52 +264,50 @@ class TimeKeeping(object):
         if tAbs <= self.currentTimeAbs:
             self.vprint("The time to advance to " + str(tAbs) + " is not after " + str(self.currentTimeAbs))
             return False
-        if tAbs == np.inf:
-            self.vprint("The time to advance to is inf")
-            return False
+
+        #Use 2 and Use 4
+        if tAbs >= self.missionFinishAbs:  # 
+            tmpcurrentTimeNorm = self.currentTimeNorm.copy()
+            t_added = (tAbs - self.currentTimeAbs).value*u.d
+            self.currentTimeNorm = (tAbs - self.missionStart).value*u.d
+            self.currentTimeAbs = tAbs
+            if addExoplanetObsTime:  # Count time towards exoplanetObs Time
+                if (self.exoplanetObsTime + t_added) > (self.missionLife*self.missionPortion):
+                    self.vprint("The time added to exoplanetObsTime " + str(t_added) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
+                    self.exoplanetObsTime = (self.missionLife*self.missionPortion)
+                    return False
+                self.exoplanetObsTime += self.missionLife - tmpcurrentTimeNorm#Advances exoplanet time to end of mission time
+            else:
+                self.exoplanetObsTime += 0*u.d
+            return True
 
         #Use 1 and Use 3
-        if tAbs <= self.OBendTimes[self.OBnumber] + self.missionStart: # The time to advance to does not leave the current OB (and by extension the end of mission)
+        if tAbs <= self.OBendTimes[self.OBnumber] + self.missionStart: # The time to advance to does not leave the current OB
             t_added = (tAbs - self.currentTimeAbs).value*u.d
             self.currentTimeNorm = (tAbs - self.missionStart).to('day')
             self.currentTimeAbs = tAbs
             if addExoplanetObsTime:  # count time towards exoplanet Obs Time
                 if (self.exoplanetObsTime + t_added) > (self.missionLife*self.missionPortion):
                     self.vprint("The time added to exoplanetObsTime " + str(t_added) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
-                    #DELETE self.vprint("Advancing to tAbs failed under Use Case 1")
                     self.exoplanetObsTime = (self.missionLife*self.missionPortion)
                     return False
                 else:
-                    self.exoplanetObsTime += (tAbs - self.currentTimeAbs).value*u.d
+                    self.exoplanetObsTime += t_added
                     return True
             else:  # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0*u.d
             return True
 
-        #Use 2 and Use 4
-        if tAbs >= self.missionFinishAbs:  # Equal to case covered above
-            t_added = (tAbs - self.currentTimeAbs).value*u.d
-            self.currentTimeNorm += (tAbs - self.missionStart).value*u.d
-            self.currentTimeAbs = tAbs
-            if addExoplanetObsTime:  # Count time towards exoplanetObs Time
-                if (self.exoplanetObsTime + t_added) > (self.missionLife*self.missionPortion):
-                    self.vprint("The time added to exoplanetObsTime " + str(t_added) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
-                    #DELETE self.vprint("Advancing to tAbs failed under Use Case 4")
-                    self.exoplanetObsTime = (self.missionLife*self.missionPortion)
-                    return False
-                self.exoplanetObsTime += self.missionLife - self.currentTimeNorm#Advances exoplanet time to end of mission time
-            return True
-
         #Use 5 and 7 #extended to accomodate any current and future time between OBs
         tNorm = (tAbs - self.missionStart).value*u.d
-        if np.any(  (tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])  ):  # The tAbs is between end End of an OB and start of the Next OB
+        if np.any((tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])):  # The tAbs is between end End of an OB and start of the Next OB
             endIndex = np.where((tNorm<=self.OBstartTimes[1:-1])*(tNorm>=self.OBendTimes[0:-2])==True)[0][0]  # Return OBnumber of End Index
-            t_added = self.OBendTimes[endIndex] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
-            for ind in np.arange(endIndex+1,len(self.OBendTimes)):  # Add time for all additional OB
+            t_added = 0*u.d#self.OBendTimes[endIndex+1] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
+            for ind in np.arange(self.OBnumber,endIndex+1):#,len(self.OBendTimes)):  # Add time for all additional OB
                 t_added += self.OBendTimes[ind] - self.OBstartTimes[ind]
             self.OBnumber = endIndex + 1  # set OBnumber to correct Observing Block
-            self.currentTimeNorm = self.OBstartTimes[endIndex + 1]  # Advance Time to start of next OB
-            self.currentTimeAbs = self.OBstartTimes[endIndex + 1] + self.missionStart  # Advance Time to start of next OB
+            self.currentTimeNorm = self.OBstartTimes[self.OBnumber]  # Advance Time to start of next OB
+            self.currentTimeAbs = self.OBstartTimes[self.OBnumber] + self.missionStart  # Advance Time to start of next OB
             if addExoplanetObsTime:  # Count time towards exoplanetObs Time
                 if self.exoplanetObsTime + t_added > self.missionLife*self.missionPortion:  # We can CANNOT allocate that time to exoplanetObsTime
                     self.vprint("The time added to exoplanetObsTime " + str(t_added) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
@@ -317,29 +315,36 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (self.missionLife*self.missionPortion)
                     return False
                 self.exoplanetObsTime += t_added
+            else:
+                self.exoplanetObsTime += 0*u.d
             return True
 
         #Use 6 and 8 #extended to accomodate any current and future time between OBs
         if np.any((tNorm>=self.OBstartTimes[self.OBnumber:-1])*(tNorm<=self.OBendTimes[self.OBnumber:-1])):  # The tAbs is between start of a future OB and end of that OB
-            endIndex = np.where((tNorm>=self.OBstartTimes[self.OBnumber:-1])*(tNorm<=self.OBendTimes[self.OBnumber:-1]))# Return index of OB that tAbs will be inside of
+            endIndex = np.where((tNorm>=self.OBstartTimes[self.OBnumber:-1])*(tNorm<=self.OBendTimes[self.OBnumber:-1])==True)[0][0]# Return index of OB that tAbs will be inside of
             t_added = 0*u.d
             if addExoplanetObsTime:  # Count time towards exoplanetObs Time
-                t_added = (tAbs - self.currentTimeAbs).to('day')
-                for i in np.arange(endIndex - self.OBnumber)+1:# accumulate time to subtract (time not counted against Exoplanet Obs Time)
-                    index = self.OBnumber + i
-                    t_added -= (self.OBstartTimes[index + 1] - self.OBendTimes[index]) #Subtract the time between these OB from the t_added to exoplanetObsTime
+                t_added += (tAbs - self.currentTimeAbs).to('day')
+                for i in np.arange(self.OBnumber, endIndex):# accumulate time to subtract (time not counted against Exoplanet Obs Time)
+                    index = self.OBnumber
+                    t_added -= self.OBstartTimes[index + 1] - self.OBendTimes[index] #Subtract the time between these OB from the t_added to exoplanetObsTime
+                    #Check if exoplanetObsTime would be exceeded
+                if self.exoplanetObsTime + t_added > self.missionLife*self.missionPortion:
+                    self.vprint("The time added to exoplanetObsTime " + str(t_added) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
+                    self.vprint("Advancing to tAbs failed under Use Case 8")
+                    self.exoplanetObsTime = (self.missionLife*self.missionPortion)
+                    self.OBnumber = endIndex  # set OBnumber to correct Observing Block
+                    self.currentTimeNorm = (tAbs - self.missionStart).to('day')  # Advance Time to start of next OB
+                    self.currentTimeAbs = tAbs  # Advance Time to start of next OB
+                    return False
+                else:
+                    self.exoplanetObsTime += t_added
+            else: # addExoplanetObsTime is False
+                self.exoplanetObsTime += 0*u.d
             self.OBnumber = endIndex  # set OBnumber to correct Observing Block
             self.currentTimeNorm = (tAbs - self.missionStart).to('day')  # Advance Time to start of next OB
             self.currentTimeAbs = tAbs  # Advance Time to start of next OB
-            #Check if exoplanetObsTime would be exceeded
-            if self.exoplanetObsTime + t_added > self.missionLife*self.missionPortion:
-                self.vprint("The time added to exoplanetObsTime " + str((tAbs - self.currentTimeAbs).value*u.d) + " would exceed the missionLife*missionPortion " + str(self.missionLife*self.missionPortion))
-                self.vprint("Advancing to tAbs failed under Use Case 8")
-                self.exoplanetObsTime = (self.missionLife*self.missionPortion)
-                return False
-            else:
-                self.exoplanetObsTime += t_added
-                return True
+            return True
 
         self.vprint('No Use Case Found in AdvanceToAbsTime')#Can delete if functioning flawlessly
         self.vprint(fail)
@@ -377,15 +382,3 @@ class TimeKeeping(object):
             maxIntTimeMissionLife = 0*u.d
 
         return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
-
-    # def get_TAbs_mission_is_over(self):
-    #     """Calculates nearest mission termination time in Absolute Time
-    #     Returns:
-    #         tAbs (astropy Time Quantity):
-    #             The absolute time that terminaltes the mission
-    #     """
-    #     tAbs1 = self.OBendTimes[-1] + self.missionStart
-    #     tAbs2 = (self.missionLife*self.missionPortion - self.exoplanetObsTime) + self.currentTimeAbs
-    #     tAbs3 = self.missionLife + self.missionStart
-
-    #     return min(tAbs1,tAbs2,tAbs3)

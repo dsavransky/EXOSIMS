@@ -94,7 +94,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         r"""Test generate fZ method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'generate_fZ' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -117,7 +117,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         """Test calcfZmax method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'calcfZmax' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -146,7 +146,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         r"""Test calcfZmin method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'calcfZmin' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)

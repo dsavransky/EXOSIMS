@@ -283,6 +283,8 @@ class SLSQPScheduler(SurveySimulation):
         Returns:
             sInd (integer):
                 Index of next target star
+            waitTime (astropy Quantity):
+                the amount of time to wait (this method returns None)
         
         """
                 
@@ -295,5 +297,5 @@ class SLSQPScheduler(SurveySimulation):
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
         
-        return sInd
+        return sInd, None
 

@@ -28,13 +28,15 @@ class randomWalkScheduler(SurveySimulation):
         Returns:
             sInd (integer):
                 Index of next target star
-        
+            waitTime (astropy Quantity):
+                the amount of time to wait (this method returns None)
         """
         
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        
+        #sInds = np.array(sInds, ndmin=1, copy=False)
+        #allStarsself.TargetList.nStars
+
         # pick one
         sInd = np.random.choice(sInds)
         
-        return sInd
+        return sInd, None

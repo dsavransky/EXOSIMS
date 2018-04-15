@@ -49,6 +49,8 @@ class linearJScheduler(SurveySimulation):
         Returns:
             sInd (integer):
                 Index of next target star
+            waitTime (astropy Quantity):
+                the amount of time to wait (this method returns None)
         
         """
 
@@ -75,7 +77,7 @@ class linearJScheduler(SurveySimulation):
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
-            return sInd
+            return sInd, None
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
@@ -94,7 +96,7 @@ class linearJScheduler(SurveySimulation):
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
-        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionLife)**2
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
@@ -111,4 +113,4 @@ class linearJScheduler(SurveySimulation):
         tmp = np.argmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
-        return sInd
+        return sInd, None

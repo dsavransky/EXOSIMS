@@ -30,6 +30,8 @@ class cbytScheduler(SurveySimulation):
         Returns:
             sInd (integer):
                 Index of next target star
+            waitTime (astropy Quantity):
+                the amount of time to wait (this method returns None)
         
         """
         
@@ -50,4 +52,4 @@ class cbytScheduler(SurveySimulation):
         # selecting the target star to observe
         sInd = sInds[selMetric == max(selMetric)][0]
         
-        return sInd
+        return sInd, None

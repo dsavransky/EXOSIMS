@@ -157,9 +157,8 @@ class starkAYO_staticSchedule(SurveySimulation):
             intTimes - unused
 
         Returns:
-            DRM - A blank structure
             sInd - the single index of self.schedule_startSaved to observe
-            t_det - the time to observe sInd in days (u.d)
+            waitTime - a strategic amount of time to wait (this module always returns None)
         """
         SU = self.SimulatedUniverse
         OS = SU.OpticalSystem
@@ -170,82 +169,78 @@ class starkAYO_staticSchedule(SurveySimulation):
         TK = self.TimeKeeping
         mode = self.mode
         # now, start to look for available targets
-        cnt = 0
-        while not TK.mission_is_over():
-            TK.obsStart = TK.currentTimeNorm.to('day')
+        # cnt = 0
+        # while not TK.mission_is_over():
+        # TK.obsStart = TK.currentTimeNorm.to('day')
 
-            dmag = self.dmag_startSaved
-            WA = OS.WA0
-            startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
+        dmag = self.dmag_startSaved
+        WA = OS.WA0
+        startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
 
-            tovisit = np.zeros(self.schedule_startSaved.shape[0], dtype=bool)
-            fZtovisit = np.zeros(self.schedule_startSaved.shape[0], dtype=bool)
+        tovisit = np.zeros(self.schedule_startSaved.shape[0], dtype=bool)
+        fZtovisit = np.zeros(self.schedule_startSaved.shape[0], dtype=bool)
 
-            DRM = {}#Create DRM
+        # DRM = {}#Create DRM
 
-            startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
+        startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs
 
-            #Estimate Yearly fZmin###########################################
-            tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[self.schedule,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-            #Find minimum fZ of each star
-            fZmintmp = np.zeros(self.schedule.shape[0])
-            for i in xrange(self.schedule.shape[0]):
-                fZmintmp[i] = min(fZ_matrix[i,:])
+        #Estimate Yearly fZmin###########################################
+        tmpfZ = np.asarray(self.fZ_startSaved)
+        fZ_matrix = tmpfZ[self.schedule,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        #Find minimum fZ of each star
+        fZmintmp = np.zeros(self.schedule.shape[0])
+        for i in xrange(self.schedule.shape[0]):
+            fZmintmp[i] = min(fZ_matrix[i,:])
 
-            #Find current fZ
-            indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value%365.25,[0,365.25],[0,1000])#This is only good for 1 year missions right now
-            fZinterp = np.zeros(self.schedule.shape[0])
-            fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac%1+1)]#this is the current fZ
+        #Find current fZ
+        indexFrac = np.interp((self.TimeKeeping.currentTimeAbs-self.TimeKeeping.missionStart).value%365.25,[0,365.25],[0,1000])#This is only good for 1 year missions right now
+        fZinterp = np.zeros(self.schedule.shape[0])
+        fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac%1+1)]#this is the current fZ
 
-            commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule
-            imat = [self.schedule.tolist().index(x) for x in commonsInds]
-            CbyT = self.CbyT[imat]
-            t_dets = self.t_dets[imat]
-            Comp00 = self.Comp00[imat]
-            fZ = fZinterp[imat]
-            fZmin = fZmintmp[imat]
+        commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule
+        imat = [self.schedule.tolist().index(x) for x in commonsInds]
+        CbyT = self.CbyT[imat]
+        t_dets = self.t_dets[imat]
+        Comp00 = self.Comp00[imat]
+        fZ = fZinterp[imat]
+        fZmin = fZmintmp[imat]
 
-            commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
-            imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
-            dec = self.TargetList.coords.dec[imat2].value
+        commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
+        imat2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds2]
+        dec = self.TargetList.coords.dec[imat2].value
 
-            currentTime = TK.currentTimeAbs
-            r_targ = TL.starprop(np.asarray(imat2).astype(int),currentTime,False)
-            #dec = np.zeros(len(imat2))
-            #for i in np.arange(len(imat2)):
-            c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
-            c.representation = 'spherical'
-            dec = c.dec
+        currentTime = TK.currentTimeAbs
+        r_targ = TL.starprop(np.asarray(imat2).astype(int),currentTime,False)
+        #dec = np.zeros(len(imat2))
+        #for i in np.arange(len(imat2)):
+        c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
+        c.representation = 'spherical'
+        dec = c.dec
 
-            
-            if len(sInds) > 0:
-                # store selected star integration time
-                selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
-                sInd = sInds[selectInd]#finds index of star to sacrifice
-                t_det = t_dets[selectInd]*u.d
+        
+        if len(sInds) > 0:
+            # store selected star integration time
+            selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
+            sInd = sInds[selectInd]#finds index of star to sacrifice
+            t_det = t_dets[selectInd]*u.d
 
-                #Create a check to determine if the mission length would be exceeded.
-                timeLeft = TK.missionFinishNorm - TK.currentTimeNorm#This is how much time we have left in the mission in u.d
-                if(timeLeft > (Obs.settlingTime + mode['syst']['ohTime'])):#There is enough time left for overhead time but not for the full t_det
-                    if(timeLeft > (t_det+Obs.settlingTime + mode['syst']['ohTime'])):#If the nominal plan for observation time is greater than what we can do
-                        t_det = t_det
-                    else:
-                        t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
-                    break 
-                else:#There is insufficient time to cover overhead time
-                    TK.allocate_time(timeLeft*u.d)
-                    sInd = None
-                    t_det = None
-                    break
-
-            # if no observable target, call the TimeKeeping.wait() method
-            else:
-                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                cnt += 1
-        else:
-            return None#DRM, None, None
-        return sInd
+            # #Create a check to determine if the mission length would be exceeded.
+            # timeLeft = TK.missionLife - TK.currentTimeNorm#This is how much time we have left in the mission in u.d
+            # if(timeLeft > (Obs.settlingTime + mode['syst']['ohTime'])):#There is enough time left for overhead time but not for the full t_det
+            #     if(timeLeft > (t_det+Obs.settlingTime + mode['syst']['ohTime'])):#If the nominal plan for observation time is greater than what we can do
+            #         t_det = t_det
+            #     else:
+            #         t_det = timeLeft - (Obs.settlingTime + mode['syst']['ohTime'])#We reassign t_det to fill the remaining time
+            #     break 
+            # else:#There is insufficient time to cover overhead time
+            #     TK.allocate_time(timeLeft*u.d)
+            #     sInd = None
+            #     t_det = None
+            #     break
+            return sInd, None
+        else: # return a strategic amount of time to wair
+            return None, 1*u.d
+        
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Finds and Returns Precomputed Observation Time

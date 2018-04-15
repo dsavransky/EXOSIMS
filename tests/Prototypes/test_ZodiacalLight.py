@@ -163,7 +163,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
                 mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
                 hashname = sim.cachefname
                 sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-                [val, inds] = sim.calcfZmincalcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
+                [val, inds] = sim.calcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
                 try:
                     self.assertIsInstance(inds, type(np.asarray([])))
                 except:

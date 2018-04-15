@@ -102,10 +102,15 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
                     sim.run_sim()
-                # check that the mission time is indeed elapsed
-                self.assertGreaterEqual(sim.TimeKeeping.currentTimeNorm,
-                                        sim.TimeKeeping.missionFinishNorm,
-                                        'Mission did not run to completion for %s'%mod.__name__)
+                # check that a mission constraint has been exceeded
+                allModes = sim.OpticalSystem.observingModes
+                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                exoplanetObsTimeCondition = sim.TimeKeeping.exoplanetObsTime + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife*sim.TimeKeeping.missionPortion
+                missionLifeCondition = sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife
+                OBcondition = sim.TimeKeeping.OBendTimes[sim.TimeKeeping.OBnumber] <= sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime']
+
+                self.assertTrue(exoplanetObsTimeCondition or (missionLifeCondition or OBcondition), 'Mission did not run to completion for %s'%mod.__name__)
+
                 # resulting DRM is a list...
                 self.assertIsInstance(sim.DRM, list, 'DRM is not a list for %s'%mod.__name__)
                 # ...and has nontrivial number of entries
@@ -128,7 +133,7 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
 
-                DRM_out,sInd,intTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
+                DRM_out, sInd, intTime, waitTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
 
                 # result index is a scalar numpy ndarray, that is a valid integer
                 # in a valid range
@@ -154,17 +159,19 @@ class TestSurveySimulation(unittest.TestCase):
                     sim = mod(scriptfile=self.script)
                 
                 #old sInd is None
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
-                sInd = sim.choose_next_target(None,sInds,
-                        np.array([1.0]*sim.TargetList.nStars)*u.d,
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False).astype(int)
+                sInd, waitTime = sim.choose_next_target(None, sInds, \
+                        np.array([1.0]*sim.TargetList.nStars)*u.d, \
                         np.array([1.0]*len(sInds))*u.d)
+
+
                 self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd in sInds
                 sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 old_sInd = np.random.choice(sInds)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
-                sInd = sim.choose_next_target(old_sInd,sInds,
+                sInd, waitTime = sim.choose_next_target(old_sInd,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
 
@@ -175,7 +182,7 @@ class TestSurveySimulation(unittest.TestCase):
                 tmp = list(set(np.arange(sim.TargetList.nStars)) - set(sInds))
                 old_sInd = np.random.choice(tmp)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
-                sInd = sim.choose_next_target(old_sInd,sInds,
+                sInd, waitTime = sim.choose_next_target(old_sInd,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
 
@@ -275,7 +282,7 @@ class TestSurveySimulation(unittest.TestCase):
 
                 sInds = np.asarray([0])
                 tovisit = np.zeros(sim.TargetList.nStars, dtype=bool)
-                sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
+                sInds = sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
                 try:
                     self.assertIsInstance(sInds, np.ndarray)
                 except:

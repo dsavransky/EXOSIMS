@@ -104,24 +104,26 @@ class Stark(ZodiacalLight):
         
         return fZ
 
-    def calcfZmax(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmax and fZmaxInds returned for
             Obs (module):
                 Observatory module
-            TL (module):
+            TL (TargetList object):
                 Target List Module
-            currentTimeAbs (astropy Time array):
-                current absolute time im MJD
+            TK (TimeKeeping object):
+                TimeKeeping object
             mode (dict):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
-            fZmax[sInds] (astropy Quantity array):
+            valfZmax[sInds] (astropy Quantity array):
                 the maximum fZ
+            absTimefZmax[sInds] (astropy Time array):
+                returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)
         """
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmax'
@@ -131,22 +133,22 @@ class Stark(ZodiacalLight):
             self.vprint("Loading cached fZmax from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
                 tmpDat = pickle.load(f)
-                fZmax = tmpDat[0,:]
-                fZmaxInds = tmpDat[1,:]
-            return fZmax#, fZmaxInds
+                valfZmax = tmpDat[0,:]
+                absTimefZmax = tmpDat[1,:]
+            return valfZmax[sInds], absTimefZmax[sInds]#, fZmaxInds
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint("Calculating fZmax")
             if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
 
             #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
             tmpfZ = np.asarray(self.fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ
-            startTime = np.zeros(sInds.shape[0])*u.d + currentTimeAbs#Array of current times
+            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in range(1000)]
                 
@@ -160,22 +162,26 @@ class Stark(ZodiacalLight):
             #Filter Out fZ where star is in KO region
 
             #Find maximum fZ of each star
-            fZmax = np.zeros(sInds.shape[0])
-            fZmaxInds = np.zeros(sInds.shape[0])
+            valfZmax = np.zeros(sInds.shape[0])
+            indsfZmax = np.zeros(sInds.shape[0])
+            relTimefZmax = np.zeros(sInds.shape[0])*u.d
+            absTimefZmax = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
             for i in xrange(len(sInds)):
-                fZmax[i] = min(fZ_matrix[i,:])
-                fZmaxInds[i] = np.argmax(fZ_matrix[i,:])
+                valfZmax[i] = min(fZ_matrix[i,:])#fZ_matrix has dimensions sInds 
+                indsfZmax[i] = np.argmax(fZ_matrix[i,:])#Gets indices where fZmax occurs
+                relTimefZmax[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmax[i]*dt*u.d
+            absTimefZmax = TK.currentTimeAbs + relTimefZmax
 
             tmpDat = np.zeros([2,fZmax.shape[0]])
-            tmpDat[0,:] = fZmax
-            tmpDat[1,:] = fZmaxInds
+            tmpDat[0,:] = valfZmax
+            tmpDat[1,:] = absTimefZmax
             with open(cachefname, "wb") as fo:
                 wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 pickle.dump(tmpDat,fo)
                 self.vprint("Saved cached fZmax to %s"%cachefname)
-            return fZmax#, fZmaxInds
+            return valfZmax, absTimefZmax#, fZmaxInds
 
-    def calcfZmin(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
+    def calcfZmin(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
             sInds[sInds] (integer array):
@@ -184,8 +190,8 @@ class Stark(ZodiacalLight):
                 Observatory module
             TL (module):
                 Target List Module
-            currentTimeAbs (astropy Time array):
-                current absolute time im MJD
+            TK (TimeKeeping object):
+                TimeKeeping object
             mode (dict):
                 Selected observing mode
             hashname (string):
@@ -193,18 +199,27 @@ class Stark(ZodiacalLight):
         Returns:
             fZmin[sInds] (astropy Quantity array):
                 the minimum fZ
+            absTimefZmin[sInds] (astropy Time array):
+                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
         """
         if not hasattr(self,'fZ_startSaved'):
-            self.fZ_startSaved = self.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+            self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
 
         #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
         tmpfZ = np.asarray(self.fZ_startSaved)#convert into an array
         fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        dt = 365.25/len(np.arange(1000))
         #Find minimum fZ of each star
         fZmin = np.zeros(sInds.shape[0])
-        fZminInds = np.zeros(sInds.shape[0])
+        indsfZmin = np.zeros(sInds.shape[0])
+        relTimefZmin = np.zeros(sInds.shape[0])*u.d
+        absTimefZmin = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
         for i in xrange(len(sInds)):
             fZmin[i] = min(fZ_matrix[i,:])
-            fZminInds[i] = np.argmin(fZ_matrix[i,:])
+            indsfZmin[i] = np.argmin(fZ_matrix[i,:])
+            relTimefZmin[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmin[i]*dt*u.d
+        absTimefZmin = TK.currentTimeAbs + relTimefZmin
 
-        return fZmin/u.arcsec**2 #fZminInds
+
+
+        return fZmin/u.arcsec**2, absTimefZmin #fZminInds

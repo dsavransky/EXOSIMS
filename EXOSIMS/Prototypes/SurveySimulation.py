@@ -282,27 +282,10 @@ class SurveySimulation(object):
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
 
-    def initializeStorageArrays(self):
-        """
-        Initialize all storage arrays based on # of stars and targets
-        """
-
-        self.DRM = []
-        self.fullSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
-        self.propagTimes = np.zeros(self.TargetList.nStars)*u.d
-        self.lastObsTimes = np.zeros(self.TargetList.nStars)*u.d
-        self.starVisits = np.zeros(self.TargetList.nStars, dtype=int)#contains the number of times each star was visited
-        self.starRevisit = np.array([])
-        
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart
         endTime   = self.TimeKeeping.missionFinishAbs
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
-
-        self.starExtended = np.array([], dtype=int)
-        self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
-
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -317,6 +300,22 @@ class SurveySimulation(object):
         WA = self.WAint[sInds] # grabbing WA
         self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+
+
+    def initializeStorageArrays(self):
+        """
+        Initialize all storage arrays based on # of stars and targets
+        """
+
+        self.DRM = []
+        self.fullSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.partialSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.propagTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.lastObsTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.starVisits = np.zeros(self.TargetList.nStars, dtype=int)#contains the number of times each star was visited
+        self.starRevisit = np.array([])
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -868,8 +867,6 @@ class SurveySimulation(object):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]
-
-        return detected.astype(int), fZ, systemParams, SNR, FA
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information

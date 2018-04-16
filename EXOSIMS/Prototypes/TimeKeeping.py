@@ -53,27 +53,16 @@ class TimeKeeping(object):
     """
 
     _modtype = 'TimeKeeping'
-<<<<<<< HEAD
-    _outspec = {}
+    #_outspec = {}#DMITRY you lef this here. Commented out for future review
 
     def __init__(self, missionStart=60634, missionLife=0.1, 
         missionPortion=1, OBduration=np.inf, missionSchedule=None, **specs):
 
-||||||| merged common ancestors
-    _outspec = {}
-
-    def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
-            missionPortion=1, OBduration=np.inf, waitTime=1, waitMultiple=2, **specs):
-        
-=======
-    
-    def __init__(self, missionStart=60634, missionLife=0.1, extendedLife=0, 
-            missionPortion=1, OBduration=np.inf, waitTime=1, waitMultiple=2, **specs):
-       
+        _outspec = {}
+   
         #start the outspec
         self._outspec = {}
 
->>>>>>> master
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         

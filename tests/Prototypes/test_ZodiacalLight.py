@@ -102,11 +102,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
 
         #Check if File Exists and if it does, delete it
         sim = self.sim
-        try:
-            sim.SurveySimulation.cachefname
-        except:
-            import pdb
-            pdb.set_trace()
+        sim.SurveySimulation.cachefname
 
         if os.path.isfile(sim.SurveySimulation.cachefname+'starkfZ'):
             os.remove(sim.SurveySimulation.cachefname+'starkfZ')
@@ -118,7 +114,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         allModes = OS.observingModes
         mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         hashname = sim.SurveySimulation.cachefname
-        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, sim.TimeKeeping, mode, hashname)
         self.assertEqual(sim.ZodiacalLight.fZ_startSaved.shape[0],TL.nStars)
         #Should also check length of fZ_startSaved??
         self.assertEqual(sim.ZodiacalLight.fZ_startSaved.shape[1],1000)#This was arbitrarily selected.
@@ -144,10 +140,10 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         allModes = OS.observingModes
         mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         hashname = sim.SurveySimulation.cachefname
-        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, sim.TimeKeeping, mode, hashname)
         valfZmax = np.zeros(sInds.shape[0])
         timefZmax = np.zeros(sInds.shape[0])
-        [valfZmax, timefZmax] = sim.ZodiacalLight.calcfZmax(sInds, Obs, TL, currentTimeAbs, mode, hashname)
+        [valfZmax, timefZmax] = sim.ZodiacalLight.calcfZmax(sInds, Obs, TL, sim.TimeKeeping, mode, hashname)
         self.assertTrue(len(valfZmax) == len(sInds))
         self.assertTrue(len(timefZmax) == len(sInds))
         self.assertTrue(valfZmax[0].unit == 1/u.arcsec**2)
@@ -173,8 +169,8 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         allModes = OS.observingModes
         mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         hashname = sim.SurveySimulation.cachefname
-        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-        [valfZmin, timefZmin] = sim.ZodiacalLight.calcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, sim.TimeKeeping, mode, hashname)
+        [valfZmin, timefZmin] = sim.ZodiacalLight.calcfZmin(sInds, Obs, TL, sim.TimeKeeping, mode, hashname)
         self.assertTrue(len(valfZmin) == len(sInds))
         self.assertTrue(len(timefZmin) == len(sInds))
         self.assertTrue(valfZmin[0].unit == 1/u.arcsec**2)

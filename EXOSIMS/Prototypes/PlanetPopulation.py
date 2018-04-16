@@ -54,22 +54,12 @@ class PlanetPopulation(object):
     _modtype = 'PlanetPopulation'
     
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
-<<<<<<< HEAD
         Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
         Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
-        
-||||||| merged common ancestors
-            Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
-            Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
-        
-=======
-            Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
-            Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
        
         #start the outspec
         self._outspec = {}
 
->>>>>>> master
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         

@@ -71,19 +71,11 @@ class TargetList(object):
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-<<<<<<< HEAD
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
-        
-||||||| merged common ancestors
-            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
-        
-=======
-            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
        
         #start the outspec
         self._outspec = {}
 
->>>>>>> master
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         

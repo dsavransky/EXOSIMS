@@ -29,6 +29,7 @@ class Test_Zodiacal_prototype(unittest.TestCase):
         self.observatory = sim.Observatory
         self.mode = sim.OpticalSystem.observingModes[0]
         self.timekeeping = sim.TimeKeeping
+        self.sim = sim
         assert self.nStars > 10, "Need at least 10 stars in the target list for the unit test."
         
     def test_fz_case(self):
@@ -93,81 +94,91 @@ class Test_Zodiacal_prototype(unittest.TestCase):
     def test_generate_fZ(self):
         r"""Test generate fZ method
         """
-        for mod in self.allmods:
-            if 'generate_fZ' in mod.__dict__:
+        # for mod in self.allmods:
+        #     if 'generate_fZ' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+        # with RedirectStreams(stdout=self.dev_null):
+        #     sim = mod(scriptfile=self.script)
 
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
-                Obs = sim.Observatory
-                TL = sim.TargetList
-                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
-                OS = sim.OpticalSystem
-                allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-                hashname = sim.cachefname
-                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-                self.assertEqual(sim.fZ_startSaved.shape[0],1)
+        #Check if File Exists and if it does, delete it
+        sim = self.sim
+        try:
+            sim.SurveySimulation.cachefname
+        except:
+            import pdb
+            pdb.set_trace()
+
+        if os.path.isfile(sim.SurveySimulation.cachefname+'starkfZ'):
+            os.remove(sim.SurveySimulation.cachefname+'starkfZ')
+        sInds = np.asarray([0])
+        Obs = sim.Observatory
+        TL = sim.TargetList
+        currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+        OS = sim.OpticalSystem
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        hashname = sim.SurveySimulation.cachefname
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+        self.assertEqual(sim.ZodiacalLight.fZ_startSaved.shape[0],TL.nStars)
+        #Should also check length of fZ_startSaved??
+        self.assertEqual(sim.ZodiacalLight.fZ_startSaved.shape[1],1000)#This was arbitrarily selected.
 
     def test_calcfZmax(self):
-        """Test calcfZmax method
+        r"""Test calcfZmax method
         """
-        for mod in self.allmods:
-            if 'calcfZmax' in mod.__dict__:
+        # for mod in self.allmods:
+        #     if 'calcfZmax' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+        # with RedirectStreams(stdout=self.dev_null):
+        #     sim = mod(scriptfile=self.script)
 
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.arange(5)
-                Obs = sim.Observatory
-                TL = sim.TargetList
-                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
-                OS = sim.OpticalSystem
-                allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-                hashname = sim.cachefname
-                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-                val = np.zeros(sInds.shape[0])
-                inds = np.zeros(sInds.shape[0])
-                [val, inds] = sim.calcfZmax(sInds, Obs, TL, currentTimeAbs, mode, hashname)
-                try:
-                    self.assertIsInstance(inds, type(np.asarray([])))
-                except:
-                    self.assertIsInstance(inds, type(None))
+        #Check if File Exists and if it does, delete it
+        sim = self.sim
+        if os.path.isfile(sim.SurveySimulation.cachefname+'starkfZ'):
+            os.remove(sim.SurveySimulation.cachefname+'starkfZ')
+        sInds = np.arange(5)
+        Obs = sim.Observatory
+        TL = sim.TargetList
+        currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+        OS = sim.OpticalSystem
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        hashname = sim.SurveySimulation.cachefname
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+        valfZmax = np.zeros(sInds.shape[0])
+        timefZmax = np.zeros(sInds.shape[0])
+        [valfZmax, timefZmax] = sim.ZodiacalLight.calcfZmax(sInds, Obs, TL, currentTimeAbs, mode, hashname)
+        self.assertTrue(len(valfZmax) == len(sInds))
+        self.assertTrue(len(timefZmax) == len(sInds))
+        self.assertTrue(valfZmax[0].unit == 1/u.arcsec**2)
+        self.assertTrue(timefZmax[0].format == currentTimeAbs.format)
 
     def test_calcfZmin(self):
         r"""Test calcfZmin method
         """
-        for mod in self.allmods:
-            if 'calcfZmin' in mod.__dict__:
+        # for mod in self.allmods:
+        #     if 'calcfZmin' in mod.__dict__:
 
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
-
-                #Check if File Exists and if it does, delete it
-                if os.path.isfile(sim.cachefname+'starkfZ'):
-                    os.remove(sim.cachefname+'starkfZ')
-                sInds = np.asarray([0])
-                Obs = sim.Observatory
-                TL = sim.TargetList
-                currentTimeAbs = sim.TimeKeeping.currentTimeAbs
-                OS = sim.OpticalSystem
-                allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-                hashname = sim.cachefname
-                sim.fZ_startSaved = sim.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
-                [val, inds] = sim.calcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
-                try:
-                    self.assertIsInstance(inds, type(np.asarray([])))
-                except:
-                    self.assertIsInstance(inds, type(None))
+        # with RedirectStreams(stdout=self.dev_null):
+        #     sim = mod(scriptfile=self.script)
+        sim = self.sim
+        #Check if File Exists and if it does, delete it
+        if os.path.isfile(sim.SurveySimulation.cachefname+'starkfZ'):
+            os.remove(sim.SurveySimulation.cachefname+'starkfZ')
+        sInds = np.asarray([0])
+        Obs = sim.Observatory
+        TL = sim.TargetList
+        currentTimeAbs = sim.TimeKeeping.currentTimeAbs
+        OS = sim.OpticalSystem
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        hashname = sim.SurveySimulation.cachefname
+        sim.ZodiacalLight.fZ_startSaved = sim.ZodiacalLight.generate_fZ(Obs, TL, currentTimeAbs, mode, hashname)
+        [valfZmin, timefZmin] = sim.ZodiacalLight.calcfZmin(sInds, Obs, TL, currentTimeAbs, mode, hashname)
+        self.assertTrue(len(valfZmin) == len(sInds))
+        self.assertTrue(len(timefZmin) == len(sInds))
+        self.assertTrue(valfZmin[0].unit == 1/u.arcsec**2)
+        self.assertTrue(timefZmin[0].format == currentTimeAbs.format)
 
 if __name__ == '__main__':
     unittest.main()

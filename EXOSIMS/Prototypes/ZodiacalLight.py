@@ -78,8 +78,8 @@ class ZodiacalLight(object):
                 TargetList class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
-            currentTimeAbs (astropy Time array):
-                Current absolute mission time in MJD
+            currentTimeAbs (astropy Time quantity):
+                absolute time to evaluate fZ for
             mode (dict):
                 Selected observing mode
         
@@ -144,15 +144,15 @@ class ZodiacalLight(object):
         
         return fEZ
 
-    def generate_fZ(self, Obs, TL, currentTimeAbs, mode, hashname):
+    def generate_fZ(self, Obs, TL, TK, mode, hashname):
         """Calculates fZ values for all stars over an entire orbit of the sun
         Args:
             Obs (module):
                 Observatory module
             TL (module):
                 Target List Module
-            currentTimeAbs (astropy Time array):
-                current absolute time im MJD
+            TK (TimeKeeping object):
+                TimeKeeping object
             mode (dict):
                 Selected observing mode
             hashname (string):
@@ -177,7 +177,7 @@ class ZodiacalLight(object):
             #OS = self.OpticalSystem#Testing to be sure I can remove this
             #WA = OS.WA0#Testing to be sure I can remove this
             sInds= np.arange(TL.nStars)
-            startTime = np.zeros(sInds.shape[0])*u.d + currentTimeAbs#Array of current times
+            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             resolution = [j for j in range(1000)]
             fZ = np.zeros([sInds.shape[0], len(resolution)])
             dt = 365.25/len(resolution)*u.d
@@ -190,7 +190,7 @@ class ZodiacalLight(object):
                 self.vprint("Saved cached 1st year fZ to %s"%cachefname)
             return fZ
 
-    def calcfZmax(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
          (prototype includes keepout angles because the values are all the same)
         Args:
@@ -200,8 +200,8 @@ class ZodiacalLight(object):
                 Observatory module
             TL (module):
                 Target List Module
-            currentTimeAbs (astropy Time array):
-                current absolute time im MJD
+            TK (TimeKeeping object):
+                TimeKeeping object
             mode (dict):
                 Selected observing mode
             hashname (string):
@@ -220,11 +220,11 @@ class ZodiacalLight(object):
         nZ = np.ones(nStars)
         valfZmax = nZ*10**(-0.4*self.magZ)/u.arcsec**2
 
-        absTimefZmax = nZ*u.d + currentTimeAbs
+        absTimefZmax = nZ*u.d + TK.currentTimeAbs
 
         return valfZmax[sInds], absTimefZmax[sInds]
 
-    def calcfZmin(self,sInds, Obs, TL, currentTimeAbs, mode, hashname):
+    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
         Args:
             sInds[sInds] (integer array):
@@ -233,8 +233,8 @@ class ZodiacalLight(object):
                 Observatory module
             TL (module):
                 Target List Module
-            currentTimeAbs (astropy Time):
-                current absolute time im MJD
+            TK (TimeKeeping object):
+                TimeKeeping object
             mode (dict):
                 Selected observing mode
             hashname (string):
@@ -253,6 +253,6 @@ class ZodiacalLight(object):
         nZ = np.ones(nStars)
         valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
 
-        absTimefZmin = nZ*u.d + currentTimeAbs
+        absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
         return valfZmin[sInds], absTimefZmin[sInds]

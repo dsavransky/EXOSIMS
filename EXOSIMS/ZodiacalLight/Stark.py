@@ -5,7 +5,7 @@ import os, inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import griddata, CubicSpline #interp1d, DELETE ME OLD INTERPOLANT
+from scipy.interpolate import griddata, CubicSpline
 try:
     import cPickle as pickle
 except:

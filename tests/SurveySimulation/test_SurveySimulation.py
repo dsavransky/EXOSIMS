@@ -214,7 +214,7 @@ class TestSurveySimulation(unittest.TestCase):
         """Runs scheduleRevisit method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'scheduleRevisit' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -275,7 +275,7 @@ class TestSurveySimulation(unittest.TestCase):
         r"""Test revisitFilter method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'revisitFilter' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)

@@ -169,10 +169,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         TK = self.TimeKeeping
         mode = self.mode
         # now, start to look for available targets
-        # cnt = 0
-        # while not TK.mission_is_over():
-        # TK.obsStart = TK.currentTimeNorm.to('day')
-
+        
         dmag = self.dmag_startSaved
         WA = OS.WA0
         startTime = np.zeros(sInds.shape[0])*u.d + self.TimeKeeping.currentTimeAbs

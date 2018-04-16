@@ -109,4 +109,3 @@ class Test_Completeness_Prototype(unittest.TestCase):
         self.assertEqual(type(result), type(''))
         # put stdout back
         sys.stdout = original_stdout
-

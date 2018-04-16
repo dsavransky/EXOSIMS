@@ -191,7 +191,8 @@ class ZodiacalLight(object):
             return fZ
 
     def calcfZmax(self, sInds, Obs, TL, currentTimeAbs, mode, hashname):
-        """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+        """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
+         (prototype includes keepout angles because the values are all the same)
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmax and fZmaxInds returned for
@@ -206,8 +207,10 @@ class ZodiacalLight(object):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
-            fZmax[sInds] (astropy Quantity array):
-                the maximum fZ
+            valfZmax[sInds] (astropy Quantity array):
+                the maximum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+            absTimefZmax[sInds] (astropy Time array):
+                returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -215,12 +218,14 @@ class ZodiacalLight(object):
         nStars = sInds.size
 
         nZ = np.ones(nStars)
-        fZmax = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+        valfZmax = nZ*10**(-0.4*self.magZ)/u.arcsec**2
 
-        return fZmax
+        absTimefZmax = nZ*u.d + currentTimeAbs
+
+        return valfZmax[sInds], absTimefZmax[sInds]
 
     def calcfZmin(self,sInds, Obs, TL, currentTimeAbs, mode, hashname):
-        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmin and fZminInds returned for
@@ -235,8 +240,10 @@ class ZodiacalLight(object):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
-            fZmin[sInds] (astropy Quantity array):
-                the minimum fZ
+            valfZmin[sInds] (astropy Quantity array):
+                the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+            absTimefZmin[sInds] (astropy Time array):
+                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -244,6 +251,8 @@ class ZodiacalLight(object):
         nStars = sInds.size
 
         nZ = np.ones(nStars)
-        fZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+        valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
 
-        return fZmin
+        absTimefZmin = nZ*u.d + currentTimeAbs
+
+        return valfZmin[sInds], absTimefZmin[sInds]

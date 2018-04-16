@@ -11,6 +11,7 @@ try:
 except:
     import pickle
 
+#I like canneries
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
     

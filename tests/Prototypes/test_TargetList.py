@@ -8,6 +8,8 @@ import numpy as np
 from astropy import units as u
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
+import json
+import copy
 
 r"""TargetList module unit tests
 
@@ -20,9 +22,11 @@ class Test_TargetList_prototype(unittest.TestCase):
     dev_null = open(os.devnull, 'w')
 
     def setUp(self):
+        self.spec = json.loads(open(scriptfile).read())
+        
         # quiet the chatter at initialization
         with RedirectStreams(stdout=self.dev_null):
-            sim = MissionSim.MissionSim(scriptfile)
+            sim = MissionSim.MissionSim(**self.spec)
         self.targetlist = sim.TargetList
         self.opticalsystem = sim.OpticalSystem
         self.planetpop = sim.PlanetPopulation
@@ -226,6 +230,24 @@ class Test_TargetList_prototype(unittest.TestCase):
 
         self.assertTrue(sim.TargetList.fillPhotometry)
         self.assertGreaterEqual(sim.TargetList.nStars, self.targetlist.nStars)
+    
+    def test_completeness_specs(self):
+        """
+        Test completeness_specs logic
+        """
+        
+        # test case where no completeness specs given
+        self.assertEqual(self.targetlist.PlanetPopulation.__class__.__name__,self.targetlist.Completeness.PlanetPopulation.__class__.__name__)
+        
+        # test case where completeness specs given
+        spec2 = json.loads(open(scriptfile).read())
+        spec2['completeness_specs'] = {'modules': {"PlanetPopulation": "EarthTwinHabZone1", \
+             "PlanetPhysicalModel": "PlanetPhysicalModel"}}
+        spec2['explainFiltering'] = True
+        spec2['scaleOrbits'] = True
+        
+        tl = TargetList.TargetList(**spec2)
+        self.assertNotEqual(tl.PlanetPopulation.__class__.__name__,tl.Completeness.PlanetPopulation.__class__.__name__)
 
 
 

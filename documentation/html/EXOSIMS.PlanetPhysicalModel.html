@@ -1,40 +1,26 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>EXOSIMS.PlanetPhysicalModel package &#8212; EXOSIMS 1.3 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="EXOSIMS.PlanetPopulation package" href="EXOSIMS.PlanetPopulation.html" />
-    <link rel="prev" title="EXOSIMS.OpticalSystem package" href="EXOSIMS.OpticalSystem.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
-  </head>
-  <body role="document">  
+  </head><body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -51,7 +37,7 @@
 <dl class="class">
 <dt id="EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster">
 <em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPhysicalModel.Forecaster.</code><code class="descname">Forecaster</code><span class="sig-paren">(</span><em>n_pop=4</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/Forecaster.html#Forecaster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.Forecaster.Forecaster" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1</span></code></a></p>
 <p>Planet M-R relation model based on the FORECASTER software, Chen &amp; Kippling 2016.</p>
 <p>This module requires to download the fitting_parameters.h5 file from the
 FORECASTER GitHub repository at <a class="reference external" href="https://github.com/chenjj2/forecaster">https://github.com/chenjj2/forecaster</a>
@@ -60,7 +46,7 @@ and add it to the PlanetPhysicalModel directory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
@@ -72,11 +58,11 @@ and add it to the PlanetPhysicalModel directory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of Earth mass</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) – Planet mass in units of Earth mass</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of Earth radius</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Rp (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -108,14 +94,14 @@ and add it to the PlanetPhysicalModel directory.</p>
 <dl class="class">
 <dt id="EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1">
 <em class="property">class </em><code class="descclassname">EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.</code><code class="descname">FortneyMarleyCahoyMix1</code><span class="sig-paren">(</span><em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/PlanetPhysicalModel/FortneyMarleyCahoyMix1.html#FortneyMarleyCahoyMix1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1.FortneyMarleyCahoyMix1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel" title="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel"><code class="xref py py-class docutils literal"><span class="pre">EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel" title="EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel</span></code></a></p>
 <p>Planet density models based on Fortney &amp; Marley, albedo models based on
 Cahoy.  Intended for use with the Kepler-like planet population modules.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> &#8211; user specified values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**specs</strong> – user specified values</td>
 </tr>
 </tbody>
 </table>
@@ -134,11 +120,11 @@ grid from Cahoy et al. 2010.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>astropy Quanitity array</em>) &#8211; Semi-major axis values</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>a</strong> (<em>astropy Quanitity array</em>) – Semi-major axis values</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Albedo values</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.p">p</a> (ndarray)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">p (ndarray)</td>
 </tr>
 </tbody>
 </table>
@@ -154,11 +140,11 @@ only be ice/rock/iron, and then things that can be giants.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) &#8211; Planet radius in units of Earth radius</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Rp</strong> (<em>astropy Quantity array</em>) – Planet radius in units of Earth radius</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet mass in units of Earth mass</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Mp">Mp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Mp (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -174,11 +160,11 @@ only be ice/rock/iron, and then things that can be giants.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) &#8211; Planet mass in units of Earth mass</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Mp</strong> (<em>astropy Quantity array</em>) – Planet mass in units of Earth mass</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Planet radius in units of Earth radius</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="EXOSIMS.Prototypes.html#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp" title="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.Rp">Rp</a> (astropy Quantity array)</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Rp (astropy Quantity array)</td>
 </tr>
 </tbody>
 </table>
@@ -212,10 +198,6 @@ only be ice/rock/iron, and then things that can be giants.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
-      <li>Previous: <a href="EXOSIMS.OpticalSystem.html" title="previous chapter">EXOSIMS.OpticalSystem package</a></li>
-      <li>Next: <a href="EXOSIMS.PlanetPopulation.html" title="next chapter">EXOSIMS.PlanetPopulation package</a></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -228,12 +210,14 @@ only be ice/rock/iron, and then things that can be giants.</p>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -244,7 +228,7 @@ only be ice/rock/iron, and then things that can be giants.</p>
       &copy;2015 - 2017, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -180,7 +180,6 @@ class OpticalSystem(object):
     """
 
     _modtype = 'OpticalSystem'
-    _outspec = {}
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
             dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
@@ -190,6 +189,9 @@ class OpticalSystem(object):
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
+
+        #start the outspec
+        self._outspec = {}
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -249,6 +251,7 @@ class OpticalSystem(object):
             inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
             inst['pixelNumber'] = int(inst.get('pixelNumber', pixelNumber)) # array format
             inst['pixelSize'] = float(inst.get('pixelSize', pixelSize))*u.m # pixel pitch
+            inst['pixelScale'] = inst.get('pixelScale', 2*inst['FoV'].value/inst['pixelNumber'])*u.arcsec # pixel pitch
             inst['idark'] = float(inst.get('idark', idark))/u.s # dark-current rate
             inst['CIC'] = float(inst.get('CIC', CIC))           # clock-induced-charge
             inst['sread'] = float(inst.get('sread', sread))     # effective readout noise
@@ -266,8 +269,6 @@ class OpticalSystem(object):
                 inst['Rs'] = 1.
                 inst['lenslSamp'] = 1.
             
-            # calculate pixelScale (Nyquist sampled)
-            inst['pixelScale'] = 2*inst['FoV']/inst['pixelNumber']
             # calculate focal and f-number
             inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
@@ -445,7 +446,7 @@ class OpticalSystem(object):
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__.keys():
             if att not in ['vprint', 'F0', 'scienceInstruments', 
-                    'starlightSuppressionSystems', 'observingModes']:
+                    'starlightSuppressionSystems', 'observingModes','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 

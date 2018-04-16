@@ -51,7 +51,7 @@ class TargetList(object):
         tint0 (astropy Quantity array):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
-            Completeness value for each target star
+            Initial completeness value for each target star
         MsEst (float ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
@@ -69,11 +69,21 @@ class TargetList(object):
     """
 
     _modtype = 'TargetList'
-    _outspec = {}
-
+    
     def __init__(self, missionStart=60634, staticStars=True, 
+<<<<<<< HEAD
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
         
+||||||| merged common ancestors
+            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
+        
+=======
+            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
+       
+        #start the outspec
+        self._outspec = {}
+
+>>>>>>> master
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
@@ -87,9 +97,17 @@ class TargetList(object):
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
         
+        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
+        if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
+            assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
+            'KnownRVPlanetsTargetList must use KnownRVPlanets'
+        else:
+            assert specs['modules']['PlanetPopulation'] != 'KnownRVPlanets', \
+            'This TargetList cannot use KnownRVPlanets'
+        
         # populate outspec
         for att in self.__dict__.keys():
-            if att not in ['vprint']:
+            if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
@@ -137,7 +155,7 @@ class TargetList(object):
         # and are not propagated during the mission
         self.starprop_static = None
         if self.staticStars is True:
-            allInds = np.arange(self.nStars)
+            allInds = np.arange(self.nStars,dtype=int)
             missionStart = Time(float(missionStart), format='mjd', scale='tai')
             self.starprop_static = lambda sInds, currentTime, eclip=False, \
                     c1=self.starprop(allInds, missionStart, eclip=False), \

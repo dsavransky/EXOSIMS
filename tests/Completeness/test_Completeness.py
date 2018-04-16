@@ -96,8 +96,6 @@ class TestCompleteness(unittest.TestCase):
                 self.assertGreaterEqual(c,0,"Completeness less than zero for %s"%mod.__name__)
                 self.assertLessEqual(c,1,"Completeness greater than one for %s"%mod.__name__)
 
-
-
     def test_completeness_update(self):
         """
         Ensure that target completeness updates are properly sized
@@ -146,9 +144,18 @@ class TestCompleteness(unittest.TestCase):
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(comp),self.TL.nStars)
-            #for c in comp:
-            #    self.assertGreaterEqual(c,0,"Completeness less than zero for %s"%mod.__name__)
-            #    self.assertLessEqual(c,1,"Completeness greater than one for %s"%mod.__name__)
+            self.assertTrue(np.all(comp>=0.),"Completeness less than zero from comp_per_intTime for %s"%mod.__name__)
+            self.assertTrue(np.all(comp<=1.),"Completeness greater than one from comp_per_intTime for %s"%mod.__name__)
+            
+            # check that scaleOrbits == True also works
+            obj.PlanetPopulation.scaleOrbits = True
+            
+            comp = obj.comp_per_intTime(1*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
+                    np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
+            
+            self.assertEqual(len(comp),self.TL.nStars)
+            self.assertTrue(np.all(comp>=0.),"Completeness less than zero when scaleOrbits == True from comp_per_intTime for %s"%mod.__name__)
+            self.assertTrue(np.all(comp<=1.),"Completeness greater than one when scaleOrbits == True from comp_per_intTime for %s"%mod.__name__)
 
     def test_dcomp_dt(self):
 

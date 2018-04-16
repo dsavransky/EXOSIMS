@@ -89,17 +89,29 @@ class SimulatedUniverse(object):
     """
 
     _modtype = 'SimulatedUniverse'
-    _outspec = {}
     
     def __init__(self, fixedPlanPerStar=None, Min=None, **specs):
         
+        #start the outspec
+        self._outspec = {}
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
         self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
-       
+        
+        # check if KnownRVPlanetsUniverse has correct input modules
+        if specs['modules']['SimulatedUniverse'] == 'KnownRVPlanetsUniverse':
+            val = specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList' \
+            and specs['modules']['PlanetPopulation'] == 'KnownRVPlanets'
+            assert val == True, 'KnownRVPlanetsUniverse must use KnownRVPlanetsTargetList and KnownRVPlanets'
+        else:
+            val = specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList' \
+            or specs['modules']['PlanetPopulation'] == 'KnownRVPlanets'
+            assert val == False, 'KnownRVPlanetsTargetList or KnownRVPlanets should not be used with this SimulatedUniverse'
+            
         # import TargetList class
         self.TargetList = get_module(specs['modules']['TargetList'],
                 'TargetList')(**specs)
@@ -460,13 +472,17 @@ class SimulatedUniverse(object):
                 Planet indices to keep
         
         """
-       
+        
+        # planet attributes which are floats and should not be filtered
+        bad_atts = ['Min']
+        
         if len(pInds) == 0:
             raise IndexError("Planets list filtered to empty.")
         
         for att in self.planet_atts:
-            if getattr(self, att).size != 0:
-                setattr(self, att, getattr(self, att)[pInds])
+            if att not in bad_atts:
+                if getattr(self, att).size != 0:
+                    setattr(self, att, getattr(self, att)[pInds])
         self.nPlans = len(pInds)
         assert self.nPlans, "Planets list is empty: nPlans = %r"%self.nPlans
 

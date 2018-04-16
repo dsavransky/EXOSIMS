@@ -91,7 +91,7 @@ class SAG13(KeplerLike2):
         if self.Rprange[1].to('earthRad').value < self.Rplim[1]:
             self.eta = self.Gamma[0]*(self.Rprange[1].to('earthRad').value**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
         elif self.Rprange[0].to('earthRad').value > self.Rplim[1]:
-            self.eta = self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rprange[1].to('earthRad').value**self.alpha[1])/self.alpha[1]*self.Ca[1]
+            self.eta = self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rprange[0].to('earthRad').value**self.alpha[1])/self.alpha[1]*self.Ca[1]
         else:
             self.eta = self.Gamma[0]*(self.Rplim[1]**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
             self.eta+= self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rplim[1]**self.alpha[1])/self.alpha[1]*self.Ca[1]
@@ -209,24 +209,25 @@ class SAG13(KeplerLike2):
         # cast to arrays
         a = np.array(a, ndmin=1, copy=False)
         R = np.array(R, ndmin=1, copy=False)
-        aa, RR = np.meshgrid(a,R)
+        
+        assert a.shape == R.shape, "input semi-major axis and planetary radius must have same shape"
 
         mu = self.mu.to('AU3/year2').value
 
-        f = np.zeros(aa.shape)
-        mask1 = (RR < self.Rplim[1]) & (RR > self.Rprange[0].value) & (RR < self.Rprange[1].value) & (aa > self.arange[0].value) & (aa < self.arange[1].value)
-        mask2 = (RR > self.Rplim[1]) & (RR > self.Rprange[0].value) & (RR < self.Rprange[1].value) & (aa > self.arange[0].value) & (aa < self.arange[1].value)
+        f = np.zeros(a.shape)
+        mask1 = (R < self.Rplim[1]) & (R > self.Rprange[0].value) & (R < self.Rprange[1].value) & (a > self.arange[0].value) & (a < self.arange[1].value)
+        mask2 = (R > self.Rplim[1]) & (R > self.Rprange[0].value) & (R < self.Rprange[1].value) & (a > self.arange[0].value) & (a < self.arange[1].value)
         
         # for R < boundary radius
-        f[mask1] = self.Gamma[0]*RR[mask1]**(self.alpha[0]-1.)
-        f[mask1]*= (2.*np.pi*np.sqrt(aa[mask1]**3/mu))**(self.beta[0]-1.)
-        f[mask1]*= (3.*np.pi*np.sqrt(aa[mask1]/mu))*np.exp(-(aa[mask1]/self.smaknee)**3)
+        f[mask1] = self.Gamma[0]*R[mask1]**(self.alpha[0]-1.)
+        f[mask1]*= (2.*np.pi*np.sqrt(a[mask1]**3/mu))**(self.beta[0]-1.)
+        f[mask1]*= (3.*np.pi*np.sqrt(a[mask1]/mu))*np.exp(-(a[mask1]/self.smaknee)**3)
         f[mask1]/= self.eta
         
         # for R > boundary radius
-        f[mask2] = self.Gamma[1]*RR[mask2]**(self.alpha[1]-1.)
-        f[mask2]*= (2.*np.pi*np.sqrt(aa[mask2]**3/mu))**(self.beta[1]-1.)
-        f[mask2]*= (3.*np.pi*np.sqrt(aa[mask2]/mu))*np.exp(-(aa[mask2]/self.smaknee)**3)
+        f[mask2] = self.Gamma[1]*R[mask2]**(self.alpha[1]-1.)
+        f[mask2]*= (2.*np.pi*np.sqrt(a[mask2]**3/mu))**(self.beta[1]-1.)
+        f[mask2]*= (3.*np.pi*np.sqrt(a[mask2]/mu))*np.exp(-(a[mask2]/self.smaknee)**3)
         f[mask2]/= self.eta
         
         return f
@@ -248,7 +249,7 @@ class SAG13(KeplerLike2):
         # unitless sma range
         ar = self.arange.to('AU').value
         mu = self.mu.to('AU3/year2').value
-        f = np.zeros(np.size(a))
+        f = np.zeros(a.shape)
         mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
         
         Rmin = self.Rprange[0].to('earthRad').value

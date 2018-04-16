@@ -1,11 +1,11 @@
-EXOSIMS\.ZodiacalLight package
-==============================
+EXOSIMS.ZodiacalLight package
+=============================
 
 Submodules
 ----------
 
-EXOSIMS\.ZodiacalLight\.Stark module
-------------------------------------
+EXOSIMS.ZodiacalLight.Stark module
+----------------------------------
 
 .. automodule:: EXOSIMS.ZodiacalLight.Stark
     :members:

@@ -283,7 +283,7 @@ class KeplerLike1(PlanetPopulation):
         ar = self.arange.to('AU').value
         
         # RV-like semi-major axis distribution with exponential decay
-        f = np.zeros(np.size(a))
+        f = np.zeros(a.shape)
         mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
         f[mask] = a[mask]**-0.62*np.exp(-(a[mask]/self.smaknee)**2)/self.smanorm
         
@@ -306,7 +306,7 @@ class KeplerLike1(PlanetPopulation):
         e = np.array(e, ndmin=1, copy=False)
         
         # Rayleigh distribution sigma
-        f = np.zeros(np.size(e))
+        f = np.zeros(e.shape)
         mask = np.array((e >= self.erange[0]) & (e <= self.erange[1]), ndmin=1)
         f[mask] = e[mask]/self.esigma**2*np.exp(-e[mask]**2/(2.*self.esigma**2))/self.enorm
         

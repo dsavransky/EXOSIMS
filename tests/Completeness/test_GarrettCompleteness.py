@@ -25,55 +25,51 @@ class TestGarrettCompleteness(unittest.TestCase):
         self.script2 = resource_path('test-scripts/simplest.json')
         self.spec2 = json.loads(open(self.script2).read())
 
-    def test_calc_fdmag(self):
+    def test_calcs(self):
         """
-        Ensure calc_fdmag returns a valid pdf
+        Performs following tests:
+            Ensure calc_fdmag returns a valid pdf.
+            Ensure that comp_calc, comp_dmag, and comp_s are all within 1e-3.
+            Test if f_dmags and f_sdmag return same result.
+            Test s_bound against mindmag and maxdmag.
         """
             
         Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec))
+        
+        print('Testing calc_fdmag ...'),
         val = Gcomp.calc_fdmag(25.,0.75,1.)
         self.assertGreaterEqual(val,0,"dmag pdf must be greater than zero for GarrettCompleteness")
+        print('ok')
         
-    def test_comps_close(self):
-        """
-        Ensure that comp_calc, comp_dmag, and comp_s are all within 1e-3
-        """
-        
-        Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec))
+        print('Testing comp_calc, comp_dmag, comp_s are all close ...'),
         val1 = Gcomp.comp_calc(0.75,1.,25.)
         val2 = Gcomp.comp_dmag(0.75,1.,25.)
         val3 = Gcomp.comp_s(0.75,1.,25.)
-        
         # compare comp_calc to comp_dmag
         self.assertLessEqual(np.abs(val1-val2),1e-3,"comp_calc and comp_dmag must be within 1e-3 for GarrettCompleteness")
         # compare comp_calc to comp_s
         self.assertLessEqual(np.abs(val1-val3),1e-3,"comp_calc and comp_s must be within 1e-3 for GarrettCompleteness")
         # compare comp_dmag to comp_s
         self.assertLessEqual(np.abs(val2-val3),1e-3,"comp_dmag and comp_s must be within 1e-3 for GarrettCompleteness")
+        print('ok')
         
-    def test_f_dmags_f_sdmag(self):
-        """
-        Test if f_dmags and f_sdmag return same result.
-        """
-        
-        Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec2))
+        print('Testing f_dmags and f_sdmag yield same result ...'),
         val1 = Gcomp.f_dmags(22.,1.)
         val2 = Gcomp.f_sdmag(1.,22.)
-        self.assertEqual(val1,val2)
+        self.assertEqual(val1,val2,"f_dmags and f_sdmag must return same result")
+        print('ok')
         
-    def test_s_bound(self):
-        """
-        Test s_bound against mindmag and maxdmag.
-        """
-        
-        Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**copy.deepcopy(self.spec))
         s = 1.
         mind = Gcomp.mindmag(s)
         maxd = Gcomp.maxdmag(s)
         s1 = Gcomp.s_bound(mind,Gcomp.amax)
         s2 = Gcomp.s_bound(maxd,Gcomp.amax)
+        print('Testing s_bound against mindmag ...'),
         self.assertLessEqual(np.abs(s-s1),1e-3,"s_bound must return s value from mindmag for GarrettCompleteness")
+        print('ok')
+        print('Testing s_bound against maxdmag ...'),
         self.assertLessEqual(np.abs(s-s2),1e-3,"s_bound must return s value from maxdmag for GarrettCompleteness")
+        print('ok')
         
     def test_comp_constrainOrbits(self):
         """
@@ -140,6 +136,19 @@ class TestGarrettCompleteness(unittest.TestCase):
         val = Gcomp.comp_calc(1.,5.,22.)
         self.assertGreaterEqual(val,0,"Completeness evaluated less than zero by GarrettCompleteness when sma and eccentricity constant")
         self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when sma and eccentricity constant")
+        
+    def test_constant_sma_constrainOrbits(self):
+        """
+        Test that GarrettCompleteness returns a valid completeness value when 
+        sma is constant and constrainOrbits is true
+        """
+        
+        spec = copy.deepcopy(self.spec2)
+        spec['arange'] = [5,5]
+        Gcomp = EXOSIMS.Completeness.GarrettCompleteness.GarrettCompleteness(**spec)
+        val = Gcomp.comp_calc(1.,5.,22.)
+        self.assertGreaterEqual(val,0,"Completeness evaluated less than zero by GarrettCompleteness when sma constant and constrainOrbits==True")
+        self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when sma constant and constrainOrbits==True")
         
     def test_constant_albedo(self):
         """

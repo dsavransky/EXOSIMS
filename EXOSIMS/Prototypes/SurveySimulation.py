@@ -91,15 +91,26 @@ class SurveySimulation(object):
             Working angle used for integration time calculation in units of arcsec
         dMagint (float ndarray):
             Delta magnitude used for integration time calculation
+        scaleWAdMag (bool):
+            If True, rescale dMagint and WAint for all stars based on luminosity and 
+            to ensure that WA is within the IWA/OWA. Defaults False.
         
     """
 
     _modtype = 'SurveySimulation'
-    _outspec = {}
-
+    
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
+<<<<<<< HEAD
         WAint=None, dMagint=None, dt_max=1.,**specs):
+||||||| merged common ancestors
+            WAint=None, dMagint=None, **specs):
+=======
+            WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, **specs):
+>>>>>>> master
         
+        #start the outspec
+        self._outspec = {}
+
         # if a script file is provided read it in. If not set, assumes that 
         # dictionary has been passed through specs.
         if scriptfile is not None:
@@ -132,6 +143,7 @@ class SurveySimulation(object):
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         self.vprint('Numpy random seed is: %s'%self.seed)
         np.random.seed(self.seed)
+        self._outspec['seed'] = self.seed
 
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
@@ -198,8 +210,12 @@ class SurveySimulation(object):
         
         # observation time sampling
         self.ntFlux = int(ntFlux)
+        self._outspec['ntFlux'] = self.ntFlux
+
         # maximum number of observations per star
         self.nVisitsMax = int(nVisitsMax)
+        self._outspec['nVisitsMax'] = self.nVisitsMax
+
         # integration time margin for characterization
         self.charMargin = float(charMargin)
         # maximum time for revisit window    
@@ -210,44 +226,116 @@ class SurveySimulation(object):
             if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
                 self._outspec[att] = self.__dict__[att]
 
+||||||| merged common ancestors
+        
+        # populate outspec with all SurveySimulation scalar attributes
+        for att in self.__dict__.keys():
+            if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
+                self._outspec[att] = self.__dict__[att]
+        
+=======
+        self._outspec['charMargin'] = self.charMargin
+
+        # maximum time for revisit window    
+        self.dt_max = float(dt_max)*u.week
+        self._outspec['dt_max'] = self.dt_max.value
+
+>>>>>>> master
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
+        # If inputs are scalars, save scalars to outspec, otherwise save full lists
         Comp = self.Completeness
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        dMagint = Comp.dMagLim if dMagint is None else float(dMagint)
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+
+        if dMagint is None:
+            dMagint = Comp.dMagLim 
         if WAint is None:
-            mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
             WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
+            WAint = WAint.to('arcsec')
+        
+        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+
+        if len(self.dMagint) is 1:
+            self._outspec['dMagint'] = self.dMagint[0]
+            self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
         else:
-            WAint = float(WAint)*u.arcsec
-        # transform into arrays of length TargetList.nStars
-        self.dMagint = np.array([dMagint]*TL.nStars)
-        self.WAint = np.array([WAint.value]*TL.nStars)*WAint.unit
+            assert (len(self.dMagint) == TL.nStars), \
+                    "Input dMagint array doesn't match number of target stars."
+            self._outspec['dMagint'] = self.dMagint
         
-        # add scalar values of WAint and dMagint to outspec
-        self._outspec['dMagint'] = self.dMagint[0]
-        self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+        if len(self.WAint) is 1:
+            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
+        else:
+            assert (len(self.WAint) == TL.nStars), \
+                    "Input WAint array doesn't match number of target stars."
+            self._outspec['WAint'] = self.WAint.to('arcsec').value
         
+        #if requested, rescale based on luminosities and mode limits
+        if scaleWAdMag:
+            for i,Lstar in enumerate(TL.L):
+                if (Lstar < 1.6) and (Lstar > 0):
+                   self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
+                else:
+                    self.dMagint[i] = Comp.dMagLim
+
+                EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
+                if EEID < mode['IWA']:
+                    EEID = mode['IWA']
+                elif EEID > mode['OWA']:
+                    EEID = mode['OWA']
+
+                self.WAint[i] = EEID
+        self._outspec['scaleWAdMag'] = scaleWAdMag 
+
         # initialize arrays updated in run_sim()
+        self.initializeStorageArrays()
+
+        #Generate File Hashnames and loction
+        self.cachefname = self.generateHashfName(specs)
+
+    def initializeStorageArrays(self):
+        """
+        Initialize all storage arrays based on # of stars and targets
+        """
+
         self.DRM = []
-        self.fullSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.partialSpectra = np.zeros(SU.nPlans, dtype=int)
-        self.propagTimes = np.zeros(TL.nStars)*u.d
-        self.lastObsTimes = np.zeros(TL.nStars)*u.d
-        self.starVisits = np.zeros(TL.nStars, dtype=int)
+        self.fullSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.partialSpectra = np.zeros(self.SimulatedUniverse.nPlans, dtype=int)
+        self.propagTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.lastObsTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.starVisits = np.zeros(self.TargetList.nStars, dtype=int)#contains the number of times each star was visited
         self.starRevisit = np.array([])
+<<<<<<< HEAD
         self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
         
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart
         endTime   = self.TimeKeeping.missionFinishAbs
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
+||||||| merged common ancestors
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((TL.nStars, 4), dtype=object)
+=======
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
 
+        return
+>>>>>>> master
+
+<<<<<<< HEAD
         # Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
+||||||| merged common ancestors
+        #Generate File Hashnames and loction
+        self.cachefname = self.generateHashfName(specs)
+=======
+>>>>>>> master
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -733,7 +821,7 @@ class SurveySimulation(object):
             
         # if planets are detected, calculate the minimum apparent separation
         smin = None
-        det = (detected == 1)
+        det = (detected == 1)#If any of the planets around the star have been detected
         if np.any(det):
             smin = np.min(SU.s[pInds[det]])
             log_det = '   - Detected planet inds %s (%s/%s)'%(pInds[det], 
@@ -780,10 +868,31 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+||||||| merged common ancestors
+=======
+        #Schedule Target Revisit
+        self.scheduleRevisit(sInd,smin,det,pInds)
+
+        return detected.astype(int), fZ, systemParams, SNR, FA
+
+    def scheduleRevisit(self,sInd,smin,det,pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            det - 
+            pInds - Indices of planets around target star
+        Return:
+            updates self.starRevisit attribute
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+>>>>>>> master
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
-        if smin is not None:
+        if smin is not None:#smin is None if no planet was detected
             sp = smin
             if np.any(det):
                 pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
@@ -803,14 +912,22 @@ class SurveySimulation(object):
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
-        if self.starRevisit.size == 0:
-            self.starRevisit = np.array([revisit])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
+<<<<<<< HEAD
                 self.starRevisit[revInd,1] = revisit[1]
+||||||| merged common ancestors
+                self.starRevisit[revInd,1] = revisit[1]
+        
+        return detected.astype(int), fZ, systemParams, SNR, FA
+=======
+                self.starRevisit[revInd,1] = revisit[1]#over
+>>>>>>> master
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -1160,6 +1277,9 @@ class SurveySimulation(object):
         if rewindPlanets:
             SU.init_systems()
 
+        #reset helper arrays
+        self.initializeStorageArrays()
+
         self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):
@@ -1283,6 +1403,30 @@ class SurveySimulation(object):
             sInds = np.where(tovisit)[0]
         return sInds
 
+||||||| merged common ancestors
+=======
+    def revisitFilter(self,sInds,tmpCurrentTimeNorm):
+        """Helper method for Overloading Revisit Filtering
+
+        Args:
+            sInds - indices of stars still in observation list
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+        Returns:
+            sInds - indices of stars still in observation list
+        """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
+            tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
+                    & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
+            #The above condition should prevent revisits so long as all stars have not been observed
+            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)#absolute temporal spacing between revisit and now.
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+            sInds = np.where(tovisit)[0]
+        return sInds
+
+>>>>>>> master
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     

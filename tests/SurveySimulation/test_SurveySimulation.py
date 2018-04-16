@@ -240,24 +240,6 @@ class TestSurveySimulation(unittest.TestCase):
                 pInds = [0]
                 sim.scheduleRevisit(sInd,smin,det,pInds)
 
-||||||| merged common ancestors
-=======
-    def test_scheduleRevisit(self):
-        """Runs scheduleRevisit method
-        """
-        for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
-
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
-
-                sInd = [0]
-                smin = None
-                det = 0
-                pInds = [0]
-                sim.scheduleRevisit(sInd,smin,det,pInds)
-
->>>>>>> master
     def test_observation_characterization(self):
         r"""Test observation_characterization method.
 
@@ -327,3 +309,4 @@ class TestSurveySimulation(unittest.TestCase):
                     self.assertIsInstance(sInds, np.ndarray)
                 except:
                     self.assertIsInstance(sInds, type(list()))
+

@@ -91,7 +91,7 @@ class SAG13(KeplerLike2):
         if self.Rprange[1].to('earthRad').value < self.Rplim[1]:
             self.eta = self.Gamma[0]*(self.Rprange[1].to('earthRad').value**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
         elif self.Rprange[0].to('earthRad').value > self.Rplim[1]:
-            self.eta = self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rprange[1].to('earthRad').value**self.alpha[1])/self.alpha[1]*self.Ca[1]
+            self.eta = self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rprange[0].to('earthRad').value**self.alpha[1])/self.alpha[1]*self.Ca[1]
         else:
             self.eta = self.Gamma[0]*(self.Rplim[1]**self.alpha[0]-self.Rprange[0].to('earthRad').value**self.alpha[0])/self.alpha[0]*self.Ca[0]
             self.eta+= self.Gamma[1]*(self.Rprange[1].to('earthRad').value**self.alpha[1]-self.Rplim[1]**self.alpha[1])/self.alpha[1]*self.Ca[1]

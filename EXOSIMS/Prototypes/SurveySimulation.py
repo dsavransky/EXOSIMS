@@ -212,12 +212,6 @@ class SurveySimulation(object):
 
         # integration time margin for characterization
         self.charMargin = float(charMargin)
-
-        # populate outspec with all SurveySimulation scalar attributes
-        for att in self.__dict__.keys():
-            if att not in ['vprint', 'logger', 'StarCatalog', 'modules'] + self.modules.keys():
-                self._outspec[att] = self.__dict__[att]
-        
         self._outspec['charMargin'] = self.charMargin
 
         # maximum time for revisit window    

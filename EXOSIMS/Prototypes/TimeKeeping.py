@@ -154,7 +154,7 @@ class TimeKeeping(object):
         self.OBnumber = 0
         self.vprint('OBendTimes is: ' + str(self.OBendTimes)) # Could Be Deleted
 
-    def mission_is_over(self, Obs, mode):
+    def mission_is_over(self, OS, Obs, mode):
         r"""Is the time allocated for the mission used up?
         
         This supplies an abstraction around the test:
@@ -162,6 +162,8 @@ class TimeKeeping(object):
         so that users of the class do not have to perform arithmetic
         on class variables.
         Args:
+            OS (Optical System object):
+                Optical System module for OS.haveOcculter
             Obs (Observatory Object):
                 Observatory module for Obs.settlingTime
             mode (dict):
@@ -173,7 +175,17 @@ class TimeKeeping(object):
         
         is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')) \
             or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
-            or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]))
+            or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]) \
+            or (OS.haveOcculter and Obs.scMass < Obs.dryMass))
+
+        if (OS.haveOcculter and Obs.scMass < Obs.dryMass):
+            self.vprint('Total fuel mass exceeded at %s'self.currentTimeNorm.to('day').round(2))
+        if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]):
+            self.vprint('Last Observing Block would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
+        if (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion):
+            self.vprint('exoplanetObstime would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
+        if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')):
+            self.vprint('missionLife would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
         
         return is_over
 

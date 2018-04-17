@@ -358,7 +358,7 @@ class SurveySimulation(object):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(Obs,det_mode):
+        while not TK.mission_is_over(OS, Obs,det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -433,14 +433,10 @@ class SurveySimulation(object):
                 # append result values to self.DRM
                 self.DRM.append(DRM)
                 
-                # with occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.currentTimeNorm.to('day').round(2))
-                    break
             else:#sInd == None
                 if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over(Obs,det_mode):#as long as the mission is not over
+                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time

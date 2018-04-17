@@ -267,17 +267,17 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
-        self.assertFalse(tk.mission_is_over(Obs, det_mode)) #the mission has just begun
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode)) #the mission has just begun
 
         # 2) exoplanetObsTime exceeded
         tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion # set exoplanetObsTime to failure condition
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
         tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion # reset exoplanetObsTime
 
         # 3) missionLife exceeded
         tk.currentTimeNorm = 1.1*tk.missionLife.to('day')
         tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife.to('day')
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
         tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
 
@@ -286,7 +286,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.OBnumber = 0
         tk.currentTimeNorm = tk.OBendTimes[tk.OBnumber] + 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
-        self.assertTrue(tk.mission_is_over(Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
         tk.currentTimeAbs = 0*u.d
         tk.currentTimeAbs = tk.missionStart
 

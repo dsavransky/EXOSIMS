@@ -179,13 +179,13 @@ class TimeKeeping(object):
             or (OS.haveOcculter and Obs.scMass < Obs.dryMass))
 
         if (OS.haveOcculter and Obs.scMass < Obs.dryMass):
-            self.vprint('Total fuel mass exceeded at %s'self.currentTimeNorm.to('day').round(2))
+            self.vprint('Total fuel mass exceeded at %s'%self.currentTimeNorm.to('day').round(2))
         if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]):
-            self.vprint('Last Observing Block would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
+            self.vprint('Last Observing Block would be exceeded at %s'%self.currentTimeNorm.to('day').round(2))
         if (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion):
-            self.vprint('exoplanetObstime would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
+            self.vprint('exoplanetObstime would be exceeded at %s'%self.currentTimeNorm.to('day').round(2))
         if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')):
-            self.vprint('missionLife would be exceeded at %s'self.currentTimeNorm.to('day').round(2))
+            self.vprint('missionLife would be exceeded at %s'%self.currentTimeNorm.to('day').round(2))
         
         return is_over
 

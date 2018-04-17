@@ -283,8 +283,8 @@ class SurveySimulation(object):
         self.cachefname = self.generateHashfName(specs)
 
         # getting keepout map for entire mission
-        startTime = self.TimeKeeping.missionStart
-        endTime   = self.TimeKeeping.missionFinishAbs
+        startTime = self.TimeKeeping.missionStart.copy()
+        endTime   = self.TimeKeeping.missionFinishAbs.copy()
         self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
 
         # choose observing modes selected for detection (default marked with a flag)
@@ -454,8 +454,7 @@ class SurveySimulation(object):
                     if success == False:
                         self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 1')
                 else:
-                    # start times, including slew times
-                    startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
+                    startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d # Start Times of Observations
                     observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
@@ -1197,6 +1196,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
        
+
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules

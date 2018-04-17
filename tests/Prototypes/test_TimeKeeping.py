@@ -261,6 +261,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         sim = self.allmods[0](scriptfile=self.script1)
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
+        OS = sim.OpticalSystem
         det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
 
         # 1) mission not over

@@ -169,7 +169,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
         # 3) Exceeds missionLife: All time allocation should fail
         tk.missionLife = 365*u.d
-        tk.currentTimeNorm = tk.missionLife - 1*u.d
+        tk.currentTimeNorm = tk.missionLife.to('day') - 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
@@ -208,8 +208,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.missionLife = 10*u.d
         tk.missionPortion = 0.2
         tk.OBendTimes = [10]*u.d
-        tk.exoplanetObsTime = tk.missionLife*tk.missionPortion - 1*u.d
-        tk.currentTimeNorm = tk.missionLife*tk.missionPortion - 1*u.d
+        tk.exoplanetObsTime = tk.missionLife.to('day')*tk.missionPortion - 1*u.d
+        tk.currentTimeNorm = tk.missionLife.to('day')*tk.missionPortion - 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
@@ -270,13 +270,13 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.assertFalse(tk.mission_is_over(Obs, det_mode)) #the mission has just begun
 
         # 2) exoplanetObsTime exceeded
-        tk.exoplanetObsTime = 1.1*tk.missionLife*tk.missionPortion # set exoplanetObsTime to failure condition
+        tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion # set exoplanetObsTime to failure condition
         self.assertTrue(tk.mission_is_over(Obs, det_mode))
-        tk.exoplanetObsTime = 0.*tk.missionLife*tk.missionPortion # reset exoplanetObsTime
+        tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion # reset exoplanetObsTime
 
         # 3) missionLife exceeded
-        tk.currentTimeNorm = 1.1*tk.missionLife
-        tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife
+        tk.currentTimeNorm = 1.1*tk.missionLife.to('day')
+        tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife.to('day')
         self.assertTrue(tk.mission_is_over(Obs, det_mode))
         tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
@@ -395,7 +395,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.OBendTimes[0] + tk.missionStart
         self.assertFalse(tk.advanceToAbsTime(tAbs,True))
-        self.assertTrue(tk.exoplanetObsTime == tk.missionLife*tk.missionPortion)
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
@@ -423,7 +423,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         # 4a) Check Use Case 2 and 4: addExoplanetObsTime == True
         #time advancement exceeds missionFinishAbs but NOT exoplanetObsTime
         tk.missionLife = 1*u.year
-        tk.missionFinishAbs = tk.missionStart + tk.missionLife
+        tk.missionFinishAbs = tk.missionStart + tk.missionLife.to('day')
         tk.missionPortion = 1
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart + 300*u.d
@@ -439,7 +439,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.currentTimeAbs + 70*u.d
         self.assertTrue(tk.advanceToAbsTime(tAbs,True))
-        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife - tmpcurrentTimeNorm).to('day'))
+        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife.to('day') - tmpcurrentTimeNorm).to('day'))       
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
@@ -461,7 +461,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.currentTimeAbs + 30*u.d
         self.assertFalse(tk.advanceToAbsTime(tAbs,True))
-        self.assertTrue(tk.exoplanetObsTime == tk.missionLife*tk.missionPortion)
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
@@ -528,7 +528,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tAbs = tk.missionStart + 37.5*u.d
         self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.OBnumber == 4)
-        self.assertTrue(tk.exoplanetObsTime == tk.missionLife*tk.missionPortion)
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == tk.OBstartTimes[tk.OBnumber])
         self.assertTrue(tk.currentTimeAbs == tk.OBstartTimes[tk.OBnumber] + tk.missionStart)
 
@@ -594,7 +594,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tAbs = tk.missionStart + 22.5*u.d
         self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.OBnumber == 2)
-        self.assertTrue(tk.exoplanetObsTime == tk.missionLife*tk.missionPortion)
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == 22.5*u.d)
         self.assertTrue(tk.currentTimeAbs == 22.5*u.d + tk.missionStart)
 
@@ -655,7 +655,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         intTime = min([MITOBT, MITEOT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
         self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True))#was allocation successful
-        self.assertTrue(tk.exoplanetObsTime == tk.missionLife*tk.missionPortion)
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
 
         # 3) Returned time ends mission at missionLife
         tk.missionLife = 1*u.year
@@ -669,8 +669,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         intTime = min([MITOBT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
         self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],False))#was allocation successful
-        self.assertTrue(tk.missionLife == tk.currentTimeNorm)
-        self.assertTrue(tk.missionLife == tk.currentTimeAbs - tk.missionStart)
+        self.assertTrue(tk.missionLife.to('day') == tk.currentTimeNorm)
+        self.assertTrue(tk.missionLife.to('day') == tk.currentTimeAbs - tk.missionStart)
 
         # 4) Returned time ends mission at OBendTime
         tk.missionLife = 1*u.year

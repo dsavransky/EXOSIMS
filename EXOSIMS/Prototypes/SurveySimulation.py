@@ -441,14 +441,12 @@ class SurveySimulation(object):
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
                     success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
-                    if success == False:
-                        self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 1')
                 else:
                     startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d # Start Times of Observations
                     observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
-                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm=' + str(TK.currentTimeNorm))
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm))
                         #Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
@@ -461,8 +459,6 @@ class SurveySimulation(object):
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
-                        if success == False:
-                            self.vprint('Time Advancement exceeds mission constraint. Mission Is Over 2')
                         self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' Advanced To tNorm= ' + str(tAbs-TK.missionStart))
                 
         else:#TK.mission_is_over()

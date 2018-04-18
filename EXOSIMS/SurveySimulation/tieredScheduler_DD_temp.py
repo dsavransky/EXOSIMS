@@ -129,7 +129,8 @@ class tieredScheduler_DD_temp(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, dmode = self.next_target(sInd, occ_sInd, detModes, charMode)
-            assert t_det !=0, "Integration time can't be 0."
+            if sInd != occ_sInd:
+                assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
@@ -486,6 +487,9 @@ class tieredScheduler_DD_temp(SurveySimulation):
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
 
+            t_det = 0*u.d
+            dmode = copy.deepcopy(detmode[0])
+
             # 7b/ Choose best target from remaining
             if np.any(sInds):
 
@@ -500,7 +504,6 @@ class tieredScheduler_DD_temp(SurveySimulation):
                 # t_det = max(intTime_by_mode)
 
                 # Perform dual band detections if necessary
-                dmode = copy.deepcopy(detmode[0])
                 if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
                     dmode['BW'] = dmode['BW'] + detmode[1]['BW']
                     dmode['inst']['sread'] = dmode['inst']['sread'] + detmode[1]['inst']['sread']
@@ -524,8 +527,14 @@ class tieredScheduler_DD_temp(SurveySimulation):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTime[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
+                    if not np.any(sInds):
+                        sInd = occ_sInd
                     self.ready_to_update = False
                     self.occ_starVisits[occ_sInd] += 1
+                elif not np.any(sInds):
+                    TK.allocate_time(1*u.d)
+                    cnt += 1
+                    continue
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

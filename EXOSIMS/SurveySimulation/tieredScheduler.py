@@ -82,6 +82,9 @@ class tieredScheduler(SurveySimulation):
         self.coeff_data_a4 = []
         self.coeff_time = []
 
+        self.revisit_wait = revisit_wait
+        self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
+
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -441,14 +444,7 @@ class tieredScheduler(SurveySimulation):
             
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if np.any(sInds):
-                tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-                    tovisit[ind_rev] = True
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)
 
             # revisit list, with time after start
             if np.any(occ_sInds):
@@ -1009,3 +1005,78 @@ class tieredScheduler(SurveySimulation):
                 self.starRevisit[revInd,1] = revisit[1]
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
+
+
+    def revisitFilter(self, sInds, tmpCurrentTimeNorm):
+        """Helper method for Overloading Revisit Filtering
+
+        Args:
+            sInds - indices of stars still in observation list
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+        Returns:
+            sInds - indices of stars still in observation list
+        """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
+            tovisit[sInds] = (self.starVisits[sInds] < self.nVisitsMax)#Checks that no star has exceeded the number of revisits
+            #The above condition should prevent revisits so long as all stars have not been observed
+            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
+                dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
+                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
+                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0, 0] if x in sInds and self.no_dets[x] is True]
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+            sInds = np.where(tovisit)[0]
+
+        return sInds
+
+
+    def scheduleRevisit(self, sInd, smin, det, pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            det - 
+            pInds - Indices of planets around target star
+        Return:
+            updates self.starRevisit attribute
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        # in both cases (detection or false alarm), schedule a revisit 
+        # based on minimum separation
+        Ms = TL.MsTrue[sInd]
+        if smin is not None and np.nan not in smin: #smin is None if no planet was detected
+            sp = smin
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + T/2.
+        # otherwise, revisit based on average of population semi-major axis and mass
+        else:
+            sp = SU.s.mean()
+            Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + 0.75*T
+        # if no detections then schedule revisit based off of revisit_weight
+        if not np.any(det):
+            t_rev = TK.currentTimeNorm + self.revisit_wait
+            self.no_dets[sInd] = True
+        else:
+            self.no_dets[sInd] = False
+
+        # finally, populate the revisit list (NOTE: sInd becomes a float)
+        revisit = np.array([sInd, t_rev.to('day').value])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
+        else:
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]#over

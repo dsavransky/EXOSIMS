@@ -18,7 +18,7 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], **specs):
+    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25*u.d, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -31,6 +31,9 @@ class linearJScheduler(SurveySimulation):
         coeffs = coeffs/np.linalg.norm(coeffs)
         
         self.coeffs = coeffs
+        
+        self.revisit_wait = revisit_wait
+        self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Choose next target based on truncated depth first search 
@@ -112,3 +115,78 @@ class linearJScheduler(SurveySimulation):
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
         return sInd
+
+    def revisitFilter(self, sInds, tmpCurrentTimeNorm):
+        """Helper method for Overloading Revisit Filtering
+
+        Args:
+            sInds - indices of stars still in observation list
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+        Returns:
+            sInds - indices of stars still in observation list
+        """
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
+            tovisit[sInds] = (self.starVisits[sInds] < self.nVisitsMax)#Checks that no star has exceeded the number of revisits
+            #The above condition should prevent revisits so long as all stars have not been observed
+            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
+                dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
+                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
+                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0, 0] if x in sInds and self.no_dets[x] is True]
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+            sInds = np.where(tovisit)[0]
+
+        return sInds
+
+    def scheduleRevisit(self, sInd, smin, det, pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            det - 
+            pInds - Indices of planets around target star
+        Return:
+            updates self.starRevisit attribute
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        # in both cases (detection or false alarm), schedule a revisit 
+        # based on minimum separation
+        Ms = TL.MsTrue[sInd]
+        if smin is not None and np.nan not in smin: #smin is None if no planet was detected
+            sp = smin
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + T/2.
+        # otherwise, revisit based on average of population semi-major axis and mass
+        else:
+            sp = SU.s.mean()
+            Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm + 0.75*T
+        # if no detections then schedule revisit based off of revisit_weight
+        if not np.any(det):
+            t_rev = TK.currentTimeNorm + self.revisit_wait
+            self.no_dets[sInd] = True
+        else:
+            self.no_dets[sInd] = False
+
+        # finally, populate the revisit list (NOTE: sInd becomes a float)
+        revisit = np.array([sInd, t_rev.to('day').value])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
+        else:
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]#over
+
+

@@ -212,16 +212,7 @@ class linearJScheduler_PD_det_only(linearJScheduler):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if len(sInds) > 0:
-                tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
-                        & (self.starVisits[sInds] < self.nVisitsMax))
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
-                            if x in sInds]
-                    tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -437,36 +428,8 @@ class linearJScheduler_PD_det_only(linearJScheduler):
             
             # in both cases (detection or false alarm), schedule a revisit 
             # based on minimum separation
-            Ms = TL.MsTrue[sInd]
             if m_i == len(modes) - 1:
-                if np.nan not in smins:
-                    sp = smins[0]
-                    if np.any(det):
-                        pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-                        Mp = SU.Mp[pInd_smin]
-                    else:
-                        Mp = SU.Mp.mean()
-                    mu = const.G*(Mp + Ms)
-                    T = 2.*np.pi*np.sqrt(sp**3/mu)
-                    t_rev = TK.currentTimeNorm + T/2.
-                # otherwise, revisit based on average of population semi-major axis and mass
-                else:
-                    sp = SU.s.mean()
-                    Mp = SU.Mp.mean()
-                    mu = const.G*(Mp + Ms)
-                    T = 2.*np.pi*np.sqrt(sp**3/mu)
-                    t_rev = TK.currentTimeNorm + 0.75*T
-                
-                # finally, populate the revisit list (NOTE: sInd becomes a float)
-                revisit = np.array([sInd, t_rev.to('day').value])
-                if self.starRevisit.size == 0:
-                    self.starRevisit = np.array([revisit])
-                else:
-                    revInd = np.where(self.starRevisit[:,0] == sInd)[0]
-                    if revInd.size == 0:
-                        self.starRevisit = np.vstack((self.starRevisit, revisit))
-                    else:
-                        self.starRevisit[revInd,1] = revisit[1]
+                self.scheduleRevisit(sInd, smin, det, pInds)
         
         return np.array(detecteds).astype(int), fZ, systemParams, SNR, np.array(FAs)
 

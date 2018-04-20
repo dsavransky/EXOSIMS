@@ -248,16 +248,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if len(sInds) > 0:
-                tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
-                        & (self.starVisits[sInds] < self.nVisitsMax))
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] 
-                            if x in sInds]
-                    tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds, TK.currentTimeNorm)
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff

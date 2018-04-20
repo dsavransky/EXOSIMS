@@ -390,14 +390,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            if np.any(sInds):
-                tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
-                if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
-                    tovisit[ind_rev] = True
-                sInds = np.where(tovisit)[0]
+            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)
 
             # revisit list, with time after start
             if np.any(occ_sInds):

@@ -8,10 +8,6 @@ import astropy.constants as const
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
-try:
-    import cPickle as pickle
-except:
-    import pickle
 import hashlib
 import csv
 from numpy import nan
@@ -358,7 +354,7 @@ class SurveySimulation(object):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(OS, Obs,det_mode):
+        while not TK.mission_is_over(OS, Obs, det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -441,6 +437,7 @@ class SurveySimulation(object):
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
                     success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
+                    self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d # Start Times of Observations
                     observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
@@ -540,13 +537,18 @@ class SurveySimulation(object):
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
+        #CHANGE THIS SO WE FILTER TARGETS EXCEEDING MAXIMUM INTEGRATION TIMES
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
+        #   WE CANNOT DO THIS BECAUSE WE MUST RECALCULATE COMPLETENESS intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
+
+        sInds = sInds[np.where(intTimes[sInds] > maxIntTime)]  # Filters targets exceeding end of OB
         endTimes = startTimes + intTimes
         if maxIntTime.value <= 0:
             sInds = np.asarray([],dtype=int)
+
+
         # 4.2 filter out totTimes > integration cutoff
         if len(sInds) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
@@ -703,7 +705,7 @@ class SurveySimulation(object):
 
         #Allocate Time
         extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
-        success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True)#allocates time
+        success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
         assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
         dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
         
@@ -737,8 +739,7 @@ class SurveySimulation(object):
                 # save planet parameters
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
-                Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, pInds, dt, mode, 
-                        fZ=fZs[i])
+                Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, pInds, dt, mode, fZ=fZs[i])
                 # allocate second half of dt
                 timePlus += dt/2.
             
@@ -781,20 +782,20 @@ class SurveySimulation(object):
             self.vprint(log_det)
         
         # populate the lastDetected array by storing det, fEZ, dMag, and WA
-        self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, 
+        self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, \
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
         
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
         # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
-            WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
+            WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
             dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
-            self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], 
+            self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], \
                     ZL.fEZ0.to('1/arcsec2').value)
             self.lastDetected[sInd,2] = np.append(self.lastDetected[sInd,2], dMag)
-            self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], 
+            self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], \
                     WA.to('arcsec').value)
             sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
@@ -918,8 +919,8 @@ class SurveySimulation(object):
         # and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs + mode['syst']['ohTime']
-            startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime']
+            startTime = TK.currentTimeAbs + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
             tochar[tochar] = Obs.keepout(TL, sInd, startTime)
         
@@ -956,7 +957,7 @@ class SurveySimulation(object):
             #Allocate Time
             intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
-            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'],True)#allocates time
+            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
             if success == False: #Time was not successfully allocated
                 #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
                 char_intTime = None

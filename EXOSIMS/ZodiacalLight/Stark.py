@@ -53,7 +53,7 @@ class Stark(ZodiacalLight):
         lon0 = (r_obs_lon + 180) % 360
         
         # target star positions vector in heliocentric true ecliptic frame
-        r_targ = TL.starprop(sInds, currentTime, eclip=True)
+        r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates

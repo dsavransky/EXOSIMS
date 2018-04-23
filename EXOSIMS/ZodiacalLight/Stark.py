@@ -44,7 +44,7 @@ class Stark(ZodiacalLight):
         """
         
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTime, eclip=True)
+        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distances (projected in ecliptic plane)
         r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
         # observatory ecliptic longitudes

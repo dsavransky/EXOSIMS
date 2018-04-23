@@ -5,11 +5,13 @@ import os, inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import griddata, CubicSpline
+from scipy.interpolate import griddata, interp1d
 try:
     import cPickle as pickle
 except:
     import pickle
+from numpy import nan
+from astropy.time import Time
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -42,7 +44,7 @@ class Stark(ZodiacalLight):
         """
         
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
+        r_obs = Obs.orbit(currentTime, eclip=True)
         # observatory distances (projected in ecliptic plane)
         r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
         # observatory ecliptic longitudes
@@ -51,7 +53,7 @@ class Stark(ZodiacalLight):
         lon0 = (r_obs_lon + 180) % 360
         
         # target star positions vector in heliocentric true ecliptic frame
-        r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
+        r_targ = TL.starprop(sInds, currentTime, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
@@ -70,8 +72,8 @@ class Stark(ZodiacalLight):
         Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
         # create data point coordinates
         lon_pts = np.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 75, 90,
-                105, 120, 135, 150, 165, 180]) # deg ecliptic longitude with 0 at sun
-        lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg ecliptic latitude with 0 at sun
+                105, 120, 135, 150, 165, 180]) # deg
+        lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(zip(np.concatenate(x_pts), np.concatenate(y_pts)))
         # create data values, normalized by (90,0) value
@@ -90,10 +92,8 @@ class Stark(ZodiacalLight):
                 3.2e-9, 6.9e-10]) # W/m2/sr/um
         x = np.log10(zodi_lam)
         y = np.log10(zodi_Blam)
-        #logf = interp1d(x, y, kind='quadratic')#DELETE ME OLD INTERPOLANT
-        logf = CubicSpline(x, zodi_Blam, bc_type='clamped')
-        f = logf(np.log10(lam.to('um').value))*u.W/u.m**2/u.sr/u.um
-        #f = 10.**(logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um#DELETE ME OLD INTERPOLANT
+        logf = interp1d(x, y, kind='quadratic')
+        f = 10.**(logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
@@ -134,7 +134,8 @@ class Stark(ZodiacalLight):
             with open(cachefname, 'rb') as f:#load from cache
                 tmpDat = pickle.load(f)
                 valfZmax = tmpDat[0,:]
-                absTimefZmax = tmpDat[1,:]
+                #DELETE absTimefZmax = tmpDat[1,:]
+                absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
             return valfZmax[sInds], absTimefZmax[sInds]#, fZmaxInds
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
@@ -172,11 +173,11 @@ class Stark(ZodiacalLight):
                 relTimefZmax[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmax[i]*dt*u.d
             absTimefZmax = TK.currentTimeAbs + relTimefZmax
 
-            tmpDat = np.zeros([2,fZmax.shape[0]])
+            tmpDat = np.zeros([2,valfZmax.shape[0]])
             tmpDat[0,:] = valfZmax
-            tmpDat[1,:] = absTimefZmax
+            tmpDat[1,:] = absTimefZmax.value
             with open(cachefname, "wb") as fo:
-                wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                #DELETE wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 pickle.dump(tmpDat,fo)
                 self.vprint("Saved cached fZmax to %s"%cachefname)
             return valfZmax, absTimefZmax#, fZmaxInds
@@ -212,6 +213,8 @@ class Stark(ZodiacalLight):
         #Find minimum fZ of each star
         fZmin = np.zeros(sInds.shape[0])
         indsfZmin = np.zeros(sInds.shape[0])
+
+
         relTimefZmin = np.zeros(sInds.shape[0])*u.d
         absTimefZmin = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
         for i in xrange(len(sInds)):
@@ -219,7 +222,5 @@ class Stark(ZodiacalLight):
             indsfZmin[i] = np.argmin(fZ_matrix[i,:])
             relTimefZmin[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmin[i]*dt*u.d
         absTimefZmin = TK.currentTimeAbs + relTimefZmin
-
-
 
         return fZmin/u.arcsec**2, absTimefZmin #fZminInds

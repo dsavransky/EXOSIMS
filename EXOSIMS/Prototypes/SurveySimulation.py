@@ -543,7 +543,7 @@ class SurveySimulation(object):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         #   WE CANNOT DO THIS BECAUSE WE MUST RECALCULATE COMPLETENESS intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
 
-        sInds = sInds[np.where(intTimes[sInds] > maxIntTime)]  # Filters targets exceeding end of OB
+        sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
         endTimes = startTimes + intTimes
         if maxIntTime.value <= 0:
             sInds = np.asarray([],dtype=int)

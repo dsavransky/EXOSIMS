@@ -133,7 +133,7 @@ class linearJScheduler(SurveySimulation):
                 ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0, 0] if x in sInds and self.no_dets[x] is True]
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
-                tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+                #tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
             sInds = np.where(tovisit)[0]
 
         return sInds

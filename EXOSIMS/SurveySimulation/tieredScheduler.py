@@ -1010,10 +1010,12 @@ class tieredScheduler(SurveySimulation):
                     & (self.starVisits[sInds] < self.nVisitsMax))# Checks that no star has exceeded the number of revisits
             if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
-                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)] #return indice of all revisits within a threshold dt_max of revisit day
-                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)] # return indice of all revisits with no detections past the revisit time
+
+                #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
+                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
+                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
-                tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+                tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
 
         return sInds

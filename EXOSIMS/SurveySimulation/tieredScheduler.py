@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25*u.d, **specs):
         
         SurveySimulation.__init__(self, **specs)
         

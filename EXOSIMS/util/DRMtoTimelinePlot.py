@@ -91,13 +91,49 @@ if __name__ == "__main__":
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
         ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
         y_vals = np.zeros(len(det_times)).tolist()
+        OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
         #sumOHTIME = [1 for i in np.arange(len(DRM['DRM']))]
         print(sum(det_times))
 
 
+        #Check if plotting font #########################################################
+        tmpfig = plt.figure(figsize=(30,3.5),num=0)
+        ax = tmpfig.add_subplot(111)
+        t = ax.text(0, 0, "Obs#   ,  d", ha='center',va='center',rotation='vertical', fontsize=8)
+        r = tmpfig.canvas.get_renderer()
+        bb = t.get_window_extent(renderer=r)
+        Obstxtwidth = bb.width#Width of text
+        Obstxtheight = bb.height#height of text
+        FIGwidth, FIGheight = tmpfig.get_size_inches()*tmpfig.dpi
+        plt.show(block=False)
+        plt.close()
+        daysperpixelapprox = max(arrival_times)/FIGwidth#approximate #days per pixel
+        if mean(det_times)*0.8/daysperpixelapprox > Obstxtwidth:
+            ObstextBool = True
+        else:
+            ObstextBool = False
+
+        tmpfig = plt.figure(figsize=(30,3.5),num=0)
+        ax = tmpfig.add_subplot(111)
+        t = ax.text(0, 0, "OB#  , dur.=    d", ha='center',va='center',rotation='horizontal', fontsize=12)
+        r = tmpfig.canvas.get_renderer()
+        bb = t.get_window_extent(renderer=r)
+        OBtxtwidth = bb.width#Width of text
+        OBtxtheight = bb.height#height of text
+        FIGwidth, FIGheight = tmpfig.get_size_inches()*tmpfig.dpi
+        plt.show(block=False)
+        plt.close()
+        if mean(OBdurations)*0.8/daysperpixelapprox > OBtxtwidth:
+            OBtextBool = True
+        else:
+            OBtextBool = False
+        #################################################################################
+
+
+
         colors = 'rb'#'rgbwmc'
         patch_handles = []
-        fig = plt.figure(figsize=(30,3.5))
+        fig = plt.figure(figsize=(30,3.5),num=cnt)
         ax = fig.add_subplot(111)
 
         # Plot All Observations
@@ -116,11 +152,11 @@ if __name__ == "__main__":
             plt.rc('axes',linewidth=2)
             plt.rc('lines',linewidth=2)
             rcParams['axes.linewidth']=2
-            rc('font',weight='bold') 
-            ax.text(x, y, "Obs#%d, %dd" % (l,det_time), ha='center',va='center',rotation='vertical', fontsize=8)
+            rc('font',weight='bold')
+            if ObstextBool: 
+                ax.text(x, y, "Obs#%d, %dd" % (l,det_time), ha='center',va='center',rotation='vertical', fontsize=8)
 
         # Plot Observation Blocks
-        OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
         patch_handles2 = []
         for (OBnum, OBdur, OBstart) in zip(xrange(len(outspec['OBendTimes'])), OBdurations, np.asarray(outspec['OBstartTimes'])):
             patch_handles2.append(ax.barh(1, OBdur, align='center', left=OBstart, hatch='//',linewidth=2.0, edgecolor='black'))
@@ -128,7 +164,8 @@ if __name__ == "__main__":
             bl = patch.get_xy()
             x = 0.5*patch.get_width() + bl[0]
             y = 0.5*patch.get_height() + bl[1]
-            ax.text(x, y, "OB#%d, dur.= %dd" % (OBnum,OBdur), ha='center',va='center',rotation='horizontal',fontsize=12)
+            if OBtextBool:
+                ax.text(x, y, "OB#%d, dur.= %dd" % (OBnum,OBdur), ha='center',va='center',rotation='horizontal',fontsize=12)
 
         # Plot Asthetics
         y_pos = np.arange(2)#Number of xticks to have

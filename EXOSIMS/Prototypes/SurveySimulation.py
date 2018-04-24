@@ -365,7 +365,7 @@ class SurveySimulation(object):
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day')
+                DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
                 DRM['OB_nb'] = TK.OBnumber
                 DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
@@ -388,6 +388,7 @@ class SurveySimulation(object):
                 DRM['det_SNR'] = det_SNR
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 if char_mode['SNR'] not in [0, np.inf]:
@@ -425,15 +426,18 @@ class SurveySimulation(object):
                 del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 DRM['char_mode'] = dict(char_mode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+
+
                 
                 # append result values to self.DRM
                 self.DRM.append(DRM)
                 
             else:#sInd == None
-                if(TK.currentTimeNorm == TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                if(TK.currentTimeNorm >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
                     if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                        #DELETEprint('TACO')
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
                     success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
@@ -447,7 +451,7 @@ class SurveySimulation(object):
                         #Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                        return DRM, None, None
+                        #DELETEreturn DRM, None, None
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d]
@@ -455,9 +459,10 @@ class SurveySimulation(object):
                             tAbs = np.min(oTnowToEnd)#advance do that observable time
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
-                        self.vprint('No Observable Targets a currentTimeNorm= ' + str(TK.currentTimeNorm) + ' Advanced To tNorm= ' + str(tAbs-TK.missionStart))
-                
+                        #DELETEself.vprint('No Observable Targets a currentTimeNorm= ' + str(tmpcurrentTimeNorm) + ' Advanced To currentTimeNorm= ' + str(tAbs-TK.missionStart))
+                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
@@ -569,7 +574,7 @@ class SurveySimulation(object):
             sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
             if sInd == None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
-                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
                 return DRM, None, None, waitTime
             # store selected star integration time
             intTime = intTimes[sInd]

@@ -73,6 +73,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         #DELETE mode = self.mode#resolve this mode is passed into next_target
         #DELETE allModes = self.OpticalSystem.observingModes
         #DELETE det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        #WE DO NOT NEED TO CALCULATE OVER EVERY DMAG
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
@@ -160,23 +161,40 @@ class starkAYO_staticSchedule(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])#float from 0 to 1000 of where at in 1 year
+        #indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])#float from 0 to 1000 of where at in 1 year
         #tmp = np.asarray(ZL.fZ_startSaved)[self.schedule,:]
         #fZ_matrixSched = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac%1+1)]#A simple interpolant
 
-        fZ_matrixSched = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
+        #fZ_matrixSched = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
+        fZ_matrixSched = np.zeros(TL.nStars)
+        fZ_matrixSched[sInds] = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
         #fZ_matrixSched = np.asarray(ZL.fZ_startSaved)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
         #The above line might not work because it must be filtered down one index at a time...
-        fZminSched = self.fZmin[self.schedule].value #has shape [self.schedule.shape[0]]
+        fZminSched = np.zeros(TL.nStars)
+        fZminSched[sInds] = self.fZmin[sInds].value #has shape [self.schedule.shape[0]]
+
         commonsInds = np.intersect1d(self.schedule,sInds)
 
         #commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule (we need the inherited filtering from sInds)
-        indmap = [self.schedule.tolist().index(x) for x in commonsInds]#get index of schedule for the Inds in self.schedule and sInds
-        CbyT = self.CbyT[indmap]
-        t_dets = self.t_dets[indmap]
-        Comp00 = self.Comp00[indmap]
-        fZ = fZ_matrixSched[indmap]
-        fZmin = fZminSched[indmap]
+        #indmap = [self.schedule.tolist().index(x) for x in commonsInds]#get index of schedule for the Inds in self.schedule and sInds
+        #indmap = [x for x in np.arange(self.schedule.shape[0]) if self.schedule[x] in sInds]
+        indmap1 = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]#maps self.schedule defined to Inds ##find indicies of occurence of commonsInds in self.schedule
+        indmap2 = [sInds.tolist().index(x) for x in sInds if x in self.schedule]# maps sInds defined to Inds
+        #indmap = [x for x in self.schedule if x in sInds]
+
+        #CbyT = np.zeros(TL.nStars)
+        #CbyT[self.schedule] = self.CbyT
+        CbyT = self.CbyT[indmap1]
+        #t_dets = np.zeros(TL.nStars)
+        #t_dets[self.schedule] = self.t_dets
+        t_dets = self.t_dets[indmap1]
+        #Comp00 = np.zeros(TL.nStars)
+        #Comp00[self.schedule] = self.Comp00
+        Comp00 = self.Comp00[indmap1]
+
+        
+        fZ = fZ_matrixSched[indmap2]#DONE
+        fZmin = fZminSched[indmap2]#DONE
 
         # ###############################################################################################
         # # now, start to look for available targets
@@ -212,25 +230,27 @@ class starkAYO_staticSchedule(SurveySimulation):
         # fZmin = fZminSched[imat]
 
         #commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
-        indmap2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds]
-        dec = TL.coords.dec[indmap2].value
+        #indmap2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds]
+        tmp = TL.coords.dec[self.schedule].value
+        dec = tmp[indmap1]
 
-        #currentTime = TK.currentTimeAbs
-        r_targ = TL.starprop(np.asarray(indmap2).astype(int),TK.currentTimeAbs,False)
-        #dec = np.zeros(len(imat2))
-        #for i in np.arange(len(imat2)):
-        c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='spherical')
-        #c.representation = 'spherical'
-        dec = c.dec
+        # #currentTime = TK.currentTimeAbs
+        # r_targ = TL.starprop(np.asarray(indmap2).astype(int),TK.currentTimeAbs,False)
+        # #dec = np.zeros(len(imat2))
+        # #for i in np.arange(len(imat2)):
+        # c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
+        # c.representation = 'spherical'
+        # dec = c.dec
 
-        
-        if len(sInds) > 0:
+        #print saltyburrito
+        if len(indmap1) > 0:
             # store selected star integration time
             selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
-            sInd = self.schedule[selectInd]
+            sInd = self.schedule[indmap1[selectInd]]
             #sInd = sInds[selectInd]#finds index of star to sacrifice
-            t_det = t_dets[selectInd]*u.d
-
+            #t_det = t_dets[selectInd]*u.d
+            
+            #assert intTimes[indmap1[selectInd]] != 0*u.d
             return sInd, None
         else: # return a strategic amount of time to wair
             return None, 1*u.d
@@ -250,10 +270,11 @@ class starkAYO_staticSchedule(SurveySimulation):
                 Integration times for detection 
                 same dimension as sInds
         """
-        commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
-        imat = [self.schedule.tolist().index(x) for x in commonsInds]#find indicies of occurence of commonsInds in self.schedule
+        #commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
+
+        imat = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]#find indicies of occurence of commonsInds in self.schedule
         intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
-        intTimes[commonsInds] = self.t_dets[imat]#
+        intTimes[self.schedule[imat]] = self.t_dets[imat]#
         intTimes = intTimes*u.d#add units of day to intTimes
 
         return intTimes[sInds]
@@ -349,28 +370,30 @@ class starkAYO_staticSchedule(SurveySimulation):
             return CbyT.value
 
         
-        t_dets = np.arange(0,100)/10.
-        fig = figure(1)
-        i=0
-        CbyTfuncvals = np.zeros(len(t_dets))
-        for j in np.arange(len(t_dets)):
-            CbyTfuncvals[j] = CbyTfunc(t_dets[j], self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i])
-        plot(t_dets,CbyTfuncvals)
-        show(block=False)
+        # t_dets = np.logspace(-5,1,num=100,base=10)#(np.arange(0,100)+1)/10.
+        # fig = figure(1)
+        # i=1
+        # CbyTfuncvals = np.zeros(len(t_dets))
+        # compvals = np.zeros(len(t_dets))
+        # for j in np.arange(len(t_dets)):
+        #     compvals[j] = self.Completeness.comp_per_intTime(t_dets[j]*u.d, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i])
+        #     #CbyTfuncvals[j] = CbyTfunc(t_dets[j], self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i])
+        # plot(t_dets,compvals)
+        # xscale('log')
+        # show(block=False)
 
-        print saltyburrito
 
         #Calculate Maximum C/T
         for i in xrange(sInds.shape[0]):
             x0 = 0.5
             retVals = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-8, ftol=1e-8, disp=True)
             maxCbyTtime[i] = retVals[0]
-            if i in [1,2,3] and maxCbyTtime[i] == 0.5:
-                print(saltyburrito)
+            #DELETE if i in [1,2,3] and maxCbyTtime[i] == 0.5:
+            #DELETE     print(saltyburrito)
             self.vprint("Max C/T calc completion: " + str(float(i)/sInds.shape[0]) + ' ' + str(maxCbyTtime[i]))
         #Sept 27, Execution time 101 seconds for 651 stars
-        if maxCbyTtime[0] == 0.5 or maxCbyTtime[1] == 0.5 or maxCbyTtime[2] == 0.5:#print statement to tell me if the values being returned are silly
-            print saltyburrito
+        #DELETE if maxCbyTtime[0] == 0.5 or maxCbyTtime[1] == 0.5 or maxCbyTtime[2] == 0.5:#print statement to tell me if the values being returned are silly
+        #DELETE     print saltyburrito
 
         with open(cachefname, "wb") as fo:
             #DELETEwr = csv.writer(fo, quoting=csv.QUOTE_ALL)

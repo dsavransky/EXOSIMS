@@ -137,8 +137,8 @@ class starkAYO_staticSchedule(SurveySimulation):
                 break
             else:#else set lastIterationSumComp to current sum Comp00
                 lastIterationSumComp = sum(Comp00)
-                self.vprint(str(numits) + ' SumComp ' + str(round(sum(Comp00),2)) + ' Sum(t_dets) ' + str(round(sum(t_dets),2)) + ' sInds ' + str(sInds.shape[0]) + ' TimeConservation ' + str(round(sum(t_dets)+sInds.shape[0]*overheadTime,2)))# + ' Avg C/T ' + str(np.average(CbyT)))
-        
+                #self.vprint(str(numits) + ' SumComp ' + str(round(sum(Comp00),2)) + ' Sum(t_dets) ' + str(round(sum(t_dets),2)) + ' sInds ' + str(sInds.shape[0]) + ' TimeConservation ' + str(round(sum(t_dets)+sInds.shape[0]*overheadTime,2)))# + ' Avg C/T ' + str(np.average(CbyT)))
+                self.vprint("%d SumComp %.2f Sum(t_dets) %.2f sInds %d Time Conservation %.2f"%(numits, sum(Comp00), sum(t_dets), sInds.shape[0], sum(t_dets)+sInds.shape[0]*overheadTime))
         #End While Loop
         #END INIT##################################################################
         

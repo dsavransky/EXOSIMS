@@ -648,7 +648,7 @@ class tieredScheduler(SurveySimulation):
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        weights = (comps + float(f2_uv)/self.nVisitsMax)/t_dets
+        weights = (comps + f2_uv/float(self.nVisitsMax))/t_dets
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 

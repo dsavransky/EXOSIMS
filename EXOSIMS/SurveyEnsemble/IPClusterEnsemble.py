@@ -6,6 +6,7 @@ from EXOSIMS.util.get_module import get_module
 import time
 from IPython.core.display import clear_output
 import sys
+from datetime import datetime, timedelta
 
 
 class IPClusterEnsemble(SurveyEnsemble):
@@ -65,6 +66,27 @@ class IPClusterEnsemble(SurveyEnsemble):
                     timeleftstr = "%2.2f seconds"%timeleft
             else:
                 timeleftstr = "who knows"
+
+            #Terminate hanging runs
+            hourago = (datetime.now() - timedelta(1./24))*(0.5)#runs lasting longer than 30 minutes
+            rcRunningLong = rc.db_query({'started' : {'$le' : hourago}}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid'])
+            if ar.progress/(nb_run_sim+1) > 0.9 and rcRunningLong is not None:  # Over 90% of the runs have been completed and 
+                print("rcRunningLong is: ")
+                print(rcRunningLong)
+                #alternative rc.db_query({'completed' : None}, keys=['msg_id', 'started'])
+
+            # We will try using Client().become_dask(targets='all',nanny=True)
+            # following initialization of these clients to get them to run as dask distributed cluster... whatever that means
+            # Can also try Client().become_distributed(targets='all',nanny=True)
+            # supposedly the above two commands are equivalent according to the ICD
+            # We would restart a process by calling executor.restart
+            # I think we get an executor by calling
+            # Client().executor(targets=[ids])
+            # so the full command is 
+            # Client().executor(targets=[ids]).restart
+            # We should get ids from the rcRunningLong['msg_id'] but I am not certain if that is the right id
+
+
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()

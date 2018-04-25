@@ -437,7 +437,6 @@ class SurveySimulation(object):
                     #Conditional Advance To Start of Next OB
                     if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
-                        #DELETEprint('TACO')
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
                     success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
@@ -451,7 +450,6 @@ class SurveySimulation(object):
                         #Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                        #DELETEreturn DRM, None, None
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d]
@@ -461,7 +459,6 @@ class SurveySimulation(object):
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
-                        #DELETEself.vprint('No Observable Targets a currentTimeNorm= ' + str(tmpcurrentTimeNorm) + ' Advanced To currentTimeNorm= ' + str(tAbs-TK.missionStart))
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
@@ -731,7 +728,6 @@ class SurveySimulation(object):
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # integrate the signal (planet flux) and noise
-            #dt = intTime/self.ntFlux#DELETE
             timePlus = Obs.settlingTime + mode['syst']['ohTime']#accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt

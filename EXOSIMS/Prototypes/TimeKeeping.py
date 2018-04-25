@@ -322,7 +322,7 @@ class TimeKeeping(object):
         tNorm = (tAbs - self.missionStart).value*u.d
         if np.any((tNorm<=self.OBstartTimes[1:])*(tNorm>=self.OBendTimes[0:-1])):  # The tAbs is between end End of an OB and start of the Next OB
             endIndex = np.where((tNorm<=self.OBstartTimes[1:])*(tNorm>=self.OBendTimes[0:-1])==True)[0][0]  # Return OBnumber of End Index
-            t_added = 0*u.d#self.OBendTimes[endIndex+1] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
+            t_added = self.OBendTimes[self.OBnumber] - self.currentTimeNorm#self.OBendTimes[endIndex+1] - self.currentTimeNorm # Time to be added to exoplanetObsTime from current OB
             for ind in np.arange(self.OBnumber,endIndex):#,len(self.OBendTimes)):  # Add time for all additional OB
                 t_added += self.OBendTimes[ind] - self.OBstartTimes[ind]
             while (self.OBnumber < endIndex + 1):
@@ -338,7 +338,7 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (self.missionLife.to('day')*self.missionPortion)
                     return False
                 self.exoplanetObsTime += t_added
-                #DELETEprint('5 and 7')
+                print('5 and 7')
             else:
                 self.exoplanetObsTime += 0*u.d
             return True
@@ -364,7 +364,7 @@ class TimeKeeping(object):
                     return False
                 else:
                     self.exoplanetObsTime += t_added
-                    #DELETEprint('6 and 8')
+                    print('6 and 8')
             else: # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0*u.d
             self.OBnumber = endIndex  # set OBnumber to correct Observing Block

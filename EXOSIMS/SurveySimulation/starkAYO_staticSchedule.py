@@ -3,7 +3,6 @@ import astropy.units as u
 import numpy as np
 from numpy import nan
 import scipy
-#DELETEimport csv
 import os.path
 from astropy.coordinates import SkyCoord
 try:
@@ -56,23 +55,14 @@ class starkAYO_staticSchedule(SurveySimulation):
         WA = OS.WA0
         startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
 
-        #DELETE tovisit = np.zeros(sInds.shape[0], dtype=bool)
         #Generate fZ #no longer necessary because called by calcfZmin
-        #DELETE ZL.fZ_startSaved = ZL.generate_fZ(sInds)#
         #Estimate Yearly fZmin###########################################
-        #DELETEself.fZmin, self.fZminInds = self.calcfZmin(sInds,ZL.fZ_startSaved)
         self.fZmin, self.abdTimefZmin = ZL.calcfZmin(sInds, Obs, TL, TK, self.mode, self.cachefname)
         #Estimate Yearly fZmax###########################################
-        #DELETEself.fZmax, self.fZmaxInds = self.calcfZmax(Obs,TL,TK,sInds,self.mode,ZL.fZ_startSaved)
         self.fZmax, self.abdTimefZmax = ZL.calcfZmax(sInds, Obs, TL, TK, self.mode, self.cachefname)
         #################################################################
 
         #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
-        #DELETEfZ = self.fZmin
-        #DELETEfEZ = ZL.fEZ0#DELETE*np.ones(TL.nStars)
-        #DELETE mode = self.mode#resolve this mode is passed into next_target
-        #DELETE allModes = self.OpticalSystem.observingModes
-        #DELETE det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         #WE DO NOT NEED TO CALCULATE OVER EVERY DMAG
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
@@ -91,7 +81,6 @@ class starkAYO_staticSchedule(SurveySimulation):
         #LETS CHANGE T_DETS SO THAT IT REPRESENTS ALL STARS FOR NOW
 
         #Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
-        #DELETE missionLength = (TK.missionLife.to(u.d)*TK.missionPortion).value#mission length in days
         overheadTime = Obs.settlingTime.value + OS.observingModes[0]['syst']['ohTime'].value#OH time in days
         while((sum(t_dets) + sInds.shape[0]*overheadTime) > (TK.missionLife*TK.missionPortion).to('day').value):#the sum of star observation times is still larger than the mission length
             sInds, t_dets, sacrificedStarTime= self.sacrificeStarCbyT(sInds, t_dets, self.fZmin[sInds], ZL.fEZ0, WA, overheadTime)
@@ -103,7 +92,6 @@ class starkAYO_staticSchedule(SurveySimulation):
         ###############################################################################
 
         #STARK AYO LOOP################################################################
-        #DELETEsavedSumComp00 = np.zeros(sInds.shape[0])
         firstIteration = 1#checks if this is the first iteration.
         numits = 0#ensure an infinite loop does not occur. Should be depricated
         lastIterationSumComp  = -10000000 #this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
@@ -122,7 +110,6 @@ class starkAYO_staticSchedule(SurveySimulation):
             #change this to an assert
             if 1 >= len(sInds):#if this is the last ement in the list
                 break
-            #DELETEsavedSumComp00[numits-1] = sum(Comp00)
             #If the total sum of completeness at this moment is less than the last sum, then exit
             if(sum(Comp00) < lastIterationSumComp):#If sacrificing the additional target reduced performance, then Define Output of AYO Process
                 CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.fZmin[sInds], ZL.fEZ0, WA, self.mode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
@@ -196,61 +183,14 @@ class starkAYO_staticSchedule(SurveySimulation):
         fZ = fZ_matrixSched[indmap2]#DONE
         fZmin = fZminSched[indmap2]#DONE
 
-        # ###############################################################################################
-        # # now, start to look for available targets
-        # #DELETE dmag = self.dmag_startSaved
-        # #DELETE WA = OS.WA0
-        # #DELETE startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
-
-        # #Estimate Yearly fZmin###########################################
-        # #DELETE tmpfZ = np.asarray(ZL.fZ_startSaved)
-        # #GOOD
-        # fZ_matrixSched = np.asarray(ZL.fZ_startSaved)[self.schedule,:]#has shape [self.schedule.shape[0], 1000]
-        # #Find minimum fZ of each star
-        # # fZmintmp = np.zeros(self.schedule.shape[0])
-        # # for i in xrange(self.schedule.shape[0]):
-        # #     fZmintmp[i] = min(fZ_matrix[i,:])
-        # #GOOD
-        # fZminSched = self.fZmin[self.schedule].value #has len self.schedule.shape[0]
-        # #Find current fZ
-        # # indexFrac = np.interp((TK.currentTimeAbs-TK.missionStart).value%365.25,[0,365.25],[0,1000])#This is only good for 1 year missions right now
-        # # fZinterp = np.zeros(self.schedule.shape[0])
-        # # fZinterp[:] = (indexFrac%1)*fZ_matrix[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrix[:,int(indexFrac%1+1)]#this is the current fZ
-        # #GOOD
-        # indexFrac = int(np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000]))#This is only good for 1 year missions right now
-        # fZinterp = np.zeros(self.schedule.shape[0])
-        # fZinterp[:] = (indexFrac%1)*fZ_matrixSched[:,int(indexFrac)] + (1-indexFrac%1)*fZ_matrixSched[:,int(indexFrac%1+1)]#this is the current fZ dimensions [self.schedule.shape[0], 1000]
-
-        # commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule (we need the inherited filtering from sInds)
-        # imat = [self.schedule.tolist().index(x) for x in commonsInds]#get index of schedule for the Inds in self.schedule and sInds
-        # CbyT = self.CbyT[imat]
-        # t_dets = self.t_dets[imat]
-        # Comp00 = self.Comp00[imat]
-        # fZ = fZinterp[imat]
-        # fZmin = fZminSched[imat]
-
-        #commonsInds2 = [x for x in self.schedule_startSaved if((x in sInds) and (x in self.schedule))]#finds indicies in common between sInds and self.schedule
-        #indmap2 = [self.schedule_startSaved.tolist().index(x) for x in commonsInds]
         tmp = TL.coords.dec[self.schedule].value
         dec = tmp[indmap1]
 
-        # #currentTime = TK.currentTimeAbs
-        # r_targ = TL.starprop(np.asarray(indmap2).astype(int),TK.currentTimeAbs,False)
-        # #dec = np.zeros(len(imat2))
-        # #for i in np.arange(len(imat2)):
-        # c = SkyCoord(r_targ[:,0],r_targ[:,1],r_targ[:,2],representation='cartesian')
-        # c.representation = 'spherical'
-        # dec = c.dec
-
-        #print saltyburrito
         if len(indmap1) > 0:
             # store selected star integration time
             selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
             sInd = self.schedule[indmap1[selectInd]]
-            #sInd = sInds[selectInd]#finds index of star to sacrifice
-            #t_det = t_dets[selectInd]*u.d
             
-            #assert intTimes[indmap1[selectInd]] != 0*u.d
             return sInd, None
         else: # return a strategic amount of time to wair
             return None, 1*u.d
@@ -343,9 +283,6 @@ class starkAYO_staticSchedule(SurveySimulation):
         sacrificedStarTime = t_dets[sacrificeIndex] + overheadTime#saves time being sacrificed
         sInds = np.delete(sInds,sacrificeIndex)
         t_dets = np.delete(t_dets,sacrificeIndex)
-        #DELETEfZ = np.delete(fZ,sacrificeIndex)
-        #DELETEself.Cb = np.delete(self.Cb,sacrificeIndex)
-        #DELETEself.Csp = np.delete(self.Csp,sacrificeIndex)
         return sInds, t_dets, sacrificedStarTime
 
     def calcTinit(self, sInds, TL, fZ, fEZ, WA, mode):
@@ -388,15 +325,10 @@ class starkAYO_staticSchedule(SurveySimulation):
             x0 = 0.5
             retVals = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-8, ftol=1e-8, disp=True)
             maxCbyTtime[i] = retVals[0]
-            #DELETE if i in [1,2,3] and maxCbyTtime[i] == 0.5:
-            #DELETE     print(saltyburrito)
             self.vprint("Max C/T calc completion: " + str(float(i)/sInds.shape[0]) + ' ' + str(maxCbyTtime[i]))
         #Sept 27, Execution time 101 seconds for 651 stars
-        #DELETE if maxCbyTtime[0] == 0.5 or maxCbyTtime[1] == 0.5 or maxCbyTtime[2] == 0.5:#print statement to tell me if the values being returned are silly
-        #DELETE     print saltyburrito
 
         with open(cachefname, "wb") as fo:
-            #DELETEwr = csv.writer(fo, quoting=csv.QUOTE_ALL)
             pickle.dump(maxCbyTtime,fo)
             self.vprint("Saved cached 1st year Tinit to %s"%cachefname)
         return maxCbyTtime

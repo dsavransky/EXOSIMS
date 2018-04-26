@@ -614,7 +614,7 @@ class BrownCompleteness(Completeness):
         
         # take care of scaleOrbits == True
         if self.PlanetPopulation.scaleOrbits:
-            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
+            L = np.where(TL.L[sInds]>0, TL.L[sInds], 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMag -= 2.5*np.log10(L)

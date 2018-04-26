@@ -22,6 +22,9 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         # access the cluster
         self.rc = Client()
+        #BECOME DASK ################
+        self.e = self.rc.become_dask()
+        #############################
         self.dview = self.rc[:]
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
@@ -68,7 +71,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                 timeleftstr = "who knows"
 
             #Terminate hanging runs
-            hourago = (datetime.now() - timedelta(1./24))*(0.5)#runs lasting longer than 30 minutes
+            hourago = (datetime.now() - timedelta(1./24*(0.5)))#runs lasting longer than 30 minutes
             rcRunningLong = rc.db_query({'started' : {'$le' : hourago}}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid'])
             if ar.progress/(nb_run_sim+1) > 0.9 and rcRunningLong is not None:  # Over 90% of the runs have been completed and 
                 print("rcRunningLong is: ")

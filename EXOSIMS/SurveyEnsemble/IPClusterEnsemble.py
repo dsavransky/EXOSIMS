@@ -86,7 +86,7 @@ class IPClusterEnsemble(SurveyEnsemble):
 
             if len(outstandingset) < 5:  # There are less than 5 runs remaining #nb_run_sim
                 #we are making the general assumption that less than 5 runs will encounter a hang.
-                if runOnce == True:
+                if ar.progress > 0.5*nb_run_sim and runOnce == True:
                     timeMark = timeit.timeit() # Create a marker to calculate the average amount of time spent on simulation runs
                     runOnce = False#set marker to False so it will not run again
                     avg_time_per_run = (timeMark - runStartTime)/(nb_run_sim - len(outstandingset))#compute average amount of time per run
@@ -94,7 +94,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                     tmplenoutstandingset = len(outstandingset)
                     timeMark = timeit.timeit()
 
-                if len(outstandingset) > 0:  # prevents division by 0
+                if len(outstandingset) > 0 and runOnce == False:  # prevents division by 0 and only triggered after runOnce has run
                     if avg_time_per_run*3 < (timeit.timeit() - timeMark)/len(outstandingset):#*3 is some generic factor to ensure the runs have time to complete if they run over...
                         #Shutdown all running cores
                         print('Shutting down ' + str(len(self.rc.outstanding)) + 'qty engine processes')

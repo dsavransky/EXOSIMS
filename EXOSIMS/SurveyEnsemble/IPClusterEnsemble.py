@@ -93,13 +93,14 @@ class IPClusterEnsemble(SurveyEnsemble):
                 if len(outstandingset) < tmplenoutstandingset:
                     tmplenoutstandingset = len(outstandingset)
                     timeMark = timeit.timeit()
-                
-                if avg_time_per_run*3 < (timeit.timeit() - timeMark)/len(outstandingset):#*3 is some generic factor to ensure the runs have time to complete if they run over...
-                    #Shutdown all running cores
-                    print('Shutting down ' + str(len(self.rc.outstanding)) + 'qty engine processes')
-                    #STOP THIS DOESN'T TECHNICALLY WORK. RC.OUTSTANDING ARE MSG_IDS NOT ENGINE IDS
-                    #self.rc.shutdown(targets=list(self.rc.outstanding))
-                    self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+
+                if len(outstandingset) > 0:  # prevents division by 0
+                    if avg_time_per_run*3 < (timeit.timeit() - timeMark)/len(outstandingset):#*3 is some generic factor to ensure the runs have time to complete if they run over...
+                        #Shutdown all running cores
+                        print('Shutting down ' + str(len(self.rc.outstanding)) + 'qty engine processes')
+                        #STOP THIS DOESN'T TECHNICALLY WORK. RC.OUTSTANDING ARE MSG_IDS NOT ENGINE IDS
+                        #self.rc.shutdown(targets=list(self.rc.outstanding))
+                        self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
 
 
             # try:

@@ -7,6 +7,7 @@ import time
 from IPython.core.display import clear_output
 import sys
 from datetime import datetime, timedelta
+import timeit
 
 
 class IPClusterEnsemble(SurveyEnsemble):
@@ -23,7 +24,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         # access the cluster
         self.rc = Client()
         #BECOME DASK ################
-        self.e = self.rc.become_dask()
+        #self.rc.become_dask()
         #############################
         self.dview = self.rc[:]
         self.dview.block = True
@@ -43,6 +44,8 @@ class IPClusterEnsemble(SurveyEnsemble):
 
         self.lview = self.rc.load_balanced_view()
 
+        self.maxNumEngines = len(self.rc.ids)
+
     def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,
             rewindPlanets=True, kwargs={}):
         
@@ -55,7 +58,12 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         print("Submitted %d tasks."%len(async_res))
         
-        ar = self.rc._asyncresult_from_jobs(async_res)
+        runStartTime = timeit.timeit()#create job starting time
+        runOnce = True
+        avg_time_per_run = 0
+        timeMark = 0
+        tmplenoutstandingset = 5
+        ar= self.rc._asyncresult_from_jobs(async_res)
         while not ar.ready():
             ar.wait(10.)
             clear_output(wait=True)
@@ -71,11 +79,77 @@ class IPClusterEnsemble(SurveyEnsemble):
                 timeleftstr = "who knows"
 
             #Terminate hanging runs
-            hourago = (datetime.now() - timedelta(1./24*(0.5)))#runs lasting longer than 30 minutes
-            rcRunningLong = rc.db_query({'started' : {'$le' : hourago}}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid'])
-            if ar.progress/(nb_run_sim+1) > 0.9 and rcRunningLong is not None:  # Over 90% of the runs have been completed and 
-                print("rcRunningLong is: ")
-                print(rcRunningLong)
+            outstandingset = self.rc.outstanding#a set of msg_ids that have been submitted but resunts have not been received
+            print('outstandingset')
+            print(outstandingset)
+            print('Outstanding set length is: ' + str(len(outstandingset)))
+
+            if len(outstandingset) < 5:  # There are less than 5 runs remaining #nb_run_sim
+                #we are making the general assumption that less than 5 runs will encounter a hang.
+                if runOnce == True:
+                    timeMark = timeit.timeit() # Create a marker to calculate the average amount of time spent on simulation runs
+                    runOnce = False#set marker to False so it will not run again
+                    avg_time_per_run = (timeMark - runStartTime)/(nb_run_sim - len(outstandingset))#compute average amount of time per run
+                if len(outstandingset) < tmplenoutstandingset:
+                    tmplenoutstandingset = len(outstandingset)
+                    timeMark = timeit.timeit()
+                
+                if avg_time_per_run*3 < (timeit.timeit() - timeMark)/len(outstandingset):#*3 is some generic factor to ensure the runs have time to complete if they run over...
+                    #Shutdown all running cores
+                    print('Shutting down ' + str(len(self.rc.outstanding)) + 'qty engine processes')
+                    #STOP THIS DOESN'T TECHNICALLY WORK. RC.OUTSTANDING ARE MSG_IDS NOT ENGINE IDS
+                    #self.rc.shutdown(targets=list(self.rc.outstanding))
+                    self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+
+
+            # try:
+            #     tmpDict = ar.result_status(outstandingset)
+            #     pendingmsgIds = tmpDict['pending']
+            # except:
+            #     pass
+
+            # #msgids = ar._msg_ids_from_jobs(jobs)
+            # try:
+            #     arResult = ar.get_result(list(outstandingset))
+            #     print('arResult')
+            #     print(arResult) 
+            # except:
+            #     pass
+            # #didnt work ar.get_dict()
+            # hourago = (datetime.now() - timedelta(1./24*(0.5)))#runs lasting longer than 30 minutes
+            # print('hour ago')
+            # print(hourago)
+            # print('db_query Garbage')
+            # try:
+            #     print(self.rc.db_query({'started' : None}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid', 'submitted', 'header', 'date']))
+            # except:
+            #     pass
+            # try:
+            #     listofStarted = [x for x in self.rc.db_query({'started' : None}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid', 'submitted', 'header', 'date']) if not x['started'] == None]
+            #     print('list of Started')
+            #     print(listofStarted)
+            # except:
+            #     pass
+
+            # try:
+            #     rcRunningLong = self.rc.db_query({'started' : {'$lte' : hourago}}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid', 'submitted', 'header', 'date'])
+            #     print('Something is $LTE')
+            #     print(rcRunningLong)
+            # except:
+            #     pass
+
+            # try:
+            #     if ar.progress/(nb_run_sim+1) > 0.8 and rcRunningLong is not None:  # Over 90% of the runs have been completed and 
+            #         print("rcRunningLong is: ")
+            #         print(rcRunningLong)
+            # except:
+            #     pass
+
+            # try:
+            #     dir(ar)
+            # except:
+            #     pass
+
                 #alternative rc.db_query({'completed' : None}, keys=['msg_id', 'started'])
 
             # We will try using Client().become_dask(targets='all',nanny=True)

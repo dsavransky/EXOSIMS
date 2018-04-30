@@ -1,0 +1,4 @@
+{
+ "scriptNames":["deleteMeRun1.json", "deleteMeRun2.json"],
+ "numRuns":[5,20]
+}

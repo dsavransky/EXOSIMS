@@ -10,7 +10,7 @@ try:
 except:
    import pickle
 
-class SLSQPScheduler(SurveySimulation):
+class SLSQPSchedulerG(SurveySimulation):
     """SLSQPScheduler
     
     This class implements a continuous optimization of integration times
@@ -289,13 +289,20 @@ class SLSQPScheduler(SurveySimulation):
         """
                 
         # calcualte completeness values for current intTimes
+        tmpsInds = sInds
+        sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
+        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length...
+            sInds = tmpsInds #revert to the saved sInds
+            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
+            
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
+        comps = self.Completeness.comp_per_intTime(intTimes[np.where(intTimes.value > 1e-15)], self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 
         # choose target with maximum completeness
-        sInd = np.random.choice(sInds[comps == max(comps)])
+        selectInd = np.argmin(intTimes[np.where(intTimes.value > 1e-15)]/comps)
+        sInd = sInds[selectInd]
         
         return sInd, None
 

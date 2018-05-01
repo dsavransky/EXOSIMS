@@ -10,7 +10,7 @@ try:
 except:
    import pickle
 
-class SLSQPScheduler(SurveySimulation):
+class SLSQPSchedulerA(SurveySimulation):
     """SLSQPScheduler
     
     This class implements a continuous optimization of integration times

@@ -6,7 +6,16 @@ from EXOSIMS.util.get_module import get_module
 import time
 from IPython.core.display import clear_output
 import sys
-from datetime import datetime, timedelta
+import json
+import os
+import numpy as np
+import EXOSIMS
+import EXOSIMS.MissionSim
+import os
+import os.path
+import cPickle
+import random
+import traceback
 
 
 class IPClusterEnsemble(SurveyEnsemble):
@@ -40,9 +49,16 @@ class IPClusterEnsemble(SurveyEnsemble):
 
         self.lview = self.rc.load_balanced_view()
 
+        self.maxNumEngines = len(self.rc.ids)
+
     def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,
-            rewindPlanets=True, kwargs={}):
-        
+        rewindPlanets=True, kwargs={}):
+        """
+        Args:
+            sim:
+
+        """
+
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
@@ -52,7 +68,11 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         print("Submitted %d tasks."%len(async_res))
         
-        ar = self.rc._asyncresult_from_jobs(async_res)
+        runStartTime = time.time()#create job starting time
+        avg_time_per_run = 0.
+        tmplenoutstandingset = nb_run_sim
+        tLastRunFinished = time.time()
+        ar= self.rc._asyncresult_from_jobs(async_res)
         while not ar.ready():
             ar.wait(10.)
             clear_output(wait=True)
@@ -68,31 +88,20 @@ class IPClusterEnsemble(SurveyEnsemble):
                 timeleftstr = "who knows"
 
             #Terminate hanging runs
-            hourago = (datetime.now() - timedelta(1./24))*(0.5)#runs lasting longer than 30 minutes
-            rcRunningLong = rc.db_query({'started' : {'$le' : hourago}}, keys=['msg_id', 'started', 'client_uuid', 'engine_uuid'])
-            if ar.progress/(nb_run_sim+1) > 0.9 and rcRunningLong is not None:  # Over 90% of the runs have been completed and 
-                print("rcRunningLong is: ")
-                print(rcRunningLong)
-                #alternative rc.db_query({'completed' : None}, keys=['msg_id', 'started'])
-
-            # We will try using Client().become_dask(targets='all',nanny=True)
-            # following initialization of these clients to get them to run as dask distributed cluster... whatever that means
-            # Can also try Client().become_distributed(targets='all',nanny=True)
-            # supposedly the above two commands are equivalent according to the ICD
-            # We would restart a process by calling executor.restart
-            # I think we get an executor by calling
-            # Client().executor(targets=[ids])
-            # so the full command is 
-            # Client().executor(targets=[ids]).restart
-            # We should get ids from the rcRunningLong['msg_id'] but I am not certain if that is the right id
-
-
+            outstandingset = self.rc.outstanding#a set of msg_ids that have been submitted but resunts have not been received
+            if len(outstandingset) > 0 and len(outstandingset) < nb_run_sim:#there is at least 1 run still going and we have not just started
+                avg_time_per_run = (time.time() - runStartTime)/float(nb_run_sim - len(outstandingset))#compute average amount of time per run
+                if len(outstandingset) < tmplenoutstandingset:#The scheduler has finished a run
+                    tmplenoutstandingset = len(outstandingset)#update this. should decrease by ~1 or number of cores...
+                    tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation finished (right now)
+                    #self.vprint("tmplenoutstandingset %d, tLastRunFinished %0.6f"%(tmplenoutstandingset,tLastRunFinished))
+                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2):
+                    self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
+                    self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()
 
-        #self.rc.wait(async_res)
-        #self.rc.wait_interactive(async_res)
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
         

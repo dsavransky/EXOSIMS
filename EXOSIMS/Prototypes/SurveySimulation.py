@@ -388,7 +388,7 @@ class SurveySimulation(object):
                 DRM['det_SNR'] = det_SNR
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
-                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
+                
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 if char_mode['SNR'] not in [0, np.inf]:
@@ -427,7 +427,7 @@ class SurveySimulation(object):
                 DRM['char_mode'] = dict(char_mode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
-
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 
                 # append result values to self.DRM
                 self.DRM.append(DRM)

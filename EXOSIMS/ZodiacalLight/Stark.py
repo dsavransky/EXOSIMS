@@ -136,7 +136,7 @@ class Stark(ZodiacalLight):
                 valfZmax = tmpDat[0,:]
                 #DELETE absTimefZmax = tmpDat[1,:]
                 absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
-            return valfZmax[sInds], absTimefZmax[sInds]#, fZmaxInds
+            return valfZmax[sInds]/u.arcsec**2, absTimefZmax[sInds]#, fZmaxInds
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
@@ -180,7 +180,7 @@ class Stark(ZodiacalLight):
                 #DELETE wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
                 pickle.dump(tmpDat,fo)
                 self.vprint("Saved cached fZmax to %s"%cachefname)
-            return valfZmax, absTimefZmax#, fZmaxInds
+            return valfZmax/u.arcsec**2, absTimefZmax#, fZmaxInds
 
     def calcfZmin(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles

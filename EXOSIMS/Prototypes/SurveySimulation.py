@@ -372,7 +372,7 @@ class SurveySimulation(object):
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
                         + 'mission time at Obs start: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
-                        TK.currentTimeNorm.to('day').round(2))
+                        TK.currentTimeNorm.to('day').copy().round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
@@ -433,26 +433,26 @@ class SurveySimulation(object):
                 self.DRM.append(DRM)
                 
             else:#sInd == None
-                if(TK.currentTimeNorm >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
                     if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs + waitTime)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                     self.vprint('waitTime is not None')
                 else:
-                    startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d # Start Times of Observations
+                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
                     observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
-                    if((observableTimes[(TK.missionFinishAbs.value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
-                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm))
+                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
                         #Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
-                        oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.value*u.d]
+                        oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
                         if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
                             tAbs = np.min(oTnowToEnd)#advance do that observable time
                         else:
@@ -505,8 +505,8 @@ class SurveySimulation(object):
         DRM = {}
         
         # allocate settling time + overhead time
-        tmpCurrentTimeAbs = TK.currentTimeAbs + Obs.settlingTime + mode['syst']['ohTime']
-        tmpCurrentTimeNorm = TK.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
 
         # look for available targets
         # 1. initialize arrays
@@ -525,8 +525,8 @@ class SurveySimulation(object):
 
         # start times, including slew times
         #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
-        startTimes = tmpCurrentTimeAbs + slewTimes
-        startTimesNorm = tmpCurrentTimeNorm + slewTimes
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
         # indices of observable stars
 
         # 2.5 Filter stars not observable at startTimes
@@ -578,7 +578,7 @@ class SurveySimulation(object):
         
         # if no observable target, advanceTime to next Observable Target
         else:
-            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm))
+            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
             return DRM, None, None, None
 
         # update visited list for selected star
@@ -654,7 +654,7 @@ class SurveySimulation(object):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
@@ -835,14 +835,14 @@ class SurveySimulation(object):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
@@ -920,8 +920,8 @@ class SurveySimulation(object):
         # and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs + mode['syst']['ohTime'] + Obs.settlingTime
-            startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime'] + Obs.settlingTime
+            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
             tochar[tochar] = Obs.keepout(TL, sInd, startTime)
         
@@ -1096,7 +1096,7 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         
         # calculate optional parameters if not provided
-        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)
+        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
         fEZ = fEZ if fEZ else SU.fEZ[pInds]
         dMag = dMag if dMag else SU.dMag[pInds]
         WA = WA if WA else SU.WA[pInds]
@@ -1148,7 +1148,7 @@ class SurveySimulation(object):
         
         #decrement mass for station-keeping
         dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(TL, \
-                sInd, TK.currentTimeAbs, t_int)
+                sInd, TK.currentTimeAbs.copy(), t_int)
         
         DRM[skMode + '_dV'] = deltaV.to('m/s')
         DRM[skMode + '_mass_used'] = mass_used.to('kg')

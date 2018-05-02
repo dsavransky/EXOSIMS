@@ -290,7 +290,7 @@ class SLSQPSchedulerA(SurveySimulation):
                 
         # calcualte completeness values for current intTimes
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs + slewTimes[sInds], self.detmode)
+                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
         comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 

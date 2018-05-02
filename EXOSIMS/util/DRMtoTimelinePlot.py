@@ -145,7 +145,7 @@ if __name__ == "__main__":
             patch_handles.append(ax.barh(0, det_time, align='center', left=arrival_times[ind],
                 color=colors[int(obs) % len(colors)]))
             if not char_time == 0:
-                ax.barh(0, char_time, align='center', left=arrival_times[ind]+det_time,color=(255/255,69/255,0/255))
+                ax.barh(0, char_time, align='center', left=arrival_times[ind]+det_time,color=(255/255.,69/255.,0/255.))
             ind += 1
             obs += 1
             patch = patch_handles[-1][0] 

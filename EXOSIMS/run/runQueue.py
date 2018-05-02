@@ -1,32 +1,17 @@
-#This script is designed to load the queue.json file located in the "run" folder.
-#queue.json contains the names of .json files located in ../Scripts/. to be run by this script
-#This script then runs .json file named in queue.json for 1000 runs
-#This script should be executed from the "run" folder
-#Written by Dean Keithly 4/27/2018
 """
-Top-level run script for IPCluster parallel implementation.
+Top-level run script for IPCluster parallel Queue implementation
 Run as:
-    python run_ipcluster_ensemble scriptname #runs
-Run:
-    python run_ipcluster_ensemble --help 
-for detailed usage.
+    python runQueue.py --outpath '/dirToCreateAllOutputFolders/'
 
-Notes:  
-1) It is always advisable to run a script with the prototype 
-SurveyEnsemble BEFORE running a parallel job to allow EXOSIMS to
-cache all pre-calcualted products.
-2) An ipcluster instance must be running and accessible in order
-to use this script.  If everything is already set up and configured
-properly, this is usually a matter of just executing:
-    ipcluster start
-from the command line.
-3) The emailing setup assumes a gmail address.  If you're using a 
-different SMTP, or wish to send/receive on different accounts, modify
-the email setup.
-4) If an output directory is reused, new run files will be added, but
-the outspec.json file will be ovewritten.  Any generated errors will be
-appended to any exisitng log.err file.
+This script is designed to load the queue.json file located in the "run" folder.
+queue.json contains the names of .json files located in ../Scripts/. to be run by this script
+This script then runs .json file named in queue.json for the number of runs specified in queue.json
+This script should be executed from the "run" folder
+Written by Dean Keithly 4/27/2018
 """
+
+#
+
 import json
 from subprocess import Popen
 import subprocess

@@ -128,7 +128,7 @@ class SurveySimulation(object):
         
         # mission simulation logger
         self.logger = specs.get('logger', logging.getLogger(__name__))
-       
+
         # set up numpy random number (generate it if not in specs)
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         self.vprint('Numpy random seed is: %s'%self.seed)
@@ -427,6 +427,15 @@ class SurveySimulation(object):
                 DRM['char_mode'] = dict(char_mode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
+                # DELETEif 0.0001 < abs((TK.exoplanetObsTime.copy() - (DRM['arrival_time'] + DRM['det_time'] + 1.*u.d + DRM['char_time'] + (DRM['char_time'] > 0.*u.d)*1.*u.d)).value):
+                #     print DRM['arrival_time'] 
+                #     print('Total det_time' + str(DRM['det_time'] + 1.*u.d))
+                #     print('Total char_time: ' + str(DRM['char_time']*(1. + self.charMargin) + (DRM['char_time'] > 0.*u.d)*1.*u.d))
+                #     print TK.exoplanetObsTime.copy()
+                #     print('ExoObsTime - arrivalTime: ' + str(TK.exoplanetObsTime.copy() - DRM['arrival_time']))
+                #     print abs((TK.exoplanetObsTime.copy() - (DRM['arrival_time'] + DRM['det_time'] + 1.*u.d + DRM['char_time']*(1. + self.charMargin) + (DRM['char_time'] > 0.*u.d)*1.*u.d)).value)
+                #     print saltyburrito
+
                 DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 
                 # append result values to self.DRM
@@ -507,6 +516,7 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+
 
         # look for available targets
         # 1. initialize arrays
@@ -706,7 +716,7 @@ class SurveySimulation(object):
         currentTimeAbs = TK.currentTimeAbs.copy()
 
         #Allocate Time
-        extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
+        extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
         success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
         assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
         dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
@@ -728,7 +738,7 @@ class SurveySimulation(object):
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # integrate the signal (planet flux) and noise
-            timePlus = Obs.settlingTime + mode['syst']['ohTime']#accounts for the time since the current time
+            timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
                 timePlus += dt/2.
@@ -757,7 +767,7 @@ class SurveySimulation(object):
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime*(mode['timeMultiplier'])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2, mode)[0]
+            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
@@ -935,7 +945,8 @@ class SurveySimulation(object):
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
-            intTimes = intTimes*(1 + self.charMargin)
+            # DELETEself.vprint('intTimes pre charMargin' + str(intTimes))
+            intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
             # end times
@@ -957,7 +968,13 @@ class SurveySimulation(object):
 
             #Allocate Time
             intTime = np.max(intTimes[tochar])
-            extraTime = intTime*(mode['timeMultiplier'] - 1)#calculates extraTime
+            # DELETEself.vprint('intTimes post charMargin: ' + str(intTimes))
+            # DELETEself.vprint('intTime pre allocation: ' + str(intTime))
+            extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+            # DELETEself.vprint('extraTime pre allocation: ' + str(extraTime))
+            # DELETEself.vprint('ohTime pre allocation: ' + str(mode['syst']['ohTime']))
+            # DELETEself.vprint('Obs.settlingTime pre allocation: ' + str(Obs.settlingTime))
+            # DELETEself.vprint('Total Time allocated (dt): ' + str(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime))
             success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
             if success == False: #Time was not successfully allocated
                 #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
@@ -987,7 +1004,7 @@ class SurveySimulation(object):
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
                 dt = intTime/self.ntFlux
-                timePlus = mode['syst']['ohTime']#accounts for the time since the current time
+                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
                     timePlus += dt
@@ -1018,7 +1035,7 @@ class SurveySimulation(object):
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2, mode)[0]
+                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
             
             # calculate the false alarm SNR (if any)
             SNRfa = []

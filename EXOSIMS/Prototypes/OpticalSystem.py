@@ -187,7 +187,7 @@ class OpticalSystem(object):
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
-            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
 
         #start the outspec

@@ -86,15 +86,16 @@ if __name__ == "__main__":
             pass
 
         arrival_times = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
-        sumOHTIME = 1
+        sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime']
         det_times = [DRM['DRM'][i]['det_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
         ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
         y_vals = np.zeros(len(det_times)).tolist()
-        char_times = [DRM['DRM'][i]['char_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]
+        char_times = [DRM['DRM'][i]['char_time'].value*(1+outspec['charMargin'])+sumOHTIME for i in np.arange(len(DRM['DRM']))]
         OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
         #sumOHTIME = [1 for i in np.arange(len(DRM['DRM']))]
         print(sum(det_times))
+        print(sum(char_times))
 
 
         #Check if plotting font #########################################################

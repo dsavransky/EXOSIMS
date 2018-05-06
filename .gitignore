@@ -89,7 +89,7 @@ statsFun_C
 *.p
 *.pkl
 *.t0
-*.starkfZ
+*.starkcache
 *.maxCbyTt0
 *.fits
 *.csv

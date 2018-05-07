@@ -532,6 +532,9 @@ class SurveySimulation(object):
             sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
+            if sInds == None:
+                sInds = np.asarray([],dtype=int)
+
 
         # start times, including slew times
         #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
@@ -540,12 +543,15 @@ class SurveySimulation(object):
         # indices of observable stars
 
         # 2.5 Filter stars not observable at startTimes
-        koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-        sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+        try:
+            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+        except:#If there are no target stars to observe 
+            sInds = np.asarray([],dtype=int)
         
         # 3. filter out all previously (more-)visited targets, unless in 
         # revisit list, with time within some dt of start (+- 1 week)
-        if len(sInds) > 0:
+        if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
@@ -562,21 +568,21 @@ class SurveySimulation(object):
 
 
         # 4.2 filter out totTimes > integration cutoff
-        if len(sInds) > 0:
+        if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
         # 5.2 find spacecraft orbital END positions (for each candidate target), 
         # and filter out unavailable targets
-        if len(sInds) > 0 and Obs.checkKeepoutEnd:
+        if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
                 sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
         # 6. choose best target from remaining
-        if len(sInds) > 0:
+        if len(sInds.tolist()) > 0:
             # choose sInd of next target
             sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
@@ -719,7 +725,7 @@ class SurveySimulation(object):
         extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
         success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
         assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
-        dt = intTime/self.ntFlux#calculates partial time to be added for every ntFlux
+        dt = intTime/float(self.ntFlux)#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -1003,7 +1009,7 @@ class SurveySimulation(object):
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
-                dt = intTime/self.ntFlux
+                dt = intTime/float(self.ntFlux)
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt

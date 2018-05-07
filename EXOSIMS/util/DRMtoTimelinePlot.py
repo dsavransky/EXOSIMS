@@ -33,7 +33,6 @@ import argparse
 import json
 
 
-#IF GIVEN FILEPATH
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create Mission Timeline Figures")
     parser.add_argument('pklfile', nargs=1, type=str, help='Full path to pkl file (string).')

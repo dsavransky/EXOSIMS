@@ -18,21 +18,16 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     2nd execution time 2 min 30 sec
     """
-    def __init__(self, cacheOptTimes=False, **specs):
+    def __init__(self, cacheOptTimes=False, staticOptTimes=False, **specs):
         SurveySimulation.__init__(self, **specs)
+
+        assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
+        self.staticOptTimes = staticOptTimes
+        self._outspec['staticOptTimes'] = self.staticOptTimes
 
         assert isinstance(cacheOptTimes, bool), 'cacheOptTimes must be boolean.'
         self._outspec['cacheOptTimes'] = cacheOptTimes
 
-        #Load cached Observation Times
-        self.starkt0 = None
-        if cacheOptTimes:#Checks if flag to load cached optimal times exists
-            cachefname = self.cachefname + 'starkt0'  # Generate cache Name
-            if os.path.isfile(cachefname):#check if file exists
-                self.vprint("Loading cached t0 from %s"%cachefname)
-                with open(cachefname, 'rb') as f:#load from cache
-                    self.starkt0 = pickle.load(f)
-                sInds = np.arange(self.TargetList.nStars)
 
         # bring inherited class objects to top level of Survey Simulation
         SU = self.SimulatedUniverse
@@ -74,25 +69,54 @@ class starkAYO_staticSchedule(SurveySimulation):
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
         ################################################################
 
+
+        #Load cached Observation Times
+        cachefname = self.cachefname + 'starkcache'  # Generate cache Name
+        if cacheOptTimes and os.path.isfile(cachefname):#Checks if flag to load cached optimal times exists
+            self.vprint("Loading starkcache from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                tmpDat = pickle.load(f)
+                self.schedule = tmpDat[0,:].astype(int)
+                self.t_dets = tmpDat[1,:]
+                self.CbyT = tmpDat[2,:]
+                self.Comp00 = tmpDat[3,:]
+        else:#create cachedOptTimes
+            self.altruisticYieldOptimization(sInds)
+        #END INIT##################################################################
+        
+    def altruisticYieldOptimization(self,sInds):
+        """
+        Updates attributes:
+        self.schedule
+        self.t_dets
+        self.CbyT
+        self.Comp00
+        """
+        TL = self.TargetList
+        ZL = self.ZodiacalLight
+        TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        WA = OS.WA0
+
         #Calculate Initial Integration Times###########################################
         maxCbyTtime = self.calcTinit(sInds, TL, self.fZmin, ZL.fEZ0, WA, self.mode)
         t_dets = maxCbyTtime#[sInds] #t_dets has length TL.nStars
 
-        #LETS CHANGE T_DETS SO THAT IT REPRESENTS ALL STARS FOR NOW
-
         #Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
+        startingsInds = len(sInds)
         overheadTime = Obs.settlingTime.value + OS.observingModes[0]['syst']['ohTime'].value#OH time in days
-        while((sum(t_dets) + sInds.shape[0]*overheadTime) > (TK.missionLife*TK.missionPortion).to('day').value):#the sum of star observation times is still larger than the mission length
+        print(str(TK.currentTimeNorm.value) + ' ' + str(TK.missionLife.to('day').value))
+        while((sum(t_dets) + sInds.shape[0]*overheadTime) > ((TK.missionLife.to('day').value-TK.currentTimeNorm.to('day').value)*TK.missionPortion)):#the sum of star observation times is still larger than the mission length
             sInds, t_dets, sacrificedStarTime= self.sacrificeStarCbyT(sInds, t_dets, self.fZmin[sInds], ZL.fEZ0, WA, overheadTime)
-        self.vprint('Started with ' + str(TL.nStars) + ' sacrificed down to ' + str(sInds.shape[0]))
+        self.vprint('Started with ' + str(startingsInds) + ' sacrificed down to ' + str(sInds.shape[0]))
 
-        if(sum(t_dets + sInds.shape[0]*overheadTime) > (TK.missionLife*TK.missionPortion).to('day').value):#There is some excess time
-            sacrificedStarTime = (TK.missionLife*TK.missionPortion).to('day').value - (sum(t_dets) + sInds.shape[0]*overheadTime)#The amount of time the list is under the total mission Time
+        if(sum(t_dets + sInds.shape[0]*overheadTime) > ((TK.missionLife.to('day').value-TK.currentTimeNorm.to('day').value)*TK.missionPortion)):#There is some excess time
+            sacrificedStarTime = ((TK.missionLife.to('day').value-TK.currentTimeNorm.to('day').value)*TK.missionPortion) - (sum(t_dets) + sInds.shape[0]*overheadTime)#The amount of time the list is under the total mission Time
             t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, self.fZmin[sInds], ZL.fEZ0, WA)
         ###############################################################################
 
         #STARK AYO LOOP################################################################
-        firstIteration = 1#checks if this is the first iteration.
         numits = 0#ensure an infinite loop does not occur. Should be depricated
         lastIterationSumComp  = -10000000 #this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
         while numits < 100000 and sInds is not None:
@@ -121,14 +145,24 @@ class starkAYO_staticSchedule(SurveySimulation):
                 self.CbyT = CbyT[sortIndex]
                 #self.fZ = fZ[sortIndex]
                 self.Comp00 = Comp00[sortIndex]
+
+                cachefname = self.cachefname + 'starkcache'  # Generate cache Name
+                tmpDat = np.zeros([4,self.schedule.shape[0]])
+                tmpDat[0,:] = self.schedule
+                tmpDat[1,:] = self.t_dets
+                tmpDat[2,:] = self.CbyT
+                tmpDat[3,:] = self.Comp00
+                if self.staticOptTimes == True:
+                    self.vprint("Saving starkcache to %s"%cachefname)
+                    with open(cachefname, 'wb') as f:#save to cache
+                        pickle.dump(tmpDat,f)
                 break
             else:#else set lastIterationSumComp to current sum Comp00
                 lastIterationSumComp = sum(Comp00)
-                #self.vprint(str(numits) + ' SumComp ' + str(round(sum(Comp00),2)) + ' Sum(t_dets) ' + str(round(sum(t_dets),2)) + ' sInds ' + str(sInds.shape[0]) + ' TimeConservation ' + str(round(sum(t_dets)+sInds.shape[0]*overheadTime,2)))# + ' Avg C/T ' + str(np.average(CbyT)))
-                self.vprint("%d SumComp %.2f Sum(t_dets) %.2f sInds %d Time Conservation %.2f"%(numits, sum(Comp00), sum(t_dets), sInds.shape[0], sum(t_dets)+sInds.shape[0]*overheadTime))
+                self.vprint("%d SumComp %.2f Sum(t_dets) %.2f sInds %d Time Conservation %.2f" \
+                    %(numits, sum(Comp00), sum(t_dets), sInds.shape[0], sum(t_dets)+sInds.shape[0]*overheadTime))
         #End While Loop
-        #END INIT##################################################################
-        
+
     def choose_next_target(self,old_sInd,sInds,slewTime,intTimes):
         """Generate Next Target to Select based off of AYO at this instant in time
         Args:
@@ -188,7 +222,8 @@ class starkAYO_staticSchedule(SurveySimulation):
 
         if len(indmap1) > 0:
             # store selected star integration time
-            selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
+            #selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
+            selectInd = np.argmin(1/Comp00)
             sInd = self.schedule[indmap1[selectInd]]
             
             return sInd, None
@@ -211,13 +246,19 @@ class starkAYO_staticSchedule(SurveySimulation):
                 same dimension as sInds
         """
         #commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
-
-        imat = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]#find indicies of occurence of commonsInds in self.schedule
-        intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
-        intTimes[self.schedule[imat]] = self.t_dets[imat]#
-        intTimes = intTimes*u.d#add units of day to intTimes
-
-        return intTimes[sInds]
+        if self.staticOptTimes:
+            imat = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]#find indicies of occurence of commonsInds in self.schedule
+            intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
+            intTimes[self.schedule[imat]] = self.t_dets[imat]#
+            intTimes = intTimes*u.d#add units of day to intTimes
+            return intTimes[sInds]
+        else:
+            self.altruisticYieldOptimization(sInds)
+            imat = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]#find indicies of occurence of commonsInds in self.schedule
+            intTimes = np.zeros(self.TargetList.nStars)#default observation time is 0 days
+            intTimes[self.schedule[imat]] = self.t_dets[imat]#
+            intTimes = intTimes*u.d#add units of day to intTimes
+            return intTimes[sInds]
   
     def distributedt(self, sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA):#distributing the sacrificed time
         """Distributes sacrificedStarTime amoung sInds
@@ -295,7 +336,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             self.vprint("Loading cached maxCbyTt0 from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
                 maxCbyTtime = pickle.load(f)
-            return maxCbyTtime
+            return maxCbyTtime[sInds]
         ###########################################################################################
 
         self.vprint("Calculating maxCbyTt0")

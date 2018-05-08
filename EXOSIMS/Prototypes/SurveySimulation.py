@@ -1183,7 +1183,7 @@ class SurveySimulation(object):
         
         return DRM
 
-    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
         """Performs a full reset of the current simulation by:
         
         1) Re-initializing the TimeKeeping object with its own outspec
@@ -1211,8 +1211,13 @@ class SurveySimulation(object):
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules
-        if 'seed' in specs:
-            specs.pop('seed')
+
+        if seed is None:
+            if 'seed' in specs:
+                specs.pop('seed')
+        else:
+            specs['seed'] = seed
+            
         self.__init__(**specs)
 
         # reset mission time and observatory parameters

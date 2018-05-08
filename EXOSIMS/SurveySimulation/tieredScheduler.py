@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25*u.d, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -82,7 +82,7 @@ class tieredScheduler(SurveySimulation):
         self.coeff_data_a4 = []
         self.coeff_time = []
 
-        self.revisit_wait = revisit_wait
+        self.revisit_wait = revisit_wait * u.d
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
 

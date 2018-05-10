@@ -546,6 +546,8 @@ class TargetList(object):
         
         This method calculates stellar mass via the formula relating absolute V
         magnitude and stellar mass.  The values are in units of solar mass.
+
+        *Function called by reset sim
         
         """
         
@@ -556,8 +558,10 @@ class TargetList(object):
         self.MsTrue = (1. + err)*self.MsEst
         
         # if additional filters are desired, need self.catalog_atts fully populated
-        self.catalog_atts.append('MsEst')
-        self.catalog_atts.append('MsTrue')
+        if not hasattr(self.catalog_atts,'MsEst'):
+            self.catalog_atts.append('MsEst')
+        if not hasattr(self.catalog_atts,'MsTrue'):
+            self.catalog_atts.append('MsTrue')
 
     def starprop(self, sInds, currentTime, eclip=False):
         """Finds target star positions vector in heliocentric equatorial (default)

@@ -130,7 +130,8 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
-            assert t_det !=0, "Integration time can't be 0."
+            if sInd != occ_sInd:
+                assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
@@ -493,8 +494,14 @@ class tieredScheduler(SurveySimulation):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTime[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
+                    if not np.any(sInds):
+                        sInd = occ_sInd
                     self.ready_to_update = False
                     self.occ_starVisits[occ_sInd] += 1
+                elif not np.any(sInds):
+                    TK.allocate_time(1*u.d)
+                    cnt += 1
+                    continue
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

@@ -9,6 +9,8 @@ except:
     import pickle
 import numpy as np
 import json
+import copy
+from copy import deepcopy
 
 # folder = os.path.normpath(os.path.expandvars('$HOME/Documents/exosims/EXOSIMS/EXOSIMS/Scripts'))
 # filename = 'sS_AYO7.json'
@@ -50,23 +52,116 @@ import json
 #             print i
 #             print key1
 
+def DRMcomparator(DRM1, DRM2, exact=True):
+    """
+    Args:
+        DRM3 (list of dict):
+            DRM of mission 1 to compare to mission 2
+        DRM2 (list of dict):
+            DRM of mission2 to compare to mission 1
+        exact (boolean):
+            boolean indicating whether to be exact in comparison (default) (all keys and values are identical), or
+            approximately equal (useful for comparing DRM from pkl file and freshly simulated DRM)
+    Returns:
+        success (boolean):
+            boolean indicating they are identical (true) or different (False)
+    """
+    if exact:#if they must be equal
+        ae = 0
+    else:
+        ae = 1e-10 #arbitrarily set allowed error
+
+    for i in np.arange(len(DRM1)):#Iterate over all elements of list
+        for key1 in DRM1[i].keys():#iterate over all key1
+            #Comparison 1
+            if type(DRM1[i][key1]) == type(1) or type(DRM1[i][key1]) == type(np.int64(1)):  # key value is an integer or int64
+                if not DRM1[i][key1] == DRM2[i][key1]:
+                    return False
+            #Comparison 2
+            elif type(DRM1[i][key1]) == type(1.0):  # key value is float 
+                if not abs(DRM1[i][key1] - DRM2[i][key1]) <= ae:
+                    return False
+
+            #Comparison 3
+            elif type(DRM1[i][key1]) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1].dtype == np.int64(1).dtype):# or DRM1[i][key1].dtype == 1.dtype):  # is numpy array of ints
+                if not all(DRM1[i][key1] == DRM2[i][key1]):
+                    return False
+
+            #Comparison 4
+            elif type(DRM1[i][key1]) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1].dtype == np.float64(1).dtype):# or type(DRM1[i][key1][0]) == type(1.)):  # is numpy array of floats
+                if not all(abs(DRM1[i][key1] - DRM2[i][key1]) <= ae):
+                    return False
+
+            #Comparison 5
+            elif hasattr(DRM1[i][key1],'value'):
+                if not DRM1[i][key1].value == DRM2[i][key1].value:
+                    print "key: %s, i: %d, values: %f, %f"%(key1, i, DRM1[i][key1].value, DRM2[i][key1].value)
+                    return False
+
+            #Explore all dict elements with dicts
+            elif hasattr(DRM1[i][key1], 'keys'):
+                for key2 in DRM1[i][key1]:#iterate over all key2
+
+                    #Comparison 6
+                    if type(DRM1[i][key1][key2]) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1][key2].dtype == np.int64(1).dtype):# or type(DRM1[i][key1][key2][0]) == type(1)):  # is numpy array of ints
+                        if not all(DRM1[i][key1][key2] == DRM2[i][key1][key2]):
+                            return False
+
+                    #Comparison 7
+                    elif type(DRM1[i][key1][key2]) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1][key2].dtype == np.float64(1).dtype):# or type(DRM1[i][key1][key2][0]) == type(1.)):  # is numpy array of floats
+                        if not all(abs(DRM1[i][key1][key2] - DRM2[i][key1][key2]) <= ae):
+                            return False
+
+                    #If elements have units
+                    elif hasattr(DRM1[i][key1][key2],'value'):
+                        #Comparison 8
+                        if type(DRM1[i][key1][key2].value) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1][key2].value.dtype == np.int64(1).dtype):# or type(DRM1[i][key1][key2][0].value) == type(1)):  # is numpy array of ints
+                            if not all(DRM1[i][key1][key2].value == DRM2[i][key1][key2].value):
+                                return False
+
+                        #Comparison 9
+                        elif type(DRM1[i][key1][key2].value) == type(np.asarray([1,2,3,4])) and (DRM1[i][key1][key2].value.dtype == np.float64(1).dtype):# or type(DRM1[i][key1][key2][0].value) == type(1.)):  # is numpy array of floats
+                            if not all(abs(DRM1[i][key1][key2].value - DRM2[i][key1][key2].value) <= ae):
+                                return False
+
+                        #Comparison 10
+                        else:
+                            if not DRM1[i][key1][key2].value == DRM2[i][key1][key2].value:
+                                return False
+                    else:
+                        #Comparison 11
+                        if not DRM1[i][key1][key2] == DRM2[i][key1][key2]:
+                            return False
+            elif type(DRM1[i][key1]) == type('taco'):
+                #Comparison 12
+                if not DRM1[i][key1] == DRM2[i][key1]:
+                    return False
+            else:
+                print("i: %d, key1: %s, value DRM1[i][key1]: %s"%(i, key1, str(DRM1[i][key1])))
+                print DRM1[i][key1]
+                #print DRM1[i][key1]
+                #print i
+                #print key1
+
+    return True
 
 
 ######################################################################
 #Load DRM from pkl file and compare to sim run with same seed
-pklfile = "/home/dean/Documents/SIOSlab/Dean2May18RS16CXXfZ01OB01PP01SU01/run979296152263.pkl"
-outspecfile = "/home/dean/Documents/SIOSlab/Dean2May18RS16CXXfZ01OB01PP01SU01/outspec.json"
+pklfile =     "/home/dean/Documents/SIOSlab/Dean2May18RS09CXXfZ01OB01PP01SU01/run4459512005.pkl"
+outspecfile = "/home/dean/Documents/SIOSlab/Dean2May18RS09CXXfZ01OB01PP01SU01/outspec.json"
 with open(pklfile, 'rb') as f:#load pkl to extract mission specific SEED
     DRM3tmp = pickle.load(f)
 
 DRM3seed = DRM3tmp['seed']
 DRM3 = DRM3tmp['DRM']
 DRM3systems = DRM3tmp['systems']
-#Spot Logic Check to ensure DRM3systems plan_inds have the correct star##############
+#Spot Logic Check to ensure DRM3systems plan_inds have the correct star
 #planet indices for DRM3
 pInds = DRM3[0]['plan_inds']
 #All plan_inds should have the same star. Confirm with this
 DRM3systems['star'][pInds] #all names should be identical
+#########################################################################
 
 
 #Load the Outspec File for Modification#######################
@@ -77,155 +172,79 @@ newjson['modules']['SurveyEnsemble'] = "SurveyEnsemble"#modify the outspec file
 #Save newjson script
 with open(os.path.dirname(outspecfile)+'tmp.json', 'wb') as f:
     json.dump(newjson, f)
+##############################################################
 
-#Initialize sim4 from modified json script
-sim4 = EXOSIMS.MissionSim.MissionSim(os.path.dirname(outspecfile) + 'tmp.json')
-SU1 = sim4.SurveySimulation.SimulatedUniverse
-TK = sim4.SurveySimulation.TimeKeeping
-Obs = sim4.SurveySimulation.Observatory
-SS = sim4.SurveySimulation
-
-with open(os.path.dirname(outspecfile) + 'tmp.json', 'rb') as f:#load from cache
-    newjson2 = json.load(f)
-
-TK.__init__(**newjson2.copy())
-Obs.__init__(**newjson2.copy())
-SS.__init__(**newjson2.copy())#The scienceInstruments become populated with units....
-print(newjson2)#For some reason, newjson2 has been populated with units... gross
-with open(os.path.dirname(outspecfile) + 'tmp.json', 'rb') as f:#load from cache
-    newjson2 = json.load(f)
-SU1.__init__(**newjson2.copy())
-
-
-print saltyburrito
-
-SU1.I = DRM3systems['I']
-SU1.M0 = DRM3systems['M0']
-SU1.Mp = DRM3systems['Mp']
-SU1.O = DRM3systems['O']
-SU1.Rp = DRM3systems['Rp']
-SU1.a = DRM3systems['a']
-SU1.e = DRM3systems['e']
-SU1.mu = DRM3systems['mu']
-SU1.p = DRM3systems['p']
-SU1.plan2star = DRM3systems['plan2star']
-SU1.star = DRM3systems['star']
-SU1.w = DRM3systems['w']
-
-#absT1 = TK.currentTimeAbs.copy()
-#SCpos1 = Obs.orbit(TK.currentTimeAbs.copy())
-#fZ1 = sim4.ZodiacalLight.fZ(Obs, sim4.TargetList, range(sim4.TargetList.nStars), absT1, sim4.SurveySimulation.mode)
-
-
+######################################
+#Comparing two freshly run simulations
+######################################
+sim4 = EXOSIMS.MissionSim.MissionSim(os.path.dirname(outspecfile) + 'tmp.json') #initializing random mission
+sim4.SurveySimulation.reset_sim()
+seed1 = sim4.SurveySimulation._outspec['seed']
 sim4.SurveySimulation.run_sim()
-SS = sim4.SurveySimulation
-DRM4 = SS.DRM
+DRM1 = deepcopy(sim4.SurveySimulation.DRM)
 
-#FACT This statement must be if both DRM are equivalent
-if all(DRM4[0]['plan_inds'] == pInds):
-    print('okay1')
-else:
-    print('not okay1')
+#here is where we separately duplicat DRM1
+sim4.SurveySimulation.reset_sim(seed=seed1)
+sim4.SurveySimulation.run_sim()
+DRM2 = sim4.SurveySimulation.DRM
 
-
-ind = DRM4[0]['star_ind']
-DRM4[0]['det_fZ']
-fZ1[ind]
-
+success1 = DRMcomparator(DRM1, DRM2)
+print('Freshly Run Simulation Comparison')
+print(success1)
+#This operation succeeded on #5/9/2018
+######################################
 
 
-
-# #sim4.SurveySimulation._outspec['seed'] = DRM3seed
-
-# #sim4.reset_sim(genNewPlanets=False)
-# SU = sim4.SurveySimulation.SimulatedUniverse
-# TK = sim4.SurveySimulation.TimeKeeping
-# Obs = sim4.SurveySimulation.Observatory
-# SS = sim4.SurveySimulation
-# # re-initialize SurveySimulation arrays
-# specs = SS._outspec
-# specs.pop('seed')
-# specs['seed'] = DRM3seed
-# specs['modules'] = sim4.SurveySimulation.modules
-# # if 'seed' in specs:
-# #     specs.pop('seed')
-
-# #sim4.SurveySimulation.__init__(**specs)
-# TK.__init__(**TK._outspec)
-# Obs.__init__(**Obs._outspec)
-# SS.__init__(**specs)
-# # reset mission time and observatory parameters
+#################################################
+#Comparing freshly run simulation to pkl file DRM
+#################################################
+sim4.SurveySimulation.reset_sim(seed=DRM3seed)#I must make this method work
+#sim4.SurveySimulation.reset_sim(seed=newjson['seed'])
+sim4.SurveySimulation.run_sim()
+DRM4 = deepcopy(sim4.SurveySimulation.DRM)
+success2 = DRMcomparator(DRM4, DRM3, exact=False)
+print('Freshly Run Simulation To Loaded pkl File Comparison')
+print(success2)
 
 
-# #SS.__init__(**SS._outspec)
-# # generate new planets if requested (default)
-# # if genNewPlanets:
-# #     SU.gen_physical_properties(**SU._outspec)
-# #     rewindPlanets = True
-# # re-initialize systems if requested (default)
-# #if rewindPlanets:
-
-# #SU.init_systems()
+#########################################
+#Compairing Freshly Made Sim to DRM output
+#########################################
+sim5 = EXOSIMS.MissionSim.MissionSim(os.path.dirname(outspecfile) + 'tmp.json') #initializing random mission
+sim5.SurveySimulation.run_sim()
+DRM5 = deepcopy(sim5.SurveySimulation.DRM)
 
 
-# SU.I = DRM3systems['I']
-# SU.M0 = DRM3systems['M0']
-# SU.Mp = DRM3systems['Mp']
-# SU.O = DRM3systems['O']
-# SU.Rp = DRM3systems['Rp']
-# SU.a = DRM3systems['a']
-# SU.e = DRM3systems['e']
-# SU.mu = DRM3systems['mu']
-# SU.p = DRM3systems['p']
-# SU.plan2star = DRM3systems['plan2star']
-# SU.star = DRM3systems['star']
-# SU.w = DRM3systems['w']
+pInds2 = DRM5[0]['plan_inds']
+#All plan_inds should have the same star. Confirm with this
+DRM3systems['star'][pInds2] #all nam
+success3 = DRMcomparator(DRM5, DRM3, exact=False)
+print('Freshly Run Simulation To Loaded pkl File Comparison')
+print(success3)
 
-# #reset helper arrays
-# SS.initializeStorageArrays()
-# SS.vprint("Simulation reset.")
-# SS.run_sim()
-# DRM4 = SS.DRM
-
-from pylab import *
-fig = figure(1)
-error = list()
-atime = list()
-EOT3 = list()
-for i in np.arange(len(DRM3)):
-    EOT3.append(DRM3[i]['exoplanetObsTime'].value)
-    error.append(DRM3[i]['exoplanetObsTime'].value-DRM4[i]['exoplanetObsTime'].value)
-    atime.append(DRM3[i]['arrival_time'].value-DRM4[i]['arrival_time'].value)
-plot([0 for i in range(len(error))],error,marker='o')
-#plot(EOT3)
-show(block=False)
+sim5.SurveySimulation.reset_sim(seed=sim5.SurveySimulation.seed)
+sim5.SurveySimulation.run_sim()
+DRM5a = deepcopy(sim5.SurveySimulation.DRM)
+success5 = DRMcomparator(DRM5, DRM5a)
+print('Freshly Run Simulation Comparison')
+print(success5)
 
 
+#################################################
+tmp = [all(DRM3[x]['plan_inds'] == DRM5[x]['plan_inds']) for x in range(len(DRM3))]
 
-for i in np.arange(len(DRM3)):
-    for key1 in DRM3[i].keys():
-        if type(DRM3[i][key1]) == type(1) or type(DRM3[i][key1]) == type(1.0) or type(DRM3[i][key1]) == type(np.int64(1)):#is an integer of float
-            assert(DRM3[i][key1] == DRM4[i][key1])
-        elif type(DRM3[i][key1]) == type(np.asarray([1,2,3,4])):#is numpy array
-            assert(all(DRM3[i][key1] == DRM4[i][key1]))
-        elif hasattr(DRM3[i][key1],'value'):
-            assert DRM3[i][key1].value == DRM4[i][key1].value, "key: %s, i: %d, values: %f, %f"%(key1, i, DRM3[i][key1].value, DRM4[i][key1].value)
-        elif hasattr(DRM3[i][key1], 'keys'):
-            for key2 in DRM3[i][key1]:
-                if type(DRM3[i][key1][key2]) == type(np.asarray([1,2,3,4])):#is numpy array
-                    assert(all(DRM3[i][key1][key2] == DRM4[i][key1][key2]))
-                elif hasattr(DRM3[i][key1][key2],'value'):
-                    if type(DRM3[i][key1][key2].value) == type(np.asarray([1,2,3,4])):#is numpy array
-                        assert(all(DRM3[i][key1][key2].value == DRM4[i][key1][key2].value))
-                    else:
-                        assert(DRM3[i][key1][key2].value == DRM4[i][key1][key2].value)
-                else:
-                    assert(DRM3[i][key1][key2] == DRM4[i][key1][key2])
-        elif type(DRM3[i][key1]) == type('taco'):
-            assert(DRM3[i][key1] == DRM4[i][key1])
-        else:
-            print DRM3[i][key1]
-            print i
-            print key1
 
+#DELETE
+# from pylab import *
+# fig = figure(1)
+# error = list()
+# atime = list()
+# EOT3 = list()
+# for i in np.arange(len(DRM1)):
+#     EOT3.append(DRM1[i]['exoplanetObsTime'].value)
+#     error.append(DRM1[i]['exoplanetObsTime'].value-DRM2[i]['exoplanetObsTime'].value)
+#     atime.append(DRM1[i]['arrival_time'].value-DRM2[i]['arrival_time'].value)
+# plot([0 for i in range(len(error))],error,marker='o')
+# #plot(EOT3)
+# show(block=False)
 

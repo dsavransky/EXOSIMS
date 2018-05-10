@@ -241,13 +241,13 @@ class MissionSim(object):
         
         return res
 
-    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
         """Convenience method that simply calls the SurveySimulation reset_sim method.
         
         """
         
         res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets,
-                rewindPlanets=rewindPlanets)
+                rewindPlanets=rewindPlanets, seed=seed)
         
         return res
 

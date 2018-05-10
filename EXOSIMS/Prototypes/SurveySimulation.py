@@ -427,15 +427,6 @@ class SurveySimulation(object):
                 DRM['char_mode'] = dict(char_mode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
-                # DELETEif 0.0001 < abs((TK.exoplanetObsTime.copy() - (DRM['arrival_time'] + DRM['det_time'] + 1.*u.d + DRM['char_time'] + (DRM['char_time'] > 0.*u.d)*1.*u.d)).value):
-                #     print DRM['arrival_time'] 
-                #     print('Total det_time' + str(DRM['det_time'] + 1.*u.d))
-                #     print('Total char_time: ' + str(DRM['char_time']*(1. + self.charMargin) + (DRM['char_time'] > 0.*u.d)*1.*u.d))
-                #     print TK.exoplanetObsTime.copy()
-                #     print('ExoObsTime - arrivalTime: ' + str(TK.exoplanetObsTime.copy() - DRM['arrival_time']))
-                #     print abs((TK.exoplanetObsTime.copy() - (DRM['arrival_time'] + DRM['det_time'] + 1.*u.d + DRM['char_time']*(1. + self.charMargin) + (DRM['char_time'] > 0.*u.d)*1.*u.d)).value)
-                #     print saltyburrito
-
                 DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 
                 # append result values to self.DRM
@@ -951,7 +942,6 @@ class SurveySimulation(object):
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
-            # DELETEself.vprint('intTimes pre charMargin' + str(intTimes))
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
@@ -974,13 +964,7 @@ class SurveySimulation(object):
 
             #Allocate Time
             intTime = np.max(intTimes[tochar])
-            # DELETEself.vprint('intTimes post charMargin: ' + str(intTimes))
-            # DELETEself.vprint('intTime pre allocation: ' + str(intTime))
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
-            # DELETEself.vprint('extraTime pre allocation: ' + str(extraTime))
-            # DELETEself.vprint('ohTime pre allocation: ' + str(mode['syst']['ohTime']))
-            # DELETEself.vprint('Obs.settlingTime pre allocation: ' + str(Obs.settlingTime))
-            # DELETEself.vprint('Total Time allocated (dt): ' + str(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime))
             success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
             if success == False: #Time was not successfully allocated
                 #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
@@ -1199,25 +1183,28 @@ class SurveySimulation(object):
         initial starting locations (i.e., all systems will remain at the times they 
         were at the end of the last run, thereby effectively randomizing planet phases.
 
-        4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
-        The random seed will be reset as well.
+        4) If seed is None (default) Re-initializing the SurveySimulation object, 
+        including resetting the DRM to [] and resets the random seed. If seed
+        is provided, use that to reset the simulation.
         
         """
         
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-       
+        TL = self.TargetList
 
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules
 
-        if seed is None:
+        if seed is None:#pop the seed so a new one is generated
             if 'seed' in specs:
                 specs.pop('seed')
-        else:
+        else:#if seed is provided, replace seed with provided seed
             specs['seed'] = seed
-            
+
+
+        #DELETEself.vprint("reset sim with random seed %d"%seed)    
         self.__init__(**specs)
 
         # reset mission time and observatory parameters
@@ -1226,11 +1213,15 @@ class SurveySimulation(object):
         
         # generate new planets if requested (default)
         if genNewPlanets:
+            TL.stellar_mass()
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
+
+        # #Reset mu
+        # specs['keepStarCatalog'] = True
 
         #reset helper arrays
         self.initializeStorageArrays()

@@ -1022,7 +1022,7 @@ class tieredScheduler(SurveySimulation):
                 # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
                 # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
                 # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
-                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0]]
+                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
 

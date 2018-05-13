@@ -10,7 +10,7 @@ try:
 except:
    import pickle
 
-class SLSQPSchedulerA(SurveySimulation):
+class SLSQPSchedulerI(SurveySimulation):
     """SLSQPScheduler
     
     This class implements a continuous optimization of integration times
@@ -283,7 +283,12 @@ class SLSQPSchedulerA(SurveySimulation):
             waitTime (astropy Quantity):
                 the amount of time to wait (this method returns None)
         """
-        
+        tmpsInds = sInds
+        sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
+        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length...
+            sInds = tmpsInds #revert to the saved sInds
+            intTimes = (np.zeros(len(sInds)) + 1.)*u.d 
+
         # cast sInds to array
         #sInds = np.array(sInds, ndmin=1, copy=False)
         #allStarsself.TargetList.nStars

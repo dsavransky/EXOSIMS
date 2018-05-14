@@ -39,7 +39,7 @@ class SurveyEnsemble(object):
         return res
 
     def run_one(self, SS, genNewPlanets=True, rewindPlanets=True):
+        SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         SS.run_sim()
         res = SS.DRM[:]
-        SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         return res

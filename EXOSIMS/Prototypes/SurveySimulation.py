@@ -523,7 +523,7 @@ class SurveySimulation(object):
             sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
-            if sInds == None:
+            if len(sInds.tolist()) == 0:
                 sInds = np.asarray([],dtype=int)
 
 

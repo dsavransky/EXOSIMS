@@ -33,6 +33,8 @@ class IPClusterEnsemble(SurveyEnsemble):
         res = self.dview.execute("SS = EXOSIMS.util.get_module.get_module(specs['modules'] \
                 ['SurveySimulation'], 'SurveySimulation')(**specs)")
 
+        res2 = self.dview.execute("SS.reset_sim()")
+
         self.vprint("Created SurveySimulation objects on %d engines."%len(self.rc.ids))
         #for row in res.stdout:
         #    self.vprint(row)

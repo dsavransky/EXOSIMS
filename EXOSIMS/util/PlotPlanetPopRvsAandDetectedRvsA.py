@@ -1,11 +1,19 @@
 """
-Plot Planet Population Radius vs a AND Detected Planet R vs a
+Plot Planet Population Radius vs a AND Detected Planet Rp vs a
+Plot will be shown and saved to the directory specified by runPath
+
+#Call this function by 
+python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/dir/containing/pkl/files/'
+
+#A specific example calling this function
+python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/'
+
 Written by Dean Keithly on 5/6/2018
 """
 
 
 #RUN LOAD MISSION FROM SEED OPERATION...
-
+import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 try:
     import cPickle as pickle
@@ -18,61 +26,120 @@ from numpy import nan
 import matplotlib.pyplot as plt
 import argparse
 import json
+from EXOSIMS.util.read_ipcluster_ensemble import gen_summary
+from numpy import linspace
+from matplotlib.ticker import NullFormatter, MaxNLocator
+import matplotlib.pyplot as plt
 
-pklPaths = list()
-outspecPaths = list()
-pklPaths.append('/home/dean/Documents/SIOSlab/Dean2May18RS15CXXfZ01OB01PP01SU01/run875756922387.pkl')
-outspecPaths.append('/home/dean/Documents/SIOSlab/Dean2May18RS15CXXfZ01OB01PP01SU01/outspec.json')
-cnt=0
-try:
-    with open(pklPaths[cnt], 'rb') as f:#load from cache
+### FilePath specification
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Create MonteCarlo Planet Radius vs Semi-Major Axis Distribution Figures")
+    parser.add_argument('--runPath', nargs=1, type=str, help='Full path to directory containing pkl Files')
+
+    args = parser.parse_args()
+    runPath = args.runPath[0]
+    #outspecfile = args.outspecfile[0]
+
+    if not os.path.exists(runPath):
+        raise ValueError('%s not found'%runPath)
+
+    out = gen_summary(runPath)#out contains information on the detected planets
+     
+    #Load and plot generated planets
+    myF = 'a'
+    for i in range(100):#Iterate for 100 or until pkl file has been found
+        myF = myRand.choice(os.listdir(runPath)) #change dir name to whatever
+        if os.path.splitext(myF)[1] == '.pkl':
+            break#we found a pkl file break from loop
+        assert i < 100, "Could not find a pkl file in runPath: %s"%runPath
+    with open(runPath+myF, 'rb') as f:#load from cache
         DRM = pickle.load(f)
-except:
-    print('Failed to open pklfile %s'%pklPaths[cnt])
-    pass
-try:
-    with open(outspecPaths[cnt], 'rb') as g:
-        outspec = json.load(g)
-except:
-    print('Failed to open outspecfile %s'%outspecPaths[cnt])
-    pass
+    aPOP = DRM['systems']['a'].value
+    RpPOP = DRM['systems']['Rp'].value
+    x = aPOP
+    y = RpPOP
 
+    # Define the x and y data 
+    det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
+    det_smas = np.concatenate(out['smas']).ravel()
+     
+    fig2 = figure(2)
 
-#Load DRM from pkl file and compare to sim run with same seed
-# pklfile = "/home/dean/Documents/SIOSlab/Dean2May18RS16CXXfZ01OB01PP01SU01/run979296152263.pkl"
-# outspecfile = "/home/dean/Documents/SIOSlab/Dean2May18RS16CXXfZ01OB01PP01SU01/outspec.json"
-# with open(pklfile, 'rb') as f:#load from cache
-#     DRM3tmp = pickle.load(f)
+    gs = GridSpec(2,2, width_ratios=[4,1], height_ratios=[1,4])
+    gs.update(wspace=0.03, hspace=0.03) # set the spacing between axes. 
+    ax1 = plt.subplot(gs[2])#2Dhistogram
+    ax2 = plt.subplot(gs[0])#, sharex=ax1)#x histogram
+    ax3 = plt.subplot(gs[3])#, sharey=ax1)#y histogram
 
-DRMseed = DRM['seed']
-newDRM = DRM['DRM']
+    # Set up default x and y limits
+    xlims = [min(x),max(x)]
+    ylims = [min(y),max(y)]
+    # Find the min/max of the data
+    xmin = min(xlims)
+    xmax = max(xlims)
+    ymin = min(ylims)
+    ymax = max(y)
+    ax1.set_xlim(xlims)
+    ax1.set_ylim(ylims)
+    ax2.set_xlim(xlims)
+    ax3.set_ylim(ylims)
 
-# with open(outspecPaths[cnt], 'rb') as f:#load from cache
-#     newjson = json.load(f)
-# newjson['seed'] = DRMseed
-# newjson['modules']['SurveyEnsemble'] = "SurveyEnsemble"
-#with open(os.path.dirname(outspecPaths[cnt])+'tmp.json', 'wb') as f:
-#    json.dump(newjson, f)
-#sim4 = EXOSIMS.MissionSim.MissionSim(os.path.dirname(outspecPaths[cnt]) + 'tmp.json')
+    # Make the 'main' temperature plot
+    # Define the number of bins
+    nxbins = 50
+    nybins = 50
+    nbins = 100
+     
+    xbins = linspace(start = xmin, stop = xmax, num = nxbins)
+    ybins = linspace(start = ymin, stop = ymax, num = nybins)
+    xcenter = (xbins[0:-1]+xbins[1:])/2.0
+    ycenter = (ybins[0:-1]+ybins[1:])/2.0
+    aspectratio = 1.0*(xmax - 0)/(1.0*ymax - 0)
+     
+    H, xedges,yedges = np.histogram2d(y,x,bins=(ybins,xbins))
+    X = xcenter
+    Y = ycenter
+    Z = H
 
-#Collect all detected Rp and a
-detRp = list()
-deta = list()
-for i in range(len(DRM['DRM'])):
-    if 1 in DRM['DRM'][i]['det_status']:#Was there a detection
-        star_ind = DRM['DRM'][i]['star_ind']
-        plan_inds = DRM['DRM'][i]['plan_inds']
-        #iterate over detected planet inds
-        for j in np.where(DRM['DRM'][i]['det_status'] == 1):
-            deta.append(DRM['systems']['a'][plan_inds[j]])
-            detRp.append(DRM['systems']['Rp'][plan_inds[j]])
+    # Plot the temperature data
+    cax = (ax1.imshow(H, extent=[xmin,xmax,ymin,ymax],
+        interpolation='nearest', origin='lower',aspect="auto"))#aspectratio))
 
-fig1 = figure(1)
-a = DRM['systems']['a']#All generated Rp and a
-Rp = DRM['systems']['Rp']
-scatter(a,Rp,marker='o',color='b')
-scatter(deta,detRp,marker='x',color='r')
-xlabel('a')
-ylabel(r'$R_{p}$')
-show(block=False)
+    #Plot the axes labels
+    ax1.set_xlabel('$\mathrm{Semi-Major\\ Axis\\ (a)\\ in\\ AU}$',fontsize=14,weight='bold')
+    ax1.set_ylabel('$\mathrm{Planet Radius\\ (R_{p})\\ in\\ R_{\oplus}}$',fontsize=14,weight='bold')
 
+    #Set up the histogram bins
+    xbins = np.arange(xmin, xmax, (xmax-xmin)/nbins)
+    ybins = np.arange(ymin, ymax, (ymax-ymin)/nbins)
+     
+    #Plot the histograms
+    ax2.hist(x, bins=xbins, color = 'blue')
+    ax3.hist(y, bins=ybins, orientation='horizontal', color = 'red')
+    ax2.set_ylabel(r'a Frequency',weight='bold')
+    ax3.set_xlabel(r'$R_{P}$ Frequency',weight='bold')
+
+    #Remove xticks on x-histogram and remove yticks on y-histogram
+    ax2.set_xticks([])
+    ax3.set_yticks([])
+
+    # Remove the inner axes numbers of the histograms
+    nullfmt = NullFormatter()
+    ax2.xaxis.set_major_formatter(nullfmt)
+    ax3.yaxis.set_major_formatter(nullfmt)
+
+    #plot the detected planet Rp and a
+    ax1.scatter(det_smas, det_Rps, marker='o', color='red', alpha=0.1)
+
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    #plt.rc('axes',prop_cycle=(cycler('color',['red','purple'])))#,'blue','black','purple'])))
+    rcParams['axes.linewidth']=2
+    rc('font',weight='bold')
+
+    show(block=False)
+    # Save to a File
+    filename = 'RpvsSMAdetections'
+    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.png')
+    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.svg')
+    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.eps')

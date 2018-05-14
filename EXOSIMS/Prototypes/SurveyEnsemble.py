@@ -69,7 +69,7 @@ class SurveyEnsemble(object):
             res (list dict):
                 simulation list of dictionaries
         """
+        SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         SS.run_sim()
         res = SS.DRM[:]
-        SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         return res

@@ -148,8 +148,8 @@ def DRMcomparator(DRM1, DRM2, exact=True):
 
 ######################################################################
 #Load DRM from pkl file and compare to sim run with same seed
-pklfile =     "/home/dean/Documents/SIOSlab/Dean2May18RS09CXXfZ01OB01PP01SU01/run4459512005.pkl"
-outspecfile = "/home/dean/Documents/SIOSlab/Dean2May18RS09CXXfZ01OB01PP01SU01/outspec.json"
+pklfile =     "/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/run9333229941.pkl"
+outspecfile = "/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/outspec.json"
 with open(pklfile, 'rb') as f:#load pkl to extract mission specific SEED
     DRM3tmp = pickle.load(f)
 
@@ -176,6 +176,7 @@ with open(os.path.dirname(outspecfile)+'tmp.json', 'wb') as f:
 
 ######################################
 #Comparing two freshly run simulations
+#This validates that the DRM can be replicated under some circumstances
 ######################################
 sim4 = EXOSIMS.MissionSim.MissionSim(os.path.dirname(outspecfile) + 'tmp.json') #initializing random mission
 sim4.SurveySimulation.reset_sim()
@@ -189,6 +190,7 @@ sim4.SurveySimulation.run_sim()
 DRM2 = sim4.SurveySimulation.DRM
 
 success1 = DRMcomparator(DRM1, DRM2)
+print("#11111111111111111111111111111111111111")
 print('Freshly Run Simulation Comparison')
 print(success1)
 #This operation succeeded on #5/9/2018

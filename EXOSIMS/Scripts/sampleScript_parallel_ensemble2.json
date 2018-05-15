@@ -1,0 +1,85 @@
+{
+  "missionLife": 0.5,
+  "missionPortion": 1,
+  "OBduration": 50,
+  "minComp": 0,
+  "dMagLim": 22.5,
+  "pupilDiam": 2.37,
+  "ppFact": 0.1,
+  "scienceInstruments": [
+    { "name": "imager",
+      "QE": 0.72,
+      "FoV": 9.5,
+      "pixelNumber": 1024,
+      "pixelSize": 1.3e-5,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41
+    },
+    { "name": "spectro",
+      "QE": 0.72,
+      "FoV": 1,
+      "pixelNumber": 76,
+      "pixelSize": 1.74e-4,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41,
+      "Rs": 50
+    }
+  ],
+  "starlightSuppressionSystems": [
+    { "name": "HLC-565",
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.15,
+      "OWA": 0.42,
+      "occ_trans": 0.2,
+      "core_thruput": 0.01,
+      "core_mean_intensity": 1.6e-12,
+      "core_area": 0.002,
+      "core_platescale": 0.30
+    },
+    { "name": "SPC-800",
+      "lam": 800,
+      "BW": 0.18,
+      "IWA": 0.19,
+      "OWA": 0.62,
+      "occ_trans": 0.2,
+      "core_thruput": 0.015,
+      "core_mean_intensity": 1.6e-12,
+      "core_area": 0.003,
+      "core_platescale": 0.30
+    }
+  ],
+  "observingModes": [
+    { "instName": "imager",
+      "systName": "HLC-565",
+      "detectionMode": true
+    },
+    { "instName": "spectro",
+      "systName": "SPC-800",
+      "lam": 770,
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "KeplerLike2",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "Forecaster",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": "IPClusterEnsemble"
+  }
+}

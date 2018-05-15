@@ -69,4 +69,19 @@ def gen_summary(run_dir):
         
     return out
 
+def read_all(run_dir):
+    pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
+
+    allres = []
+
+    for counter,f in enumerate(pklfiles):
+        print "%d/%d"%(counter,len(pklfiles))
+        with open(f, 'rb') as g:
+            res = pickle.load(g)
+        allres.append(res)
+
+    return allres
+
+
+
 

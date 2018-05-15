@@ -1119,7 +1119,7 @@ class SurveySimulation(object):
         
         return DRM
 
-    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
         """Performs a full reset of the current simulation by:
         
         1) Re-initializing the TimeKeeping object with its own outspec
@@ -1135,19 +1135,25 @@ class SurveySimulation(object):
         initial starting locations (i.e., all systems will remain at the times they 
         were at the end of the last run, thereby effectively randomizing planet phases.
 
-        4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
-        The random seed will be reset as well.
-        
+        4) If seed is None (default) Re-initializing the SurveySimulation object, 
+        including resetting the DRM to [] and resets the random seed. If seed
+        is provided, use that to reset the simulation.
+
         """
         
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-       
+        TL = self.TargetList
+
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules
-        if 'seed' in specs:
-            specs.pop('seed')
+        if seed is None:#pop the seed so a new one is generated
+              if 'seed' in specs:
+                  specs.pop('seed')
+
+        else:#if seed is provided, replace seed with provided seed
+              specs['seed'] = seed
         self.__init__(**specs)
 
         # reset mission time and observatory parameters
@@ -1156,6 +1162,7 @@ class SurveySimulation(object):
         
         # generate new planets if requested (default)
         if genNewPlanets:
+            TL.stellar_mass()
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
         # re-initialize systems if requested (default)

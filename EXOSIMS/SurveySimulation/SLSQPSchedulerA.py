@@ -123,6 +123,7 @@ class SLSQPSchedulerA(SurveySimulation):
             assert ires['success'], "Initial time optimization failed."
 
             self.t0 = ires['x']*u.d
+            #self.t0[self.t0 < 1*u.s] = (1*u.s).to(u.d)
             self.scomp0 = -ires['fun']
 
             if cacheOptTimes:
@@ -297,5 +298,8 @@ class SLSQPSchedulerA(SurveySimulation):
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
         
+        if self.t0[sInd] < 1.0*u.s:
+		sInd = None
+
         return sInd, None
 

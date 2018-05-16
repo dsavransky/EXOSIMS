@@ -577,8 +577,11 @@ class SurveySimulation(object):
             # choose sInd of next target
             sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
-            if sInd == None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+            if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
+                return DRM, None, None, waitTime
+            elif sInd == None and waitTime == None:
+                self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
                 return DRM, None, None, waitTime
             # store selected star integration time
             intTime = intTimes[sInd]

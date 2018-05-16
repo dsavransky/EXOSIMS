@@ -452,9 +452,13 @@ class SurveySimulation(object):
                         TK.currentTimeAbs = TK.missionFinishAbs
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
-                        oTnowToEnd = observableTimes[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
+                        oTnowToEnd = observableTimes[inds3]
                         if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)#advance do that observable time
+                            tAbs = np.min(oTnowToEnd)#advance to that observable time
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
@@ -528,10 +532,8 @@ class SurveySimulation(object):
 
 
         # start times, including slew times
-        #slewTimes[np.isnan(slewTimes)] = 10000*u.d#slewTimes cannot contain any nan #adding slewTimes with nan does not work #adding slewTimes with nan replaced with inf does not work
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
-        # indices of observable stars
 
         # 2.5 Filter stars not observable at startTimes
         try:
@@ -546,11 +548,9 @@ class SurveySimulation(object):
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
-        #CHANGE THIS SO WE FILTER TARGETS EXCEEDING MAXIMUM INTEGRATION TIMES
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        #   WE CANNOT DO THIS BECAUSE WE MUST RECALCULATE COMPLETENESS intTimes[np.where(intTimes > maxIntTime)] = maxIntTime #assign any intTimes to the maximum possible IntTime
 
         sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
         endTimes = startTimes + intTimes

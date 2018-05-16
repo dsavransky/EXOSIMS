@@ -180,7 +180,7 @@ class TestSurveySimulation(unittest.TestCase):
                         np.array([1.0]*len(sInds))*u.d)
 
 
-                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+                self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd in sInds
                 sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)

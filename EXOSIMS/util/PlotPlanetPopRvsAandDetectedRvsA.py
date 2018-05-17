@@ -7,6 +7,7 @@ python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/dir/containing/pkl/files/
 
 #A specific example calling this function
 python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/'
+Where '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/' contains 1000 pkl files from a simulation run
 
 Written by Dean Keithly on 5/6/2018
 """
@@ -27,9 +28,12 @@ import matplotlib.pyplot as plt
 import argparse
 import json
 from EXOSIMS.util.read_ipcluster_ensemble import gen_summary
+from EXOSIMS.util.read_ipcluster_ensemble import read_all
 from numpy import linspace
 from matplotlib.ticker import NullFormatter, MaxNLocator
 import matplotlib.pyplot as plt
+from matplotlib import ticker
+import astropy.units as u
 
 ### FilePath specification
 if __name__ == "__main__":
@@ -44,23 +48,14 @@ if __name__ == "__main__":
         raise ValueError('%s not found'%runPath)
 
     out = gen_summary(runPath)#out contains information on the detected planets
-     
-    #Load and plot generated planets
-    myF = 'a'
-    for i in range(100):#Iterate for 100 or until pkl file has been found
-        myF = myRand.choice(os.listdir(runPath)) #change dir name to whatever
-        if os.path.splitext(myF)[1] == '.pkl':
-            break#we found a pkl file break from loop
-        assert i < 100, "Could not find a pkl file in runPath: %s"%runPath
-    with open(runPath+myF, 'rb') as f:#load from cache
-        DRM = pickle.load(f)
-    aPOP = DRM['systems']['a'].value
-    RpPOP = DRM['systems']['Rp'].value
-    x = aPOP
-    y = RpPOP
+    allres = read_all(runPath)# contains all drm from all missions in runPath
 
-
-
+    Rpunits = allres[0]['systems']['Rp'].unit
+    allres_Rp = np.concatenate([allres[i]['systems']['Rp'].value for i in range(len(allres))])
+    smaunits = allres[0]['systems']['a'].unit
+    allres_sma = np.concatenate([allres[i]['systems']['a'].value for i in range(len(allres))])
+    x = allres_sma
+    y = allres_Rp
 
     # Define the x and y data for detected planets
     det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
@@ -68,8 +63,14 @@ if __name__ == "__main__":
      
     #Create Figure and define gridspec
     fig2 = figure(2, figsize=(8.5,4.5))
-    gs = GridSpec(2,4, width_ratios=[4,1,4,1], height_ratios=[1,4])
-    gs.update(wspace=0.03, hspace=0.03) # set the spacing between axes. 
+    gs = GridSpec(2,4, width_ratios=[4,1,4,1.25], height_ratios=[1,4])
+    gs.update(wspace=0.04, hspace=0.04) # set the spacing between axes. 
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    #plt.rc('axes',prop_cycle=(cycler('color',['red','purple'])))#,'blue','black','purple'])))
+    rcParams['axes.linewidth']=2
+    rc('font',weight='bold')
+
     #What the plot layout looks like
     ###----------------------------
     # | gs[0]  gs[1]  gs[2]  gs[3] |
@@ -91,14 +92,6 @@ if __name__ == "__main__":
     xmax = max(xlims)#max of a
     ymin = min(ylims)#min of Rp
     ymax = max(y)#max of Rp
-    ax1.set_xlim(xlims)
-    ax1.set_ylim(ylims)
-    ax2.set_xlim(xlims)
-    ax3.set_ylim(ylims)
-    ax4.set_xlim(xlims)
-    ax4.set_ylim(ylims)
-    ax5.set_xlim(xlims)
-    ax6.set_ylim(ylims)
 
     # Make the 'main' temperature plot
     # Define the number of bins
@@ -121,10 +114,61 @@ if __name__ == "__main__":
     #     interpolation='nearest', origin='lower',aspect="auto"))#aspectratio))
     xcents = np.diff(xbins)/2.+xbins[:-1]
     ycents = np.diff(ybins)/2.+ybins[:-1]
-    cax = ax1.contourf(xcents,ycents,np.log10(H.T/float(len(x))), extent=[xmin, xmax, ymin, ymax], intepolation='nearest')
+    #levels = np.logspace(start = np.log10(1e-8), stop = np.log10(np.amax(H.T/float(len(x)))), num = 8)#[1e-1, 5e-2, 2.5e-2, 1.25e-2, 6.25e-3, 3.125e-3, 1.5625e-3, 7.1825e-4]# 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
+    cax = ax1.contourf(xcents, ycents, H.T/float(len(x)), extent=[xmin, xmax, ymin, ymax], cmap='jet', intepolation='nearest',locator=ticker.LogLocator())#, 
+    # fmt = ticker.LogFormatterMathtext()
+    # plt.clabel(cax, fmt=fmt, colors='k', fontsize=8, inline=1)#OK
+    # levels = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
+    
+    CS4 = ax1.contour(cax, colors=('k',), linewidths=(1,), origin='lower', locator=ticker.LogLocator())
+    colorbar_ax = fig2.add_axes([0.125, 0.775, 0.775, 0.025])#[left, bottom, width, height]
+    cbar = fig2.colorbar(cax, cax=colorbar_ax, orientation='horizontal')#pad=0.05,
+    rcParams['axes.titlepad']=-10
+    #plt.text(0.5, 1, 'Normalized Planet Joint Probability Density', weight='bold', horizontalalignment='center')
+    #cbar.ax.set_title(label='Normalized Planet Joint Probability Density', weight='bold')
+    cbar.ax.set_xlabel('Normalized Planet Joint Probability Density', weight='bold', labelpad=-35)
+    #cbar.set_label('Normalized Planet Joint Probability Density', weight='bold')#, rotation=270)
+    cbar.ax.tick_params(axis='x',direction='in',labeltop='on',labelbottom='off')
+    cbar.add_lines(CS4)
+    
+    # CS = plt.contourf(X, Y, Z, 10,
+    #               #[-1, -0.1, 0, 0.1],
+    #               #alpha=0.5,
+    #               cmap=plt.cm.bone,
+    #               origin=origin)
+
+
+    # # Note that in the following, we explicitly pass in a subset of
+    # # the contour levels used for the filled contours.  Alternatively,
+    # # We could pass in additional levels to provide extra resolution,
+    # # or leave out the levels kwarg to use all of the original levels.
+
+    # CS2 = plt.contour(CS, levels=CS.levels[::2],
+    #                   colors='r',
+    #                   origin=origin)
+
+    # plt.title('Nonsense (3 masked regions)')
+    # plt.xlabel('word length anomaly')
+    # plt.ylabel('sentence length anomaly')
+
+    # # Make a colorbar for the ContourSet returned by the contourf call.
+
+    # cbar.ax.set_ylabel('verbosity coefficient')
+    # # Add the contour line levels to the colorbar
+    # cbar.add_lines(CS2)
+
+
 
     HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins))
-    caxDET = ax4.contourf(xcents,ycents,np.log10(HDET.T/float(len(det_smas))), extent=[xmin, xmax, ymin, ymax], intepolation='nearest')
+    caxDET = ax4.contourf(xcents,ycents,HDET.T/float(len(det_smas)), extent=[xmin, xmax, ymin, ymax], cmap='jet', intepolation='nearest',locator=ticker.LogLocator())
+    # fmt2 = ticker.LogFormatterMathtext()
+    # plt.clabel(caxDET, fmt=fmt2, colors='k', fontsize=8, inline=1)#OK
+    levels2 = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
+    CS42 = ax4.contour(caxDET, colors=('k',), linewidths=(1,), origin='lower', locator=ticker.LogLocator())
+    #colorbar_ax = fig2.add_axes([0.125, 0.9, 0.775, 0.025])#[left, bottom, width, height]
+    #cbar = fig2.colorbar(caxDET, cax=colorbar_ax, orientation='horizontal')#pad=0.05,
+    #cbar.ax.tick_params(axis='x',direction='in',labeltop='on',labelbottom='off')
+    #cbar.add_lines(CS4)
 
     #Set axes scales to log
     ax1.set_xscale('log')
@@ -148,13 +192,23 @@ if __name__ == "__main__":
     #ybins = np.arange(ymin, ymax, (ymax-ymin)/nbins)
      
     #Plot the universe planet pop histograms
-    ax2.hist(x, bins=xbins, color = 'blue')#1D histogram of universe a
-    ax5.hist(det_smas, bins=xbins, color = 'blue')#1D histogram of detected planet a
-    ax3.hist(y, bins=ybins, orientation='horizontal', color = 'red')#1D histogram of detected planet a
-    ax6.hist(det_Rps, bins=ybins, orientation='horizontal', color = 'red')#1D histogram of detected planet Rp
+    ax2.hist(x, bins=xbins, color = 'black', fill=False, histtype='step', hatch='-/')#1D histogram of universe a
+    ax5.hist(det_smas, bins=xbins, color = 'black', fill=False, histtype='step', hatch='+x')#1D histogram of detected planet a
+    ax3.hist(y, bins=ybins, orientation='horizontal', color = 'black', fill=False, histtype='step', hatch='///')#1D histogram of detected planet a
+    ax6.hist(det_Rps, bins=ybins, orientation='horizontal', color = 'black', fill=False, histtype='step', hatch='x')#1D histogram of detected planet Rp
     ax2.set_ylabel('$a$\nFreq.',weight='bold', multialignment='center')
     ax3.set_xlabel('$R_{P}$\nFreq.',weight='bold', multialignment='center')
     ax6.set_xlabel('$R_{P}$\nFreq.',weight='bold', multialignment='center')
+
+    #Set plot limits
+    ax1.set_xlim(xlims)
+    ax1.set_ylim(ylims)
+    ax2.set_xlim(xlims)
+    ax3.set_ylim(ylims)
+    ax4.set_xlim(xlims)
+    ax4.set_ylim(ylims)
+    ax5.set_xlim(xlims)
+    ax6.set_ylim(ylims)
 
     #Remove xticks on x-histogram and remove yticks on y-histogram
     ax2.set_xticks([])
@@ -173,46 +227,41 @@ if __name__ == "__main__":
     
     #plot the detected planet Rp and a #make this a separate plot... or the same plot..... yess lets use subplots
     #ax1.scatter(det_smas, det_Rps, marker='o', color='red', alpha=0.1)
-
-    plt.rc('axes',linewidth=2)
-    plt.rc('lines',linewidth=2)
-    #plt.rc('axes',prop_cycle=(cycler('color',['red','purple'])))#,'blue','black','purple'])))
-    rcParams['axes.linewidth']=2
-    rc('font',weight='bold')
-
+    plt.gcf().subplots_adjust(bottom=0.15, top=0.75)
     #plt.tight_layout({"pad":.0})
     #plt.axis('tight')
-    plt.gcf().subplots_adjust(bottom=0.15)
+    
     #plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+
     show(block=False)
     # Save to a File
     filename = 'RpvsSMAdetections'
-    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.png')
-    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.svg')
-    savefig(runPath + os.path.splitext(myF)[0] + 'filename' + '.eps')
+    savefig(runPath + os.path.basename(os.path.normpath(runPath)) + filename + '.png', format='png', dpi=500)
+    savefig(runPath + os.path.basename(os.path.normpath(runPath)) + filename + '.svg')
+    savefig(runPath + os.path.basename(os.path.normpath(runPath)) + filename + '.eps', format='eps', dpi=500)
 
 
 
 
 
 
-    #Dmitry's Code
-    aedges = np.logspace(np.log10(0.2),np.log10(25),101)
-    Redges = np.logspace(0,np.log10(16),31)
+    # #Dmitry's Code
+    # aedges = np.logspace(np.log10(0.2),np.log10(25),101)
+    # Redges = np.logspace(0,np.log10(16),31)
 
-    acents = np.diff(aedges)/2.+aedges[:-1]
-    Rcents = np.diff(Redges)/2.+Redges[:-1]
+    # acents = np.diff(aedges)/2.+aedges[:-1]
+    # Rcents = np.diff(Redges)/2.+Redges[:-1]
 
 
-    h = np.histogram2d(np.hstack(out['smas']), np.hstack(out['Rps']),bins=[aedges,Redges])[0]
+    # h = np.histogram2d(np.hstack(out['smas']), np.hstack(out['Rps']),bins=[aedges,Redges])[0]
 
-    plt.figure()
-    plt.clf()
-    plt.contourf(acents,Rcents,np.log10(h.T/float(len(out['smas']))))
-    gca().set_xscale('log')
-    gca().set_yscale('log')
-    plt.xlabel('a (AU)')
-    plt.ylabel('R ($R_\\oplus$)')
-    c = plt.colorbar()
+    # plt.figure()
+    # plt.clf()
+    # plt.contourf(acents,Rcents,np.log10(h.T/float(len(out['smas']))))
+    # gca().set_xscale('log')
+    # gca().set_yscale('log')
+    # plt.xlabel('a (AU)')
+    # plt.ylabel('R ($R_\\oplus$)')
+    # c = plt.colorbar()
 
-    show(block=False)
+    # show(block=False)

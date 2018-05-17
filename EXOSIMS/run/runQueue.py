@@ -28,8 +28,6 @@ import argparse
 import traceback
 
 def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
-    # reset simulation at the end of each simulation
-    SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)  
     # wrap the run_sim in a try/except loop
     nbmax = 10
     for attempt in range(nbmax):
@@ -53,6 +51,9 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     else:
         raise ValueError("Unsuccessful run_sim after %s reset_sim attempts"%nbmax)
     
+    # reset simulation at the end of each simulation
+    SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)  
+
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:

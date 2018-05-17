@@ -148,8 +148,8 @@ def DRMcomparator(DRM1, DRM2, exact=True):
 
 ######################################################################
 #Load DRM from pkl file and compare to sim run with same seed
-pklfile =     "/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/run9333229941.pkl"
-outspecfile = "/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/outspec.json"
+pklfile =     "/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/deleteMeRun1/deleteMeRun1/run1217478635.pkl"#"/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/run9333229941.pkl"
+outspecfile = "/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/deleteMeRun1/deleteMeRun1/outspec.json"#"/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01/outspec.json"
 with open(pklfile, 'rb') as f:#load pkl to extract mission specific SEED
     DRM3tmp = pickle.load(f)
 
@@ -193,6 +193,7 @@ success1 = DRMcomparator(DRM1, DRM2)
 print("#11111111111111111111111111111111111111")
 print('Freshly Run Simulation Comparison')
 print(success1)
+assert success1
 #This operation succeeded on #5/9/2018
 ######################################
 
@@ -207,7 +208,7 @@ DRM4 = deepcopy(sim4.SurveySimulation.DRM)
 success2 = DRMcomparator(DRM4, DRM3, exact=False)
 print('Freshly Run Simulation To Loaded pkl File Comparison')
 print(success2)
-
+assert success2
 
 #########################################
 #Compairing Freshly Made Sim to DRM output
@@ -223,6 +224,7 @@ DRM3systems['star'][pInds2] #all nam
 success3 = DRMcomparator(DRM5, DRM3, exact=False)
 print('Freshly Run Simulation To Loaded pkl File Comparison')
 print(success3)
+assert success3
 
 sim5.SurveySimulation.reset_sim(seed=sim5.SurveySimulation.seed)
 sim5.SurveySimulation.run_sim()
@@ -230,6 +232,7 @@ DRM5a = deepcopy(sim5.SurveySimulation.DRM)
 success5 = DRMcomparator(DRM5, DRM5a)
 print('Freshly Run Simulation Comparison')
 print(success5)
+assert success5
 
 
 #################################################

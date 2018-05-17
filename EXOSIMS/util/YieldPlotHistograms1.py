@@ -196,25 +196,71 @@ import math
 
 
 #5/6/2018 SLSQP Scheduler Dynamic Genetics (selection comparisons)
+# pathRuns = '/home/dean/Documents/SIOSlab/'
+# t = ['Dean4May18RS17CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS18CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS19CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS20CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS21CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS22CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS23CXXfZ01OB01PP01SU01',\
+# 'Dean4May18RS24CXXfZ01OB01PP01SU01']
+# res1 = gen_summary(pathRuns + t[0])
+# res2 = gen_summary(pathRuns + t[1])
+# res3 = gen_summary(pathRuns + t[2])
+# res4 = gen_summary(pathRuns + t[3])
+# res5 = gen_summary(pathRuns + t[4])
+# res6 = gen_summary(pathRuns + t[5])
+# res7 = gen_summary(pathRuns + t[6])
+# res8 = gen_summary(pathRuns + t[7])
+
+#5/14/2018 SLSQP Scheduler static Yield vs Mission Length
+# pathRuns = '/home/dean/Documents/SIOSlab/'
+# t = ['Dean6May18RS09CXXfZ01OB08PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB09PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB10PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB11PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB12PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB13PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB14PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB15PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB16PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB17PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB18PP01SU01',\
+# 'Dean2May18RS09CXXfZ01OB01PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB19PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB20PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB21PP01SU01']
+# res1 = gen_summary(pathRuns + t[0])
+# res2 = gen_summary(pathRuns + t[1])
+# res3 = gen_summary(pathRuns + t[2])
+# res4 = gen_summary(pathRuns + t[3])
+# res5 = gen_summary(pathRuns + t[4])
+# res6 = gen_summary(pathRuns + t[5])
+# res7 = gen_summary(pathRuns + t[6])
+# res8 = gen_summary(pathRuns + t[7])
+# res9 = gen_summary(pathRuns + t[8])
+# res10 = gen_summary(pathRuns + t[9])
+# res11 = gen_summary(pathRuns + t[10])
+# res12 = gen_summary(pathRuns + t[11])
+# res13 = gen_summary(pathRuns + t[12])
+# res14 = gen_summary(pathRuns + t[13])
+# res15 = gen_summary(pathRuns + t[14])
+
+#5/14/2018 SLSQP Scheduler Static Yield vs Mission Length
 pathRuns = '/home/dean/Documents/SIOSlab/'
-t = ['Dean4May18RS17CXXfZ01OB01PP01SU01',\
-'Dean4May18RS18CXXfZ01OB01PP01SU01',\
-'Dean4May18RS19CXXfZ01OB01PP01SU01',\
-'Dean4May18RS20CXXfZ01OB01PP01SU01',\
-'Dean4May18RS21CXXfZ01OB01PP01SU01',\
-'Dean4May18RS22CXXfZ01OB01PP01SU01',\
-'Dean4May18RS23CXXfZ01OB01PP01SU01',\
-'Dean4May18RS24CXXfZ01OB01PP01SU01']
+t = ['Dean6May18RS09CXXfZ01OB02PP01SU01',\
+'Dean6May18RS09CXXfZ01OB03PP01SU01',\
+'Dean6May18RS09CXXfZ01OB04PP01SU01',\
+'Dean6May18RS09CXXfZ01OB05PP01SU01',\
+'Dean6May18RS09CXXfZ01OB06PP01SU01',\
+'Dean6May18RS09CXXfZ01OB07PP01SU01']
 res1 = gen_summary(pathRuns + t[0])
 res2 = gen_summary(pathRuns + t[1])
 res3 = gen_summary(pathRuns + t[2])
 res4 = gen_summary(pathRuns + t[3])
 res5 = gen_summary(pathRuns + t[4])
 res6 = gen_summary(pathRuns + t[5])
-res7 = gen_summary(pathRuns + t[6])
-res8 = gen_summary(pathRuns + t[7])
-
-
 
 def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     rcounts = []
@@ -268,8 +314,22 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     plt.xlabel('Unique Detections',weight='bold')
     plt.ylabel('Normalized Yield Frequency (NYF)',weight='bold')
 
+# #5/14/2018 SLSQP Scheduler StaticA with varying mission length
+# dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+#     res5['detected'],res6['detected'],res7['detected'],res8['detected'],\
+#     res9['detected'],res10['detected'],res11['detected'],res12['detected'],\
+#     res13['detected'],res14['detected'],res15['detected']],\
+#     legtext=['1mo','2mo','3mo','4mo','5mo','6mo','7mo','8mo',\
+#         '9mo','10mo','11mo','12mo','13mo','14mo','15mo'])
+
+#5/14/2018 SLSQP Scheduler Yield vs OBduration
+dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+    res5['detected'],res6['detected']],\
+    legtext=['30d','15d','10d','5d','20d','25d'])
+
+
 #5/6/2018 SLSQP Scheduler dynamic Selection Genetics
-dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],res5['detected'],res6['detected'],res7['detected'],res8['detected']],legtext=['SLSQPAdyn','SLSQPBdyn','SLSQPCdyn','SLSQPDdyn','SLSQPEdyn','SLSQPFdyn','SLSQPGdyn','SLSQPHdyn'])
+#dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],res5['detected'],res6['detected'],res7['detected'],res8['detected']],legtext=['SLSQPAdyn','SLSQPBdyn','SLSQPCdyn','SLSQPDdyn','SLSQPEdyn','SLSQPFdyn','SLSQPGdyn','SLSQPHdyn'])
 
 
 # #5/4/2018 SLSQP Scheduler Selection Genetics

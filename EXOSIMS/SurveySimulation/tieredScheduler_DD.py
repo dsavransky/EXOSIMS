@@ -146,6 +146,14 @@ class tieredScheduler_DD(tieredScheduler):
                 elif sInd == occ_sInd:
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
+
+                    # clean up revisit list when one occurs to prevent repeats
+                    if np.any(self.occ_starRevisit) and np.any(np.where(self.occ_starRevisit[:,0] == float(occ_sInd))):
+                        s_revs = np.where(self.occ_starRevisit[:,0] == float(occ_sInd))[0]
+                        dt_max = 1.*u.week
+                        t_revs = np.where(self.occ_starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
+                        self.occ_starRevisit = np.delete(self.occ_starRevisit, np.intersect1d(s_revs, t_revs),0)
+
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
 
@@ -205,10 +213,10 @@ class tieredScheduler_DD(tieredScheduler):
                         T = 2.*np.pi*np.sqrt(sp**3/mu)
                         t_rev = TK.currentTimeNorm + T/2.
                         revisit = np.array([sInd, t_rev.to('day').value])
-                        if self.starRevisit.size == 0:
-                            self.starRevisit = np.array([revisit])
+                        if self.occ_starRevisit.size == 0:
+                            self.occ_starRevisit = np.array([revisit])
                         else:
-                            self.starRevisit = np.vstack((self.starRevisit, revisit))
+                            self.occ_starRevisit = np.vstack((self.occ_starRevisit, revisit))
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime
@@ -348,7 +356,7 @@ class tieredScheduler_DD(tieredScheduler):
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
                     self.is_phase1 = False
-                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] > 5) & 
+                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] > self.nVisitsMax) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
 
             fEZ = ZL.fEZ0
@@ -396,10 +404,10 @@ class tieredScheduler_DD(tieredScheduler):
             # revisit list, with time after start
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
-                if self.starRevisit.size != 0:
+                if self.occ_starRevisit.size != 0:
                     dt_max = 1.*u.week
-                    dt_rev = TK.currentTimeNorm - self.starRevisit[:,1]*u.day
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev > 0, 0] if x in occ_sInds]
+                    dt_rev = TK.currentTimeNorm - self.occ_starRevisit[:,1]*u.day
+                    ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True
                 occ_sInds = np.where(occ_tovisit)[0]
 
@@ -451,7 +459,7 @@ class tieredScheduler_DD(tieredScheduler):
                 self.starVisits[sInd] += 1
 
             # if the starshade has arrived at its destination, or it is the first observation
-            if np.any(occ_sInds) or old_occ_sInd is None:
+            if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
                     if old_occ_sInd is None:

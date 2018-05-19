@@ -9,9 +9,6 @@ This script then runs .json file named in queue.json for the number of runs spec
 This script should be executed from the "run" folder
 Written by Dean Keithly 4/27/2018
 """
-
-#
-
 import json
 from subprocess import Popen
 import subprocess
@@ -63,11 +60,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an ipcluster parallel ensemble job queue.")
-    #parser.add_argument('scriptfile', nargs=1, type=str, help='Full path to scriptfile (string).')
-    # parser.add_argument('numruns', nargs=1, type=int, help='Number of runs (int).')
     parser.add_argument('--outpath',nargs=1,type=str, help='Full path to output directory where each job directory will be saved (string).')
-    # parser.add_argument('--email',nargs=1,type=str,help='Email address to notify when run is complete.')
-    # parser.add_argument('--toemail',nargs=1,type=str,help='Additional email to notify when run is complete.')
 
     args = parser.parse_args()
 
@@ -76,13 +69,11 @@ if __name__ == "__main__":
         queueData = json.load(queueFile)
 
     error = False
-    #DO SOME ERROR CHECKING
+    #TODO ERROR CHECKING
 
     if error == False:
         while(len(queueData['scriptNames']) > 0):#Iterate until there are no more 
             outpath = args.outpath[0] + str(queueData['scriptNames'][0].split('.')[0])
-            #outpath = '/home/dean/' + queueData['scriptNames'][0].split('.')[0]
-            #on atuin outpath = '/data2/extmount/EXOSIMSres/' + queueData['scriptNames'][0].split('.')[0]
             if not os.path.isdir(outpath):#IF the directory doesn't exist
                 os.makedirs(outpath)#make directory
 

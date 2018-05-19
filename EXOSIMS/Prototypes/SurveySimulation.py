@@ -1205,9 +1205,7 @@ class SurveySimulation(object):
                 specs.pop('seed')
         else:#if seed is provided, replace seed with provided seed
             specs['seed'] = seed
-
-
-        #DELETEself.vprint("reset sim with random seed %d"%seed)    
+  
         self.__init__(**specs)
 
         # reset mission time and observatory parameters

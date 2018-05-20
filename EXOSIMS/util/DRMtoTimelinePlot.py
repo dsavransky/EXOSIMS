@@ -170,10 +170,15 @@ if __name__ == "__main__":
             if OBtextBool:
                 ax.text(x, y, "OB#%d, dur.= %dd" % (OBnum,OBdur), ha='center',va='center',rotation='horizontal',fontsize=12)
 
+        #Set Plot Xlimit so the end of the timeline is at the end of the figure box
+        ax.set_xlim([None, outspec['missionLife']*365.25])
+
+
         # Plot Asthetics
         y_pos = np.arange(2)#Number of xticks to have
-        plt.rc('axes',linewidth=2)
-        plt.rc('lines',linewidth=2)
+
+        rc('axes',linewidth=2)
+        rc('lines',linewidth=2)
         rcParams['axes.linewidth']=2
         rc('font',weight='bold') 
         ax.set_yticks(y_pos)
@@ -185,4 +190,9 @@ if __name__ == "__main__":
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.png')
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.svg')
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.eps')
+
+
+
+
+        
 

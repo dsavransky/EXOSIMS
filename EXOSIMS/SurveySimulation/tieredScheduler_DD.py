@@ -39,6 +39,7 @@ class tieredScheduler_DD(tieredScheduler):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        Comp = self.Completeness
 
         self.phase1_end = TK.missionStart + 365*u.d
         
@@ -141,6 +142,10 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['det_params'] = det_systemParams
                     DRM['det_mode'] = dict(dmode)
                     DRM['FA_det_status'] = int(FA)
+
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], detMode)[0]
+                    DRM['det_comp'] = det_comp
+
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
@@ -198,6 +203,9 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
                     DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
                     DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
+
+                    char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], charMode)[0]
+                    DRM['char_comp'] = char_comp
 
                     # add star back into the revisit list
                     if np.any(characterized):

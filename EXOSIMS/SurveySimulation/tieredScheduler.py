@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25, revisit_weight=1.0, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -38,7 +38,10 @@ class tieredScheduler(SurveySimulation):
 
         #Add to outspec
         self._outspec['coeffs'] = coeffs
-        self._outspec['occHIPs'] = occHIPs
+        self._outspec['occHIPs'] = missionPortion
+        self._outspec['missionPortion'] = occHIPs
+        self._outspec['revisit_wait'] = revisit_wait
+        self._outspec['revisit_weight'] = revisit_weight
         
         #normalize coefficients
         coeffs = np.array(coeffs)
@@ -84,6 +87,7 @@ class tieredScheduler(SurveySimulation):
         self.coeff_time = []
 
         self.revisit_wait = revisit_wait * u.d
+        self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
 
@@ -101,6 +105,7 @@ class tieredScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        Comp = self.Completeness
 
         self.phase1_end = TK.missionStart + 365*u.d
         
@@ -198,6 +203,11 @@ class tieredScheduler(SurveySimulation):
                     DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                     DRM['det_params'] = det_systemParams
                     DRM['FA_det_status'] = int(FA)
+
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], detMode)[0]
+                    DRM['det_comp'] = det_comp
+
+                    del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
@@ -254,6 +264,9 @@ class tieredScheduler(SurveySimulation):
                     DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
                     DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
                     DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
+
+                    char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], charMode)[0]
+                    DRM['char_comp'] = char_comp
 
                     # add star back into the revisit list
                     if np.any(characterized):
@@ -423,9 +436,7 @@ class tieredScheduler(SurveySimulation):
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:
-                print(occ_sInds)
                 occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
-                print(occ_intTimes[occ_sInds])
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times
                 occ_endTimes = occ_startTimes + totTimes
@@ -433,7 +444,6 @@ class tieredScheduler(SurveySimulation):
                 # indices of observable stars
                 occ_sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                             (occ_endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
-            print(occ_sInds)
 
             if len(sInds) > 0:  
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], detmode)
@@ -668,7 +678,7 @@ class tieredScheduler(SurveySimulation):
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        weights = (comps + f2_uv/float(self.nVisitsMax))/t_dets
+        weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 

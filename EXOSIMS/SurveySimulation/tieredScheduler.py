@@ -249,6 +249,8 @@ class tieredScheduler(SurveySimulation):
                     # update the occulter wet mass
                     if OS.haveOcculter == True and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
+                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], charMode)[0]
+                        DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
                     DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
@@ -264,9 +266,6 @@ class tieredScheduler(SurveySimulation):
                     DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
                     DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
                     DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
-
-                    char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], charMode)[0]
-                    DRM['char_comp'] = char_comp
 
                     # add star back into the revisit list
                     if np.any(characterized):

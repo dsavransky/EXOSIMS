@@ -143,7 +143,7 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['det_mode'] = dict(dmode)
                     DRM['FA_det_status'] = int(FA)
 
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], detMode)[0]
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], dmode)[0]
                     DRM['det_comp'] = det_comp
 
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']

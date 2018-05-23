@@ -247,20 +247,51 @@ import math
 # res14 = gen_summary(pathRuns + t[13])
 # res15 = gen_summary(pathRuns + t[14])
 
-#5/14/2018 SLSQP Scheduler Static Yield vs Mission Length
+# #5/14/2018 SLSQP Scheduler Static Yield vs Mission Length
+# pathRuns = '/home/dean/Documents/SIOSlab/'
+# t = ['Dean6May18RS09CXXfZ01OB02PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB03PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB04PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB05PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB06PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB07PP01SU01']
+# res1 = gen_summary(pathRuns + t[0])
+# res2 = gen_summary(pathRuns + t[1])
+# res3 = gen_summary(pathRuns + t[2])
+# res4 = gen_summary(pathRuns + t[3])
+# res5 = gen_summary(pathRuns + t[4])
+# res6 = gen_summary(pathRuns + t[5])
+
+#5/21/2018 SLSQP Scheduler on Dmitry's 3mo missions with 7d and 3.5d OBduration and 1,2,3yr missions On KeplerLike2
+# pathRuns = '/home/dean/Documents/SIOSlab/'
+# t = ['Dean19May18RS09CXXfZ01OB54PP01SU01',\
+# 'Dean19May18RS09CXXfZ01OB55PP01SU01',\
+# 'Dean19May18RS09CXXfZ01OB56PP01SU01',\
+# 'Dean19May18RS09CXXfZ01OB57PP01SU01',\
+# 'Dean19May18RS09CXXfZ01OB58PP01SU01',\
+# 'Dean19May18RS09CXXfZ01OB59PP01SU01']
+# res1 = gen_summary(pathRuns + t[0])
+# res2 = gen_summary(pathRuns + t[1])
+# res3 = gen_summary(pathRuns + t[2])
+# res4 = gen_summary(pathRuns + t[3])
+# res5 = gen_summary(pathRuns + t[4])
+# res6 = gen_summary(pathRuns + t[5])
+
+#5/23/2018 SLSQP Scheduler on Dmitry's 3mo missions with 7d and 3.5d OBduration and 1,2,3yr missions On SAG13
 pathRuns = '/home/dean/Documents/SIOSlab/'
-t = ['Dean6May18RS09CXXfZ01OB02PP01SU01',\
-'Dean6May18RS09CXXfZ01OB03PP01SU01',\
-'Dean6May18RS09CXXfZ01OB04PP01SU01',\
-'Dean6May18RS09CXXfZ01OB05PP01SU01',\
-'Dean6May18RS09CXXfZ01OB06PP01SU01',\
-'Dean6May18RS09CXXfZ01OB07PP01SU01']
+t = ['Dean21May18RS09CXXfZ01OB54PP03SU03',\
+'Dean21May18RS09CXXfZ01OB55PP03SU03',\
+'Dean21May18RS09CXXfZ01OB56PP03SU03',\
+'Dean21May18RS09CXXfZ01OB57PP03SU03',\
+'Dean21May18RS09CXXfZ01OB58PP03SU03',\
+'Dean21May18RS09CXXfZ01OB59PP03SU03']
 res1 = gen_summary(pathRuns + t[0])
 res2 = gen_summary(pathRuns + t[1])
 res3 = gen_summary(pathRuns + t[2])
 res4 = gen_summary(pathRuns + t[3])
 res5 = gen_summary(pathRuns + t[4])
 res6 = gen_summary(pathRuns + t[5])
+
 
 def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     rcounts = []
@@ -312,7 +343,29 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     if legtext[0] is not None:
         plt.legend()
     plt.xlabel('Unique Detections',weight='bold')
-    plt.ylabel('Normalized Yield Frequency (NYF)',weight='bold')
+    plt.ylabel('Normalized Yield Frequency',weight='bold')
+
+#5/23/2018 SLSQP Scheduler Yield vs OBduration for Dmitry's 3mo runs with OBduration 3.5d, 7d for 1,2,3yr mission SAG13
+dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+    res5['detected'],res6['detected']],\
+    legtext=['1yr, OB=7d','1yr, OB=3.5d','2yr, OB=7d','2yr, OB=3.5d','3yr, OB=7d','3yr, OB=3.5d'])
+# 1yr missionLength, 0.25 missionPortion, OBduration 7d=54
+# 1yr missionLength, 0.25 missionPortion, OBduration 3.5d=55
+# 2yr missionLength, 0.125 missionPortion, OBduration 7d=56
+# 2yr missionLength, 0.125 missionPortion, OBduration 3.5d=57
+# 3yr missionLength, 0.08333 missionPortion, OBduration 7d=58
+# 3yr missionLength, 0.08333 missionPortion, OBduration 3.5d=59
+
+# #5/21/2018 SLSQP Scheduler Yield vs OBduration for Dmitry's 3mo runs with OBduration 3.5d, 7d for 1,2,3yr mission KeplerLike2
+# dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+#     res5['detected'],res6['detected']],\
+#     legtext=['1yr, OB=7d','1yr, OB=3.5d','2yr, OB=7d','2yr, OB=3.5d','3yr, OB=7d','3yr, OB=3.5d'])
+# 1yr missionLength, 0.25 missionPortion, OBduration 7d=54
+# 1yr missionLength, 0.25 missionPortion, OBduration 3.5d=55
+# 2yr missionLength, 0.125 missionPortion, OBduration 7d=56
+# 2yr missionLength, 0.125 missionPortion, OBduration 3.5d=57
+# 3yr missionLength, 0.08333 missionPortion, OBduration 7d=58
+# 3yr missionLength, 0.08333 missionPortion, OBduration 3.5d=59
 
 # #5/14/2018 SLSQP Scheduler StaticA with varying mission length
 # dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
@@ -322,10 +375,10 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
 #     legtext=['1mo','2mo','3mo','4mo','5mo','6mo','7mo','8mo',\
 #         '9mo','10mo','11mo','12mo','13mo','14mo','15mo'])
 
-#5/14/2018 SLSQP Scheduler Yield vs OBduration
-dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
-    res5['detected'],res6['detected']],\
-    legtext=['30d','15d','10d','5d','20d','25d'])
+# #5/14/2018 SLSQP Scheduler Yield vs OBduration
+# dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+#     res5['detected'],res6['detected']],\
+#     legtext=['30d','15d','10d','5d','20d','25d'])
 
 
 #5/6/2018 SLSQP Scheduler dynamic Selection Genetics

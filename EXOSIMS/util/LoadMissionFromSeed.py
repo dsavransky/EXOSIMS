@@ -253,3 +253,25 @@ tmp = [all(DRM3[x]['plan_inds'] == DRM5[x]['plan_inds']) for x in range(len(DRM3
 # #plot(EOT3)
 # show(block=False)
 
+
+
+
+
+
+#TODO IMPLEMENT DMITRY'S MORE COMPACT DRM COMPARATOR
+import numpy as np
+import astropy
+
+def deepcompare(x,y):
+    assert type(x) == type(y)
+    if isinstance(x,(list,dict,np.ndarray,astropy.units.Quantity)) and not(isinstance(x,astropy.units.Quantity) and (x.size == 1)):
+        assert len(x) == len(y)
+        if isinstance(x,dict):
+            assert np.all(np.sort(x.keys()) == np.sort(y.keys()))
+            for k in x.keys():
+                deepcompare(x[k],y[k])
+        else:
+            for i,j in zip(x,y):
+                deepcompare(i,j)
+    else:
+        assert x == y

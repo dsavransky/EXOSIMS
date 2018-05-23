@@ -19,6 +19,8 @@ To plot a random Timeline from each folder, from ipython
 %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/' None
 """
 #%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/run136726516274.pkl' '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/outspec.json'
+#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/run5991056964408.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/outspec.json'
+#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/run5152585081560.pkl' '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/outspec.json'
 
 try:
     import cPickle as pickle
@@ -144,8 +146,8 @@ if __name__ == "__main__":
             #print det_time, l
             patch_handles.append(ax.barh(0, det_time, align='center', left=arrival_times[ind],
                 color=colors[int(obs) % len(colors)]))
-            if not char_time == 0:
-                ax.barh(0, char_time, align='center', left=arrival_times[ind]+det_time,color=(255/255.,69/255.,0/255.))
+            if not char_time == sumOHTIME:
+                ax.barh(0, char_time, align='center', left=arrival_times[ind]+det_time,color=(0./255.,128/255.,0/255.))
             ind += 1
             obs += 1
             patch = patch_handles[-1][0] 
@@ -191,6 +193,7 @@ if __name__ == "__main__":
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.svg')
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.eps')
 
+        plt.close()
 
 
 

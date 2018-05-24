@@ -357,6 +357,7 @@ class SurveySimulation(object):
         while not TK.mission_is_over(OS, Obs, det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
+            old_sInd = sInd#used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
             if sInd is not None:
@@ -437,6 +438,7 @@ class SurveySimulation(object):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
             else:#sInd == None
+                sInd = old_sInd#Retain the last observed star
                 if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
                     if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over

@@ -431,6 +431,10 @@ class SurveySimulation(object):
                 
                 # append result values to self.DRM
                 self.DRM.append(DRM)
+
+                # handle case of inf OBs and missionPortion < 1
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
+                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
             else:#sInd == None
                 if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
@@ -471,6 +475,16 @@ class SurveySimulation(object):
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
             print(log_end)
+
+    def arbitrary_time_advancement(self,dt):
+        """ Handles fully dynamically scheduled case where OBduration is infinite and
+        missionPortion is less than 1.
+
+        Input dt is the total amount of time, including all overheads and extras
+        used for the previous observation."""
+
+        self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+                addExoplanetObsTime=False )
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.

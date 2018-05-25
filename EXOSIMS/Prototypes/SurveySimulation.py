@@ -535,6 +535,10 @@ class SurveySimulation(object):
         fZs = np.zeros(TL.nStars)/u.arcsec**2
         intTimes = np.zeros(TL.nStars)*u.d
         sInds = np.arange(TL.nStars)
+
+        # 1.1 filter out totTimes > integration cutoff
+        if len(sInds.tolist()) > 0:
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
         
         # 2. find spacecraft orbital START positions (if occulter, positions 
         # differ for each star) and filter out unavailable targets
@@ -573,10 +577,6 @@ class SurveySimulation(object):
         if maxIntTime.value <= 0:
             sInds = np.asarray([],dtype=int)
 
-
-        # 4.2 filter out totTimes > integration cutoff
-        if len(sInds.tolist()) > 0:
-            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         

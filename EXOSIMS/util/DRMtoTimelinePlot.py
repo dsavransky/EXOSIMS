@@ -92,7 +92,7 @@ if __name__ == "__main__":
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
         ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
         y_vals = np.zeros(len(det_times)).tolist()
-        char_times = [DRM['DRM'][i]['char_time'].value*(1+outspec['charMargin'])+sumOHTIME for i in np.arange(len(DRM['DRM']))]
+        char_times = [DRM['DRM'][i]['char_time'].value*(1+outspec['charMargin'])+sumOHTIME*(DRM['DRM'][i]['char_time'].value > 0.) for i in np.arange(len(DRM['DRM']))]
         OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
         #sumOHTIME = [1 for i in np.arange(len(DRM['DRM']))]
         print(sum(det_times))
@@ -146,7 +146,7 @@ if __name__ == "__main__":
             #print det_time, l
             patch_handles.append(ax.barh(0, det_time, align='center', left=arrival_times[ind],
                 color=colors[int(obs) % len(colors)]))
-            if not char_time == sumOHTIME:
+            if not char_time == 0.:
                 ax.barh(0, char_time, align='center', left=arrival_times[ind]+det_time,color=(0./255.,128/255.,0/255.))
             ind += 1
             obs += 1

@@ -374,7 +374,7 @@ class TimeKeeping(object):
 
         assert False, "No Use Case Found in AdvanceToAbsTime" #Generic error if there exists some use case that I have not encountered yet.
 
-    def get_ObsDetectionMaxIntTime(self,Obs,mode):
+    def get_ObsDetectionMaxIntTime(self,Obs,mode,currentTimeNorm=None,OBnumber=None):
         """Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
         Args:
             Obs (Observatory Object):
@@ -389,13 +389,18 @@ class TimeKeeping(object):
             maxIntTimeMissionLife (astropy Quantity):
                 The maximum integration time bounded by MissionLife
         """
-        maxTimeOBendTime = self.OBendTimes[self.OBnumber] - self.currentTimeNorm
+        if OBnumber == None:
+            OBnumber = self.OBnumber
+        if currentTimeNorm == None:
+            currentTimeNorm = self.currentTimeNorm.copy()
+
+        maxTimeOBendTime = self.OBendTimes[OBnumber] - currentTimeNorm
         maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
         maxTimeExoplanetObsTime = self.missionLife.to('day')*self.missionPortion - self.exoplanetObsTime
         maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
-        maxTimeMissionLife = self.missionLife.to('day') - self.currentTimeNorm
+        maxTimeMissionLife = self.missionLife.to('day') - currentTimeNorm
         maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 
         #Ensure all are positive or zero

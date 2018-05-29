@@ -33,6 +33,8 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
             SS.run_sim()
             DRM = SS.DRM[:]
             systems = SS.SimulatedUniverse.dump_systems()
+            systems['MsTrue'] = SS.TargetList.MsTrue
+            systems['MsEst'] = SS.TargetList.MsEst
             seed = SS.seed
         except Exception as e:
             # if anything goes wrong, log the error and reset simulation

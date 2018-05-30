@@ -11,6 +11,8 @@ Where '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/' contains
 %run PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB54PP01SU01/'
 python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB54PP03SU03/' #Baseline SAG13 Case
 python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB54PP01SU01/' #Baseline KeplerLike2 Case
+python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean25May18RS09CXXfZ01OB56PP06SU01/' #SAG13 CompSpecs, PP-KeplerLike2 Case
+python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean25May18RS09CXXfZ01OB56PP07SU03/' #KeplerLike2 CompSpecs, PP-SAG13
 
 Written by Dean Keithly on 5/6/2018
 """

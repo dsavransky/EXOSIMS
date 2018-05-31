@@ -307,14 +307,18 @@ class tieredScheduler_DD(tieredScheduler):
             TK.allocate_time(Obs.settlingTime + charmode['syst']['ohTime'])
         else:
             TK.allocate_time(0.0 + detmode[0]['syst']['ohTime'])
-        
+
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
         self.ao = Obs.thrust/Obs.scMass
         slewTime_fac = (2.*Obs.occulterSep/np.abs(self.ao)/(Obs.defburnPortion/2. \
                 - Obs.defburnPortion**2/4.)).decompose().to('d2')
-        
+
+        # Star indices that correspond with the given HIPs numbers for the occulter
+        # XXX ToDo: print out HIPs that don't show up in TL
+        HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+
         cnt = 0
         # Now, start to look for available targets
         while not TK.mission_is_over():
@@ -350,7 +354,6 @@ class tieredScheduler_DD(tieredScheduler):
             occ_startTimesNorm = TK.currentTimeNorm + slewTime
             kogoodStart = Obs.keepout(TL, sInds, occ_startTimes, charmode)
             occ_sInds = sInds[np.where(kogoodStart)[0]]
-            HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
             occ_sInds = occ_sInds[np.where(np.in1d(occ_sInds, HIP_sInds))[0]]
 
             startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
@@ -363,7 +366,7 @@ class tieredScheduler_DD(tieredScheduler):
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
                     self.is_phase1 = False
-                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] > self.nVisitsMax) & 
+                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
 
             fEZ = ZL.fEZ0
@@ -372,8 +375,7 @@ class tieredScheduler_DD(tieredScheduler):
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:  
-                occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, 
-                                                                    WA, charmode, ischar=True)
+                occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
                 #occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times

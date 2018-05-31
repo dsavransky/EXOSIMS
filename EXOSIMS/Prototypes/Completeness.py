@@ -55,6 +55,7 @@ class Completeness(object):
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
+        self._outspec['completeness_specs'] = specs['completeness_specs']
 
     def __str__(self):
         """String representation of Completeness object

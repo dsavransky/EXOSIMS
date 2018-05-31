@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25, revisit_weight=1.0, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, revisit_weight=1.0, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -36,10 +36,14 @@ class tieredScheduler(SurveySimulation):
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
 
+        TK = self.TimeKeeping
+        TL = self.TargetList
+
         #Add to outspec
         self._outspec['coeffs'] = coeffs
-        self._outspec['occHIPs'] = missionPortion
-        self._outspec['missionPortion'] = occHIPs
+        self._outspec['occHIPs'] = occHIPs
+        self._outspec['topstars'] = topstars
+        self._outspec['missionPortion'] = TK.missionPortion
         self._outspec['revisit_wait'] = revisit_wait
         self._outspec['revisit_weight'] = revisit_weight
         
@@ -62,7 +66,6 @@ class tieredScheduler(SurveySimulation):
             assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
-        TL = self.TargetList
         self.occ_arrives = None # The timestamp at which the occulter finishes slewing
         self.occ_starRevisit = np.array([])
         self.occ_starVisits = np.zeros(TL.nStars,dtype=int) # The number of times each star was visited by the occulter
@@ -427,7 +430,7 @@ class tieredScheduler(SurveySimulation):
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
                     self.is_phase1 = False
-                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] > self.nVisitsMax) & 
+                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
 
             fEZ = ZL.fEZ0

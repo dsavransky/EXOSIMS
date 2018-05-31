@@ -72,7 +72,7 @@ class tieredScheduler(SurveySimulation):
         self.phase1_end = None # The designated end time for the first observing phase
         self.is_phase1 = True
         self.FA_status = np.zeros(TL.nStars,dtype=bool)
-        self.GA_percentage = 1 - missionPortion
+        self.GA_percentage = 1 - TK.missionPortion
         self.GAtime = 0.*u.d
         self.goal_GAtime = None
         self.curves = None

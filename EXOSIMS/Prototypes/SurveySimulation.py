@@ -379,12 +379,12 @@ class SurveySimulation(object):
                 
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
-                        self.observation_detection(sInd, det_intTime, det_mode)
+                        self.observation_detection(sInd, det_intTime.copy(), det_mode)
                 # update the occulter wet mass
                 if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime.copy(), 'det')
                 # populate the DRM with detection results
-                DRM['det_time'] = det_intTime.to('day')
+                DRM['det_time'] = det_intTime.copy().to('day')
                 DRM['det_status'] = detected
                 DRM['det_SNR'] = det_SNR
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
@@ -732,10 +732,10 @@ class SurveySimulation(object):
         currentTimeAbs = TK.currentTimeAbs.copy()
 
         #Allocate Time
-        extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
-        success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
-        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
-        dt = intTime/float(self.ntFlux)#calculates partial time to be added for every ntFlux
+        extraTime = intTime.copy()*(mode['timeMultiplier'] - 1.)#calculates extraTime
+        success = TK.allocate_time(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
+        dt = intTime.copy()/float(self.ntFlux)#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -782,12 +782,12 @@ class SurveySimulation(object):
         
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
-            totTime = intTime*(mode['timeMultiplier'])
+            totTime = intTime.copy()*(mode['timeMultiplier'])
             fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
-        FA, MD = PPro.det_occur(SNR, mode, TL, sInd, intTime)
+        FA, MD = PPro.det_occur(SNR, mode, TL, sInd, intTime.copy())
         
         # populate detection status array 
         # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA

@@ -188,6 +188,7 @@ class tieredScheduler(SurveySimulation):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 
                 if sInd != occ_sInd:
+                    self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
                     # First store fEZ, dMag, WA
                     if np.any(pInds):
@@ -213,6 +214,7 @@ class tieredScheduler(SurveySimulation):
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
+                    self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
 
@@ -507,7 +509,7 @@ class tieredScheduler(SurveySimulation):
                 # store relevant values
                 t_det = intTimes[sInd]
                 # update visited list for current star
-                self.starVisits[sInd] += 1
+                # self.starVisits[sInd] += 1
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
@@ -522,7 +524,7 @@ class tieredScheduler(SurveySimulation):
                     if not np.any(sInds):
                         sInd = occ_sInd
                     self.ready_to_update = False
-                    self.occ_starVisits[occ_sInd] += 1
+                    # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
                     TK.allocate_time(1*u.d)
                     cnt += 1

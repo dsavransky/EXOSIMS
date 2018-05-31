@@ -119,6 +119,7 @@ class tieredScheduler_DD(tieredScheduler):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 
                 if sInd != occ_sInd:
+                    self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
                     # First store fEZ, dMag, WA
                     if np.any(pInds):
@@ -149,6 +150,7 @@ class tieredScheduler_DD(tieredScheduler):
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
+                    self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
 
@@ -408,7 +410,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)
+            sInds = self.revisitFilter(sInds, TK.currentTimeNorm)
 
             # revisit list, with time after start
             if np.any(occ_sInds):
@@ -465,7 +467,7 @@ class tieredScheduler_DD(tieredScheduler):
                 t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
                 # update visited list for current star
-                self.starVisits[sInd] += 1
+                #self.starVisits[sInd] += 1
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
@@ -480,7 +482,7 @@ class tieredScheduler_DD(tieredScheduler):
                     if not np.any(sInds):
                         sInd = occ_sInd
                     self.ready_to_update = False
-                    self.occ_starVisits[occ_sInd] += 1
+                    # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
                     TK.allocate_time(1*u.d)
                     cnt += 1

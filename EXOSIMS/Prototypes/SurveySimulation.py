@@ -732,7 +732,7 @@ class SurveySimulation(object):
         currentTimeAbs = TK.currentTimeAbs.copy()
 
         #Allocate Time
-        extraTime = intTime.copy()*(mode['timeMultiplier'] - 1.)#calculates extraTime
+        extraTime = intTime.copy()*(float(mode['timeMultiplier']) - 1.)#calculates extraTime
         success = TK.allocate_time(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
         assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
         dt = intTime.copy()/float(self.ntFlux)#calculates partial time to be added for every ntFlux
@@ -782,7 +782,7 @@ class SurveySimulation(object):
         
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
-            totTime = intTime.copy()*(mode['timeMultiplier'])
+            totTime = intTime.copy()*float(mode['timeMultiplier'])
             fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
         
         # find out if a false positive (false alarm) or any false negative 

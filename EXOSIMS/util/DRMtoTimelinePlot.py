@@ -193,8 +193,35 @@ if __name__ == "__main__":
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.svg')
         savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'Timeline' + '.eps')
 
-        plt.close()
+        #plt.close()
 
+
+
+
+        #Simple Plot of Temporal Coverage of Sky
+        tmpfig2 = plt.figure(figsize=(8,8),num=1)
+        rc('axes',linewidth=2)
+        rc('lines',linewidth=2)
+        rcParams['axes.linewidth']=2
+        rc('font',weight='bold')
+        sb1 = plt.subplot(111,projection="hammer")
+        plt.grid(True)
+        #sb1.scatter(np.pi/2,np.pi/4,color='r')#plot([0,np.pi/2,0],color='r')
+        #sb1.plot([np.pi/2,0,0],color='b')
+        OBdur = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
+        angular_widths = np.asarray(OBdur)/365.25*360*np.pi/180.
+        #FOR OBSERVATIONS#start_angles = np.asarray(outspec['arrival_times'])%365.25 /365.25*360*np.pi/180.
+        start_angles = np.asarray(outspec['OBstartTimes'])%365.25 /365.25*360*np.pi/180. - np.pi
+        for i in range(len(start_angles)):
+            rect = Rectangle((start_angles[i],-np.pi/2),angular_widths[i],np.pi,angle=0.0, alpha=0.2)
+            sb1.add_patch(rect)
+        # rect = Rectangle((0,-np.pi/2),np.pi/4.,np.pi,angle=0.0, alpha=0.2)
+        # sb1.add_patch(rect)
+        title('Mission Length: ' + str(outspec['missionLife'])  +'yr OBduration: ' + str(outspec['OBduration']) + 'd MissionPortion: ' + str(outspec['missionPortion']),weight='bold',fontsize=12)
+        plt.show(block=False)
+        savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'SkyCoverage' + '.png')
+        savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'SkyCoverage' + '.svg')
+        savefig('/'.join(pklPaths[cnt].split('/')[:-1]) + '/' + dirs[cnt] + 'SkyCoverage' + '.eps')
 
 
         

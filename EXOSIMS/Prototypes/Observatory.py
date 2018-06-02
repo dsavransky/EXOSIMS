@@ -103,7 +103,7 @@ class Observatory(object):
         self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
         self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
-        self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
+        self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
         self.scMass = scMass*u.kg                   # occulter initial (wet) mass (kg)

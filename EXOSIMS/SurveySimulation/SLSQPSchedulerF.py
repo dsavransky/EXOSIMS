@@ -121,7 +121,7 @@ class SLSQPSchedulerF(SurveySimulation):
             bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
             initguess = x0*self.t0.to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
-                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':300,'ftol':1e-3})
 
             assert ires['success'], "Initial time optimization failed."
 
@@ -256,7 +256,7 @@ class SLSQPSchedulerF(SurveySimulation):
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':100,'ftol':1e-4})
+                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':300,'ftol':1e-3})
             
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d

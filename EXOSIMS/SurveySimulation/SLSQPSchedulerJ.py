@@ -312,42 +312,136 @@ class SLSQPSchedulerJ(SurveySimulation):
         #Select next occuring absTimefZmin
         TK = self.TimeKeeping
         #self.absTimefZmin #these are the absolute times throughought the first year that fZmin occurs at
-        timeWherefZminOccursRelativeToNow = (self.absTimefZmin.copy() - TK.currentTimeAbs.copy()).value
+        timeWherefZminOccursRelativeToNow = (self.absTimefZmin.copy() - TK.currentTimeAbs.copy()).value #of all targetss
         zero = 0#TK.missionStart-TK.missionStart#hack to create a zero astropy time object
-        indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0]
+        indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0] # find all inds that are less than 0
         cnt = 0.
         while len(indsLessThan0) > 0:#  self.TargetList.nStars:
             cnt += 1.
-            for kk in indsLessThan0:
-                timeWherefZminOccursRelativeToNow[kk] = (self.absTimefZmin[kk] - TK.currentTimeAbs.copy() + cnt*365.25*u.d).value
-            #timeWherefZminOccursRelativeToNow[np.asarray(indsLessThan0,dtype=int).copy()] = self.absTimefZmin[np.asarray(indsLessThan0,dtype=int).copy()].copy() - TK.currentTimeAbs.copy() + cnt*365.25*u.d
+            # for kk in indsLessThan0:
+            #     timeWherefZminOccursRelativeToNow[kk] = (self.absTimefZmin[kk] - TK.currentTimeAbs.copy() + cnt*365.25*u.d).value
+            timeWherefZminOccursRelativeToNow[indsLessThan0] = (self.absTimefZmin[indsLessThan0] - TK.currentTimeAbs.copy() + cnt*365.25*u.d).value
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0]
         timeToStartfZmins = timeWherefZminOccursRelativeToNow
 
-        #timeToStartfZmins = (self.absTimefZmin + (TK.currentTimeNorm - (TK.currentTimeNorm.value%365.25)*u.d)) - TK.currentTimeAbs
-        #Doesn't temporally wrap???
         absTimefZminAfterNow = [timeToStartfZmins[i] for i in range(len(timeToStartfZmins)) if timeToStartfZmins[i] > 0. and i in sInds]
-        # if len(absTimefZminAfterNow) == 0:
-        # else:
 
         nextAbsTime = min(np.asarray(absTimefZminAfterNow))
-        sInd = np.where((nextAbsTime == timeToStartfZmins))[0][0]
-        # print(nextAbsTime)
-        # print(sInd)
-
-
-
-        #indOfNextfZmin = np.where(timeToStartfZmins == nextfZmin)
-        #sInd = indOfNextfZmin#I think this is right
-        
-        #selectInd = np.argmin((self.TimeKeeping.currentTimeAbs - ).value)
-        #sInd = sInds[selectInd]
+        sInd = np.where((timeToStartfZmins == nextAbsTime))[0][0]
 
         #Advance To fZmin of Target
-        #absTime = self.absTimefZmin[sInd] + (TK.currentTimeNorm - (TK.currentTimeNorm.value%365.25)*u.d)
         success = self.TimeKeeping.advanceToAbsTime(Time(nextAbsTime+TK.currentTimeAbs.value, format='mjd', scale='tai'), False)
+        waitTime = None
+        # print(self.absTimefZmin[sInd])
+        # print(absTimefZminAfterNow)
+        # print(self.TimeKeeping.currentTimeAbs)
+
+        #Check if exoplanetObsTime would be exceeded
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        Comp = self.Completeness
+        TL = self.TargetList
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        # allocate settling time + overhead time
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime:
+            sInd = None
+            waitTime = 1*u.d
+
+
+
+        # tmp = np.zeros(self.TargetList.nStars,dtype=bool)
+        # tmp[sInds] = [True for ii in range(self.TargetList.nStars) if ii in sInds]
+
+        # #verify Target is still observable
+
+        # save_sInds = sInds
+        # OS = self.OpticalSystem
+        # ZL = self.ZodiacalLight
+        # Comp = self.Completeness
+        # TL = self.TargetList
+        # Obs = self.Observatory
+        # TK = self.TimeKeeping
+        # # allocate settling time + overhead time
+        # allModes = OS.observingModes
+        # mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        # tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        # tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+
+
+        # # look for available targets
+        # # 1. initialize arrays
+        # slewTimes = np.zeros(TL.nStars)*u.d
+        # fZs = np.zeros(TL.nStars)/u.arcsec**2
+        # intTimes2 = np.zeros(TL.nStars)*u.d
+        # sInds2 = np.arange(TL.nStars)
+
+        # # 1.1 filter out totTimes > integration cutoff
+        # if len(sInds.tolist()) > 0:
+        #     sInds2 = np.intersect1d(self.intTimeFilterInds, sInds2)
         
-        return sInd, None
+        # # 2. find spacecraft orbital START positions (if occulter, positions 
+        # # differ for each star) and filter out unavailable targets
+        # sd = None
+        # if OS.haveOcculter == True:
+        #     sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds2, tmpCurrentTimeAbs)  
+        #     dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds2, tmpCurrentTimeAbs)
+        #     sInds2 = sInds2[np.where(dV.value < Obs.dVmax.value)]
+        #     if len(sInds2.tolist()) == 0:
+        #         sInds2 = np.asarray([],dtype=int)
+
+
+        # # start times, including slew times
+        # startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        # startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
+
+        # # 2.5 Filter stars not observable at startTimes
+        # try:
+        #     koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+        #     sInds2 = sInds2[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds2])[0]]# filters inds by koMap #verified against v1.35
+        # except:#If there are no target stars to observe 
+        #     sInds2 = np.asarray([],dtype=int)
+        
+        # # 3. filter out all previously (more-)visited targets, unless in 
+        # # revisit list, with time within some dt of start (+- 1 week)
+        # if len(sInds2.tolist()) > 0:
+        #     sInds2 = self.revisitFilter(sInds2, tmpCurrentTimeNorm)
+
+        # # 4.1 calculate integration times for ALL preselected targets
+        # intTimes2[sInds2] = self.calc_targ_intTime(sInds2, startTimes[sInds2], mode)
+        # maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        # maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+
+        # sInds2 = sInds2[np.where(intTimes2[sInds2] <= maxIntTime)]  # Filters targets exceeding end of OB
+        # endTimes = startTimes + intTimes2
+        # if maxIntTime.value <= 0:
+        #     sInds2 = np.asarray([],dtype=int)
+
+
+
+        # # allocate settling time + overhead time
+        # Obs = self.Observatory
+        # OS = self.OpticalSystem
+        # zerosIntTimes = np.arange(self.TargetList.nStars,dtype=int)*u.d
+        # indsWhereNonZero = np.where(intTimes2 > 0.0000001*u.d)[0]
+        # sInds2 = np.intersect1d(indsWhereNonZero, sInds2)
+        # zerosIntTimes[sInds2] = intTimes2[sInds2]#[(intTimes2 > 0.000001*u.d)]
+        
+        # maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        # maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        # waitTime = None
+        # #correlateIntTimesIndsTosInds = np.arange(len(intTimes))
+        # correlateIntTimesIndsTosInds = np.where(intTimes > 0.000001*u.d)[0]
+        # if intTimes[correlateIntTimesIndsTosInds][np.where(sInds2 == sInd)[0][0]] > maxIntTime:
+        #     sInd = None
+        #     waitTime = 1*u.d
+
+        return sInd, waitTime
 
     def arbitrary_time_advancement(self,dt):
         """ Handles fully dynamically scheduled case where OBduration is infinite and

@@ -248,19 +248,27 @@ import math
 # res15 = gen_summary(pathRuns + t[14])
 
 #5/14/2018 SLSQP Scheduler Static Yield vs Mission Length
+# pathRuns = '/home/dean/Documents/SIOSlab/'
+# t = ['Dean6May18RS09CXXfZ01OB02PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB03PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB04PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB05PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB06PP01SU01',\
+# 'Dean6May18RS09CXXfZ01OB07PP01SU01']
+# res1 = gen_summary(pathRuns + t[0])
+# res2 = gen_summary(pathRuns + t[1])
+# res3 = gen_summary(pathRuns + t[2])
+# res4 = gen_summary(pathRuns + t[3])
+# res5 = gen_summary(pathRuns + t[4])
+# res6 = gen_summary(pathRuns + t[5])
+
+# 6/3/2018 Optimal Scheduling
 pathRuns = '/home/dean/Documents/SIOSlab/'
-t = ['Dean6May18RS09CXXfZ01OB02PP01SU01',\
-'Dean6May18RS09CXXfZ01OB03PP01SU01',\
-'Dean6May18RS09CXXfZ01OB04PP01SU01',\
-'Dean6May18RS09CXXfZ01OB05PP01SU01',\
-'Dean6May18RS09CXXfZ01OB06PP01SU01',\
-'Dean6May18RS09CXXfZ01OB07PP01SU01']
+t = ['Dean3June18RS26CXXfZ01OB56PP01SU01',\
+'Dean3June18RS26CXXfZ01OB66PP01SU01']
 res1 = gen_summary(pathRuns + t[0])
 res2 = gen_summary(pathRuns + t[1])
-res3 = gen_summary(pathRuns + t[2])
-res4 = gen_summary(pathRuns + t[3])
-res5 = gen_summary(pathRuns + t[4])
-res6 = gen_summary(pathRuns + t[5])
+
 
 def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     rcounts = []
@@ -314,6 +322,11 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
     plt.xlabel('Unique Detections',weight='bold')
     plt.ylabel('Normalized Yield Frequency (NYF)',weight='bold')
 
+
+#5/14/2018 SLSQP Scheduler Yield vs OBduration
+dist_plot([res1['detected'],res2['detected']],
+    legtext=['56','66'])
+
 # #5/14/2018 SLSQP Scheduler StaticA with varying mission length
 # dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
 #     res5['detected'],res6['detected'],res7['detected'],res8['detected'],\
@@ -322,10 +335,10 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
 #     legtext=['1mo','2mo','3mo','4mo','5mo','6mo','7mo','8mo',\
 #         '9mo','10mo','11mo','12mo','13mo','14mo','15mo'])
 
-#5/14/2018 SLSQP Scheduler Yield vs OBduration
-dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
-    res5['detected'],res6['detected']],\
-    legtext=['30d','15d','10d','5d','20d','25d'])
+# #5/14/2018 SLSQP Scheduler Yield vs OBduration
+# dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\
+#     res5['detected'],res6['detected']],\
+#     legtext=['30d','15d','10d','5d','20d','25d'])
 
 
 #5/6/2018 SLSQP Scheduler dynamic Selection Genetics

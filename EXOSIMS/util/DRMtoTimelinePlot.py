@@ -21,6 +21,9 @@ To plot a random Timeline from each folder, from ipython
 #%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/run136726516274.pkl' '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/outspec.json'
 #%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/run5991056964408.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/outspec.json'
 #%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/run5152585081560.pkl' '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/outspec.json'
+#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/run9239688957.pkl' '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/outspec.json'
+#%run DRMtoTimelinePlot.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/run1324783950.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/outspec.json'
+
 
 try:
     import cPickle as pickle

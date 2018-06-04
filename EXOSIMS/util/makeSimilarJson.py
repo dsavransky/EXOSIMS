@@ -17,6 +17,9 @@ Specific Example:
  --repVals [0.025,0.05] \
  --runNums [100,101]
 
+Another example
+ %run makeSimilarJson.py --sourcefile '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean2June18RS07CXXfZ01OB02PP01SU01.json' --outpath '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/' --runParam 'OB' --repKey ['OBduration'] --repVals [15,10,5,20,25] --runNums [03,04,05,06,07]
+
 Written by Dean Keithly on 5/15/2018
 """
 

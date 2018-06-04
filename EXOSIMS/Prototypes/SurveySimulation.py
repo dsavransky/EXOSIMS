@@ -1222,12 +1222,14 @@ class SurveySimulation(object):
         else:#if seed is provided, replace seed with provided seed
             specs['seed'] = seed
   
-        self.__init__(**specs)
+        #self.__init__(**specs)
 
         # reset mission time and observatory parameters
         TK.__init__(**TK._outspec)
         self.Observatory.__init__(**self.Observatory._outspec)
         
+        self.__init__(**specs)#TODO VERIFY calling TK.__init__ and Observatory.__init__ before SS.__init__ is not an issue
+
         # generate new planets if requested (default)
         if genNewPlanets:
             TL.stellar_mass()

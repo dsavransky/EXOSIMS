@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -36,9 +36,15 @@ class tieredScheduler(SurveySimulation):
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
 
+        TK = self.TimeKeeping
+        TL = self.TargetList
+
         #Add to outspec
         self._outspec['coeffs'] = coeffs
         self._outspec['occHIPs'] = occHIPs
+        self._outspec['topstars'] = topstars
+        self._outspec['missionPortion'] = TK.missionPortion
+        self._outspec['revisit_wait'] = revisit_wait
         
         #normalize coefficients
         coeffs = np.array(coeffs)
@@ -59,7 +65,6 @@ class tieredScheduler(SurveySimulation):
             assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
-        TL = self.TargetList
         self.occ_arrives = None # The timestamp at which the occulter finishes slewing
         self.occ_starVisits = np.zeros(TL.nStars,dtype=int) # The number of times each star was visited by the occulter
         self.phase1_end = None # The designated end time for the first observing phase
@@ -83,7 +88,7 @@ class tieredScheduler(SurveySimulation):
         self.coeff_time = []
 
         self.revisit_wait = revisit_wait * u.d
-        self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
+        self.no_dets = np.ones(TL.nStars, dtype=bool)
 
 
     def run_sim(self):

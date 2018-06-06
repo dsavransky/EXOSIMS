@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, revisit_weight=1.0, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, revisit_weight=1.0, GAPortion=.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -43,7 +43,7 @@ class tieredScheduler(SurveySimulation):
         self._outspec['coeffs'] = coeffs
         self._outspec['occHIPs'] = occHIPs
         self._outspec['topstars'] = topstars
-        self._outspec['missionPortion'] = TK.missionPortion
+        self._outspec['GAPortion'] = GAPortion
         self._outspec['revisit_wait'] = revisit_wait
         self._outspec['revisit_weight'] = revisit_weight
         
@@ -72,7 +72,7 @@ class tieredScheduler(SurveySimulation):
         self.phase1_end = None # The designated end time for the first observing phase
         self.is_phase1 = True
         self.FA_status = np.zeros(TL.nStars,dtype=bool)
-        self.GA_percentage = 1 - TK.missionPortion
+        self.GA_percentage = GAPortion
         self.GAtime = 0.*u.d
         self.goal_GAtime = None
         self.curves = None
@@ -587,7 +587,7 @@ class tieredScheduler(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm)
+        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)
@@ -601,7 +601,7 @@ class tieredScheduler(SurveySimulation):
         A = np.zeros((nStars,nStars))
 
         # consider slew distance when there's an occulter
-        r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs)
+        r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs.copy())
         u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
         angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
         A[np.ones((nStars),dtype=bool)] = angdists
@@ -617,7 +617,7 @@ class tieredScheduler(SurveySimulation):
             u1 = np.in1d(occ_sInds, top_sInds)
             u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
-            f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionFinishNorm)**2
             A = A - self.coeffs[2]*f_uv
 
             self.coeff_data_a3.append([occ_sInds,f_uv])
@@ -631,7 +631,7 @@ class tieredScheduler(SurveySimulation):
             A = A - self.coeffs[3]*no_visits
 
             self.coeff_data_a4.append([occ_sInds, no_visits])
-            self.coeff_time.append(TK.currentTimeNorm.value)
+            self.coeff_time.append(TK.currentTimeNorm.copy().value)
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -671,12 +671,12 @@ class tieredScheduler(SurveySimulation):
         sInds = np.array(sInds,ndmin=1)
 
         # 1/ Choose next telescope target
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
 
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
             ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
 
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
@@ -854,8 +854,8 @@ class tieredScheduler(SurveySimulation):
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs
-            startTimeNorm = TK.currentTimeNorm
+            startTime = TK.currentTimeAbs.copy()
+            startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
             tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
 
@@ -870,6 +870,8 @@ class tieredScheduler(SurveySimulation):
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
             WAp = WAs[tochar]*u.arcsec
+            WAp = self.WAint[sInd]*np.ones(len(tochar))
+            dMag = self.dMagint[sInd]*np.ones(len(tochar))
 
             intTimes = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
@@ -879,7 +881,6 @@ class tieredScheduler(SurveySimulation):
             # for i,j in enumerate(WAp):
             #     if tochar[i]:
             #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
-
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
             # apply time multiplier
@@ -920,10 +921,10 @@ class tieredScheduler(SurveySimulation):
                     # allocate first half of dt
                     TK.allocate_time(dt/2.)
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm
+                    SU.propag_system(sInd, TK.currentTimeNorm.copy() - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = TK.currentTimeNorm.copy()
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
@@ -949,7 +950,7 @@ class tieredScheduler(SurveySimulation):
             else:
                 totTime = intTime*(mode['timeMultiplier'])
                 TK.allocate_time(totTime/2.)
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
                 TK.allocate_time(totTime/2.)
             
             # calculate the false alarm SNR (if any)
@@ -1006,14 +1007,14 @@ class tieredScheduler(SurveySimulation):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
@@ -1096,7 +1097,7 @@ class tieredScheduler(SurveySimulation):
         #     self.no_dets[sInd] = True
         # else:
         #     self.no_dets[sInd] = False
-        t_rev = TK.currentTimeNorm + self.revisit_wait
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it

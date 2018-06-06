@@ -64,7 +64,7 @@ class tieredScheduler_DD(tieredScheduler):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs
+        self.occ_arrives = TK.currentTimeAbs.copy()
         while not TK.mission_is_over():
              
             # Acquire the NEXT TARGET star index and create DRM
@@ -73,11 +73,11 @@ class tieredScheduler_DD(tieredScheduler):
             if sInd != occ_sInd:
                 assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
                 self.ready_to_update = True
 
-            time2arrive = self.occ_arrives - TK.currentTimeAbs
+            time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
             
             if sInd is not None:
                 cnt += 1
@@ -86,11 +86,11 @@ class tieredScheduler_DD(tieredScheduler):
                 if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
                     s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
                     dt_max = 1.*u.week
-                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
+                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < dt_max)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
                 # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and self.starExtended.shape[0] == 0:
+                if TK.currentTimeNorm.copy() > TK.missionLife and self.starExtended.shape[0] == 0:
                     for i in range(len(self.DRM)):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
@@ -108,10 +108,11 @@ class tieredScheduler_DD(tieredScheduler):
                     # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
                         TK.allocate_time(time2arrive.to('day'))
+                        #TK.advanceToAbsTime(time2arrive + TK.currentTimeAbs.copy())
                         if time2arrive > 1*u.d:
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
-                TK.obsStart = TK.currentTimeNorm.to('day')
+                TK.obsStart = TK.currentTimeNorm.copy().to('day')
 
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
@@ -235,12 +236,13 @@ class tieredScheduler_DD(tieredScheduler):
                     print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)
+                    #TK.advanceToAbsTime(goal_GAdiff + TK.currentTimeAbs.copy())
 
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
 
                 # Calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
+                TK.obsEnd = TK.currentTimeNorm.copy().to('day')
 
                 # With prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
@@ -339,32 +341,32 @@ class tieredScheduler_DD(tieredScheduler):
             # find angle between old and new stars, default to pi/2 for first target
             if old_occ_sInd is None:
                 sd = np.zeros(TL.nStars)*u.rad
-                r_old = TL.starprop(np.where(np.in1d(TL.Name, self.occHIPs))[0][0], TK.currentTimeAbs)[0]
+                r_old = TL.starprop(np.where(np.in1d(TL.Name, self.occHIPs))[0][0], TK.currentTimeAbs.copy())[0]
             else:
                 # position vector of previous target star
-                r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs)[0]
+                r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs.copy())[0]
                 u_old = r_old.value/np.linalg.norm(r_old)
                 # position vector of new target stars
-                r_new = TL.starprop(sInds, TK.currentTimeAbs)
+                r_new = TL.starprop(sInds, TK.currentTimeAbs.copy())
                 u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
                 # angle between old and new stars
                 sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
                 # calculate slew time
                 slewTime = np.sqrt(slewTime_fac*np.sin(sd/2.))
             
-            occ_startTimes = TK.currentTimeAbs + slewTime
-            occ_startTimesNorm = TK.currentTimeNorm + slewTime
+            occ_startTimes = TK.currentTimeAbs.copy() + slewTime
+            occ_startTimesNorm = TK.currentTimeNorm.copy() + slewTime
             kogoodStart = Obs.keepout(TL, sInds, occ_startTimes, charmode)
             occ_sInds = sInds[np.where(kogoodStart)[0]]
             occ_sInds = occ_sInds[np.where(np.in1d(occ_sInds, HIP_sInds))[0]]
 
-            startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
-            startTimesNorm = TK.currentTimeNorm
+            startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
+            startTimesNorm = TK.currentTimeNorm.copy()
             kogoodStart = Obs.keepout(TL, sInds, startTimes, detmode[0])
             sInds = sInds[np.where(kogoodStart)[0]]
 
             # 2a/ If we are in detection phase two, start adding new targets to occulter target list
-            if TK.currentTimeAbs > self.phase1_end:
+            if TK.currentTimeAbs.copy() > self.phase1_end:
                 if self.is_phase1 is True:
                     print 'Entering detection phase 2: target list for occulter expanded'
                     self.is_phase1 = False
@@ -376,9 +378,10 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
-            if len(occ_sInds) > 0:  
+            if len(occ_sInds) > 0:
+                # occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, 
+                #                                                    WA, charmode, ischar=True)
                 occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
-                #occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times
                 occ_endTimes = occ_startTimes + totTimes
@@ -410,14 +413,14 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds, TK.currentTimeNorm)
+            sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
 
             # revisit list, with time after start
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
                 if self.occ_starRevisit.size != 0:
                     dt_max = 1.*u.week
-                    dt_rev = TK.currentTimeNorm - self.occ_starRevisit[:,1]*u.day
+                    dt_rev = TK.currentTimeNorm.copy() - self.occ_starRevisit[:,1]*u.day
                     ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True
                 occ_sInds = np.where(occ_tovisit)[0]
@@ -434,8 +437,8 @@ class tieredScheduler_DD(tieredScheduler):
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
 
             # 7a/ Filter off stars with too-long inttimes
-            if self.occ_arrives > TK.currentTimeAbs:
-                available_time = self.occ_arrives - TK.currentTimeAbs
+            if self.occ_arrives > TK.currentTimeAbs.copy():
+                available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
 
@@ -471,10 +474,10 @@ class tieredScheduler_DD(tieredScheduler):
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
-                if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
+                if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
                     if old_occ_sInd is None:
-                        self.occ_arrives = TK.currentTimeAbs
+                        self.occ_arrives = TK.currentTimeAbs.copy()
                     else:
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTime[occ_sInd]

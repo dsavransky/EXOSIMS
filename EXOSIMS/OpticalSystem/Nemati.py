@@ -55,7 +55,10 @@ class Nemati(OpticalSystem):
         SNR = mode['SNR']
         # calculate integration time based on Nemati 2014
         with np.errstate(divide='ignore', invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
+            if mode['syst']['occulter'] is False:
+                intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
+            else:
+                intTime = np.true_divide(SNR**2*C_b, (C_p**2))
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
         # negative values are set to zero

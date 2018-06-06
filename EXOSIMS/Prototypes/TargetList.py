@@ -348,13 +348,12 @@ class TargetList(object):
         Additional filters can be provided in specific TargetList implementations.
         
         """
-        
         # filter out binary stars
         if self.filterBinaries:
             self.binary_filter()
             if self.explainFiltering:
                 print("%d targets remain after binary filter."%self.nStars)
-        
+
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
         if self.explainFiltering:

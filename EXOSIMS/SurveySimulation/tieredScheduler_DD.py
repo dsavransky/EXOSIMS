@@ -75,6 +75,8 @@ class tieredScheduler_DD(tieredScheduler):
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
+                # self.ready_to_update = True
+            if sInd == occ_sInd:
                 self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
@@ -444,38 +446,13 @@ class tieredScheduler_DD(tieredScheduler):
 
             t_det = 0*u.d
             dmode = copy.deepcopy(detmode[0])
+            occ_sInd = old_occ_sInd
 
             # 7b/ Choose best target from remaining
-            if np.any(sInds):
-
-                # choose sInd of next target
-                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
-                occ_sInd = old_occ_sInd
-
-                # store relevant values
-                # intTime_by_mode = np.zeros(len(detmode))*u.d
-                # for m_i, mode in enumerate(detmode):
-                #     intTime_by_mode[m_i] = self.calc_targ_intTime(sInd, startTimes[sInd], mode)
-                # t_det = max(intTime_by_mode)
-
-                # Perform dual band detections if necessary
-                if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
-                    dmode['BW'] = dmode['BW'] + detmode[1]['BW']
-                    dmode['inst']['sread'] = dmode['inst']['sread'] + detmode[1]['inst']['sread']
-                    dmode['inst']['idark'] = dmode['inst']['idark'] + detmode[1]['inst']['idark']
-                    dmode['inst']['CIC'] = dmode['inst']['CIC'] + detmode[1]['inst']['CIC']
-                    dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
-                    dmode['instName'] = 'combined'
-
-                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
-
-                # update visited list for current star
-                #self.starVisits[sInd] += 1
-
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
-                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
+                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes)
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs.copy()
                     else:
@@ -490,6 +467,25 @@ class tieredScheduler_DD(tieredScheduler):
                     TK.allocate_time(1*u.d)
                     cnt += 1
                     continue
+
+            if occ_sInd is not None:
+                sInds = sInds[np.where(sInds != occ_sInd)[0]]
+
+            if np.any(sInds):
+
+                # choose sInd of next target
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
+
+                # Perform dual band detections if necessary
+                if self.WAint[sInd] > detmode[1]['IWA'] and self.WAint[sInd] < detmode[1]['OWA']:
+                    dmode['BW'] = dmode['BW'] + detmode[1]['BW']
+                    dmode['inst']['sread'] = dmode['inst']['sread'] + detmode[1]['inst']['sread']
+                    dmode['inst']['idark'] = dmode['inst']['idark'] + detmode[1]['inst']['idark']
+                    dmode['inst']['CIC'] = dmode['inst']['CIC'] + detmode[1]['inst']['CIC']
+                    dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], detmode[1]['syst']['optics']))
+                    dmode['instName'] = 'combined'
+
+                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

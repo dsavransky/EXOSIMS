@@ -19,11 +19,19 @@ class tieredScheduler(SurveySimulation):
     while the starshade slews to its next target.
     
         Args:
-        as (iterable 4x1):
-            Cost function coefficients: slew distance, completeness
-        as (iterable nx1)
+        coeffs (iterable 4x1):
+            Cost function coefficients: slew distance, completeness, 
+            deep-dive least visited ramp, deep-dive unvisited ramp
+        occHIPs (iterable nx1):
             List of star HIP numbers to initialize occulter target list.
-        
+        topstars (integer):
+            Number of HIP numbers to recieve preferential treatment.
+        revisit_wait (float):
+            Wait time threshold for star revisits.
+        revisit_weight (float):
+            Weight used to increase preference for coronograph revisits.
+        GAPortion (float):
+            Portion of mission time used for general astrophysics.
         \*\*specs:
             user specified values
     """
@@ -65,6 +73,8 @@ class tieredScheduler(SurveySimulation):
         else:
             assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
+
+        self.occHIPs = [hip.strip() for hip in self.occHIPs]
 
         self.occ_arrives = None # The timestamp at which the occulter finishes slewing
         self.occ_starRevisit = np.array([])
@@ -144,6 +154,8 @@ class tieredScheduler(SurveySimulation):
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
+                # self.ready_to_update = True
+            if sInd == occ_sInd:
                 self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs
@@ -502,19 +514,10 @@ class tieredScheduler(SurveySimulation):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 7b/ Choose best target from remaining
-            if np.any(sInds):
-                # choose sInd of next target
-                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
-                occ_sInd = old_occ_sInd
-                # store relevant values
-                t_det = intTimes[sInd]
-                # update visited list for current star
-                # self.starVisits[sInd] += 1
-
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs + t_det) >= self.occ_arrives and self.ready_to_update):
-                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, intTimes)
+                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes)
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs
                     else:
@@ -529,6 +532,18 @@ class tieredScheduler(SurveySimulation):
                     TK.allocate_time(1*u.d)
                     cnt += 1
                     continue
+
+            if occ_sInd is not None:
+                sInds = sInds[np.where(sInds != occ_sInd)[0]]
+
+            if np.any(sInds):
+                # choose sInd of next target
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
+                occ_sInd = old_occ_sInd
+                # store relevant values
+                t_det = intTimes[sInd]
+                # update visited list for current star
+                # self.starVisits[sInd] += 1
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):
@@ -550,7 +565,7 @@ class tieredScheduler(SurveySimulation):
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
-    def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, t_dets):
+    def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes):
         """Choose next target for the occulter based on truncated 
         depth first search of linear cost function.
         
@@ -559,7 +574,7 @@ class tieredScheduler(SurveySimulation):
                 Index of the previous target star
             occ_sInds (integer array):
                 Indices of available targets
-            t_dets (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times for detection in units of day
                 
         Returns:
@@ -608,7 +623,9 @@ class tieredScheduler(SurveySimulation):
         A = self.coeffs[0]*(A)/np.pi
 
         # add factor due to completeness
-        A = A + self.coeffs[1]*(1-comps)
+        # A = A + self.coeffs[1]*(1-comps)
+        cdt = comps/intTimes[occ_sInds]
+        A = A + self.coeffs[1]*(1 - cdt/max(cdt))
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):

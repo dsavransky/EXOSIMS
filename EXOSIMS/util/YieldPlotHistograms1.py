@@ -265,9 +265,11 @@ import math
 # 6/3/2018 Optimal Scheduling
 pathRuns = '/home/dean/Documents/SIOSlab/'
 t = ['Dean3June18RS26CXXfZ01OB56PP01SU01',\
-'Dean3June18RS26CXXfZ01OB66PP01SU01']
+'Dean3June18RS26CXXfZ01OB66PP01SU01',\
+'Dean19May18RS09CXXfZ01OB56PP01SU01']
 res1 = gen_summary(pathRuns + t[0])
 res2 = gen_summary(pathRuns + t[1])
+res3 = gen_summary(pathRuns + t[2])
 
 
 def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
@@ -324,8 +326,8 @@ def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None):
 
 
 #5/14/2018 SLSQP Scheduler Yield vs OBduration
-dist_plot([res1['detected'],res2['detected']],
-    legtext=['56','66'])
+dist_plot([res1['detected'],res2['detected'],res3['detected']],
+    legtext=['56','66','56_2'], uniq=False)
 
 # #5/14/2018 SLSQP Scheduler StaticA with varying mission length
 # dist_plot([res1['detected'],res2['detected'],res3['detected'],res4['detected'],\

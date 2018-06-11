@@ -733,8 +733,8 @@ class SurveySimulation(object):
 
         #Allocate Time
         extraTime = intTime.copy()*(float(mode['timeMultiplier']) - 1.)#calculates extraTime
-        success = TK.allocate_time(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
-        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime.copy() + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
+        success = TK.allocate_time(intTime.copy() + extraTime + Obs.settlingTime.copy() + mode['syst']['ohTime'].copy(), True)#allocates time
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime.copy() + extraTime + Obs.settlingTime.copy() + mode['syst']['ohTime'].copy().value)
         dt = intTime.copy()/float(self.ntFlux)#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target

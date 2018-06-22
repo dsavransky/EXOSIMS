@@ -71,7 +71,7 @@ class TargetList(object):
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True, **specs):
        
         #start the outspec
         self._outspec = {}

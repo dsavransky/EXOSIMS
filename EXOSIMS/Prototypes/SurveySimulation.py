@@ -852,10 +852,7 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
-<<<<<<< HEAD
 
-=======
->>>>>>> master
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]

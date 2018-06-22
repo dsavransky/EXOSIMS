@@ -80,6 +80,7 @@ EXOCATXLS.py*
 ToyCat1.py*
 de432s.bsp
 fitting_parameters.h5
+*.json
 *.comp
 *.so
 *.acomp
@@ -94,3 +95,4 @@ statsFun_C
 *.fits
 *.csv
 *.fZmax
+*.starkfZ

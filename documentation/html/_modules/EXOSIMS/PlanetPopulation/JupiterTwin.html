@@ -1,0 +1,163 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EXOSIMS.PlanetPopulation.JupiterTwin &#8212; EXOSIMS 1.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for EXOSIMS.PlanetPopulation.JupiterTwin</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">EXOSIMS.Prototypes.PlanetPopulation</span> <span class="k">import</span> <span class="n">PlanetPopulation</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+
+<div class="viewcode-block" id="JupiterTwin"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.JupiterTwin.JupiterTwin">[docs]</a><span class="k">class</span> <span class="nc">JupiterTwin</span><span class="p">(</span><span class="n">PlanetPopulation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Population of Jupiter twins (11.209 R_Earth, 317.83 M_Eearth, 1 p_Earth)</span>
+<span class="sd">    On eccentric orbits (0.7 to 1.5 AU)*5.204.</span>
+<span class="sd">    Numbers pulled from nssdc.gsfc.nasa.gov/planetary/factsheet/jupiterfact.html</span>
+<span class="sd">    </span>
+<span class="sd">    This implementation is intended to enforce this population regardless</span>
+<span class="sd">    of JSON inputs.  The only inputs that will not be disregarded are erange</span>
+<span class="sd">    and constrainOrbits.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">erange</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.048</span><span class="p">],</span> <span class="n">constrainOrbits</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">):</span>
+        <span class="c1">#eta is probability of planet occurance in a system. I set this to 1</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;erange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">erange</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;constrainOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrainOrbits</span>
+        <span class="n">aEtoJ</span> <span class="o">=</span> <span class="mf">5.204</span>
+        <span class="n">RpEtoJ</span> <span class="o">=</span> <span class="mf">11.209</span>
+        <span class="n">MpEtoJ</span> <span class="o">=</span> <span class="mf">317.83</span>
+        <span class="n">pJ</span> <span class="o">=</span> <span class="mf">0.538</span><span class="c1"># 0.538 from nssdc.gsfc.nasa.gov</span>
+        <span class="c1"># specs being modified in JupiterTwin</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;arange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="n">aEtoJ</span><span class="p">,</span><span class="mi">1</span><span class="o">*</span><span class="n">aEtoJ</span><span class="p">]</span><span class="c1">#0.7*aEtoJ, 1.5*aEtoJ]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Rprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="n">RpEtoJ</span><span class="p">,</span><span class="mi">1</span><span class="o">*</span><span class="n">RpEtoJ</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;Mprange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">*</span><span class="n">MpEtoJ</span><span class="p">,</span><span class="mi">1</span><span class="o">*</span><span class="n">MpEtoJ</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;prange&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">pJ</span><span class="p">,</span><span class="n">pJ</span><span class="p">]</span>
+        <span class="n">specs</span><span class="p">[</span><span class="s1">&#39;scaleOrbits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">RpEtoJ</span> <span class="o">=</span> <span class="n">RpEtoJ</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pJ</span> <span class="o">=</span> <span class="n">pJ</span>
+
+        <span class="n">PlanetPopulation</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">specs</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="JupiterTwin.gen_plan_params"><a class="viewcode-back" href="../../../EXOSIMS.PlanetPopulation.html#EXOSIMS.PlanetPopulation.JupiterTwin.JupiterTwin.gen_plan_params">[docs]</a>    <span class="k">def</span> <span class="nf">gen_plan_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generate semi-major axis (AU), eccentricity, geometric albedo, and</span>
+<span class="sd">        planetary radius (earthRad)</span>
+<span class="sd">        </span>
+<span class="sd">        Semi-major axis and eccentricity are uniformly distributed with all</span>
+<span class="sd">        other parameters constant.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            n (integer):</span>
+<span class="sd">                Number of samples to generate</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            a (astropy Quantity array):</span>
+<span class="sd">                Semi-major axis in units of AU</span>
+<span class="sd">            e (float ndarray):</span>
+<span class="sd">                Eccentricity</span>
+<span class="sd">            p (float ndarray):</span>
+<span class="sd">                Geometric albedo</span>
+<span class="sd">            Rp (astropy Quantity array):</span>
+<span class="sd">                Planetary radius in units of earthRad</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_input_check</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="c1"># generate samples of semi-major axis</span>
+        <span class="n">ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arange</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="c1"># check if constrainOrbits == True for eccentricity</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrainOrbits</span><span class="p">:</span>
+            <span class="c1"># restrict semi-major axis limits</span>
+            <span class="n">arcon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">arcon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">high</span><span class="o">=</span><span class="n">arcon</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+            <span class="n">tmpa</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;AU&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+
+            <span class="c1"># upper limit for eccentricity given sma</span>
+            <span class="n">elim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+            <span class="n">amean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">tmpa</span> <span class="o">&lt;=</span> <span class="n">amean</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">tmpa</span><span class="p">[</span><span class="n">tmpa</span> <span class="o">&lt;=</span> <span class="n">amean</span><span class="p">]</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">tmpa</span> <span class="o">&gt;</span> <span class="n">amean</span><span class="p">]</span> <span class="o">=</span> <span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">tmpa</span><span class="p">[</span><span class="n">tmpa</span><span class="o">&gt;</span><span class="n">amean</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">elim</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">elim</span><span class="p">[</span><span class="n">elim</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+            <span class="c1"># uniform distribution</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">high</span><span class="o">=</span><span class="n">elim</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">ar</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">high</span><span class="o">=</span><span class="n">ar</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">AU</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">erange</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># generate geometric albedo</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pJ</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,))</span>
+        <span class="c1"># generate planetary radius</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,))</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">earthRad</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">RpEtoJ</span>
+        </div></div>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">Rp</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015 - 2017, SIOSlab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

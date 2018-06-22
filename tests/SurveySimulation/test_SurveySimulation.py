@@ -308,6 +308,7 @@ class TestSurveySimulation(unittest.TestCase):
 
                 sInds = np.asarray([0])
                 tovisit = np.zeros(sim.TargetList.nStars, dtype=bool)
+
                 sInds = sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
                 try:
                     self.assertIsInstance(sInds, np.ndarray)

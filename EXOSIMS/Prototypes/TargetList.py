@@ -71,7 +71,7 @@ class TargetList(object):
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, **specs):
+            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -84,10 +84,12 @@ class TargetList(object):
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
         assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
         assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
+        assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
+        self.filterBinaries = bool(filterBinaries)
         
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
@@ -348,9 +350,10 @@ class TargetList(object):
         """
         
         # filter out binary stars
-        self.binary_filter()
-        if self.explainFiltering:
-            print("%d targets remain after binary filter."%self.nStars)
+        if self.filterBinaries:
+            self.binary_filter()
+            if self.explainFiltering:
+                print("%d targets remain after binary filter."%self.nStars)
         
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()

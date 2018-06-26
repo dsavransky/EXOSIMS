@@ -549,11 +549,7 @@ class SurveySimulation(object):
         # differ for each star) and filter out unavailable targets
         sd = None
         if OS.haveOcculter == True:
-            print(len(sInds))
-            print(len(slewTimes))
             sd, slewTimes[sInds] = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
-            print(len(sInds))
-            print(len(slewTimes))
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
             if len(sInds.tolist()) == 0:

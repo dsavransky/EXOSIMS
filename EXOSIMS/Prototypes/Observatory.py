@@ -1213,7 +1213,7 @@ class Observatory(object):
 
         if old_sInd is None:
             sd = np.array([np.radians(0)]*TL.nStars)*u.rad
-            slewTimes = np.zeros(TL.nStars)*u.d
+            slewTimes = (np.zeros(TL.nStars)*u.d)[sInds]
         else:
             sd = self.star_angularSep(TL,old_sInd,sInds,currentTime)
             # calculate slew time

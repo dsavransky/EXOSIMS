@@ -539,17 +539,25 @@ class SurveySimulation(object):
         # 1.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+
+        # 1.2 filter out all previously (more-)visited targets, unless in 
+        # revisit list, with time within some dt of start (+- 1 week)
+        if len(sInds.tolist()) > 0:
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
         
         # 2. find spacecraft orbital START positions (if occulter, positions 
         # differ for each star) and filter out unavailable targets
         sd = None
         if OS.haveOcculter == True:
-            sd, slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
+            print(len(sInds))
+            print(len(slewTimes))
+            sd, slewTimes[sInds] = Obs.calculate_slewTimes(TL, old_sInd, sInds, tmpCurrentTimeAbs)  
+            print(len(sInds))
+            print(len(slewTimes))
             dV = Obs.calculate_dV(Obs.constTOF.value,TL, old_sInd, sInds, tmpCurrentTimeAbs)
             sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
             if len(sInds.tolist()) == 0:
                 sInds = np.asarray([],dtype=int)
-
 
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
@@ -561,21 +569,17 @@ class SurveySimulation(object):
             sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
-        
-        # 3. filter out all previously (more-)visited targets, unless in 
-        # revisit list, with time within some dt of start (+- 1 week)
-        if len(sInds.tolist()) > 0:
-            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
-        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        if len(sInds.tolist()) > 0:
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
-        sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-        endTimes = startTimes + intTimes
-        if maxIntTime.value <= 0:
-            sInds = np.asarray([],dtype=int)
+            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+            endTimes = startTimes + intTimes
+            if maxIntTime.value <= 0:
+                sInds = np.asarray([],dtype=int)
 
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes

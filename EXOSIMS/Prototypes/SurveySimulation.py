@@ -539,11 +539,6 @@ class SurveySimulation(object):
         # 1.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
-        # 1.2 filter out all previously (more-)visited targets, unless in 
-        # revisit list, with time within some dt of start (+- 1 week)
-        if len(sInds.tolist()) > 0:
-            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
         
         # 2. find spacecraft orbital START positions (if occulter, positions 
         # differ for each star) and filter out unavailable targets
@@ -565,6 +560,11 @@ class SurveySimulation(object):
             sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
+
+        # 3 filter out all previously (more-)visited targets, unless in 
+        # revisit list, with time within some dt of start (+- 1 week)
+        if len(sInds.tolist()) > 0:
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # 4.1 calculate integration times for ALL preselected targets
         if len(sInds.tolist()) > 0:

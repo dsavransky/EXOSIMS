@@ -11,6 +11,8 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
+import pdb
+
 Logger = logging.getLogger(__name__)
 
 class linearJScheduler_3DDPC(linearJScheduler_DDPC):
@@ -112,21 +114,20 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 DRM['char_info'] = []
-
-                char_modes = [cm for cm in char_modes if cm['instName'][-2] == dmode['instName'].split('_')[0][-2]]
+                cmodes = [cm for cm in char_modes if cm['systName'][-2] == dmode['systName'][-2]]
 
                 if char_modes[0]['SNR'] not in [0, np.inf]:
                         characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                                self.observation_characterization(sInd, char_modes)
+                                self.observation_characterization(sInd, cmodes)
                 else:
                     char_intTime = None
                     lenChar = len(pInds) + 1 if True in FA else len(pInds)
-                    characterized = np.zeros((lenChar,len(char_modes)), dtype=float)
-                    char_SNR = np.zeros((lenChar,len(char_modes)), dtype=float)
+                    characterized = np.zeros((lenChar,len(cmodes)), dtype=float)
+                    char_SNR = np.zeros((lenChar,len(cmodes)), dtype=float)
                     char_fZ = np.array([0./u.arcsec**2, 0./u.arcsec**2])
                     char_systemParams = SU.dump_system_params(sInd)
 
-                for mode_index, char_mode in enumerate(char_modes):
+                for mode_index, char_mode in enumerate(cmodes):
                     char_data = {}
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
@@ -268,9 +269,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     kogoodEnd = Obs.keepout(TL, mode_sInds, endTimes[mode_sInds], mode)
                     mode_sInds = mode_sInds[np.where(kogoodEnd)[0]]
 
-                all_sInds = np.concatenate([all_sInds, mode_sInds[np.where(kogoodStart)[0]]])
+                all_sInds = np.concatenate([all_sInds, mode_sInds]).astype(int)
 
-            blue_modes = [mode for mode in modes if mode['instName'][-1] == 'b']
+            blue_modes = [mode for mode in modes if mode['systName'][-1] == 'b']
             sInds = np.unique(all_sInds)
             dmode = copy.deepcopy(blue_modes[0])
 
@@ -285,19 +286,20 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
 
-                blue_modes = [mode for mode in modes if mode['instName'][-1] == 'b']
-                s_IWA_OWA = PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]
+                s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
                 for bmode in blue_modes:
-                    if s_IWA_OWA[0] < bmode['IWA'] < s_IWA_OWA[1] or s_IWA_OWA[0] < bmode['OWA'] < s_IWA_OWA[1]:
-                        b_overlap = max(0, min(s_IWA_OWA[1], bmode['OWA']) - max(s_IWA_OWA[0], bmode['IWA']))
-                        d_overlap = max(0, min(s_IWA_OWA[1], dmode['OWA']) - max(s_IWA_OWA[0], dmode['IWA']))
-                        if b_overlap > d_overlap:
-                            dmode = copy.deepcopy(bmode)
-                        elif b_overlap == d_overlap:
-                            if (bmode['OWA'] - bmode['IWA']) > (dmode['OWA'] - dmode['IWA']):
+                    intTime = self.calc_targ_intTime(sInd, startTimes[sInd], bmode)[0]
+                    if intTime != 0.0*u.d:
+                        if s_IWA_OWA[0] < bmode['IWA'] < s_IWA_OWA[1] or s_IWA_OWA[0] < bmode['OWA'] < s_IWA_OWA[1]:
+                            b_overlap = max(0, min(s_IWA_OWA[1], bmode['OWA']) - max(s_IWA_OWA[0], bmode['IWA']))
+                            d_overlap = max(0, min(s_IWA_OWA[1], dmode['OWA']) - max(s_IWA_OWA[0], dmode['IWA']))
+                            if b_overlap > d_overlap:
                                 dmode = copy.deepcopy(bmode)
+                            elif b_overlap == d_overlap:
+                                if (bmode['OWA'] - bmode['IWA']) > (dmode['OWA'] - dmode['IWA']):
+                                    dmode = copy.deepcopy(bmode)
 
-                r_mode = [mode for mode in modes if mode['instName'][-1] == 'r' and mode['instName'][-2] == dmode['instName'][-2]][0]
+                r_mode = [mode for mode in modes if mode['systName'][-1] == 'r' and mode['systName'][-2] == dmode['systName'][-2]][0]
 
                 if self.WAint[sInd] > r_mode['IWA'] and self.WAint[sInd] < r_mode['OWA']:
                     dmode['BW'] = dmode['BW'] + r_mode['BW']

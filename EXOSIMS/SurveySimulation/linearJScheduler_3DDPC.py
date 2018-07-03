@@ -46,7 +46,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)[1:]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
         if np.any(spectroModes):

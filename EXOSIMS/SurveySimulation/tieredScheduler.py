@@ -36,7 +36,8 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, revisit_weight=1.0, GAPortion=.25, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
+                 revisit_weight=1.0, GAPortion=.25, int_inflection=True, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -54,6 +55,7 @@ class tieredScheduler(SurveySimulation):
         self._outspec['GAPortion'] = GAPortion
         self._outspec['revisit_wait'] = revisit_wait
         self._outspec['revisit_weight'] = revisit_weight
+        self._outspec['int_inflection'] = int_inflection
         
         #normalize coefficients
         coeffs = np.array(coeffs)
@@ -87,6 +89,7 @@ class tieredScheduler(SurveySimulation):
         self.goal_GAtime = None
         self.curves = None
         self.ao = None
+        self.int_inflection = int_inflection
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -454,9 +457,10 @@ class tieredScheduler(SurveySimulation):
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:
-                # occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
-
-                occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], charmode, ischar=True)
+                if self.int_inflection:
+                    occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], charmode, ischar=True)
+                else:
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
 
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times
@@ -899,10 +903,12 @@ class tieredScheduler(SurveySimulation):
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             intTimes = np.zeros(len(tochar))*u.day
             # intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
-            
-            for i,j in enumerate(WAp):
-                if tochar[i]:
-                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            if self.int_inflection:
+                for i,j in enumerate(WAp):
+                    if tochar[i]:
+                        intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            else:
+                intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
             # apply time multiplier

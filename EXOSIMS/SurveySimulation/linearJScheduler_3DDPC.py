@@ -133,6 +133,8 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     # update the occulter wet mass
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
+                    if np.any(characterized):
+                        print '  Char. results are: %s'%(characterized[:-1, mode_index])
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]

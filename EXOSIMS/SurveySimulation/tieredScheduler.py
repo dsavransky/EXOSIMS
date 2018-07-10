@@ -262,7 +262,7 @@ class tieredScheduler(SurveySimulation):
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, charMode)
                     if np.any(characterized):
-                        print '  Char. results are: %s'%(characterized)
+                        print '  Char. results are: %s'%(characterized.T)
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter == True and char_intTime is not None:
@@ -450,11 +450,14 @@ class tieredScheduler(SurveySimulation):
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
 
             fEZ = ZL.fEZ0
-            WA = self.WAint[0]
+            WA = self.WAint
             # 2/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:
-                occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
+                # occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], charmode)
+
+                occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], charmode, ischar=True)
+
                 totTimes = occ_intTimes*charmode['timeMultiplier']
                 # end times
                 occ_endTimes = occ_startTimes + totTimes
@@ -895,11 +898,11 @@ class tieredScheduler(SurveySimulation):
             intTimes = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            # intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
             
-            # for i,j in enumerate(WAp):
-            #     if tochar[i]:
-            #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            for i,j in enumerate(WAp):
+                if tochar[i]:
+                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
             # apply time multiplier

@@ -155,15 +155,6 @@ class tieredScheduler_DD(tieredScheduler):
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
-                    # First store fEZ, dMag, WA, and characterization mode
-
-                    # clean up revisit list when one occurs to prevent repeats
-                    # if np.any(self.occ_starRevisit) and np.any(np.where(self.occ_starRevisit[:,0] == float(occ_sInd))):
-                    #     s_revs = np.where(self.occ_starRevisit[:,0] == float(occ_sInd))[0]
-                    #     dt_max = 1.*u.week
-                    #     t_revs = np.where(self.occ_starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
-                    #     self.occ_starRevisit = np.delete(self.occ_starRevisit, np.intersect1d(s_revs, t_revs),0)
-
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
 
@@ -210,25 +201,6 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
                     DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
                     DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
-
-                    # add star back into the revisit list
-                    # if np.any(characterized):
-                    #     char = np.where(characterized)[0]
-                    #     pInds = np.where(SU.plan2star == sInd)[0]
-                    #     smin = np.min(SU.s[pInds[char]])
-                    #     pInd_smin = pInds[np.argmin(SU.s[pInds[char]])]
-
-                    #     Ms = TL.MsTrue[sInd]
-                    #     sp = smin
-                    #     Mp = SU.Mp[pInd_smin]
-                    #     mu = const.G*(Mp + Ms)
-                    #     T = 2.*np.pi*np.sqrt(sp**3/mu)
-                    #     t_rev = TK.currentTimeNorm + T/2.
-                    #     revisit = np.array([sInd, t_rev.to('day').value])
-                    #     if self.occ_starRevisit.size == 0:
-                    #         self.occ_starRevisit = np.array([revisit])
-                    #     else:
-                    #         self.occ_starRevisit = np.vstack((self.occ_starRevisit, revisit))
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime

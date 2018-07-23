@@ -616,9 +616,9 @@ class tieredScheduler(SurveySimulation):
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)
         if (old_occ_sInd is None) or (nStars == 1):
-            occ_sInd = occ_sInds[0]
-            #occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
-            #occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
+            #occ_sInd = occ_sInds[0]
+            occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
+            occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
             return occ_sInd
         
         # define adjacency matrix
@@ -795,7 +795,7 @@ class tieredScheduler(SurveySimulation):
                 int_time = int_time*self.starVisits[sInd]
 
                 # update star completeness
-                idx = (np.abs(intTimes-int_time)).argmin()
+                idx = (np.abs(intTimes - int_time)).argmin()
                 comp = c_v_t[idx]
                 TL.comp[sInd] = comp
             else:
@@ -808,6 +808,7 @@ class tieredScheduler(SurveySimulation):
 
             int_times[i] = int_time
 
+        int_times[int_times<2.000e-5*u.d] = 0.0 *u.d
         return int_times
 
 

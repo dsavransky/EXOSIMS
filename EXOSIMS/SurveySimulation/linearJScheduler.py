@@ -20,13 +20,18 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25*u.d, **specs):
+    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
         #verify that coefficients input is iterable 4x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
+
+        
+        #Add to outspec
+        self._outspec['coeffs'] = coeffs
+        self._outspec['revisit_wait'] = revisit_wait
         
         # normalize coefficients
         coeffs = np.array(coeffs)
@@ -34,7 +39,7 @@ class linearJScheduler(SurveySimulation):
         
         self.coeffs = coeffs
 
-        self.revisit_wait = revisit_wait
+        self.revisit_wait = revisit_wait*u.d
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):

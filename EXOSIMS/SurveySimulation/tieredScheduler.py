@@ -233,14 +233,6 @@ class tieredScheduler(SurveySimulation):
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
 
-                    # clean up revisit list when one occurs to prevent repeats
-                    # XXX CONSIDER REMOVAL
-                    # if np.any(self.occ_starRevisit) and np.any(np.where(self.occ_starRevisit[:,0] == float(occ_sInd))):
-                    #     s_revs = np.where(self.occ_starRevisit[:,0] == float(occ_sInd))[0]
-                    #     dt_max = 1.*u.week
-                    #     t_revs = np.where(self.occ_starRevisit[:,1]*u.day - TK.currentTimeNorm < dt_max)[0]
-                    #     self.occ_starRevisit = np.delete(self.occ_starRevisit, np.intersect1d(s_revs, t_revs),0)
-
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
 
@@ -268,7 +260,7 @@ class tieredScheduler(SurveySimulation):
                         print '  Char. results are: %s'%(characterized.T)
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
-                    if OS.haveOcculter == True and char_intTime is not None:
+                    if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
                         char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], charMode)[0]
                         DRM['char_comp'] = char_comp
@@ -301,12 +293,6 @@ class tieredScheduler(SurveySimulation):
                         mu = const.G*(Mp + Ms)
                         T = 2.*np.pi*np.sqrt(sp**3/mu)
                         t_rev = TK.currentTimeNorm + T/2.
-                        # XXX INVESTIGATE THIS
-                        # revisit = np.array([sInd, t_rev.to('day').value])
-                        # if self.occ_starRevisit.size == 0:
-                        #     self.occ_starRevisit = np.array([revisit])
-                        # else:
-                        #     self.occ_starRevisit = np.vstack((self.occ_starRevisit, revisit))
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime

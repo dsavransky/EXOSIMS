@@ -21,9 +21,11 @@ class linearJScheduler_DDPC(linearJScheduler):
     mode, while characterizations are performed in parallel.
     """
 
-    def __init__(self, **specs):
+    def __init__(self, revisit_weight=1.0, **specs):
         
         linearJScheduler.__init__(self, **specs)
+
+        self._outspec['revisit_weight'] = revisit_weight
 
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
@@ -33,6 +35,9 @@ class linearJScheduler_DDPC(linearJScheduler):
         num_char_modes = len(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
         self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
+
+        self.revisit_weight = revisit_weight
+
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -183,6 +188,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             self.logger.info(log_end)
             print(log_end)
 
+
     def next_target(self, old_sInd, modes):
         """Finds index of next target star and calculates its integration time.
         
@@ -316,6 +322,109 @@ class linearJScheduler_DDPC(linearJScheduler):
                 return DRM, None, None, None
         
         return DRM, sInd, intTime, dmode
+
+
+    def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
+        """Choose next target based on truncated depth first search 
+        of linear cost function.
+        
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+        
+        Returns:
+            sInd (integer):
+                Index of next target star
+        
+        """
+
+        OS = self.OpticalSystem
+        Comp = self.Completeness
+        TL = self.TargetList
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        if OS.haveOcculter:
+            
+            # current star has to be in the adjmat
+            if (old_sInd is not None) and (old_sInd not in sInds):
+                sInds = np.append(sInds, old_sInd)
+            
+            # calculate dt since previous observation
+            dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+            # get dynamic completeness values
+            comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+            
+            # if first target, or if only 1 available target, 
+            # choose highest available completeness
+            nStars = len(sInds)
+            if (old_sInd is None) or (nStars == 1):
+                sInd = np.random.choice(sInds[comps == max(comps)])
+                return sInd
+            
+            # define adjacency matrix
+            A = np.zeros((nStars,nStars))
+            
+            # only consider slew distance when there's an occulter
+            if OS.haveOcculter:
+                r_ts = TL.starprop(sInds, TK.currentTimeAbs)
+                u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+                angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
+                A[np.ones((nStars), dtype=bool)] = angdists
+                A = self.coeffs[0]*(A)/np.pi
+            
+            # add factor due to completeness
+            A = A + self.coeffs[1]*(1 - comps)
+            
+            # add factor due to unvisited ramp
+            f_uv = np.zeros(nStars)
+            unvisited = self.starVisits[sInds]==0
+            f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+            A = A - self.coeffs[2]*f_uv
+
+            # add factor due to revisited ramp
+            f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
+                    (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+            A = A + self.coeffs[3]*f2_uv
+            
+            # kill diagonal
+            A = A + np.diag(np.ones(nStars)*np.Inf)
+            
+            # take two traversal steps
+            step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
+            step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
+            tmp = np.argmin(step1 + step2)
+            sInd = sInds[int(np.floor(tmp/float(nStars)))]
+
+        else:
+            nStars = len(sInds)
+
+            # 1/ Choose next telescope target
+            comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
+
+            # add weight for star revisits
+            ind_rev = []
+            if self.starRevisit.size != 0:
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+
+            f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
+                              self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+
+            weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
+
+            sInd = np.random.choice(sInds[weights == max(weights)])
+        
+        return sInd
 
 
     def observation_characterization(self, sInd, modes):

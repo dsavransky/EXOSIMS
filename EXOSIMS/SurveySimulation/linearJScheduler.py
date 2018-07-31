@@ -28,7 +28,7 @@ class linearJScheduler(SurveySimulation):
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
 
-        
+
         #Add to outspec
         self._outspec['coeffs'] = coeffs
         self._outspec['revisit_wait'] = revisit_wait
@@ -182,13 +182,14 @@ class linearJScheduler(SurveySimulation):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm + 0.75*T
-        # if no detections then schedule revisit based off of revisit_weight
-        if not np.any(det):
-            t_rev = TK.currentTimeNorm + self.revisit_wait
-            self.no_dets[sInd] = True
-        else:
-            self.no_dets[sInd] = False
-
+        # if no detections then schedule revisit based off of revisit_wait
+        # if not np.any(det):
+        #     t_rev = TK.currentTimeNorm + self.revisit_wait
+        #     self.no_dets[sInd] = True
+        # else:
+        #     self.no_dets[sInd] = False
+            
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it

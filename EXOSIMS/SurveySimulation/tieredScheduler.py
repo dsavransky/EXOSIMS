@@ -622,7 +622,7 @@ class tieredScheduler(SurveySimulation):
             return occ_sInd
         
         # define adjacency matrix
-        A = np.zeros((nStars,nStars))
+        A = np.zeros((nStars, nStars))
 
         # consider slew distance when there's an occulter
         r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs.copy())

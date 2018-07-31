@@ -353,7 +353,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
-        if True:
+        if OS.haveOcculter:
             # current star has to be in the adjmat
             if (old_sInd is not None) and (old_sInd not in sInds):
                 sInds = np.append(sInds, old_sInd)

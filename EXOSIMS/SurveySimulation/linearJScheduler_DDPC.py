@@ -354,7 +354,6 @@ class linearJScheduler_DDPC(linearJScheduler):
         sInds = np.array(sInds, ndmin=1, copy=False)
 
         if OS.haveOcculter:
-            
             # current star has to be in the adjmat
             if (old_sInd is not None) and (old_sInd not in sInds):
                 sInds = np.append(sInds, old_sInd)
@@ -420,7 +419,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                               self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-            weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
+            weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/intTimes
 
             sInd = np.random.choice(sInds[weights == max(weights)])
         

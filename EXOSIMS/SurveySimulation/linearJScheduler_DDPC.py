@@ -353,7 +353,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
-        if OS.haveOcculter:
+        if True:
             # current star has to be in the adjmat
             if (old_sInd is not None) and (old_sInd not in sInds):
                 sInds = np.append(sInds, old_sInd)
@@ -391,8 +391,9 @@ class linearJScheduler_DDPC(linearJScheduler):
             A = A - self.coeffs[2]*f_uv
 
             # add factor due to revisited ramp
-            f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-                    (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+            # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
+            #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
             A = A + self.coeffs[3]*f2_uv
             
             # kill diagonal

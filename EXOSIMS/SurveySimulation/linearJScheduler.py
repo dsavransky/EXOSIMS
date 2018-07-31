@@ -4,7 +4,6 @@ import numpy as np
 import itertools
 import astropy.constants as const
 
-
 class linearJScheduler(SurveySimulation):
     """linearJScheduler 
     
@@ -108,10 +107,11 @@ class linearJScheduler(SurveySimulation):
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
-        f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-                (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+        # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
+        #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+        f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
         A = A + self.coeffs[3]*f2_uv
-        
+
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
         
@@ -188,7 +188,7 @@ class linearJScheduler(SurveySimulation):
         #     self.no_dets[sInd] = True
         # else:
         #     self.no_dets[sInd] = False
-            
+
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])

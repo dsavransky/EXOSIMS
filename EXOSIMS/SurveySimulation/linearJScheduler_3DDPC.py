@@ -227,6 +227,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             slewTimes = np.zeros(TL.nStars)*u.d
             fZs = np.zeros(TL.nStars)/u.arcsec**2
             intTimes = np.zeros(TL.nStars)*u.d
+            all_intTimes = np.zeros(TL.nStars)*u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
             
@@ -264,6 +265,8 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     # indices of observable stars
                     mode_sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                             (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+
+                all_intTimes[mode_sInds] = intTimes[mode_sInds]
                 
                 # 5. find spacecraft orbital END positions (for each candidate target), 
                 # and filter out unavailable targets
@@ -280,7 +283,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # 6. choose best target from remaining
             if len(sInds) > 0:
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, all_intTimes[sInds])
                 #Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 if sInd is None:
                     TK.allocate_time(TK.waitTime)

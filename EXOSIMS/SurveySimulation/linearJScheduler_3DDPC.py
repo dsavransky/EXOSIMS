@@ -307,10 +307,11 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                             elif b_overlap == d_overlap:
                                 if (bmode['OWA'] - bmode['IWA']) > (dmode['OWA'] - dmode['IWA']):
                                     dmode = copy.deepcopy(bmode)
-
-                print(dmode['instName'], dmode['IWA'], dmode['OWA'])
+                print("==============")
+                print(dmode['systName'], dmode['instName'], dmode['IWA'], dmode['OWA'])
                 r_mode = [mode for mode in modes if mode['systName'][-1] == 'r' and mode['systName'][-2] == dmode['systName'][-2]][0]
                 print(self.WAint[sInd])
+                print(r_mode['systName'], r_mode['instName'], r_mode['IWA'], r_mode['OWA'])
                 if self.WAint[sInd] > r_mode['IWA'] and self.WAint[sInd] < r_mode['OWA']:
                     dmode['BW'] = dmode['BW'] + r_mode['BW']
                     dmode['OWA'] = r_mode['OWA']
@@ -319,7 +320,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     dmode['inst']['CIC'] = dmode['inst']['CIC'] + r_mode['inst']['CIC']
                     dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], r_mode['syst']['optics']))
                     dmode['instName'] = dmode['instName'] + '_combined'
-                print(dmode['instName'], dmode['IWA'], dmode['OWA'])
+                print(dmode['systName'], dmode['instName'], dmode['IWA'], dmode['OWA'])
                 intTime = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
                 break

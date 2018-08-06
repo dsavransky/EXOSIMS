@@ -248,10 +248,11 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # Combining them into a whole 
             for mode in modes:
                 kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
+                mode_sInds = sInds[np.where(kogoodStart)[0]]
 
                 # 3. filter out all previously (more-)visited targets, unless in 
                 # revisit list, with time within some dt of start (+- 1 week)
-                mode_sInds = self.revisitFilter(sInds, TK.currentTimeNorm)
+                mode_sInds = self.revisitFilter(mode_sInds, TK.currentTimeNorm)
 
                 # 4. calculate integration times for ALL preselected targets, 
                 # and filter out totTimes > integration cutoff
@@ -266,7 +267,10 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     mode_sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                             (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
 
-                all_intTimes[mode_sInds] = intTimes[mode_sInds]
+                for t in mode_sInds:
+                    if intTimes[t] < all_intTimes[t]:
+                        all_intTimes[t] = intTimes[t]
+                # all_intTimes[mode_sInds] = intTimes[mode_sInds]
                 
                 # 5. find spacecraft orbital END positions (for each candidate target), 
                 # and filter out unavailable targets
@@ -304,15 +308,18 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                                 if (bmode['OWA'] - bmode['IWA']) > (dmode['OWA'] - dmode['IWA']):
                                     dmode = copy.deepcopy(bmode)
 
+                print(dmode['instName'], dmode['IWA'], dmode['OWA'])
                 r_mode = [mode for mode in modes if mode['systName'][-1] == 'r' and mode['systName'][-2] == dmode['systName'][-2]][0]
-
+                print(self.WAint[sInd])
                 if self.WAint[sInd] > r_mode['IWA'] and self.WAint[sInd] < r_mode['OWA']:
                     dmode['BW'] = dmode['BW'] + r_mode['BW']
+                    dmode['OWA'] = r_mode['OWA']
                     dmode['inst']['sread'] = dmode['inst']['sread'] + r_mode['inst']['sread']
                     dmode['inst']['idark'] = dmode['inst']['idark'] + r_mode['inst']['idark']
                     dmode['inst']['CIC'] = dmode['inst']['CIC'] + r_mode['inst']['CIC']
                     dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], r_mode['syst']['optics']))
                     dmode['instName'] = dmode['instName'] + '_combined'
+                print(dmode['instName'], dmode['IWA'], dmode['OWA'])
                 intTime = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
                 break

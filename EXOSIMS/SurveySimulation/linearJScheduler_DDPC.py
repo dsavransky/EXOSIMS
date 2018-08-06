@@ -289,6 +289,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 dmode = copy.deepcopy(modes[0])
                 if self.WAint[sInd] > modes[1]['IWA'] and self.WAint[sInd] < modes[1]['OWA']:
                     dmode['BW'] = dmode['BW'] + modes[1]['BW']
+                    dmode['OWA'] = r_mode['OWA']
                     dmode['inst']['sread'] = dmode['inst']['sread'] + modes[1]['inst']['sread']
                     dmode['inst']['idark'] = dmode['inst']['idark'] + modes[1]['inst']['idark']
                     dmode['inst']['CIC'] = dmode['inst']['CIC'] + modes[1]['inst']['CIC']

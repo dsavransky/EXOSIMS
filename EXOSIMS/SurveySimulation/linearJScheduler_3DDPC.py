@@ -268,7 +268,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                             (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
 
                 for t in mode_sInds:
-                    if intTimes[t] < all_intTimes[t]:
+                    if intTimes[t] < all_intTimes[t] or all_intTimes[t] == 0:
                         all_intTimes[t] = intTimes[t]
                 # all_intTimes[mode_sInds] = intTimes[mode_sInds]
                 

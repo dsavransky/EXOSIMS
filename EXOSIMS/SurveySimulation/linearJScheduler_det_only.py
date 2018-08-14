@@ -3,6 +3,17 @@ import astropy.units as u
 import numpy as np
 import itertools
 import astropy.constants as const
+import time
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+import sys, logging
+import numpy as np
+import astropy.units as u
+import astropy.constants as const
+import random as py_random
+import time
+import json, os.path, copy, re, inspect, subprocess
+import hashlib
 
 class linearJScheduler_det_only(SurveySimulation):
     """linearJScheduler 

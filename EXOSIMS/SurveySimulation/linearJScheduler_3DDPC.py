@@ -134,7 +134,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        print '  Char. results are: %s'%(characterized[:-1, mode_index])
+                        vprint( '  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -179,7 +179,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            vprint( log_end)
 
     def next_target(self, old_sInd, modes):
         """Finds index of next target star and calculates its integration time.
@@ -292,7 +292,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 if sInd is None:
                     TK.allocate_time(TK.waitTime)
                     intTime = None
-                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                    self.vprint( 'There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
 
                 s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec

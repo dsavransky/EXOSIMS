@@ -59,7 +59,7 @@ class tieredScheduler_DD(tieredScheduler):
         
         # Begin Survey, and loop until mission is finished
         self.logger.info('OB%s: survey beginning.'%(TK.OBnumber+1))
-        print 'OB%s: survey beginning.'%(TK.OBnumber+1)
+        vprint('OB%s: survey beginning.'%(TK.OBnumber+1))
         t0 = time.time()
         sInd = None
         occ_sInd = None
@@ -118,8 +118,8 @@ class tieredScheduler_DD(tieredScheduler):
 
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                print '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
+                vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
+                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
@@ -137,7 +137,7 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['det_time'] = t_det.to('day')
 
                     if np.any(detected):
-                        print '  Det. results are: %s'%(detected)
+                        vprint('  Det. results are: %s'%(detected))
                     # populate the DRM with detection results
 
                     DRM['det_status'] = detected
@@ -167,7 +167,7 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['scMass'] = Obs.scMass.to('kg')
 
                     self.logger.info('  Starshade and telescope aligned at target star')
-                    print '  Starshade and telescope aligned at target star'
+                    vprint('  Starshade and telescope aligned at target star')
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -179,7 +179,7 @@ class tieredScheduler_DD(tieredScheduler):
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, charMode)
                     if np.any(characterized):
-                        print '  Char. results are: %s'%(characterized)
+                        vprint('  Char. results are: %s'%(characterized))
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter == True and char_intTime is not None:
@@ -207,7 +207,7 @@ class tieredScheduler_DD(tieredScheduler):
 
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d and goal_GAdiff < time2arrive.to('day'):
-                    print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
+                    vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)
                     #TK.advanceToAbsTime(goal_GAdiff + TK.currentTimeAbs.copy())
@@ -226,17 +226,17 @@ class tieredScheduler_DD(tieredScheduler):
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
+                    vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
                     break
 
         else:
             dtsim = (time.time()-t0)*u.s
             mission_end = "Mission complete: no more time available.\n"\
-                    + "Simulation duration: %s.\n" %dtsim.astype('int')\
+                    + "Simulation" %dtsim.astype('int')\
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
 
             self.logger.info(mission_end)
-            print mission_end
+            vprint(mission_end)
 
             return mission_end
 
@@ -342,7 +342,7 @@ class tieredScheduler_DD(tieredScheduler):
             # 2a/ If we are in detection phase two, start adding new targets to occulter target list
             if TK.currentTimeAbs.copy() > self.phase1_end:
                 if self.is_phase1 is True:
-                    print 'Entering detection phase 2: target list for occulter expanded'
+                    vprint('Entering detection phase 2: target list for occulter expanded')
                     self.is_phase1 = False
                 occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
@@ -471,12 +471,12 @@ class tieredScheduler_DD(tieredScheduler):
 
         else:
             self.logger.info('Mission complete: no more time available')
-            print 'Mission complete: no more time available'
+            vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
-            print 'Mission complete: no more time available'
+            vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, dmode

@@ -21,14 +21,14 @@ class CheckScript(object):
                 script = open(scriptfile).read()
                 self.specs_from_file = json.loads(script)
             except ValueError as err:
-                print "Error: %s: Input file `%s' improperly formatted."%(self._modtype,
-                        scriptfile)
-                print "Error: JSON error was: ", err
+                print("Error: %s: Input file `%s' improperly formatted."%(self._modtype,
+                        scriptfile))
+                print("Error: JSON error was: ", err)
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
             except:
-                print "Error: %s: %s", (self._modtype, sys.exc_info()[0])
+                print("Error: %s: %s", (self._modtype, sys.exc_info()[0]))
                 raise
         else:
             self.specs_from_file = {}

@@ -1,3 +1,4 @@
+from EXOSIMS.util.vprint import vprint
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import EXOSIMS, os
 import astropy.units as u
@@ -140,8 +141,8 @@ class tieredScheduler(SurveySimulation):
             charMode = OS.observingModes[0]
         
         # Begin Survey, and loop until mission is finished
-        self.logger.info('OB%s: survey beginning.'%(TK.OBnumber+1))
-        print 'OB%s: survey beginning.'%(TK.OBnumber+1)
+        self.logger.info('OB{}: survey beginning.'.format(TK.OBnumber+1))
+        vprint( 'OB{}: survey beginning.'.format(TK.OBnumber+1))
         t0 = time.time()
         sInd = None
         occ_sInd = None
@@ -199,8 +200,8 @@ class tieredScheduler(SurveySimulation):
 
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                print '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
+                vprint( '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
+                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
@@ -212,7 +213,7 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, detMode)
                     if np.any(detected):
-                        print '  Det. results are: %s'%(detected)
+                        vprint(  '  Det. results are: %s'%(detected))
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*.07
                     # populate the DRM with detection results
@@ -245,7 +246,7 @@ class tieredScheduler(SurveySimulation):
                     DRM['scMass'] = Obs.scMass.to('kg')
 
                     self.logger.info('  Starshade and telescope aligned at target star')
-                    print '  Starshade and telescope aligned at target star'
+                    vprint(  '  Starshade and telescope aligned at target star')
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -257,7 +258,7 @@ class tieredScheduler(SurveySimulation):
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, charMode)
                     if np.any(characterized):
-                        print '  Char. results are: %s'%(characterized.T)
+                        vprint( '  Char. results are: %s'%(characterized.T))
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
@@ -299,7 +300,7 @@ class tieredScheduler(SurveySimulation):
 
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d:
-                    print 'Allocating time %s to general astrophysics'%(goal_GAdiff)
+                    vprint( 'Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)
 
@@ -317,7 +318,7 @@ class tieredScheduler(SurveySimulation):
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2)
+                    vprint( 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
                     break
 
         else:
@@ -327,7 +328,7 @@ class tieredScheduler(SurveySimulation):
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
 
             self.logger.info(mission_end)
-            print mission_end
+            vprint( mission_end)
 
             return mission_end
 
@@ -433,7 +434,7 @@ class tieredScheduler(SurveySimulation):
             # 2a/ If we are in detection phase two, start adding new targets to occulter target list
             if TK.currentTimeAbs > self.phase1_end:
                 if self.is_phase1 is True:
-                    print 'Entering detection phase 2: target list for occulter expanded'
+                    vprint( 'Entering detection phase 2: target list for occulter expanded')
                     self.is_phase1 = False
                 occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                    (self.occ_starVisits[sInds] == 0))[0]])
@@ -550,12 +551,12 @@ class tieredScheduler(SurveySimulation):
 
         else:
             self.logger.info('Mission complete: no more time available')
-            print 'Mission complete: no more time available'
+            vprint( 'Mission complete: no more time available')
             return DRM, None, None, None, None, None
 
         if TK.mission_is_over():
             self.logger.info('Mission complete: no more time available')
-            print 'Mission complete: no more time available'
+            vprint( 'Mission complete: no more time available')
             return DRM, None, None, None, None, None
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
@@ -738,13 +739,13 @@ class tieredScheduler(SurveySimulation):
         # if no preexisting curves exist, either load from file or calculate
         if self.curves is None:
             if os.path.exists(Cpath):
-                print 'Loading cached completeness file from "%s".' % Cpath
+                vprint( 'Loading cached completeness file from "{}".'.format(Cpath))
                 curves = pickle.load(open(Cpath, 'rb'))
-                print 'Completeness curves loaded from cache.'
+                vprint( 'Completeness curves loaded from cache.')
             else:
                 # calculate completeness curves for all sInds
-                print 'Cached completeness file not found at "%s".' % Cpath
-                print 'Beginning completeness curve calculations.'
+                vprint( 'Cached completeness file not found at "{}".'.format(Cpath))
+                vprint( 'Beginning completeness curve calculations.')
                 curves = {}
                 fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 for t_i, t in enumerate(intTimes):
@@ -753,7 +754,7 @@ class tieredScheduler(SurveySimulation):
                     curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                 curves[mode['systName']] = curve
                 pickle.dump(curves, open(Cpath, 'wb'))
-                print 'completeness curves stored in %r' % Cpath
+                vprint( 'completeness curves stored in {}'.format(Cpath))
 
             self.curves = curves
 
@@ -766,7 +767,7 @@ class tieredScheduler(SurveySimulation):
 
             self.curves[mode['systName']] = curve
             pickle.dump(self.curves, open(Cpath, 'wb'))
-            print 'recalculated completeness curves stored in %r' % Cpath
+            vprint( 'recalculated completeness curves stored in {}'.format(Cpath))
 
         int_times = np.zeros(len(t_sInds))*u.d
         for i, sInd in enumerate(t_sInds):
@@ -918,7 +919,7 @@ class tieredScheduler(SurveySimulation):
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
-            print log_char
+            vprint( log_char)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)

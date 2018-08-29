@@ -72,6 +72,7 @@ if __name__ == "__main__":
 
     error = False
     #TODO ERROR CHECKING
+    #Here we can check if the script has already been run...
 
     if error == False:
         while(len(queueData['scriptNames']) > 0):#Iterate until there are no more 
@@ -86,6 +87,10 @@ if __name__ == "__main__":
             kwargs = {'outpath':outpath}
             numRuns = queueData['numRuns'][0]
             res = sim.run_ensemble(numRuns, run_one=run_one, kwargs=kwargs)
+
+            #Append ScriptName to logFile.csv
+            with open("runLog.csv", "a") as myfile:
+                myfile.write(queueData['scriptNames'][0])
 
             queueData['scriptNames'].remove(queueData['scriptNames'][0])#remove scriptfile from list
             queueData['numRuns'].remove(queueData['numRuns'][0])#remove numRuns from list

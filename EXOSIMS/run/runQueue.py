@@ -72,7 +72,16 @@ if __name__ == "__main__":
 
     error = False
     #TODO ERROR CHECKING
-    #Here we can check if the script has already been run...
+    
+    #Check if Any of the Scripts have already been run...
+    with open("runLog.csv") as myfile:
+        scriptsRun = map(lambda s: s.strip(), myfile.readlines())
+        for scriptRun in scriptsRun:
+            if scriptRun in queueData['scriptNames']:
+                tmpIndex = queueData['scriptNames'].index(scriptRun)
+                queueData['scriptNames'].remove(scriptRun)#remove scriptfile from list
+                queueData['numRuns'].remove(queueData['numRuns'][tmpIndex])#remove numRuns from list
+
 
     if error == False:
         while(len(queueData['scriptNames']) > 0):#Iterate until there are no more 
@@ -90,7 +99,7 @@ if __name__ == "__main__":
 
             #Append ScriptName to logFile.csv
             with open("runLog.csv", "a") as myfile:
-                myfile.write(queueData['scriptNames'][0])
+                myfile.write(queueData['scriptNames'][0] + '\n')
 
             queueData['scriptNames'].remove(queueData['scriptNames'][0])#remove scriptfile from list
             queueData['numRuns'].remove(queueData['numRuns'][0])#remove numRuns from list

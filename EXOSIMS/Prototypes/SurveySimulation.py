@@ -269,8 +269,8 @@ class SurveySimulation(object):
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()
 
-        #Generate File Hashnames and loction
-        self.cachefname = self.generateHashfName(specs)
+        #Generate File Hashnames and location
+        self.cachefname = self.generateHashfName(specs, mode)
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -1320,12 +1320,14 @@ class SurveySimulation(object):
         
         return out
 
-    def generateHashfName(self, specs):
+    def generateHashfName(self, specs, mode):
         """Generate cached file Hashname
 
         Args:
             specs
                 The json script elements of the simulation to be run
+            mode
+                Instrument observing mode dictionary
 
         Returns:
             cachefname (string)
@@ -1340,7 +1342,9 @@ class SurveySimulation(object):
         cachefname += str(tmp2)#Planet Pop
         cachefname += str(tmp1)#Planet Physical Model
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        hexstring = str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)+str(mode['syst']['ohTime'].to(u.d).value)+str(self.Observatory.settlingTime.to(u.d).value)
+        cachefname += hashlib.md5(hexstring).hexdigest()
+        #cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
         fileloc = os.path.split(inspect.getfile(self.__class__))[0]
         cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.

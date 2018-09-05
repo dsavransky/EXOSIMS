@@ -496,7 +496,8 @@ class OpticalSystem(object):
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     param_name + " wrong data shape."
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-            assert np.all(D >= 0) and np.all(D <= 1), \
+            if not self.haveOcculter:
+                assert np.all(D >= 0) and np.all(D <= 1), \
                     param_name + " must be positive and smaller than 1."
             # table interpolate function
             Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float),
@@ -509,7 +510,8 @@ class OpticalSystem(object):
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
             
         elif isinstance(syst[param_name], numbers.Number):
-            assert syst[param_name] >= 0 and syst[param_name] <= 1, \
+            if not self.haveOcculter:
+                assert syst[param_name] >= 0 and syst[param_name] <= 1, \
                     param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \
                     ((s*syst['lam']/l >= syst['IWA']) & \

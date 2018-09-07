@@ -2,8 +2,6 @@ from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 class FakeCatalog(StarCatalog):
     

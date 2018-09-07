@@ -39,4 +39,7 @@ class randomWalkScheduler(SurveySimulation):
         # pick one
         sInd = np.random.choice(sInds)
         
-        return sInd, None
+        if slewTimes[sInd] > 0:
+            return sInd, slewTimes[sInd]
+        else:
+            return sInd, None

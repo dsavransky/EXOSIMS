@@ -343,7 +343,7 @@ class OpticalSystem(object):
                 syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
             
             # loading system specifications
-            syst['IWA'] = syst.get('IWA', 0. if IWA is None else IWA)*u.arcsec    # inner WA
+            syst['IWA'] = syst.get('IWA', 0.1 if IWA is None else IWA)*u.arcsec    # inner WA
             syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             

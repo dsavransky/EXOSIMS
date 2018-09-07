@@ -7,9 +7,10 @@
   "scMass": 5000,
   "dryMass": 4950,
   "coMass": 5800,
-  "occulterSep": 55000,
+  "occulterSep": 51000,
   "skIsp": 220,
   "defburnPortion":0.05,
+  "f_nStars":10,
   "scienceInstruments": [
     {
       "name": "imager"
@@ -30,7 +31,7 @@
       "NocculterDistances" : 1,
       "occulterDistances": [
         {
-        "occulterDistance": 55000,
+        "occulterDistance": 51000,
         "occulterRedEdge": 690,
         "occulterBlueEdge": 450 }
       ]
@@ -43,13 +44,13 @@
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",
     "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
-    "Observatory": "WFIRSTObservatoryL2",
+    "Observatory": "SotoStarshade",
     "TimeKeeping": " ",
     "PostProcessing": " ",
     "Completeness": "GarrettCompleteness",
     "TargetList": " ",
     "SimulatedUniverse": "KeplerLikeUniverse",
-    "SurveySimulation": "linearJScheduler",
+    "SurveySimulation": "",
     "SurveyEnsemble": " "
   }
 }

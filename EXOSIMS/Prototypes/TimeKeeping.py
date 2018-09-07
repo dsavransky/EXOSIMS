@@ -209,6 +209,7 @@ class TimeKeeping(object):
             success (bool):
                 a flag indicating the time allocation was successful or not successful
         """
+
         #Check dt validity
         if(dt.value <= 0 or dt.value == np.inf):
             self.vprint('The temporal block to allocate must be positive nonzero, got %f'%dt.value)
@@ -278,6 +279,7 @@ class TimeKeeping(object):
             success (bool):
                 A bool indicating whether the operation was successful or not
         """
+
         #Checks on tAbs validity
         if tAbs <= self.currentTimeAbs:
             self.vprint("The time to advance to " + str(tAbs) + " is not after " + str(self.currentTimeAbs))
@@ -346,6 +348,7 @@ class TimeKeeping(object):
         #Use 6 and 8 #extended to accomodate any current and future time inside OBs
         if np.any((tNorm>=self.OBstartTimes[self.OBnumber:])*(tNorm<=self.OBendTimes[self.OBnumber:])):  # The tAbs is between start of a future OB and end of that OB
             endIndex = np.where((tNorm>=self.OBstartTimes[self.OBnumber:])*(tNorm<=self.OBendTimes[self.OBnumber:])==True)[0][0]# Return index of OB that tAbs will be inside of
+            endIndex += self.OBnumber            
             t_added = 0*u.d
             if addExoplanetObsTime:  # Count time towards exoplanetObs Time
                 t_added += (tAbs - self.currentTimeAbs).to('day')
@@ -393,7 +396,7 @@ class TimeKeeping(object):
             OBnumber = self.OBnumber
         if currentTimeNorm == None:
             currentTimeNorm = self.currentTimeNorm.copy()
-
+            
         maxTimeOBendTime = self.OBendTimes[OBnumber] - currentTimeNorm
         maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
 

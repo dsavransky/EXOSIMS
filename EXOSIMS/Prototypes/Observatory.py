@@ -82,7 +82,7 @@ class Observatory(object):
         koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
         slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):#DELETE occ_dtStep=5,
+        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -103,7 +103,7 @@ class Observatory(object):
         self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
         self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
-        self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
+        self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
         self.scMass = scMass*u.kg                   # occulter initial (wet) mass (kg)
@@ -583,7 +583,7 @@ class Observatory(object):
         if mode['syst']['occulter']:
             # find length of observable range in days
             observable_range = np.diff(observableTimesNorm,axis=0)[0]
-            # re-do calculations for observable windows that are less than 5 days long
+            # re-do calculations for observable windows that are less than dt_min days long
             reDo = np.where(observable_range < self.occ_dtmin.value)[0]
             if reDo.size:
                 correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
@@ -712,25 +712,29 @@ class Observatory(object):
             sd (integer):
                 Angular separation between two target stars 
         """
-        # position vector of previous target star
-        r_old = TL.starprop(old_sInd, currentTime)[0]
-        u_old = r_old.value/np.linalg.norm(r_old)
-        # position vector of new target stars
-        r_new = TL.starprop(sInds, currentTime)
-        u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-        # angle between old and new stars
-        sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+        if old_sInd is None:
+            sd = np.zeros(len(sInds))*u.rad
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+                
+            # A-frame
+            a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
+            a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
+            a3 = np.cross(a1,a2)                #last part of the A basis vectors
             
-        # A-frame
-        a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
-        a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
-        a3 = np.cross(a1,a2)                #last part of the A basis vectors
+            # finding sign of angle
+            u2_Az = np.dot(a3,u_new.T)
+            sgn = np.sign(u2_Az)
+            sd = sgn*sd  #The star angular separation can be negative because it is with respect to a frame
         
-        # finding sign of angle
-        u2_Az = np.dot(a3,u_new.T)
-        sgn = np.sign(u2_Az)
-        
-        return sgn*sd#The star angular separation can be negative because it is with respect to a frame
+        return sd 
         
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
@@ -1151,7 +1155,7 @@ class Observatory(object):
         
         return dF_lateral, dF_axial, intMdot, mass_used, deltaV
     
-    def calculate_dV(self,dt,TL,nA,N,tA):  
+    def calculate_dV(self,TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):  
         """Finds the change in velocity needed to transfer to a new star line of sight
         
         This method sums the total delta-V needed to transfer from one star
@@ -1179,11 +1183,11 @@ class Observatory(object):
                 State vectors in rotating frame in normalized units
         """
 
-        dV = np.zeros(len(N))
+        dV = np.zeros(len(sInds))
         
         return dV*u.m/u.s    
         
-    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+    def calculate_slewTimes(self,TL,old_sInd,sInds,sd,obsTimes,currentTime):
         """Finds slew times and separation angles between target stars
         
         This method determines the slew times of an occulter spacecraft needed
@@ -1197,12 +1201,12 @@ class Observatory(object):
                 Integer index of the most recently observed star
             sInds (integer ndarray):
                 Integer indeces of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
             currentTime (astropy Time):
                 Current absolute mission time in MJD
                 
         Returns:
-            sd (astropy Quantity):
-                Angular separation between stars in rad
             slewTimes (astropy Quantity):
                 Time to transfer to new star line of sight in units of days
         """
@@ -1212,18 +1216,16 @@ class Observatory(object):
             self.defburnPortion**2/4.)).decompose().to('d2')
 
         if old_sInd is None:
-            sd = np.array([np.radians(0)]*TL.nStars)*u.rad
-            slewTimes = (np.zeros(TL.nStars)*u.d)[sInds]
+            slewTimes = np.zeros(TL.nStars)*u.d
         else:
-            sd = self.star_angularSep(TL,old_sInd,sInds,currentTime)
             # calculate slew time
-            slewTimes = np.sqrt(slewTime_fac*np.sin(abs(sd)/2.))#an issue exists if sd is negative
+            slewTimes = np.sqrt(slewTime_fac*np.sin(abs(sd)/2.)) #an issue exists if sd is negative
             
             #The following are debugging 
-            assert(np.where(np.isnan(slewTimes))[0].shape[0] > 0, 'At least one slewTime is nan')
+            assert np.where(np.isnan(slewTimes))[0].shape[0] == 0, 'At least one slewTime is nan'
         
-        return sd,slewTimes
-    
+        return slewTimes
+   
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results
         

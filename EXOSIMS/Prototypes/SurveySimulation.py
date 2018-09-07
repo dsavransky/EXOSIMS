@@ -5,6 +5,7 @@ import sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+from astropy.time import Time
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess

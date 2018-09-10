@@ -42,7 +42,7 @@
    "ohTime": 0.025, 
    "core_platescale": 0.3, 
    "BW": 0.1, 
-   "optics": 0.983647, 
+   "optics": 0.983647 
   }, 
   {
    "lam": 660, 
@@ -51,7 +51,7 @@
    "ohTime": 0.025, 
    "core_platescale": 0.3, 
    "BW": 0.18, 
-   "optics": 0.9154706, 
+   "optics": 0.9154706 
   }
  ], 
  "WAint": 0.3, 

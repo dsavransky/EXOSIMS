@@ -56,18 +56,18 @@ if __name__ == "__main__":
     parser.add_argument('--makeSimilarInst',nargs=1,type=str, help='Full path to the makeSimilar.json instruction script (string).')
 
     args = parser.parse_args()
-    makeSimilarInst = args.makeSimilarInst[0]
 
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     valid_sweepTypes = ['SweepParameters','SweepParametersPercentages']
     
     #(default) If no makeSimilarScripts instruction file is provided, default use makeSimilar.json
-    if makeSimilarInst is None:
+    if args.makeSimilarInst is None:
         makeSimilarInst = './makeSimilar.json'
         assert os.path.exists(makeSimilarInst), "%s is not a valid filepath" % (makeSimilarInst)
         with open(makeSimilarInst) as f:#Load variational instruction script
             jsonDataInstruction = json.load(f)#This script contains the instructions for precisely how to modify the base file
     else:#else: use the provided instructions
+        makeSimilarInst = args.makeSimilarInst[0]
         assert os.path.exists(makeSimilarInst), "%s is not a valid filepath" % (makeSimilarInst)
         with open(makeSimilarInst) as f:#Load variational instruction script
             jsonDataInstruction = json.load(f)#This script contains the instructions for precisely how to modify the base file

@@ -127,10 +127,17 @@ if __name__ == "__main__":
             queueOut['scriptNames'] = namesOfScriptsCreated
             queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
             json.dump(queueOut, g, indent=1)
-        with open('../run/' + 'queue.json', 'w') as g:
-            queueOut['scriptNames'] = namesOfScriptsCreated
-            queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
-            json.dump(queueOut, g, indent=1)
+        if os.path.isdir('../run'):#If the relative path exists for run, create it there
+            with open('../run/' + 'queue.json', 'w') as g:
+                queueOut['scriptNames'] = namesOfScriptsCreated
+                queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
+                json.dump(queueOut, g, indent=1)
+        else:#Otherwise create queue.json in current directory
+            with open('./' + 'queue.json', 'w') as g:
+                queueOut['scriptNames'] = namesOfScriptsCreated
+                queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
+                json.dump(queueOut, g, indent=1)
+
 
 
         # Case 2
@@ -184,10 +191,16 @@ if __name__ == "__main__":
             queueOut['scriptNames'] = namesOfScriptsCreated
             queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
             json.dump(queueOut, g, indent=1)
-        with open('../run/'  'queue.json', 'w') as g:
-            queueOut['scriptNames'] = namesOfScriptsCreated
-            queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
-            json.dump(queueOut, g, indent=1)
+        if os.path.isdir('../run'):#If the relative path exists for run, create it there
+            with open('../run/'  'queue.json', 'w') as g:
+                queueOut['scriptNames'] = namesOfScriptsCreated
+                queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
+                json.dump(queueOut, g, indent=1)
+        else:#Otherwise create queue.json in current directory
+            with open('./' + 'queue.json', 'w') as g:
+                queueOut['scriptNames'] = namesOfScriptsCreated
+                queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
+                json.dump(queueOut, g, indent=1)
 
         #Create Filename Substring using parameters and values
         # paramNameSet = ''

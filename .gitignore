@@ -96,3 +96,4 @@ statsFun_C
 *.csv
 *.fZmax
 *.starkfZ
+*/queue.json

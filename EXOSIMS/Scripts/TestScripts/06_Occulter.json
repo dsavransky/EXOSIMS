@@ -38,7 +38,7 @@
     }
   ],
   "modules": {
-    "PlanetPopulation": "KeplerLike2",
+    "PlanetPopulation": "KeplerLike1",
     "StarCatalog": "EXOCAT1",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
@@ -50,7 +50,7 @@
     "Completeness": "GarrettCompleteness",
     "TargetList": " ",
     "SimulatedUniverse": "KeplerLikeUniverse",
-    "SurveySimulation": "",
+    "SurveySimulation": "occulterJScheduler",
     "SurveyEnsemble": " "
   }
 }

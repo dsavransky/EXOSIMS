@@ -566,7 +566,6 @@ class SurveySimulation(object):
             sInds = np.asarray([],dtype=int)
         
         # 3. filter out all previously (more-)visited targets, unless in 
-        # revisit list, with time within some dt of start (+- 1 week)
         if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
@@ -596,7 +595,7 @@ class SurveySimulation(object):
                 sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
-
+        
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
@@ -807,7 +806,7 @@ class SurveySimulation(object):
         
         TK  = self.TimeKeeping
         Obs = self.Observatory
-        
+
         #allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
@@ -830,24 +829,29 @@ class SurveySimulation(object):
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
         
         # 2. find OBnumber for each sInd's slew time
-        for i in range(len(sInds)):
-            
-            S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
-            F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
-
-            # slew occurs within an OB
-            if S != F: 
-                OBnumbers[i] = S
-                maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
-                maxIntTimes[i] = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
-            
-            # slew occurs between OBs, badbadnotgood
-            else: 
-                OBnumbers[i]   = -1 
-                maxIntTimes[i] = 0*u.d
+        if len(TK.OBendTimes) > 1:
+            for i in range(len(sInds)):
+                
+                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
+    
+                # slew occurs within an OB
+                if S != F: 
+                    OBnumbers[i] = S
+                    maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
+                    maxIntTimes[i] = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+                
+                # slew occurs between OBs, badbadnotgood
+                else: 
+                    OBnumbers[i]   = -1 
+                    maxIntTimes[i] = 0*u.d
+            OBstartTimeNorm     = (TK.OBstartTimes[np.array(OBnumbers,dtype=int)].value - tmpCurrentTimeNorm.value)
+        else:
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, tmpCurrentTimeNorm)
+            maxIntTimes[:]   = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+            OBstartTimeNorm  = np.zeros(OBnumbers.shape) #np.array([tmpCurrentTimeNorm.value]*len(OBnumbers)).reshape(OBnumbers.shape)
         
         #finding the minimum possible slew time (either OBstart or when star JUST leaves keepout)
-        OBstartTimeNorm     = (TK.OBstartTimes[np.array(OBnumbers,dtype=int)].value - tmpCurrentTimeNorm.value)
         minAllowedSlewTime = np.max([OBstartTimeNorm,minObsTimeNorm],axis=0)
         
         # 3. start filtering process
@@ -855,7 +859,6 @@ class SurveySimulation(object):
         # ^ star slew within OB -AND- can finish observing before it goes back into keepout
     
         if good_inds.shape[0] > 0:
-            
             #the good ones
             sInds = sInds[good_inds]
             slewTimes = slewTimes[good_inds]
@@ -870,17 +873,16 @@ class SurveySimulation(object):
             
             #checking to see if slewTimes are allowed
             good_inds = np.where( (slewTimes.reshape([len(sInds),1]).value > minAllowedSlewTime) & \
-                                  (slewTimes.reshape([len(sInds),1]).value < maxAllowedSlewTime))[0]
+                                  (slewTimes.reshape([len(sInds),1]).value < maxAllowedSlewTime) )[0]
             
             slewTimes = slewTimes[good_inds]
         
         # 3.5 showing some mercy if no slews are allowable
         if good_inds.shape[0] == 0:
-            
             #replace slews with minimum allowed slew time
             good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
             slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
-
+        
         return sInds[good_inds],intTimes[good_inds].flatten(),slewTimes
     
     def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
@@ -917,7 +919,7 @@ class SurveySimulation(object):
         TK  = self.TimeKeeping
         Obs = self.Observatory
         TL = self.TargetList
-        
+
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
         
@@ -948,22 +950,23 @@ class SurveySimulation(object):
         # each entry either has a slew time value if a slew is allowed at that date or 0 if slewing is not allowed
         
         # first filled in for the current OB
+        minAllowedSlewTimes = np.array([minObsTimeNorm.T]*len(intTimes_int.T)).T
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
-        minAllowedSlewTimes = np.array([minObsTimeNorm.T]*len(maxAllowedSlewTimes.T)).T
-        
+        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = Obs.occ_dtmax.value
+
         # conditions that must be met to define an allowable slew time
-        cond1 = minAllowedSlewTimes > Obs.occ_dtmin.value
-        cond2 = maxAllowedSlewTimes < Obs.occ_dtmax.value
+        cond1 = minAllowedSlewTimes >= Obs.occ_dtmin.value # minimum dt time in dV map interpolant
+        cond2 = maxAllowedSlewTimes <= Obs.occ_dtmax.value # maximum dt time in dV map interpolant
         cond3 = maxAllowedSlewTimes > minAllowedSlewTimes
-        cond4 = intTimes_int.value < ObsTimeRange.reshape(len(sInds),1)
+        cond4 = intTimes_int.value  < ObsTimeRange.reshape(len(sInds),1)
+    
         conds = cond1 & cond2 & cond3 & cond4
-        
         minAllowedSlewTimes[np.invert(conds)] = np.Inf
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
         
         # one last condition to meet
         map_i,map_j = np.where((obsTimeArrayNorm > minAllowedSlewTimes) & (obsTimeArrayNorm < maxAllowedSlewTimes))
-        
+
         # 2.5 if any stars are slew-able to within this OB block, populate "allowedSlewTimes", a running tally of possible slews
         # within the time range a star is observable (out of keepout)
         if map_i.shape[0] > 0 and map_j.shape[0] > 0:
@@ -973,6 +976,7 @@ class SurveySimulation(object):
         
         # 3. search future OBs 
         OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
+        
 
         if any(OB_withObsStars > 0):
             nOBstart = np.argmin( np.abs(OB_withObsStars) )
@@ -991,13 +995,14 @@ class SurveySimulation(object):
                 # min slew times for stars start either whenever the star first leaves keepout or when next OB stars, whichever comes last
                 minAllowedSlewTimes_nOB = np.array([np.max([minObsTimeNorm,nOBstartTimeNorm],axis=0).T]*len(maxAllowedSlewTimes.T)).T 
                 maxAllowedSlewTimes_nOB = nOBstartTimeNorm.reshape(len(sInds),1) + maxIntTime_nOB.value - intTimes_int.value
+                maxAllowedSlewTimes_nOB[maxAllowedSlewTimes_nOB > Obs.occ_dtmax.value] = Obs.occ_dtmax.value
                 
                 # amount of time left when the stars are still out of keepout
                 ObsTimeRange_nOB = maxObsTimeNorm - np.max([minObsTimeNorm,nOBstartTimeNorm],axis=0).T
                 
                 # condition to be met for an allowable slew time
-                cond1 = minAllowedSlewTimes_nOB > Obs.occ_dtmin.value
-                cond2 = maxAllowedSlewTimes_nOB < Obs.occ_dtmax.value
+                cond1 = minAllowedSlewTimes_nOB >= Obs.occ_dtmin.value
+                cond2 = maxAllowedSlewTimes_nOB <= Obs.occ_dtmax.value
                 cond3 = maxAllowedSlewTimes_nOB > minAllowedSlewTimes_nOB
                 cond4 = intTimes_int.value < ObsTimeRange_nOB.reshape(len(sInds),1)
                 cond5 = intTimes_int.value < maxIntTime_nOB.value
@@ -1035,7 +1040,38 @@ class SurveySimulation(object):
 
     
     def chooseOcculterSlewTimes(self,sInds,good_sInds,slewTimes,dVs,intTimes,charTimes):
-
+        """Selects the best slew time for each star
+        
+        This method searches through an array of permissible slew times for 
+        each star and chooses the best slew time for the occulter based on 
+        maximizing possible characterization time for that particular star (as
+        a default).
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            obsTimeArray (astropy Quantity array):
+                Array of times during which a star is out of keepout, has shape
+                nx50 where n is the number of stars in sInds
+            intTimeArray (astropy Quantity array):
+                Array of integration times for each time in obsTimeArray, has shape
+                nx50 where n is the number of stars in sInds
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+        
+        Returns:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+        
         # selection criteria for each star slew
         good_j = np.argmax(charTimes[good_sInds,:],axis=1) # maximum possible characterization time available
         good_i = np.arange(0,len(sInds))
